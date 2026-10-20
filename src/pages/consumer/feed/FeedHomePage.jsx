@@ -144,7 +144,7 @@ export default function FeedHomePage() {
       setItems((prev) => [...(prev || []), ...uniqueRows]);
       return true;
     } catch (err) {
-      setError(err?.message || "Unable to load more Feed videos");
+      setError(err?.message || "Unable to load more Feed clips");
       return false;
     } finally {
       loadingMoreRef.current = false;

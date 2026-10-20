@@ -109,7 +109,7 @@ export const EATING_COMPOSE_CATEGORIES = [
     label: "What I'm Eating",
     placeholder: "Anything to say? (optional)",
     description:
-      "Current eating signal — cuisine, food type, restaurant, or dish. Video is core for Feed discovery.",
+      "Current eating signal — cuisine, food type, restaurant, or dish. Clips are core for Feed discovery.",
   },
   {
     id: "want",
@@ -121,19 +121,19 @@ export const EATING_COMPOSE_CATEGORIES = [
     id: "plan",
     label: "My Eating Plans",
     placeholder: "Where are you going?",
-    description: "Photo or video, then schedule — Join Me stays on the plan form.",
+    description: "Photo or clip, then schedule — Join Me stays on the plan form.",
   },
   {
     id: "reviews",
     label: "Reviews",
     placeholder: "Anything to say about this dish? (optional)",
-    description: "Record a video review of a specific menu item.",
+    description: "Record a clip review of a specific menu item.",
   },
   {
     id: "cooking",
     label: "What's Cooking @home",
     placeholder: "What are you cooking? (optional)",
-    description: "Video of a home-cooked meal — posts to Feed; photos on profile @home use + Add.",
+    description: "Clip of a home-cooked meal — posts to Feed; photos on profile @home use + Add.",
   },
 ];
 

@@ -35,7 +35,7 @@ export function buildTopHighlights({ profileHighlightMedia = [], profileHighligh
         media_id: row.id,
         media_kind: isVideo ? "video" : "photo",
         label: String(row.label || "").trim() || "My Highlight",
-        sublabel: String(row.sublabel || "").trim() || (isVideo ? "Video you shared" : "Experience you shared"),
+        sublabel: String(row.sublabel || "").trim() || (isVideo ? "Clip you shared" : "Experience you shared"),
         badge: isVideo ? "Video" : "Photo",
         image: isVideo ? null : url,
         videoUrl: isVideo ? url : undefined,

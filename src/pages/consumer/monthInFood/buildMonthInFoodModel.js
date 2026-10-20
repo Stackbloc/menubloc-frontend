@@ -286,7 +286,7 @@ export function buildMonthInFoodModel(payload = {}) {
     stats.push({ id: "dishes", label: "Dishes", value: dishesCount });
     stats.push({ id: "restaurants", label: "Restaurants", value: restaurantIds.size });
     stats.push({ id: "home", label: "@home meals", value: homeMealsCount });
-    stats.push({ id: "media", label: "Photos & videos", value: mediaMealCount });
+    stats.push({ id: "media", label: "Photos & clips", value: mediaMealCount });
     stats.push({ id: "moments", label: "Moments shared", value: momentsShared });
     stats.push({ id: "meals", label: "Total meals", value: mealsLogged });
   }

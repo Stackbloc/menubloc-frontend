@@ -11,7 +11,7 @@ const CORE_LINKS = [
   {
     to: MY_MENUPLY_PROFILE_PATH,
     title: "My Menuply",
-    blurb: "Profile, videos, photos, connections, Dining Crew",
+    blurb: "Profile, clips, photos, connections, Dining Crew",
     testId: "feed-me-my-menuply",
   },
   {
@@ -44,7 +44,7 @@ const GUEST_AUTH_LINKS = [
   {
     to: "/account/signup?next=%2Ffeed%2Fme",
     title: "Create account",
-    blurb: "Free — claim videos, connect with friends, and post plans",
+    blurb: "Free — claim clips, connect with friends, and post plans",
     testId: "feed-me-create-account",
   },
   {

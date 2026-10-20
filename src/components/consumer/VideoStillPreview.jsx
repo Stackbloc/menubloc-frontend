@@ -173,12 +173,12 @@ export default function VideoStillPreview({
         <div
           style={styles.fallback}
           data-testid={`${testId}-fallback`}
-          aria-label={frameFailed ? "Video" : "Loading video preview"}
+          aria-label={frameFailed ? "Clip" : "Loading clip preview"}
         >
           <span style={styles.playGlyph} aria-hidden="true">
             ▶
           </span>
-          <span style={styles.fallbackLabel}>Video</span>
+          <span style={styles.fallbackLabel}>Clip</span>
         </div>
       )}
       <span style={styles.playBadge} aria-hidden="true">
@@ -188,7 +188,7 @@ export default function VideoStillPreview({
         <button
           type="button"
           style={styles.hit}
-          aria-label="Play video"
+          aria-label="Play clip"
           data-testid={`${testId}-play`}
           onClick={(e) => {
             e.stopPropagation();

@@ -69,8 +69,8 @@ export default function MenuItemReviewChooser({
                 🎥
               </span>
               <span>
-                <strong style={styles.actionTitle}>Video review</strong>
-                <span style={styles.actionHint}>Record using the existing food-video flow</span>
+                <strong style={styles.actionTitle}>Clip review</strong>
+                <span style={styles.actionHint}>Record using the existing food-clip flow</span>
               </span>
             </button>
           ) : null}

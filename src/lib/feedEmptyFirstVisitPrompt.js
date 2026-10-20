@@ -3,7 +3,7 @@
  */
 
 export const FEED_EMPTY_FIRST_VISIT_PROMPT_COPY =
-  "Tap X below to post a video about what you're eating or wanting to eat today.";
+  "Tap X below to post a clip about what you're eating or wanting to eat today.";
 
 /** Hide the first-visit coach once this many public Feed videos exist nationally. */
 export const FEED_EMPTY_PROMPT_VIDEO_THRESHOLD = 50;

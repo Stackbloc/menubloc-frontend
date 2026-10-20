@@ -118,7 +118,7 @@ export default function MyHighlightsGrid({
                 type="button"
                 style={styles.addIconBtn}
                 data-testid="my-highlights-add"
-                aria-label="Add a highlight photo or video"
+                aria-label="Add a highlight photo or clip"
                 onClick={() => onAdd?.()}
               >
                 <span aria-hidden="true">+</span>

@@ -71,7 +71,7 @@ function SummaryGrid({ summary, intervalLabel }) {
     ["Want to Eat", summary.interval?.want_to_eat, summary.lifetime?.want_to_eat],
     ["Events", summary.interval?.social_events, summary.lifetime?.social_events],
     ["Invites sent", summary.interval?.invites_sent, summary.lifetime?.invites_sent],
-    ["Videos", summary.interval?.video_uploads, summary.lifetime?.video_uploads],
+    ["Clips", summary.interval?.video_uploads, summary.lifetime?.video_uploads],
     ["Connects", null, summary.lifetime?.accepted_connects],
   ];
 

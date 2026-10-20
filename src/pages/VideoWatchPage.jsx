@@ -36,7 +36,7 @@ export default function VideoWatchPage() {
   useEffect(() => {
     let cancelled = false;
     if (!VIDEO_KINDS.has(kind) || !Number.isInteger(id) || id <= 0) {
-      setError("Video not found");
+      setError("Clip not found");
       setLoading(false);
       return undefined;
     }
@@ -47,7 +47,7 @@ export default function VideoWatchPage() {
       .then(async (res) => {
         const json = await res.json().catch(() => null);
         if (!res.ok || !json?.ok) {
-          throw new Error(json?.error || "Video not found");
+          throw new Error(json?.error || "Clip not found");
         }
         return json.data;
       })
@@ -55,7 +55,7 @@ export default function VideoWatchPage() {
         if (!cancelled) setData(payload);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || "Video not found");
+        if (!cancelled) setError(err.message || "Clip not found");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -79,7 +79,7 @@ export default function VideoWatchPage() {
     return (
       <div style={shellStyle()}>
         <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: "2rem", color: "#94a3b8" }}>
-          Loading video…
+          Loading clip…
         </div>
         <BottomNav />
       </div>
@@ -90,7 +90,7 @@ export default function VideoWatchPage() {
     return (
       <div style={shellStyle()}>
         <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: "2rem", color: "#94a3b8" }}>
-          {error || "Video not found"}
+          {error || "Clip not found"}
         </div>
         <BottomNav />
       </div>
@@ -118,7 +118,7 @@ export default function VideoWatchPage() {
         </p>
 
         <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.45rem", fontWeight: 700, lineHeight: 1.25 }}>
-          {data.title || "Menuply video"}
+          {data.title || "Menuply clip"}
         </h1>
 
         {!data.indexable ? (
@@ -160,7 +160,7 @@ export default function VideoWatchPage() {
             />
           ) : (
             <div style={{ padding: "3rem 1rem", textAlign: "center", color: "#94a3b8" }}>
-              Video unavailable
+              Clip unavailable
             </div>
           )}
         </div>
@@ -169,7 +169,7 @@ export default function VideoWatchPage() {
             style={{ margin: "-0.5rem 0 1rem", fontSize: 13, color: "#94a3b8" }}
             data-testid="video-watch-no-sound"
           >
-            This video plays without sound.
+            This clip plays without sound.
           </p>
         ) : null}
 

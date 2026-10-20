@@ -18,7 +18,7 @@ test("Ate compose uses structured signal kinds + food type icons", () => {
   const panel = read("src/pages/consumer/myMenuply/WantDiscoveryPanel.jsx");
 
   assert.match(utils, /ATE_SIGNAL_KINDS/);
-  assert.match(utils, /Video is core for Feed discovery/);
+  assert.match(utils, /Clips are core for Feed discovery/);
   assert.match(compose, /ate-signal-/);
   assert.match(compose, /ate-food-type-/);
   assert.match(compose, /Video \(core\) or photo/);

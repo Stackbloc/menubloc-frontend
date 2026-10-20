@@ -258,7 +258,7 @@ function VideoTile({
       data-testid="profile-video-tile"
       data-video-kind={video.kind}
       data-preview-slot={video._preview_slot || ""}
-      aria-label={`Play video: ${caption}`}
+      aria-label={`Play clip: ${caption}`}
       onClick={() => onOpen(video, position)}
       style={styles.tile}
     >
@@ -470,7 +470,7 @@ function PlayerSheet({
           >
             {loadError ? (
               <div style={styles.loadFail} data-testid="profile-video-player-error">
-                <p style={{ margin: 0 }}>Couldn’t load this video.</p>
+                <p style={{ margin: 0 }}>Couldn’t load this clip.</p>
                 <button
                   type="button"
                   style={styles.retryBtn}
@@ -619,7 +619,7 @@ function SeeAllSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="All videos"
+        aria-label="All clips"
         data-testid="profile-videos-see-all-sheet"
         style={{
           ...styles.seeAllSheet,
@@ -630,7 +630,7 @@ function SeeAllSheet({
           <button type="button" aria-label="Close" onClick={onClose} style={styles.closeX}>
             ×
           </button>
-          <div style={styles.seeAllTitle}>Videos</div>
+          <div style={styles.seeAllTitle}>Clips</div>
           <div style={styles.sortRow} role="group" aria-label="Sort">
             <FilterChip
               active={sort === "top"}
@@ -877,13 +877,13 @@ export default function ProfileVideosSection({
     <section
       data-testid="profile-videos-section"
       data-profile-surface="card"
-      aria-label="Videos"
+      aria-label="Clips"
       style={profileReadableSurfaceStyle({
         marginBottom: isMobile ? 20 : 28,
       })}
     >
       <div style={styles.headerRow}>
-        <div style={styles.heading}>Videos</div>
+        <div style={styles.heading}>Clips</div>
         {!loading ? (
           <span style={styles.count} data-testid="profile-videos-count">
             {poolCountLabel}
@@ -896,7 +896,7 @@ export default function ProfileVideosSection({
 
       {fetchError ? (
         <div style={styles.errorBox} data-testid="profile-videos-error">
-          <span>Couldn’t load videos.</span>
+          <span>Couldn’t load clips.</span>
           <button type="button" style={styles.retryBtn} onClick={() => load()}>
             Retry
           </button>
@@ -917,7 +917,7 @@ export default function ProfileVideosSection({
             <div
               style={styles.chipRow}
               role="group"
-              aria-label="Filter videos by dish category"
+              aria-label="Filter clips by dish category"
               data-testid="profile-videos-chips"
             >
               <FilterChip

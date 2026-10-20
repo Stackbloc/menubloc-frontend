@@ -70,7 +70,7 @@ test("Owner Video Manager supports upload panel and date filters", () => {
   assert.match(api, /date_from/);
   assert.match(api, /date_to/);
   const layout = read("src/pages/owner/OwnerLayout.jsx");
-  assert.match(layout, /Video Manager/);
+  assert.match(layout, /Clip Manager/);
 });
 
 test("Owner Video Manager includes cluster dropdown for platform uploads", () => {
@@ -109,8 +109,8 @@ test("Owner Video Manager labels owner uploads Platform video and guest uploads 
   const page = read("src/pages/owner/OwnerVideoCuration.jsx");
   const labels = read("src/lib/ownerVideoCatalogLabels.js");
   assert.match(page, /formatOwnerVideoCreatorLabel/);
-  assert.match(labels, /Platform video/);
-  assert.match(labels, /Guest video/);
+  assert.match(labels, /Platform clip/);
+  assert.match(labels, /Guest clip/);
   assert.match(labels, /kind === "managed"/);
   assert.match(labels, /row\.is_guest/);
 });

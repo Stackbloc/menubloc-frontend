@@ -83,7 +83,7 @@ export default function SeeWhosEatingSurface({
       .catch((err) => {
         if (cancelled) return;
         setItems([]);
-        setError(err?.message || "Unable to load videos");
+        setError(err?.message || "Unable to load clips");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -198,7 +198,7 @@ export default function SeeWhosEatingSurface({
               style={styles.reelTap}
               onClick={() => openAt(0)}
               disabled={!preview}
-              aria-label={preview ? "Open See who's eating reel" : "No market videos yet"}
+              aria-label={preview ? "Open See who's eating reel" : "No market clips yet"}
             >
               {preview?.video_url ? (
                 <video
@@ -314,7 +314,7 @@ export default function SeeWhosEatingSurface({
               ? `${items.length} signal${items.length === 1 ? "" : "s"} in range · tap to expand`
               : channel === "event"
                 ? "No Events signal in this market yet"
-                : "Waiting for nearby video"}
+                : "Waiting for nearby clip"}
           </p>
         )}
       </div>

@@ -76,7 +76,7 @@ export default function FeedDealsPage() {
       } catch (err) {
         if (cancelled) return;
         setAllItems([]);
-        setError(err?.message || "Unable to load deal videos");
+        setError(err?.message || "Unable to load deal clips");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -90,12 +90,12 @@ export default function FeedDealsPage() {
   const headerSlot = isDesktop ? null : (
     <div style={styles.chromeWrap} data-testid="feed-deals-chrome" data-deals-channel="public-offers">
       <p style={styles.publicNote} data-testid="feed-deals-public-note">
-        Public deal videos — offers for everyone
+        Public deal clips — offers for everyone
       </p>
       <div
         style={styles.mealStrip}
         role="tablist"
-        aria-label="Sort deal videos by meal time"
+        aria-label="Sort deal clips by meal time"
         data-testid="feed-deals-meal-filters"
       >
         {MEAL_FILTERS.map((chip) => {
@@ -125,7 +125,7 @@ export default function FeedDealsPage() {
     return (
       <div style={styles.loading} data-testid="feed-deals-loading">
         {headerSlot}
-        <p style={styles.loadingText}>Loading deal videos…</p>
+        <p style={styles.loadingText}>Loading deal clips…</p>
       </div>
     );
   }

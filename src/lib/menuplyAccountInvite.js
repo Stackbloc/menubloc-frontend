@@ -7,7 +7,7 @@ import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
 export const MENUPLY_ACCOUNT_INVITE_HEADLINE = "Open a free Menuply account";
 
 export const MENUPLY_ACCOUNT_INVITE_BODY =
-  "Create a free Menuply account to connect with friends, post food videos, and plan where to eat.";
+  "Create a free Menuply account to connect with friends, post food clips, and plan where to eat.";
 
 export function menuplySignupPath(nextPath = "/feed") {
   const next = String(nextPath || "/feed").trim() || "/feed";

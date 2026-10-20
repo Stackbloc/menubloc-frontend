@@ -30,7 +30,7 @@ function ProfileMediaTile({ item, readOnly, busy, onRemove }) {
           type="button"
           style={s.profileMediaRemove}
           data-testid="profile-media-delete"
-          aria-label={isVideo ? "Delete profile video" : "Delete profile photo"}
+          aria-label={isVideo ? "Delete profile clip" : "Delete profile photo"}
           disabled={busy}
           onClick={(e) => {
             e.preventDefault();

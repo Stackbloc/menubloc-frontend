@@ -253,7 +253,7 @@ export default function OwnerFeedInviteQr() {
     >
       <div style={styles.lead}>
         Printable growth QR for strangers. Scan opens{" "}
-        <code style={styles.code}>{destinationUrl}</code> so they can create food videos on Feed.
+        <code style={styles.code}>{destinationUrl}</code> so they can create food clips on Feed.
         Edit the poster text below — destination stays locked to menuply.com.
       </div>
 

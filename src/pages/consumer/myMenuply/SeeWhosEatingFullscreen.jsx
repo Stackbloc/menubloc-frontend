@@ -720,7 +720,7 @@ export default function SeeWhosEatingFullscreen({
             shareData={feedShareData}
             variant="menu"
             label="Share"
-            modalTitle="Share video"
+            modalTitle="Share clip"
             iconOnly
             tone="ghost"
             size="compact"
@@ -843,7 +843,7 @@ export default function SeeWhosEatingFullscreen({
             }}
             disabled={index <= 0}
             data-testid="feed-menu-browser-pip-prev-video"
-            aria-label="Previous Feed video"
+            aria-label="Previous Feed clip"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -863,7 +863,7 @@ export default function SeeWhosEatingFullscreen({
             }}
             disabled={!isFeedHome && index >= activeItems.length - 1}
             data-testid="feed-menu-browser-pip-next-video"
-            aria-label="Next Feed video"
+            aria-label="Next Feed clip"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -876,7 +876,7 @@ export default function SeeWhosEatingFullscreen({
             type="button"
             style={styles.pipMuteBtn}
             data-testid="see-whos-eating-pip-sound-toggle"
-            aria-label={managerForcedMute ? "No sound." : videoMuted ? "Unmute video" : "Mute video"}
+            aria-label={managerForcedMute ? "No sound." : videoMuted ? "Unmute clip" : "Mute clip"}
             disabled={managerForcedMute}
             onClick={(e) => {
               e.preventDefault();
@@ -893,7 +893,7 @@ export default function SeeWhosEatingFullscreen({
         <button
           type="button"
           style={styles.videoTapLayer}
-          aria-label={videoMuted ? soundToggleLabel : "Mute video"}
+          aria-label={videoMuted ? soundToggleLabel : "Mute clip"}
           data-testid="see-whos-eating-video-sound-layer"
           onClick={onToggleVideoSound}
         />
@@ -920,7 +920,7 @@ export default function SeeWhosEatingFullscreen({
                   top: "calc(max(16px, env(safe-area-inset-top)) + 52px)",
                 }),
           }}
-          aria-label={managerForcedMute ? "No sound." : videoMuted ? soundPromptLabel : "Mute video"}
+          aria-label={managerForcedMute ? "No sound." : videoMuted ? soundPromptLabel : "Mute clip"}
           data-testid="see-whos-eating-sound-toggle"
           disabled={managerForcedMute}
           onClick={onToggleVideoSound}
@@ -1060,7 +1060,7 @@ export default function SeeWhosEatingFullscreen({
           shareMessageLead="Let's try this out!"
           flowTitle={useMobileActionRail ? "Invite to Eat" : "Share & Invite"}
           quickShareData={feedShareData}
-          quickShareTitle="Share video"
+          quickShareTitle="Share clip"
           quickShareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
         />
       ) : null}

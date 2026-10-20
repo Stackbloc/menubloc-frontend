@@ -69,7 +69,7 @@ import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js
  * (Andre: cognitive load). The header keeps its Bookmark.
  */
 const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
-/** Pinned "From the video" card: same four actions + Add to basket. */
+/** Pinned "From the clip" card: same four actions + Add to basket. */
 const PINNED_CARD_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
@@ -205,7 +205,7 @@ export default function CatalogMenuRenderer({
   highlightMenuItemName = null,
   /** Feed videos with several dishes: [{ id, name }] (up to 3), video order. */
   highlightMenuItems = null,
-  /** When set (e.g. "From the video"), the matched dish is pinned under the restaurant header. */
+  /** When set (e.g. "From the clip"), the matched dish is pinned under the restaurant header. */
   pinnedItemLabel = null,
   /** Feed Menu Browser only: ordering is offered only for restaurants in the viewer's market. */
   gateOrderingByMarket = false,

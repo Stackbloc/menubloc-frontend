@@ -37,8 +37,8 @@ export function buildFeedVideoShareData(item) {
   const food = String(item?.item_name || item?.food_name || "").trim();
   const headline = food ? `${poster} on Menuply — ${food}` : `${poster} on Menuply`;
   const body = food
-    ? `Watch ${poster}'s food video on Menuply${food ? `: ${food}` : ""}.`
-    : `Watch ${poster}'s food video on Menuply.`;
+    ? `Watch ${poster}'s food clip on Menuply${food ? `: ${food}` : ""}.`
+    : `Watch ${poster}'s food clip on Menuply.`;
 
   const text = appendMenuplyAccountInviteToShareText(`${body}\n${url}`.trim(), {
     nextPath: invitePathFromShareUrl(url),

@@ -208,7 +208,7 @@ export function buildEatInviteShareText({
   const link = String(url || "").trim();
   if (!link) return ledDraft;
   const safeVideo = normalizeConsumerShareUrl(String(videoUrl || "").trim());
-  const videoLine = safeVideo ? `Watch the video: ${safeVideo}` : "";
+  const videoLine = safeVideo ? `Watch the clip: ${safeVideo}` : "";
   const body = [ledDraft, link, videoLine].filter(Boolean).join("\n").trim();
   return appendMenuplyAccountInviteToShareText(body, {
     nextPath: invitePathFromShareUrl(link),

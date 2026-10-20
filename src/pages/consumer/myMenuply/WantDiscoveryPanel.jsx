@@ -93,7 +93,7 @@ export default function WantDiscoveryPanel({
 
       {videos.length > 0 ? (
         <div style={styles.block} data-testid="want-discovery-videos">
-          <p style={styles.blockTitle}>Videos</p>
+          <p style={styles.blockTitle}>Clips</p>
           <div style={styles.videoRow}>
             {videos.slice(0, 4).map((row) => (
               <a

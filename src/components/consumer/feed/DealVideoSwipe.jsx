@@ -429,10 +429,10 @@ export default function DealVideoSwipe({
         data-testid="feed-deals-video-swipe"
         data-variant="empty"
         role="region"
-        aria-label="Deal videos"
+        aria-label="Deal clips"
       >
         {headerSlot}
-        <p style={styles.empty}>No deal videos yet. Restaurants can post videos here soon.</p>
+        <p style={styles.empty}>No deal clips yet. Restaurants can post clips here soon.</p>
       </div>
     );
     return containInShell ? empty : createPortal(empty, document.body);
@@ -460,7 +460,7 @@ export default function DealVideoSwipe({
       data-testid="feed-deals-video-swipe"
       data-variant="reel"
       role="region"
-      aria-label="Deal videos"
+      aria-label="Deal clips"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -563,7 +563,7 @@ export default function DealVideoSwipe({
             }}
             disabled={index <= 0}
             data-testid="feed-deals-pip-prev-video"
-            aria-label="Previous Feed video"
+            aria-label="Previous Feed clip"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -581,7 +581,7 @@ export default function DealVideoSwipe({
             }}
             disabled={atEnd}
             data-testid="feed-deals-pip-next-video"
-            aria-label="Next Feed video"
+            aria-label="Next Feed clip"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -594,7 +594,7 @@ export default function DealVideoSwipe({
             type="button"
             style={styles.pipMuteBtn}
             data-testid="feed-deals-pip-sound-toggle"
-            aria-label={videoMuted ? "Unmute video" : "Mute video"}
+            aria-label={videoMuted ? "Unmute clip" : "Mute clip"}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -610,7 +610,7 @@ export default function DealVideoSwipe({
         <button
           type="button"
           style={styles.videoTapLayer}
-          aria-label={videoMuted ? soundToggleLabel : "Mute video"}
+          aria-label={videoMuted ? soundToggleLabel : "Mute clip"}
           data-testid="feed-deals-video-sound-layer"
           onClick={onToggleVideoSound}
         />
@@ -625,7 +625,7 @@ export default function DealVideoSwipe({
             left: "auto",
             right: "max(12px, env(safe-area-inset-right))",
           }}
-          aria-label={videoMuted ? soundPromptLabel : "Mute video"}
+          aria-label={videoMuted ? soundPromptLabel : "Mute clip"}
           data-testid="feed-deals-sound-toggle"
           onClick={onToggleVideoSound}
         >
@@ -802,7 +802,7 @@ export default function DealVideoSwipe({
       shareMessageLead="Let's try this out!"
       flowTitle={useMobileActionRail ? "Invite to Eat" : "Share & Invite"}
       quickShareData={dealShareData}
-      quickShareTitle="Share video"
+      quickShareTitle="Share clip"
       quickShareAnalyticsContext={{ surface: "feed_deals_video", deal_id: item?.deal_id || item?.id }}
     />
   ) : null;

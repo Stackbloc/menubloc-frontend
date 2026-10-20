@@ -1,6 +1,6 @@
 /**
  * Menu Browser — menu-primary panel; parent owns Feed PiP video.
- * The video's dish (id, else name) is pinned under the restaurant header as "From the video".
+ * The video's dish (id, else name) is pinned under the restaurant header as "From the clip".
  * Horizontal swipe walks restaurants discussed from open clip → current playing clip.
  * Close / tap PiP returns to live Feed (parent).
  */
@@ -249,7 +249,7 @@ export default function FeedMenuBrowserPipOverlay({
           highlightMenuItemId={highlightMenuItemId}
           highlightMenuItemName={highlightMenuItemName}
           highlightMenuItems={highlightMenuItems}
-          pinnedItemLabel="From the video"
+          pinnedItemLabel="From the clip"
           gateOrderingByMarket
           orderViewerLocation={viewerLocation}
           enableRestaurantContextualVideo={false}

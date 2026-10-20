@@ -10,7 +10,7 @@ export default function GuestFeedVideoNextStep({ onDismiss, nextPath = "/account
 
   return (
     <div data-testid="guest-feed-video-next-step" style={styles.wrap}>
-      <p style={styles.title}>Your video is live on the Feed.</p>
+      <p style={styles.title}>Your clip is live on the Feed.</p>
       <p style={styles.body}>
         Anyone can watch. Create a free Menuply account to claim your video, unlock Join Me, and
         build your profile.

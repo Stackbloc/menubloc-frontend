@@ -19,7 +19,7 @@ test("Deals catalog and Feed Deals frame public offers", () => {
   assert.match(dealsPage, /Public offers for everyone/);
   assert.match(dealsPage, /not personalized Meal Intel/i);
 
-  assert.match(feedDeals, /Public deal videos/);
+  assert.match(feedDeals, /Public deal clips/);
   assert.match(feedDeals, /apiGet\(`\/deals/);
   assert.doesNotMatch(feedDeals, /see-whos-eating|want-to-eat/i);
   assert.doesNotMatch(feedDeals, /listSeeWhosEating|fetchWantDiscovery/);

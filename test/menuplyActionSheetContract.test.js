@@ -32,7 +32,7 @@ test("MenuplyActionSheet opens My Highlights compose from X", () => {
   assert.match(sheet, /compose: "profile-gallery"/);
   assert.match(sheet, /id: "my-account"/);
   assert.match(sheet, /title: "My Highlights"/);
-  assert.match(sheet, /Add a photo or short video to My Highlights/);
+  assert.match(sheet, /Add a photo or short clip to My Highlights/);
   assert.ok(sheet.indexOf('id: "diner-qr"') < sheet.indexOf('id: "ate"'));
   assert.ok(sheet.indexOf('id: "my-account"') > sheet.indexOf('id: "profile-gallery"'));
   assert.doesNotMatch(sheet, /id: "im-eating"/);

@@ -8,7 +8,7 @@ import {
 test("feed home X coach copy and duration", () => {
   assert.match(
     FEED_HOME_X_COACH_COPY,
-    /Press the 'x' below to share your food related video content\./
+    /Press the 'x' below to share your food related clips\./
   );
   assert.equal(FEED_HOME_X_COACH_DURATION_MS, 10_000);
 });

@@ -2,25 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { formatOwnerVideoCreatorLabel } from "../src/lib/ownerVideoCatalogLabels.js";
 
-test("formatOwnerVideoCreatorLabel — owner managed upload is Platform video", () => {
+test("formatOwnerVideoCreatorLabel — owner managed upload is Platform clip", () => {
   assert.equal(
     formatOwnerVideoCreatorLabel({
       video_kind: "managed",
       creator_type: "platform",
       is_guest: false,
     }),
-    "Platform video"
+    "Platform clip"
   );
 });
 
-test("formatOwnerVideoCreatorLabel — guest ate upload is Guest video", () => {
+test("formatOwnerVideoCreatorLabel — guest ate upload is Guest clip", () => {
   assert.equal(
     formatOwnerVideoCreatorLabel({
       video_kind: "ate",
       creator_type: "guest",
       is_guest: true,
     }),
-    "Guest video"
+    "Guest clip"
   );
 });
 

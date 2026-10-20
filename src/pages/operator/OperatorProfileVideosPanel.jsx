@@ -18,7 +18,7 @@ function kindLabel(kind) {
   if (k === "ate") return "Food diary / Feed";
   if (k === "want") return "Want";
   if (k === "plan") return "Plan";
-  return kind || "Video";
+  return kind || "Clip";
 }
 
 export default function OperatorProfileVideosPanel({ restaurantId }) {
@@ -39,7 +39,7 @@ export default function OperatorProfileVideosPanel({ restaurantId }) {
       setVideos(Array.isArray(data?.videos) ? data.videos : []);
     } catch (err) {
       setVideos([]);
-      setError(err?.message || "Unable to load profile videos");
+      setError(err?.message || "Unable to load profile clips");
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function OperatorProfileVideosPanel({ restaurantId }) {
       await removeOperatorProfileVideo(restaurantId, video.kind, video.video_id);
       setVideos((prev) => prev.filter((row) => (row.video_key || `${row.kind}:${row.video_id}`) !== key));
     } catch (err) {
-      setError(err?.message || "Unable to remove video");
+      setError(err?.message || "Unable to remove clip");
     } finally {
       setRemovingKey("");
     }
@@ -82,12 +82,12 @@ export default function OperatorProfileVideosPanel({ restaurantId }) {
       }}
     >
       <h2 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-        Videos on your profile
+        Clips on your profile
       </h2>
       <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#64748b" }}>
         Includes diner, platform, and deal videos tagged to this location
         {videos.some((v) => v.chain_id) ? " or elsewhere in your franchise" : ""}.{" "}
-        <strong>Remove</strong> clears the video from the Feed and every location profile.
+        <strong>Remove</strong> clears the clip from the Feed and every location profile.
       </p>
 
       {loading ? <p style={{ color: "#64748b" }}>Loading…</p> : null}
@@ -98,7 +98,7 @@ export default function OperatorProfileVideosPanel({ restaurantId }) {
       ) : null}
       {!loading && videos.length === 0 ? (
         <p style={{ color: "#64748b" }} data-testid="operator-profile-videos-empty">
-          No tagged videos on this profile right now.
+          No tagged clips on this profile right now.
         </p>
       ) : null}
 
@@ -137,7 +137,7 @@ export default function OperatorProfileVideosPanel({ restaurantId }) {
                 <div style={{ fontSize: 11, fontWeight: 800, color: "#166534", textTransform: "uppercase" }}>
                   {kindLabel(video.kind)}
                 </div>
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>{video.title || "Video"}</div>
+                <div style={{ fontWeight: 700, color: "#0f172a" }}>{video.title || "Clip"}</div>
                 {video.creator_label ? (
                   <div style={{ fontSize: 12, color: "#64748b" }}>{video.creator_label}</div>
                 ) : null}

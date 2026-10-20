@@ -95,7 +95,7 @@ function MealMediaCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
           disabled={!onSelect && !isVideo}
           aria-label={
             isVideo && !playing
-              ? `${mealBadge}. ${label}. Video preview — tap to play.`
+              ? `${mealBadge}. ${label}. Clip preview — tap to play.`
               : `${mealBadge}. ${label}. Tap for details. Long-press to delete.`
           }
         >
@@ -271,7 +271,7 @@ function MealHeroCard({ item, readOnly, onSelect, onDelete, deleteBusy }) {
         disabled={!onSelect && !isVideo}
         aria-label={
           isVideo && !playing
-            ? `${mealBadge}. ${label}. Video preview — tap to play.`
+            ? `${mealBadge}. ${label}. Clip preview — tap to play.`
             : `${mealBadge}. ${label}. Tap for details. Long-press to delete.`
         }
       >

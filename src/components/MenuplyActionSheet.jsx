@@ -51,14 +51,14 @@ const ACTION_DEFS = {
   ate: {
     id: "ate",
     title: "What I'm Eating",
-    description: "Camera — photo or video of what you're eating now.",
+    description: "Camera — photo or clip of what you're eating now.",
     to: myMenuplyProfileHref({ compose: "ate" }),
     guestOk: false,
   },
   "upload-media": {
     id: "upload-media",
     title: "Upload media",
-    description: "Choose a photo or video from your phone library, then post.",
+    description: "Choose a photo or clip from your phone library, then post.",
     to: myMenuplyProfileHref({ compose: "ate", media: "library" }),
     guestOk: false,
   },
@@ -72,7 +72,7 @@ const ACTION_DEFS = {
   "profile-gallery": {
     id: "profile-gallery",
     title: "My Highlights",
-    description: "Add a photo or short video to My Highlights.",
+    description: "Add a photo or short clip to My Highlights.",
     to: myMenuplyProfileHref({ compose: "profile-gallery" }),
     guestOk: false,
   },

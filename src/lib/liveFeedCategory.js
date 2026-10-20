@@ -109,7 +109,7 @@ export function liveFeedPosterLabel(item) {
     return item?.venue?.name || "Venue";
   }
   if (isLiveFeedPlatformCreator(item)) {
-    return item?.diner?.display_name || "Platform video";
+    return item?.diner?.display_name || "Platform clip";
   }
   if (isLiveFeedRestaurantCreator(item)) {
     return item?.creator?.name || item?.restaurant_name || "Restaurant";

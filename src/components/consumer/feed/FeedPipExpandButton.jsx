@@ -8,7 +8,7 @@ export default function FeedPipExpandButton({ onExpand }) {
     <button
       type="button"
       data-testid="feed-menu-browser-pip-expand"
-      aria-label="Back to full-screen video"
+      aria-label="Back to full-screen clip"
       title="Full screen"
       onClick={(e) => {
         e.preventDefault();

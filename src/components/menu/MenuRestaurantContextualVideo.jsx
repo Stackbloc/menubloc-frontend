@@ -158,7 +158,7 @@ export default function MenuRestaurantContextualVideo({
         controls={false}
         preload="auto"
         data-testid="menu-restaurant-contextual-video-el"
-        aria-label="Restaurant video — tap to expand"
+        aria-label="Restaurant clip — tap to expand"
         onClick={openFull}
       />
       {videos.length > 1 ? (
@@ -168,7 +168,7 @@ export default function MenuRestaurantContextualVideo({
             style={{ ...styles.sideBtn, ...styles.sideLeft, ...(index <= 0 ? styles.disabled : null) }}
             disabled={index <= 0}
             data-testid="menu-restaurant-contextual-video-prev"
-            aria-label="Previous restaurant video"
+            aria-label="Previous restaurant clip"
             onClick={goPrev}
           >
             ‹
@@ -182,7 +182,7 @@ export default function MenuRestaurantContextualVideo({
             }}
             disabled={index >= videos.length - 1}
             data-testid="menu-restaurant-contextual-video-next"
-            aria-label="Next restaurant video"
+            aria-label="Next restaurant clip"
             onClick={goNext}
           >
             ›
@@ -193,7 +193,7 @@ export default function MenuRestaurantContextualVideo({
         type="button"
         style={styles.muteBtn}
         data-testid="menu-restaurant-contextual-video-mute"
-        aria-label={forcedMute ? "This video plays without sound" : muted ? "Unmute video" : "Mute video"}
+        aria-label={forcedMute ? "This clip plays without sound" : muted ? "Unmute clip" : "Mute clip"}
         title={forcedMute ? "No sound" : undefined}
         disabled={forcedMute}
         data-forced-mute={forcedMute ? "1" : "0"}

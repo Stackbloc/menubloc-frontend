@@ -177,8 +177,8 @@ test("Share copy options include LDL/LDD/LHC/LGD/MMH with light emoji", () => {
   });
   assert.match(withVideo, /^Let's try this out!/);
   assert.match(withVideo, /menuply\.com\/invite\/vid/);
-  assert.match(withVideo, /Watch the video: https:\/\/menuply\.com\/feed\?clip=ate%3A1/);
-  assert.doesNotMatch(withVideo, /Watch the video:.*Watch the video:/);
+  assert.match(withVideo, /Watch the clip: https:\/\/menuply\.com\/feed\?clip=ate%3A1/);
+  assert.doesNotMatch(withVideo, /Watch the clip:.*Watch the clip:/);
 
   const coffee = buildEatInviteMessageDraft({
     inviteKind: "private",

@@ -25,7 +25,7 @@ export default function FeedVideoWatchLink({ kind, id, label }) {
   const text = String(label || "").trim();
   return (
     <Link to={path} style={visuallyHidden} data-testid="feed-video-watch-link">
-      {text ? `Watch video: ${text}` : "Watch this video"}
+      {text ? `Watch clip: ${text}` : "Watch this clip"}
     </Link>
   );
 }

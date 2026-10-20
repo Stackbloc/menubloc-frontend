@@ -74,7 +74,7 @@ export const FEED_GUEST_PROFILE_CARDS = [
   {
     to: FEED_SHELL_PROFILE_SIGNUP_PATH,
     title: "Join Menuply",
-    blurb: "Create a free account to connect, post videos, and plan with friends.",
+    blurb: "Create a free account to connect, post clips, and plan with friends.",
     testId: "feed-guest-join-card",
     primary: true,
   },

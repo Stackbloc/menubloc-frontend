@@ -11,11 +11,11 @@ export function formatOwnerVideoCreatorLabel(row) {
   const creatorType = String(row.creator_type || "").toLowerCase();
 
   if (kind === "managed" || creatorType === "platform") {
-    return "Platform video";
+    return "Platform clip";
   }
 
   if (row.is_guest || creatorType === "guest") {
-    return "Guest video";
+    return "Guest clip";
   }
 
   const labels = {

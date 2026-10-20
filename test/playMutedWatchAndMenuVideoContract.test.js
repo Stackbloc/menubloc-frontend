@@ -16,7 +16,7 @@ test("watch page plays play_muted videos muted and undoes unmute", () => {
   assert.match(src, /muted=\{data\.play_muted === true\}/);
   assert.match(src, /if \(el && data\.play_muted === true\) el\.muted = true;/);
   assert.match(src, /onVolumeChange=\{\(e\) => \{\s*if \(data\.play_muted === true && !e\.currentTarget\.muted\) e\.currentTarget\.muted = true;/);
-  assert.match(src, /This video plays without sound\./);
+  assert.match(src, /This clip plays without sound\./);
 });
 
 test("menu-page video keeps play_muted videos muted with a locked button", () => {

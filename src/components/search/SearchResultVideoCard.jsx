@@ -61,7 +61,7 @@ function ChevronGlyph({ direction }) {
 
 function contextLabel(video, omitRestaurantContext) {
   if (omitRestaurantContext && video.menu_item_name) return video.menu_item_name;
-  return video.context_line || video.menu_item_name || "Video";
+  return video.context_line || video.menu_item_name || "Clip";
 }
 
 /** Strip caption: who made the clip (one line). Falls back to the context line. */
@@ -85,7 +85,7 @@ export function SearchResultVideoCard({
       type="button"
       data-testid="search-result-video-card"
       onClick={() => onPlay?.(video)}
-      aria-label={`Play video: ${context}`}
+      aria-label={`Play clip: ${context}`}
       title={context}
       style={{
         display: "flex",
@@ -342,7 +342,7 @@ function SearchResultVideoInlineExpanded({
           <button
             type="button"
             data-testid="search-result-video-prev"
-            aria-label="Previous video"
+            aria-label="Previous clip"
             onClick={(event) => {
               event.stopPropagation();
               go(-1);
@@ -356,7 +356,7 @@ function SearchResultVideoInlineExpanded({
           <button
             type="button"
             data-testid="search-result-video-next"
-            aria-label="Next video"
+            aria-label="Next clip"
             onClick={(event) => {
               event.stopPropagation();
               go(1);

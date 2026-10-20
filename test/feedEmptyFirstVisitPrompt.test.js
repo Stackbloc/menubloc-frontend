@@ -30,7 +30,7 @@ function mockStorage() {
 test("feed empty prompt: copy + threshold constants", () => {
   assert.match(
     FEED_EMPTY_FIRST_VISIT_PROMPT_COPY,
-    /Tap X below to post a video about what you're eating or wanting to eat today/
+    /Tap X below to post a clip about what you're eating or wanting to eat today/
   );
   assert.equal(FEED_EMPTY_PROMPT_VIDEO_THRESHOLD, 50);
 });
