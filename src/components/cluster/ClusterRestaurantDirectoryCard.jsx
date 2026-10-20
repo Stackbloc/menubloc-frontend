@@ -17,6 +17,13 @@ import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
 import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
 
+function withClusterLocation(href, locationId) {
+  if (!href || !locationId) return href;
+  const [path, hash = ""] = String(href).split("#");
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}location=${encodeURIComponent(locationId)}${hash ? `#${hash}` : ""}`;
+}
+
 export default function ClusterRestaurantDirectoryCard({
   restaurant,
   placeReturnPath = null,
@@ -40,7 +47,8 @@ export default function ClusterRestaurantDirectoryCard({
   const showAddMenu = canShowAddMenu(restaurant);
   const profileHref = restaurantPathFromRow(restaurant);
   const menuHref = restaurantMenuPathFromRow(restaurant);
-  const rawHref = menuReady && menuHref ? menuHref : profileHref;
+  // MLE: open the restaurant at the kitchen that is in this cluster (its address is on the card).
+  const rawHref = withClusterLocation(menuReady && menuHref ? menuHref : profileHref, restaurant?.location_id);
   const href =
     rawHref && placeReturnPath
       ? appendClusterReturnQuery(rawHref, placeReturnPath, placeReturnLabel)
