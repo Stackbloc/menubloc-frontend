@@ -13,6 +13,8 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import HoursBulkSet from "../../components/hours/HoursBulkSet.jsx";
+import { applyHoursToDays, isOpen24, setOpen24 } from "../../lib/weeklyHours.js";
 
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
@@ -177,14 +179,22 @@ export default function OperatorHoursEditor() {
         )}
 
         {/* ── Weekly schedule ─────────────────────────────────────── */}
+        <HoursBulkSet
+          accent="#1F4E3D"
+          inputStyle={INPUT}
+          onApply={(days, setting) => {
+            setSchedule(prev => applyHoursToDays(prev, days, setting));
+            setSaved(false);
+          }}
+        />
         <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
           {/* Header */}
           <div className="operator-hours-table-header" style={{
-            display: "grid", gridTemplateColumns: "120px 80px 1fr 1fr",
+            display: "grid", gridTemplateColumns: "120px 80px 80px 1fr 1fr",
             padding: "10px 16px", background: "#f8f7f4",
             borderBottom: "1px solid #e4e9f0",
           }}>
-            {["Day", "Closed", "Opens", "Closes"].map(h => (
+            {["Day", "Closed", "24 hrs", "Opens", "Closes"].map(h => (
               <div key={h} style={{ fontSize: 11, fontWeight: 700, color: "#8a9ab0", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</div>
             ))}
           </div>
@@ -197,7 +207,7 @@ export default function OperatorHoursEditor() {
                 className="operator-hours-table-row"
                 key={row.day_of_week}
                 style={{
-                  display: "grid", gridTemplateColumns: "120px 80px 1fr 1fr",
+                  display: "grid", gridTemplateColumns: "120px 80px 80px 1fr 1fr",
                   padding: "10px 16px", alignItems: "center",
                   borderBottom: idx < 6 ? "1px solid #f0f0ec" : "none",
                   background: row.is_closed ? "#fafafa" : "#fff",
@@ -220,6 +230,24 @@ export default function OperatorHoursEditor() {
                   </label>
                 </div>
 
+                {/* Open 24 hours */}
+                <div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: row.is_closed ? "default" : "pointer", opacity: row.is_closed ? 0.35 : 1 }}>
+                    <input
+                      type="checkbox"
+                      data-testid="operator-hours-24"
+                      checked={isOpen24(row)}
+                      disabled={row.is_closed}
+                      onChange={e => {
+                        setSchedule(prev => prev.map((r, i) => (i === idx ? setOpen24(r, e.target.checked, { opens: "11:00", closes: "21:00" }) : r)));
+                        setSaved(false);
+                      }}
+                      style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#1F4E3D" }}
+                    />
+                    <span style={{ fontSize: 12, color: "#8a9ab0" }}>24 hrs</span>
+                  </label>
+                </div>
+
                 {/* Open time */}
                 <div>
                   <div className="operator-hours-mobile-label">Opens</div>
@@ -228,8 +256,8 @@ export default function OperatorHoursEditor() {
                     type="time"
                     value={row.opens_at || ""}
                     onChange={e => updateRow(idx, "opens_at", e.target.value)}
-                    disabled={row.is_closed}
-                    style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
+                    disabled={row.is_closed || isOpen24(row)}
+                    style={{ ...INPUT, width: 110, opacity: row.is_closed || isOpen24(row) ? 0.35 : 1 }}
                   />
                 </div>
 
@@ -241,8 +269,8 @@ export default function OperatorHoursEditor() {
                     type="time"
                     value={row.closes_at || ""}
                     onChange={e => updateRow(idx, "closes_at", e.target.value)}
-                    disabled={row.is_closed}
-                    style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
+                    disabled={row.is_closed || isOpen24(row)}
+                    style={{ ...INPUT, width: 110, opacity: row.is_closed || isOpen24(row) ? 0.35 : 1 }}
                   />
                 </div>
               </div>
