@@ -144,6 +144,30 @@ function testFoodTruckPlanOrType() {
   assert.match(primitives, /restaurant_type/);
 }
 
+/** 2026-10-21 simplification: diners never see empty owner prompts or public diner-signal sections. */
+function testSimplifiedDinerProfile() {
+  const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
+  for (const tag of ["ProfileAboutFounded", "ProfileFavoriteMenuItems", "ProfileDealsSection", "ProfileUpdates"]) {
+    const start = shell.indexOf(`<${tag}`);
+    assert.ok(start >= 0, `${tag} mounted`);
+    const block = shell.slice(start, shell.indexOf("/>", start));
+    assert.doesNotMatch(block, /showClaimInvites/, `${tag} must not render claim-invite blanks`);
+  }
+  assert.doesNotMatch(shell, /foundedText=\{founded\}/);
+  assert.doesNotMatch(shell, /profile-upcoming-blank/);
+  assert.match(shell, /establishedLabel=\{establishedLabel\}/);
+  assert.match(shell, /<ProfileClaimBanner/);
+  assert.match(shell, /<ConnectionSocialProof/);
+  assert.match(shell, /restaurantId && isDiningHall \? \(\s*<WhatDinersAreSaying/);
+  assert.doesNotMatch(shell, /<RestaurantDiningIntentSection/);
+
+  const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
+  assert.match(hero, /profile-hero-established/);
+  const primitives = read("src/components/restaurant/publicProfile/profilePrimitives.jsx");
+  assert.match(primitives, /export function formatEstablishedLabel/);
+  assert.match(primitives, /`Est\. \$\{match\[1\]\}`/);
+}
+
 testHomepageSectionOrder();
 testFavoritesCapAndViewMenu();
 testUpdatesHideWhenEmpty();
@@ -151,5 +175,6 @@ testUnclaimedHomepageBlanks();
 testSplashPreserved();
 testOwnerFavoritesAndUpdates();
 testFoodTruckPlanOrType();
+testSimplifiedDinerProfile();
 
 console.log("restaurantProfileHomepageContract: ok");

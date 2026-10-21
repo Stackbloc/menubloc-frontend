@@ -1,6 +1,8 @@
 /**
  * About [Restaurant Name] + Founded on every public profile.
  * Unclaimed missing Founded (and About) render empty slots; claim CTA is page-level.
+ * Restaurant / food truck / dining hall profiles (PublicProfileShell) pass no Founded and no
+ * claim invites: Founded shows in the hero as "Est. YYYY" and an empty About hides the card.
  * about_us content remains the single description source for Invite to Eat preview.
  */
 import ProfilePhotoStrip from "./ProfilePhotoStrip.jsx";
@@ -34,6 +36,9 @@ export default function ProfileAboutFounded({
   void claimState;
   const about = firstNonEmpty(aboutText);
   const founded = firstNonEmpty(foundedText);
+  const showFounded = Boolean(founded || showClaimInvites || !omitEmptyFounded);
+  // Nothing to say → no card (restaurant profiles hide empty About instead of showing prompts).
+  if (!about && !showClaimInvites && !showFounded && !showPhotos) return null;
   const placeName = String(name || "").trim() || "this restaurant";
   const aboutHeading = `About ${placeName}`;
 
@@ -75,7 +80,7 @@ export default function ProfileAboutFounded({
           <ProfileSectionBlank testId="profile-about-blank" message={aboutBlankMessage} />
         ) : null}
 
-        {founded || showClaimInvites || !omitEmptyFounded ? (
+        {showFounded ? (
           <div data-testid="profile-founded">
             <div style={{ fontSize: 12, fontWeight: 700, color: PROFILE_MUTED, marginBottom: 4 }}>
               Founded

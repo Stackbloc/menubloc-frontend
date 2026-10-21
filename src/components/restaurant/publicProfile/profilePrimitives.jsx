@@ -62,6 +62,12 @@ export function firstNonEmpty(...vals) {
   return "";
 }
 
+/** 1998 / "1998" / "Founded in 1998" → "Est. 1998"; anything without a 4-digit year → "". */
+export function formatEstablishedLabel(raw) {
+  const match = asStr(raw).trim().match(/\b(1[7-9]\d\d|20\d\d|2100)\b/);
+  return match ? `Est. ${match[1]}` : "";
+}
+
 /** Map DB restaurant_type enum → short public label. Empty if unknown. */
 export function humanizeRestaurantType(raw) {
   const key = asStr(raw).trim().toLowerCase().replace(/[\s-]+/g, "_");

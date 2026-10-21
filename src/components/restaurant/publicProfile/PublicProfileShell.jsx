@@ -1,11 +1,17 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Claimed: Hero → Windows (if any) → About [Name] + Founded → Favorites → Deals → Updates
- * Unclaimed: Hero → About [Name] + Founded → Favorites → Deals → Updates
+ * Claimed: Hero → Windows (if any) → About [Name] → Favorites → Deals → Updates (each only when filled)
+ * Unclaimed: Hero → claim banner → the same sections, only when filled
  * Photos strip temporarily hidden (showPhotos=false) — Windows remains the photo row.
  * Windows shows only manually added window/deal offers (not brand splash art); In-N-Out exception.
  * Food truck: Hero (address / current location) → Upcoming locations → then shared sections.
  * Contact + hours live in the hero. No bottom Information box.
+ * Diners never see empty owner prompts: empty About / Favorites / Deals / Updates / Upcoming
+ * locations hide; unclaimed profiles keep only the page-level claim banner (2026-10-21).
+ * Founded shows inline in the hero as "Est. YYYY".
+ * No public diner-signal sections on restaurants/food trucks (status chips, What Diners Are
+ * Saying, People Who Want To Go) — owners won't keep them up. Connect-only social proof stays.
+ * Dining halls keep WhatDinersAreSaying ("what's good today") — no owner to moderate it.
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
@@ -19,7 +25,6 @@ import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import ConnectionSocialProof from "../../social/ConnectionSocialProof.jsx";
-import RestaurantDiningIntentSection from "../RestaurantDiningIntentSection.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
 import { formatAddressQuery } from "../../../lib/displayAddress.js";
@@ -34,8 +39,8 @@ import {
   profilePageBgVar,
   isFoodTruckProfile,
   isDiningHallProfile,
-  ProfileSectionBlank,
   ProfileClaimBanner,
+  formatEstablishedLabel,
 } from "./profilePrimitives.jsx";
 import {
   buildProfileStyleRootStyle,
@@ -103,7 +108,6 @@ export default function PublicProfileShell({
     null;
   const restaurantCity = profile?.city || null;
   const restaurantState = profile?.state || null;
-  const previewForComments = Array.isArray(menuPreviewItems) ? menuPreviewItems : null;
   const resolvedWindowsOrientation = normalizeWindowsPhotoOrientation(
     windowsPhotoOrientation ?? profile?.windows_photo_orientation
   );
@@ -186,6 +190,7 @@ export default function PublicProfileShell({
     profile?.founded_year != null ? String(profile.founded_year) : "",
     profile?.year_founded
   );
+  const establishedLabel = formatEstablishedLabel(founded);
   const openStatus = profile?.open_status || null;
 
   const favorites = Array.isArray(favoriteMenuItems)
@@ -272,6 +277,7 @@ export default function PublicProfileShell({
         }
         showClaimInvites={allowClaimInvites}
         metaBits={metaBits}
+        establishedLabel={establishedLabel}
         venueLabel={isFoodTruck ? "" : primaryVenue}
         clusterName={clusterName}
         clusterHref={clusterHref}
@@ -297,16 +303,9 @@ export default function PublicProfileShell({
           boxSizing: "border-box",
         }}
       >
-        {isFoodTruck && (stops.length || allowClaimInvites) ? (
+        {isFoodTruck && stops.length ? (
           <ProfileSection title="Upcoming locations">
-            {stops.length ? (
-              <FoodTruckUpcomingStops stops={stops} />
-            ) : (
-              <ProfileSectionBlank
-                testId="profile-upcoming-blank"
-                message="No upcoming locations yet."
-              />
-            )}
+            <FoodTruckUpcomingStops stops={stops} />
           </ProfileSection>
         ) : null}
 
@@ -331,15 +330,11 @@ export default function PublicProfileShell({
 
         <ProfileAboutFounded
           aboutText={shortDescription}
-          foundedText={founded}
           name={name}
           bannerPhotoUrl={bannerPhotoUrl}
           billboardPreview={billboardPreview}
-          claimHref={claimHref}
-          claimState={claimState}
           isMobile={isMobile}
-          showClaimInvites={allowClaimInvites}
-          omitEmptyFounded={isDiningHall}
+          omitEmptyFounded
           showPhotos={false}
           windowsPhotoOrientation={resolvedWindowsOrientation}
         />
@@ -348,7 +343,6 @@ export default function PublicProfileShell({
           <ProfileFavoriteMenuItems
             items={favorites}
             isMobile={isMobile}
-            showClaimInvites={allowClaimInvites}
           />
         )}
 
@@ -357,7 +351,6 @@ export default function PublicProfileShell({
             dealItems={deals}
             restaurantId={restaurantId}
             isMobile={isMobile}
-            showClaimInvites={allowClaimInvites}
           />
         )}
 
@@ -370,31 +363,22 @@ export default function PublicProfileShell({
         )}
 
         {isDiningHall ? null : (
-          <ProfileUpdates updates={updates} isMobile={isMobile} showClaimInvites={allowClaimInvites} />
+          <ProfileUpdates updates={updates} isMobile={isMobile} />
         )}
 
-        {isDiningHall ? null : (
-          <RestaurantDiningIntentSection
+        {restaurantId ? <ConnectionSocialProof restaurantId={restaurantId} /> : null}
+
+        {restaurantId && isDiningHall ? (
+          <WhatDinersAreSaying
             restaurantId={restaurantId}
+            restaurantSlug={restaurantSlug}
+            restaurantCity={restaurantCity}
+            restaurantState={restaurantState}
             restaurantName={name || ""}
+            menuPreviewItems={null}
+            compact={isMobile}
+            experienceMode={isDiningHall}
           />
-        )}
-
-        {restaurantId ? (
-          <>
-            <ConnectionSocialProof restaurantId={restaurantId} />
-            <WhatDinersAreSaying
-              restaurantId={restaurantId}
-              restaurantSlug={restaurantSlug}
-              restaurantCity={restaurantCity}
-              restaurantState={restaurantState}
-              restaurantName={name || ""}
-              menuPreviewItems={isDiningHall ? null : previewForComments}
-              compact={isMobile}
-              experienceMode={isDiningHall}
-              venueMode={venueCapabilityEnabled}
-            />
-          </>
         ) : null}
 
         <div style={{ height: sectionGap }} aria-hidden="true" />

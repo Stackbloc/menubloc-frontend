@@ -8,7 +8,7 @@
  * Sections (visibility controlled by plan benefits):
  *   • Core fields — always visible (profile_edit): cuisine, type, contact, address
  *   • About Us    — benefit: about_us
- *   • Founded — profile_edit (draft → Publish)
+ *   • Founded — profile_edit (draft → Publish); public hero shows “Est. YYYY”
  *   • Logo / banner / billboards / deals — public homepage photos + sections
  *   • Favorite Menu Items + Updates — live homepage sections
  *   • Hours       — link to /operator/hours
@@ -662,13 +662,13 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         {/* ── Founded (public homepage About Us block) ─────────────────── */}
         <Section
           title="Founded"
-          sub="Shows as Founded on the public profile About Us block. Save draft, then Publish."
+          sub="Shows as “Est. 2014” under your cuisine on the public profile. Save draft, then Publish."
         >
           <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
             <div>
               <Label>Founded year</Label>
               <input
-                style={INPUT}
+                style={{ ...INPUT, maxWidth: 120 }}
                 inputMode="numeric"
                 maxLength={4}
                 value={form.founded_year || ""}

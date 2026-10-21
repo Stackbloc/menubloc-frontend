@@ -111,6 +111,8 @@ export default function ProfileHero({
   viewMenuTestId = "restaurant-profile-view-menu",
   showClaimInvites = false,
   metaBits = [],
+  /** "Est. 1998" — Founded shown inline beside the cuisine (no separate block). */
+  establishedLabel = "",
   venueLabel = "",
   clusterName = "",
   clusterHref = null,
@@ -154,7 +156,16 @@ export default function ProfileHero({
 
   const venue = String(venueLabel || "").trim();
   const cluster = String(clusterName || "").trim();
-  const showIdentityMeta = profileType === "restaurant" && (venue || metaBits.length);
+  const established = String(establishedLabel || "").trim();
+  const showIdentityMeta =
+    profileType === "restaurant" && (venue || metaBits.length || established);
+  const establishedSpan = (withSeparator) =>
+    established ? (
+      <span data-testid="profile-hero-established">
+        {withSeparator ? "\u00a0·\u00a0" : ""}
+        {established}
+      </span>
+    ) : null;
   const cuisineLabel = metaBits[0] || "";
   const openLabel =
     openStatus?.label ||
@@ -335,7 +346,8 @@ export default function ProfileHero({
                 dark={onPhoto}
               />
             ) : null}
-            {restaurantId ? (
+            {/* Only dining halls keep the public #food-comments thread (2026-10-21). */}
+            {restaurantId && profileType === "dining_hall" ? (
               <FoodCommentNavButton
                 target="restaurant"
                 restaurantId={restaurantId}
@@ -378,7 +390,13 @@ export default function ProfileHero({
           </div>
         ) : null}
 
-        {profileType === "food_truck" && (cuisineLabel || cluster) ? (
+        {profileType === "dining_hall" && established ? (
+          <div style={{ marginTop: 6, fontSize: 13, fontWeight: 600, color: muted, lineHeight: 1.35 }}>
+            {establishedSpan(false)}
+          </div>
+        ) : null}
+
+        {profileType === "food_truck" && (cuisineLabel || cluster || established) ? (
           <div
             data-testid="profile-hero-cuisine-cluster"
             style={{
@@ -404,6 +422,7 @@ export default function ProfileHero({
                 <span data-testid="profile-hero-cluster">{cluster}</span>
               )
             ) : null}
+            {establishedSpan(Boolean(cuisineLabel || cluster))}
           </div>
         ) : null}
 
@@ -427,6 +446,7 @@ export default function ProfileHero({
             ) : metaBits[0] ? (
               <span data-testid="profile-hero-venue">{metaBits[0]}</span>
             ) : null}
+            {establishedSpan(Boolean(venue || metaBits[0]))}
           </div>
         ) : null}
 

@@ -10,9 +10,9 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("restaurant profile mounts People who want to go section", () => {
+test("People who want to go section is off the public profile (2026-10-21; Wish List moves to Your Connects)", () => {
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-  assert.match(shell, /RestaurantDiningIntentSection/);
+  assert.doesNotMatch(shell, /<RestaurantDiningIntentSection/);
   assert.match(shell, /isDiningHall \? null/);
 
   const section = read("src/components/restaurant/RestaurantDiningIntentSection.jsx");

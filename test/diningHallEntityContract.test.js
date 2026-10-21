@@ -27,7 +27,8 @@ test("public profile shell treats dining halls as non-claimable campus facilitie
   assert.match(src, /isDiningHallProfile/);
   assert.match(src, /dining_hall/);
   assert.match(src, /allowClaimInvites/);
-  assert.match(src, /omitEmptyFounded=\{isDiningHall\}/);
+  assert.match(src, /omitEmptyFounded/);
+  assert.match(src, /restaurantId && isDiningHall \? \(\s*<WhatDinersAreSaying/);
   assert.match(src, /dining-hall-public-editorial/);
   assert.match(src, /experienceMode=\{isDiningHall\}/);
   assert.match(src, /menuHref=\{isDiningHall \? null : menuHref\}/);
