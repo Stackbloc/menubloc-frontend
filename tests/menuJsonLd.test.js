@@ -77,6 +77,8 @@ test("menuItemPriceString prefers cents, parses $ strings, drops unknown prices"
   assert.equal(menuItemPriceString({ price: "$3.5" }), "3.50");
   assert.equal(menuItemPriceString({ price: "Market price" }), null);
   assert.equal(menuItemPriceString({ price_cents: 0, price: "$0" }), null);
+  // Matches the menu page: the diner-facing display price wins over the base price.
+  assert.equal(menuItemPriceString({ price_cents: 1000, menuply_display_price_cents: 1060 }), "10.60");
 });
 
 test("buildMenuJsonLd nests sections and items with USD offers, skipping empty ones", () => {

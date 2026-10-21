@@ -122,12 +122,33 @@ export function buildRestaurantJsonLd(restaurant) {
 const MENU_JSONLD_MAX_SECTIONS = 60;
 const MENU_JSONLD_MAX_ITEMS = 300;
 
-/** "2.85" from price_cents (preferred) or a "$2.85" display string; null when unknown/zero. */
+// Same precedence as getConsumerDisplayPrice (pricingDisplay.js), so the Offer price is
+// the price diners see on the menu page.
+const MENU_DISPLAY_PRICE_CENTS_KEYS = [
+  "menuply_display_price_cents",
+  "consumer_display_price_cents",
+  "display_price_cents",
+  "price_with_required_fees_cents",
+  "price_cents",
+];
+const MENU_DISPLAY_PRICE_KEYS = [
+  "menuply_display_price",
+  "consumer_display_price",
+  "display_price",
+  "price_with_required_fees",
+  "price",
+];
+
+/** "2.85" from the displayed cents (preferred) or a "$2.85" display string; null when unknown/zero. */
 export function menuItemPriceString(item) {
-  const cents = Number(item?.price_cents);
-  if (Number.isInteger(cents) && cents > 0) return (cents / 100).toFixed(2);
-  const m = /^\$?\s*(\d+(?:\.\d{1,2})?)$/.exec(trimStr(item?.price) || "");
-  if (m && Number(m[1]) > 0) return Number(m[1]).toFixed(2);
+  for (const key of MENU_DISPLAY_PRICE_CENTS_KEYS) {
+    const cents = Number(item?.[key]);
+    if (Number.isFinite(cents) && cents > 0) return (Math.round(cents) / 100).toFixed(2);
+  }
+  for (const key of MENU_DISPLAY_PRICE_KEYS) {
+    const m = /^\$?\s*(\d+(?:\.\d{1,2})?)$/.exec(trimStr(item?.[key]) || "");
+    if (m && Number(m[1]) > 0) return Number(m[1]).toFixed(2);
+  }
   return null;
 }
 
