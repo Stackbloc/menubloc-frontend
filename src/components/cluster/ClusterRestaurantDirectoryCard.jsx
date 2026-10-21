@@ -5,8 +5,8 @@ import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 import {
   CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX,
+  formatClusterCardStreetAddress,
   formatRestaurantCuisineLabel,
-  formatRestaurantPriceTier,
   resolveClusterRestaurantAccent,
   resolveClusterRestaurantBillboardUrl,
   resolveClusterRestaurantStatus,
@@ -16,6 +16,9 @@ import AddMenuAction from "../AddMenuAction.jsx";
 import { canShowAddMenu } from "../../lib/addMenuContribution.js";
 import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
 import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
+import FavHeartIcon from "../icons/FavHeartIcon.jsx";
+import IconHoverLabel from "../IconHoverLabel.jsx";
+import { FAV_ACCENT, likeButtonVisualStyle } from "../../lib/likeButtonStyles.js";
 
 function withClusterLocation(href, locationId) {
   if (!href || !locationId) return href;
@@ -28,6 +31,10 @@ export default function ClusterRestaurantDirectoryCard({
   restaurant,
   placeReturnPath = null,
   placeReturnLabel = null,
+  // Fav heart (restaurants → My Favs); omit onToggleFav to hide it.
+  isFav = false,
+  favBusy = false,
+  onToggleFav = null,
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const { index: videoIndex } = useClusterVideos();
@@ -40,8 +47,7 @@ export default function ClusterRestaurantDirectoryCard({
   );
   const accent = resolveClusterRestaurantAccent(restaurant);
   const cuisineLabel = formatRestaurantCuisineLabel(restaurant);
-  const addressHint = String(restaurant?.address_line1 || "").trim() || null;
-  const priceTierLabel = formatRestaurantPriceTier(restaurant);
+  const addressHint = formatClusterCardStreetAddress(restaurant);
   const status = resolveClusterRestaurantStatus(restaurant);
   const menuReady = isRestaurantMenuReady(restaurant);
   const showAddMenu = canShowAddMenu(restaurant);
@@ -53,6 +59,8 @@ export default function ClusterRestaurantDirectoryCard({
     rawHref && placeReturnPath
       ? appendClusterReturnQuery(rawHref, placeReturnPath, placeReturnLabel)
       : rawHref;
+  const restaurantId = Number(restaurant?.restaurant_id ?? restaurant?.id) || null;
+  const showFav = typeof onToggleFav === "function" && Boolean(restaurantId);
   const billboardUrl = imageFailed ? null : resolveClusterRestaurantBillboardUrl(restaurant);
 
   const content = (
@@ -61,12 +69,11 @@ export default function ClusterRestaurantDirectoryCard({
       style={{
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         width: "100%",
         maxWidth: "100%",
         minWidth: 0,
-        minHeight: 220,
-        aspectRatio: "1 / 1",
+        height: "100%",
+        minHeight: 236,
         padding: 0,
         borderRadius: 6,
         border: `2px solid ${accent.border}`,
@@ -77,6 +84,7 @@ export default function ClusterRestaurantDirectoryCard({
         color: "inherit",
       }}
     >
+      {/* Same-height header on every card (photo, else cuisine emoji band) so rows line up. */}
       {billboardUrl ? (
         <img
           src={billboardUrl}
@@ -93,42 +101,51 @@ export default function ClusterRestaurantDirectoryCard({
             background: "#e5e7eb",
           }}
         />
-      ) : null}
+      ) : (
+        <div
+          aria-hidden="true"
+          data-testid="cluster-restaurant-emoji-band"
+          style={{
+            height: CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: "0.9rem",
+            fontSize: "1.6rem",
+            lineHeight: 1,
+            background: `linear-gradient(180deg, ${accent.border}22 0%, ${accent.border}0d 100%)`,
+            borderBottom: `1px solid ${accent.border}33`,
+          }}
+        >
+          {accent.emoji}
+        </div>
+      )}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
           flex: "1 1 auto",
           minHeight: 0,
           minWidth: 0,
-          padding: billboardUrl ? "0.7rem 0.9rem 0.85rem" : "1.1rem",
+          padding: "0.7rem 0.9rem 0.8rem",
         }}
       >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.45rem",
-          minHeight: 0,
-          minWidth: 0,
-          flex: "1 1 auto",
-          overflow: "hidden",
-        }}
-      >
-        {billboardUrl ? null : (
-          <div style={{ fontSize: "1.35rem", lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
-            {accent.emoji}
-          </div>
-        )}
-        <div style={{ minWidth: 0, flexShrink: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.3rem",
+            minWidth: 0,
+            flex: "1 1 auto",
+          }}
+        >
           <div
             className="cluster-card-title"
             style={{
               fontSize: "1.05rem",
               fontWeight: 700,
               color: "#111827",
-              lineHeight: 1.35,
+              lineHeight: 1.3,
               fontSynthesis: "none",
               WebkitFontSmoothing: "antialiased",
               wordBreak: "break-word",
@@ -137,98 +154,72 @@ export default function ClusterRestaurantDirectoryCard({
           >
             {name}
           </div>
+          {cuisineLabel ? (
+            <div
+              className="cluster-card-meta"
+              style={{
+                fontSize: "0.74rem",
+                fontWeight: 700,
+                color: "#4b5563",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                overflowWrap: "anywhere",
+              }}
+            >
+              {cuisineLabel}
+            </div>
+          ) : null}
+          {addressHint ? (
+            <div
+              className="cluster-card-muted"
+              data-testid="cluster-restaurant-address"
+              style={{ color: "#6b7280", fontSize: "0.82rem", lineHeight: 1.35, overflowWrap: "anywhere" }}
+            >
+              {addressHint}
+            </div>
+          ) : null}
           {listingNote ? (
             <div
               className="cluster-card-muted"
               data-testid="cluster-restaurant-listing-note"
-              style={{
-                marginTop: "0.25rem",
-                fontWeight: 600,
-                fontSize: "0.78rem",
-                color: "#6b7280",
-                lineHeight: 1.35,
-                overflowWrap: "anywhere",
-              }}
+              style={{ color: "#6b7280", fontSize: "0.78rem", lineHeight: 1.35, overflowWrap: "anywhere" }}
             >
               {listingNote}
             </div>
           ) : null}
         </div>
-        {cuisineLabel ? (
-          <div
-            className="cluster-card-meta"
-            style={{
-              fontSize: "0.8rem",
-              fontWeight: 700,
-              color: "#4b5563",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              overflowWrap: "anywhere",
-              flexShrink: 0,
-            }}
-          >
-            {cuisineLabel}
-          </div>
-        ) : null}
-        {addressHint ? (
-          <div
-            className="cluster-card-muted"
-            style={{
-              color: "#6b7280",
-              fontSize: "0.82rem",
-              lineHeight: 1.35,
-              overflowWrap: "anywhere",
-              minHeight: 0,
-            }}
-          >
-            {addressHint}
-          </div>
-        ) : null}
-        {priceTierLabel ? (
-          <div className="cluster-card-meta" style={{ color: "#374151", fontSize: "0.88rem", fontWeight: 700, flexShrink: 0 }}>
-            {priceTierLabel}
-          </div>
-        ) : null}
-      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: "0.35rem",
-          marginTop: "0.75rem",
-          paddingTop: "0.75rem",
-          borderTop: `1px solid ${accent.border}`,
-          flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            alignSelf: "flex-start",
-            fontSize: "0.72rem",
-            fontWeight: 700,
-            color: status.tone,
-            background: status.background,
-            borderRadius: 999,
-            padding: "0.2rem 0.55rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
-        >
-          {status.text}
-        </span>
         <div
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: "0.65rem",
+            paddingTop: "0.6rem",
+            // Room for the Fav heart, which sits over this row outside the link.
+            paddingRight: showFav ? 40 : 0,
+            minHeight: 32,
+            borderTop: `1px solid ${accent.border}`,
+            flexShrink: 0,
+          }}
           className="cluster-card-title"
         >
           {showAddMenu ? (
             <AddMenuAction restaurant={restaurant} testId="add-menu-cluster-directory" />
           ) : (
-            <span style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
+            <span
+              data-testid="cluster-restaurant-status"
+              style={{
+                fontWeight: 700,
+                color: menuReady ? "#111827" : status.tone,
+                fontSize: "0.9rem",
+                overflowWrap: "anywhere",
+              }}
+            >
               {menuReady ? "View menu →" : "View profile →"}
             </span>
           )}
         </div>
-      </div>
       </div>
     </article>
   );
@@ -238,7 +229,7 @@ export default function ClusterRestaurantDirectoryCard({
       to={href}
       className="cluster-themed-card-link"
       {...clusterListingEngagementAttrs(restaurant, Boolean(menuHref) && rawHref === menuHref)}
-      style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}
+      style={{ display: "block", height: "100%", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}
     >
       {content}
     </Link>
@@ -246,22 +237,51 @@ export default function ClusterRestaurantDirectoryCard({
     content
   );
 
-  // Restaurants with cluster videos: a Video pill over the card's top-right (sibling of the link,
-  // so tapping it plays in the floating player instead of opening the menu).
-  const videos = videoIndex.forRestaurant(restaurant?.restaurant_id ?? restaurant?.id);
-  if (videos.length === 0) return card;
+  // Clip pill (top-right) and Fav heart (bottom-right) are siblings of the link, so tapping them
+  // plays the clip / toggles My Favs instead of opening the menu.
+  const videos = videoIndex.forRestaurant(restaurantId);
+  if (videos.length === 0 && !showFav) return card;
+  const favLabel = isFav ? `${name} is in My Favs. Tap to remove.` : `Add ${name} to My Favs`;
   return (
-    <div style={{ position: "relative", minWidth: 0, maxWidth: "100%" }} data-testid="cluster-restaurant-video-card">
+    <div
+      style={{ position: "relative", minWidth: 0, maxWidth: "100%", height: "100%" }}
+      data-testid={videos.length > 0 ? "cluster-restaurant-video-card" : undefined}
+    >
       {card}
-      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
-        <ClusterVideoPlayButton
-          videos={videos}
-          trigger="restaurant_icon"
-          label={`Play ${name} clip`}
-          variant="overlay"
-          testId="cluster-restaurant-video-play"
-        />
-      </div>
+      {videos.length > 0 ? (
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+          <ClusterVideoPlayButton
+            videos={videos}
+            trigger="restaurant_icon"
+            label={`Play ${name} clip`}
+            variant="overlay"
+            testId="cluster-restaurant-video-play"
+          />
+        </div>
+      ) : null}
+      {showFav ? (
+        <div style={{ position: "absolute", right: 10, bottom: 10, zIndex: 1 }}>
+          <IconHoverLabel label={isFav ? "My Fav" : "Fav"}>
+            <button
+              type="button"
+              data-testid="cluster-restaurant-fav"
+              onClick={() => onToggleFav(restaurantId, name)}
+              disabled={favBusy}
+              aria-label={favLabel}
+              aria-pressed={isFav}
+              title={isFav ? "My Fav" : "Fav"}
+              style={{
+                ...likeButtonVisualStyle({ selected: isFav, loading: favBusy, accent: FAV_ACCENT }),
+                width: 32,
+                height: 32,
+              }}
+            >
+              {/* currentColor when on: red by default, cream on a themed cluster's pressed fill. */}
+              <FavHeartIcon size={16} filled={isFav} color={isFav ? "currentColor" : "#0f172a"} />
+            </button>
+          </IconHoverLabel>
+        </div>
+      ) : null}
     </div>
   );
 }

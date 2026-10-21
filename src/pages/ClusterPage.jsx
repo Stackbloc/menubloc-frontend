@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
+import useClusterFavs from "../hooks/useClusterFavs.js";
+import FavHeartIcon from "../components/icons/FavHeartIcon.jsx";
+import { FAV_ACCENT } from "../lib/likeButtonStyles.js";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
@@ -213,6 +216,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
   const [placeholderIntro, setPlaceholderIntro] = useState("");
   const [drinksPlaceholderIntro, setDrinksPlaceholderIntro] = useState("");
   const [drinksFilter, setDrinksFilter] = useState("all");
+  const { isAuthenticated, favIds, busyIds, toggleFav } = useClusterFavs();
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
 
@@ -296,24 +300,44 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
 
   const cuisineGroups = groupClusterRestaurantsByCuisine(restaurants);
   const diningByZoneHeading = getClusterDiningByZoneHeading(cluster);
+  // Signed-in diners see their Favs here first; the cards also stay in their cuisine groups.
+  const favRestaurants = isAuthenticated
+    ? restaurants.filter((row) => favIds.has(Number(row.restaurant_id)))
+    : [];
+  const renderRestaurantCard = (restaurant) => {
+    const id = Number(restaurant.restaurant_id);
+    return (
+      <ClusterRestaurantDirectoryCard
+        key={restaurant.restaurant_id}
+        restaurant={restaurant}
+        placeReturnPath={placeReturnPath}
+        placeReturnLabel={placeReturnLabel}
+        isFav={favIds.has(id)}
+        favBusy={busyIds.has(id)}
+        onToggleFav={toggleFav}
+      />
+    );
+  };
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {restaurants.length > 0 ? (
         <>
+          {favRestaurants.length > 0 ? (
+            <section style={{ display: "grid", gap: "0.65rem" }} data-testid="cluster-my-favs">
+              <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
+                <FavHeartIcon size={16} filled color={FAV_ACCENT} />
+                My Favs
+              </h3>
+              <div style={CLUSTER_DIRECTORY_GRID_STYLE}>{favRestaurants.map(renderRestaurantCard)}</div>
+            </section>
+          ) : null}
           {cuisineGroups.map((group, index) => (
             <React.Fragment key={group.id}>
               <section style={{ display: "grid", gap: "0.65rem" }}>
                 <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>{group.label}</h3>
                 <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
-                  {group.restaurants.map((restaurant) => (
-                    <ClusterRestaurantDirectoryCard
-                      key={restaurant.restaurant_id}
-                      restaurant={restaurant}
-                      placeReturnPath={placeReturnPath}
-                      placeReturnLabel={placeReturnLabel}
-                    />
-                  ))}
+                  {group.restaurants.map(renderRestaurantCard)}
                 </div>
               </section>
               {index === 1 ? (
