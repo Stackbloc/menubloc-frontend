@@ -99,7 +99,7 @@ export default function OwnerBrandStorePicker({ restaurant, onOpenStore }) {
     <PageCard style={{ padding: 20, marginBottom: 16 }} id="owner-brand-store-picker">
       <SectionTitle
         title={`${chainName} locations${data ? ` — ${data.total} store${data.total === 1 ? "" : "s"}` : ""}`}
-        subtitle="You opened the brand record (HQ), which isn't a store. Clusters, hours and prices belong to a store: pick a cluster to see the nearest stores, or search by street, city or ZIP."
+        subtitle="You opened the brand record (HQ), which isn't a store. Clusters, hours and prices belong to a store: pick a cluster to see the nearest stores, or search by street, city, ZIP or store # (stores without a street address are easiest to find by #)."
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10, marginTop: 12 }}>
@@ -120,7 +120,7 @@ export default function OwnerBrandStorePicker({ restaurant, onOpenStore }) {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Street, city or ZIP (e.g. Figueroa, 90007)"
+          placeholder="Street, city, ZIP or store # (e.g. Figueroa, 90007, #76064)"
           style={inputStyle}
           aria-label="Search stores"
           data-testid="owner-brand-store-search"
