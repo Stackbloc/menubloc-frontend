@@ -6,6 +6,7 @@
 import {
   CANONICAL_ORIGIN,
   absoluteCanonicalUrl,
+  restaurantMenuPath,
   restaurantPath,
 } from "../canonicalUrlCore.js";
 
@@ -101,15 +102,95 @@ export function buildRestaurantJsonLd(restaurant) {
     address_line_1: restaurant.address_line_1 || restaurant.address,
     city: restaurant.city,
     state: restaurant.state,
-    postal_code: restaurant.postal_code,
+    postal_code: restaurant.postal_code || restaurant.zip,
     country: restaurant.country,
   });
+  const telephone = trimStr(restaurant.phone);
+  const cuisine = trimStr(restaurant.cuisine);
   return {
     "@type": "Restaurant",
     "@id": `${url}#restaurant`,
     name: trimStr(restaurant.name) || trimStr(restaurant.slug),
     url,
     ...(address ? { address } : {}),
+    ...(telephone ? { telephone } : {}),
+    ...(cuisine ? { servesCuisine: cuisine } : {}),
+  };
+}
+
+// Caps keep the injected <script> small for very large menus.
+const MENU_JSONLD_MAX_SECTIONS = 60;
+const MENU_JSONLD_MAX_ITEMS = 300;
+
+// Same precedence as getConsumerDisplayPrice (pricingDisplay.js), so the Offer price is
+// the price diners see on the menu page.
+const MENU_DISPLAY_PRICE_CENTS_KEYS = [
+  "menuply_display_price_cents",
+  "consumer_display_price_cents",
+  "display_price_cents",
+  "price_with_required_fees_cents",
+  "price_cents",
+];
+const MENU_DISPLAY_PRICE_KEYS = [
+  "menuply_display_price",
+  "consumer_display_price",
+  "display_price",
+  "price_with_required_fees",
+  "price",
+];
+
+/** "2.85" from the displayed cents (preferred) or a "$2.85" display string; null when unknown/zero. */
+export function menuItemPriceString(item) {
+  for (const key of MENU_DISPLAY_PRICE_CENTS_KEYS) {
+    const cents = Number(item?.[key]);
+    if (Number.isFinite(cents) && cents > 0) return (Math.round(cents) / 100).toFixed(2);
+  }
+  for (const key of MENU_DISPLAY_PRICE_KEYS) {
+    const m = /^\$?\s*(\d+(?:\.\d{1,2})?)$/.exec(trimStr(item?.[key]) || "");
+    if (m && Number(m[1]) > 0) return Number(m[1]).toFixed(2);
+  }
+  return null;
+}
+
+/**
+ * schema.org Menu → MenuSection → MenuItem (+ Offer) from the public menu payload
+ * (GET /public/restaurants/:id/menu `sections`), so markup matches what the page shows.
+ */
+export function buildMenuJsonLd(sections, restaurant) {
+  const menuUrl = absoluteUrl(restaurantMenuPath(restaurant || {}));
+  if (!menuUrl || !Array.isArray(sections)) return null;
+  let itemBudget = MENU_JSONLD_MAX_ITEMS;
+  const sectionNodes = [];
+  for (const section of sections.slice(0, MENU_JSONLD_MAX_SECTIONS)) {
+    if (itemBudget <= 0) break;
+    const items = [];
+    for (const item of Array.isArray(section?.items) ? section.items : []) {
+      if (itemBudget <= 0) break;
+      const name = trimStr(item?.name);
+      if (!name) continue;
+      const node = { "@type": "MenuItem", name };
+      const description = trimStr(item.description);
+      if (description) node.description = description;
+      const price = menuItemPriceString(item);
+      if (price) node.offers = { "@type": "Offer", price, priceCurrency: "USD" };
+      items.push(node);
+      itemBudget -= 1;
+    }
+    if (!items.length) continue;
+    sectionNodes.push({
+      "@type": "MenuSection",
+      name: trimStr(section.title) || trimStr(section.name) || "Menu",
+      hasMenuItem: items,
+    });
+  }
+  if (!sectionNodes.length) return null;
+  const restaurantName = trimStr(restaurant?.name);
+  return {
+    "@type": "Menu",
+    "@id": `${menuUrl}#menu`,
+    name: restaurantName ? `${restaurantName} Menu` : "Menu",
+    url: menuUrl,
+    hasMenuSection: sectionNodes,
   };
 }
 
@@ -287,9 +368,18 @@ export function toJsonLdScriptTag(graph) {
   return `<script type="application/ld+json">${json}</script>`;
 }
 
-export function restaurantPageJsonLd(restaurant, videos = []) {
+/**
+ * Restaurant profile / menu page graph. Restaurant.hasMenu is always the menu page URL;
+ * when `menuSections` is given (menu page, crawler request) the full Menu node is
+ * added to the graph and hasMenu references it by @id instead.
+ */
+export function restaurantPageJsonLd(restaurant, videos = [], { menuSections } = {}) {
   const restaurantLd = buildRestaurantJsonLd(restaurant);
   if (!restaurantLd) return null;
+  const menuLd = menuSections ? buildMenuJsonLd(menuSections, restaurant) : null;
+  const menuUrl = absoluteUrl(restaurantMenuPath(restaurant));
+  if (menuLd) restaurantLd.hasMenu = { "@id": menuLd["@id"] };
+  else if (menuUrl) restaurantLd.hasMenu = menuUrl;
   const list = Array.isArray(videos) ? videos : [];
   const videoNodes = [];
   for (const video of list) {
@@ -303,7 +393,7 @@ export function restaurantPageJsonLd(restaurant, videos = []) {
       videoNodes.push(built.video);
     }
   }
-  return buildJsonLdGraph([restaurantLd, ...videoNodes]);
+  return buildJsonLdGraph([restaurantLd, menuLd, ...videoNodes]);
 }
 
 export function menuItemPageJsonLd(item, restaurant) {
