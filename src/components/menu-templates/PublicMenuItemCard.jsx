@@ -255,8 +255,16 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, tapRowToAdd, onRemoveOne, isScrollTap, onOpenOptions, onCannotOrder, nonOrderableOpensDish } =
-    useMenuRowActions();
+  const {
+    hideDishShare,
+    tapRowToAdd,
+    onRemoveOne,
+    isScrollTap,
+    onOpenOptions,
+    onCannotOrder,
+    nonOrderableOpensDish,
+    keepNutritionChip,
+  } = useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -302,8 +310,9 @@ export default function PublicMenuItemCard({
     )
   );
   // Menu Browser: a dish tap orders, so no Nutrition chip that leaves the menu for the detail page.
+  // Restaurant menus keep it — it's their way to the dish page now that a tap adds (protected action).
   const showNutritionInline =
-    !tapRowToAdd &&
+    (!tapRowToAdd || keepNutritionChip) &&
     themeSettings.nutrition_display !== "hidden" &&
     themeSettings.intelligence_density !== "none" &&
     (hasNutritionData || itemHasInsightsData(it));

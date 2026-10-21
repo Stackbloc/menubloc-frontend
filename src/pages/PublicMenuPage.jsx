@@ -1667,6 +1667,7 @@ export default function PublicMenuPage() {
       hideDishShare: false,
       tapRowToAdd: true,
       nonOrderableOpensDish: true,
+      keepNutritionChip: true,
       onRemoveOne: removeOneFromBasket,
       isScrollTap,
       onOpenOptions,
