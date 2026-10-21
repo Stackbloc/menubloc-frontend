@@ -65,12 +65,12 @@ import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js
 
 /**
  * Menu Browser rows carry the same four actions as the Feed rail — Wish List · Like · Invite ·
- * Share (Andre, 2026-10-20) — and tapping the dish adds it, so no per-row add button
- * (Andre: cognitive load). The header keeps its Bookmark.
+ * Share (Andre, 2026-10-20) — and tapping the dish adds it; no menu has a per-row "+"
+ * (Andre, 2026-10-21). The header keeps its Bookmark.
  */
-const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
+const MENU_BROWSER_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true };
 /** Pinned "From the clip" card: same four actions + Add to basket. */
-const PINNED_CARD_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true, hideAddButton: true };
+const PINNED_CARD_ROW_ACTIONS = { hideDishShare: false, tapRowToAdd: true };
 /** Templates without the post-header slot (allergenBannerSlot) — keep the in-row highlight instead. */
 const SCROLL_TAP_GUARD_MS = 350;
 const CANNOT_ORDER_RESTAURANT_NOTE = "This restaurant isn't taking online orders yet";

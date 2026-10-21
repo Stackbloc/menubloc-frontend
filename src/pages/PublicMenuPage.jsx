@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MenuRowActionsContext } from "../components/menuCatalog/menuRowActionsContext.js";
 import useMenuItemHighlight from "../hooks/useMenuItemHighlight.js";
 import { useLocation, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -194,6 +195,9 @@ function normalizeSections(data) {
 function isDisplayableMenuItem(item) {
   return asStr(item?.name).trim().length > 0;
 }
+
+/** A tap within this window after the page scrolled is a scroll gesture, not a selection. */
+const MENU_SCROLL_TAP_GUARD_MS = 350;
 
 function getCartItemState(cartItems, menuItemId) {
   const matchingLines = (Array.isArray(cartItems) ? cartItems : []).filter(
@@ -1629,6 +1633,47 @@ export default function PublicMenuPage() {
     }
   }
 
+  /**
+   * Restaurant menu rows (Andre, 2026-10-21): no "+" — tap an orderable dish to add it, hold to
+   * remove one, dishes with required choices open the options picker. A dish that can't be
+   * ordered online still opens its dish page.
+   */
+  const lastScrollAtRef = useRef(0);
+  useEffect(() => {
+    const onAnyScroll = () => { lastScrollAtRef.current = Date.now(); };
+    document.addEventListener("scroll", onAnyScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onAnyScroll, { capture: true });
+  }, []);
+  const isScrollTap = useCallback(() => Date.now() - lastScrollAtRef.current < MENU_SCROLL_TAP_GUARD_MS, []);
+  const removeOneFromBasket = useCallback(
+    (menuItemId) => {
+      const state = getCartItemState(activeCartItems, menuItemId);
+      const line = state.simpleLine || state.matchingLines[state.matchingLines.length - 1];
+      if (!line) return;
+      const qty = Number(line.quantity || 0);
+      if (qty > 1) updateQuantity(line.lineId, qty - 1);
+      else removeItem(line.lineId);
+      setAddedConfirmation(null);
+    },
+    [activeCartItems, updateQuantity, removeItem]
+  );
+  const openOptionsRef = useRef(null);
+  openOptionsRef.current = openSmartOrModifierFlow;
+  const onOpenOptions = useCallback((item, itemName, itemDescription) => {
+    openOptionsRef.current?.(item, itemName, itemDescription);
+  }, []);
+  const menuRowActions = useMemo(
+    () => ({
+      hideDishShare: false,
+      tapRowToAdd: true,
+      nonOrderableOpensDish: true,
+      onRemoveOne: removeOneFromBasket,
+      isScrollTap,
+      onOpenOptions,
+    }),
+    [removeOneFromBasket, isScrollTap, onOpenOptions]
+  );
+
   const menuPresentationStyle = resolveTemplateMenuStyle(
     searchParams.get("menuStyle") || searchParams.get("previewStyle") || pageState.data?.menu_style
   );
@@ -1879,10 +1924,14 @@ export default function PublicMenuPage() {
               color: appearanceTokens.ink,
             }}
           >
-            <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+            <MenuRowActionsContext.Provider value={menuRowActions}>
+              <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+            </MenuRowActionsContext.Provider>
           </div>
         ) : (
-          <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+          <MenuRowActionsContext.Provider value={menuRowActions}>
+            <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+          </MenuRowActionsContext.Provider>
         )}
       </div>
 

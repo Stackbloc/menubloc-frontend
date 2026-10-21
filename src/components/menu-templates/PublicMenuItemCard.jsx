@@ -84,7 +84,6 @@ function TitlePriceActionsBlock({
   hasDeal,
   openSheet,
   iconButtons,
-  addToOrderBox,
 }) {
   const priceEl = price ? (
     <span
@@ -118,7 +117,6 @@ function TitlePriceActionsBlock({
     >
       {iconButtons}
       {!stack ? priceEl : null}
-      {addToOrderBox}
     </div>
   );
 
@@ -170,39 +168,6 @@ function AffordancePillButton({ label, color, hairline, hoverBg, onClick }) {
       }}
     >
       {label}
-    </button>
-  );
-}
-
-/** Separate add-to-order control — row click opens item detail instead. */
-function AddToOrderBox({ accent, ink, hairline, editorial, ariaLabel, onClick }) {
-  const size = editorial ? 28 : 26;
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      title={ariaLabel}
-      onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: size,
-        height: size,
-        flexShrink: 0,
-        borderRadius: editorial ? 6 : 8,
-        border: `1.5px solid ${editorial ? hairline : accent}`,
-        background: "transparent",
-        color: editorial ? ink : accent,
-        fontSize: editorial ? 18 : 16,
-        fontWeight: 500,
-        lineHeight: 1,
-        cursor: "pointer",
-        padding: 0,
-        WebkitTapHighlightColor: "transparent",
-      }}
-    >
-      +
     </button>
   );
 }
@@ -290,7 +255,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const { hideDishShare, tapRowToAdd, onRemoveOne, isScrollTap, hideAddButton, onOpenOptions, onCannotOrder } =
+  const { hideDishShare, tapRowToAdd, onRemoveOne, isScrollTap, onOpenOptions, onCannotOrder, nonOrderableOpensDish } =
     useMenuRowActions();
   const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
@@ -484,16 +449,7 @@ export default function PublicMenuItemCard({
       }
     : null;
 
-  const addToOrderBox = canAddToOrder && !hideAddButton ? (
-    <AddToOrderBox
-      editorial={editorialRefresh}
-      accent={accent}
-      ink={ed.ink}
-      hairline={ed.hairline}
-      ariaLabel={t("menu.addToOrder", "Add to order")}
-      onClick={addItemToOrder}
-    />
-  ) : null;
+  // No per-row "+" anywhere (Andre, 2026-10-21): an orderable dish is added by tapping it.
 
   return (
     <div
@@ -506,6 +462,7 @@ export default function PublicMenuItemCard({
           e.preventDefault();
           if (tapRowToAdd) {
             if (canAddToOrder) addItemToOrder();
+            else if (nonOrderableOpensDish && canNavigate) openMenuItemDetail();
             else if (onCannotOrder) onCannotOrder(restaurantOrderingAvailable ? "dish" : "restaurant");
             else openSheet();
             return;
@@ -530,8 +487,10 @@ export default function PublicMenuItemCard({
         if (tapRowToAdd) {
           // Menu Browser: a tap that ends a scroll is not a selection.
           if (isScrollTap?.()) return;
-          // Orderable → basket; otherwise a short note — never the info sheet or detail page.
+          // Orderable → basket. Otherwise: restaurant menu pages open the dish page
+          // (nonOrderableOpensDish); the Menu Browser shows a short note and never leaves the menu.
           if (canAddToOrder) addItemToOrder();
+          else if (nonOrderableOpensDish && canNavigate) openMenuItemDetail();
           else if (onCannotOrder) onCannotOrder(restaurantOrderingAvailable ? "dish" : "restaurant");
           else openSheet();
           return;
@@ -697,7 +656,6 @@ export default function PublicMenuItemCard({
                   ) : null}
                 </>
               }
-              addToOrderBox={addToOrderBox}
             />
           ) : compactActions ? (
             <TitlePriceActionsBlock
@@ -772,7 +730,6 @@ export default function PublicMenuItemCard({
                   ) : null}
                 </>
               }
-              addToOrderBox={addToOrderBox}
             />
           ) : (
             <TitlePriceActionsBlock
@@ -847,7 +804,6 @@ export default function PublicMenuItemCard({
                   ) : null}
                 </>
               }
-              addToOrderBox={addToOrderBox}
             />
           )}
 
