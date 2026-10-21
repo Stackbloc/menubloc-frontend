@@ -54,13 +54,6 @@ const CUISINE_ACCENTS = {
 
 const DEFAULT_ACCENT = { border: "#94a3b8", bg: "#f8fafc", emoji: "🍽️" };
 
-const PRICE_TIER_LABELS = {
-  budget: { symbols: "$", label: "Budget" },
-  moderate: { symbols: "$$", label: "Moderate" },
-  upscale: { symbols: "$$$", label: "Upscale" },
-  premium: { symbols: "$$$$", label: "Premium" },
-};
-
 export function resolveClusterRestaurantAccent(restaurant = {}) {
   const cuisine = String(restaurant?.cuisine || restaurant?.category || "").toLowerCase();
   for (const [pattern, accent] of Object.entries(CUISINE_ACCENTS)) {
@@ -69,11 +62,23 @@ export function resolveClusterRestaurantAccent(restaurant = {}) {
   return DEFAULT_ACCENT;
 }
 
-export function formatRestaurantPriceTier(restaurant = {}) {
-  const tier = String(restaurant?.price_tier || "").trim().toLowerCase();
-  const mapped = PRICE_TIER_LABELS[tier];
-  if (mapped) return `${mapped.symbols} · ${mapped.label}`;
-  return null;
+/**
+ * Street line for a cluster card: drop trailing ", Los Angeles, CA 90007" — every card in a
+ * cluster shares the city, and repeating it wraps the address onto extra lines.
+ */
+export function formatClusterCardStreetAddress(restaurant = {}) {
+  const raw = String(restaurant?.address_line1 || "").trim();
+  if (!raw) return null;
+  const city = String(restaurant?.city || "").trim().toLowerCase();
+  const parts = raw.split(",").map((part) => part.trim()).filter(Boolean);
+  while (parts.length > 1) {
+    const last = parts[parts.length - 1].toLowerCase();
+    const isCity = city && last === city;
+    const isStateOrZip = /^([a-z]{2})?\s*(\d{5}(-\d{4})?)?$/i.test(last) || /^(usa|united states)$/i.test(last);
+    if (!isCity && !isStateOrZip) break;
+    parts.pop();
+  }
+  return parts.join(", ");
 }
 
 export function formatRestaurantCuisineLabel(restaurant = {}) {

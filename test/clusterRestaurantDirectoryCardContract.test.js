@@ -46,6 +46,12 @@ test("formatClusterListingNoteForDisplay drops SOURCE STATUS seed text", () => {
     null
   );
   assert.equal(formatClusterListingNoteForDisplay("catering orders only"), "catering orders only");
+  assert.equal(formatClusterListingNoteForDisplay("Official Los Angeles franchise seed sourced 2026-04-26."), null);
+  assert.equal(formatClusterListingNoteForDisplay("USC cluster shell (Jacks N Joe). No menu seeded this turn."), null);
+  assert.equal(
+    formatClusterListingNoteForDisplay("USC University Park campus coffee bar (illy)."),
+    "USC University Park campus coffee bar (illy)."
+  );
 });
 
 test("formatClusterListingNoteForDisplay drops seed JSON and data_origin blobs", () => {
@@ -77,4 +83,11 @@ test("resolveClusterRestaurantBillboardUrl prefers billboard then logo", () => {
   );
   assert.equal(resolveClusterRestaurantBillboardUrl({}), null);
   assert.equal(CLUSTER_RESTAURANT_BILLBOARD_HEIGHT_PX, 72);
+});
+
+test("cluster restaurant card drops the price tier and offers a Fav heart", () => {
+  assert.doesNotMatch(src, /price_?tier|PriceTier/i);
+  assert.doesNotMatch(src, /aspectRatio/);
+  assert.match(src, /cluster-restaurant-fav/);
+  assert.match(src, /onToggleFav/);
 });

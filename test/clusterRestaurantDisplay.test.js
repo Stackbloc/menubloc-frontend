@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   formatRestaurantCuisineLabel,
   formatRestaurantMenuCount,
-  formatRestaurantPriceTier,
+  formatClusterCardStreetAddress,
   resolveClusterRestaurantAccent,
 } from "../src/lib/clusterRestaurantDisplay.js";
 
@@ -14,10 +14,18 @@ test("resolveClusterRestaurantAccent maps cuisine families to colored accents", 
   assert.ok(coffee.bg);
 });
 
-test("formatRestaurantPriceTier renders dollar symbols", () => {
-  assert.equal(formatRestaurantPriceTier({ price_tier: "moderate" }), "$$ · Moderate");
-  assert.equal(formatRestaurantPriceTier({ price_tier: "premium" }), "$$$$ · Premium");
-  assert.equal(formatRestaurantPriceTier({}), null);
+test("formatClusterCardStreetAddress drops the shared city/state/zip", () => {
+  assert.equal(
+    formatClusterCardStreetAddress({ address_line1: "936 W 23rd St, Los Angeles, CA", city: "Los Angeles" }),
+    "936 W 23rd St"
+  );
+  assert.equal(
+    formatClusterCardStreetAddress({ address_line1: "3001 S Figueroa St, Los Angeles, CA 90007", city: "Los Angeles" }),
+    "3001 S Figueroa St"
+  );
+  assert.equal(formatClusterCardStreetAddress({ address_line1: "2700 S Figueroa St #105" }), "2700 S Figueroa St #105");
+  assert.equal(formatClusterCardStreetAddress({ address_line1: "100 Main St, Suite 4" }), "100 Main St, Suite 4");
+  assert.equal(formatClusterCardStreetAddress({}), null);
 });
 
 test("formatRestaurantCuisineLabel prefers cuisine over restaurant type", () => {
