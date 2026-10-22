@@ -33,6 +33,7 @@ import {
 } from "../../lib/dealMealPeriods.js";
 import { formatOwnerVideoCreatorLabel } from "../../lib/ownerVideoCatalogLabels.js";
 import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
+import { videoDealTermsProblem } from "../../lib/videoDealTerms.js";
 
 const KIND_OPTIONS = [
   ["all", "All kinds"],
@@ -900,6 +901,9 @@ function DealVideoUploadPanel({ onUploaded }) {
   const [dealMenu, setDealMenu] = useState({ source: "public", items: [] });
   const [dealMenuLoading, setDealMenuLoading] = useState(false);
   const [dealItems, setDealItems] = useState([]);
+  // Written terms the video is attached to (Andre, 2026-10-22): type + value drive the deal.
+  const [dealType, setDealType] = useState("percent_off");
+  const [dealValue, setDealValue] = useState("");
 
   const dealRestaurantId = restaurant?.restaurant_id || null;
   useEffect(() => {
@@ -971,6 +975,17 @@ function DealVideoUploadPanel({ onUploaded }) {
       setError("End date must be on or after the start date.");
       return;
     }
+    const termsProblem = videoDealTermsProblem({
+      dealType,
+      value: dealValue,
+      itemCount: dealItems.length,
+      startsAt: startDate,
+      expiresAt: endDate,
+    });
+    if (termsProblem) {
+      setError(termsProblem);
+      return;
+    }
 
     setBusy(true);
     setError("");
@@ -980,20 +995,17 @@ function DealVideoUploadPanel({ onUploaded }) {
       const created = await createOwnerDeal(rid, {
         title: title.trim(),
         description: description.trim() || undefined,
-        deal_type: "other",
-        allow_null_menu_item: true,
+        deal_type: dealType,
+        // percent for % off; dollars for $ off / special price (backend stores cents).
+        value: Number(dealValue),
         start_date: startDate,
         end_date: endDate,
         meal_periods: mealPeriods,
         show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
         publish: false,
-        ...(dealItems.length
-          ? {
-              menu_item_id: Number(dealItems[0].id),
-              applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
-              linked_items_source: dealMenu.source,
-            }
-          : {}),
+        menu_item_id: Number(dealItems[0].id),
+        applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
+        linked_items_source: dealMenu.source,
       });
       const dealId = created.deal?.id;
       if (!dealId) throw new Error("Deal was not created");
@@ -1015,6 +1027,7 @@ function DealVideoUploadPanel({ onUploaded }) {
       setMealPeriods([]);
       setShowMealTimeCaption(true);
       setDealItems([]);
+      setDealValue("");
       onUploaded?.();
     } catch (err) {
       setError(err.message || "Deal video upload failed");
@@ -1050,6 +1063,38 @@ function DealVideoUploadPanel({ onUploaded }) {
             disabled={busy}
           />
         ) : null}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Deal type *</span>
+            <select
+              value={dealType}
+              onChange={(e) => setDealType(e.target.value)}
+              style={inputStyle}
+              disabled={busy}
+              data-testid="owner-deal-video-type"
+            >
+              <option value="percent_off">% off</option>
+              <option value="amount_off">$ off</option>
+              <option value="fixed_price">Special price</option>
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>
+              {dealType === "percent_off" ? "Percent off *" : dealType === "amount_off" ? "Dollars off *" : "Special price ($) *"}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step={dealType === "percent_off" ? "1" : "0.01"}
+              value={dealValue}
+              onChange={(e) => setDealValue(e.target.value)}
+              style={inputStyle}
+              disabled={busy}
+              data-testid="owner-deal-video-value"
+            />
+          </label>
+        </div>
 
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontWeight: 700, fontSize: 13 }}>Deal title *</span>

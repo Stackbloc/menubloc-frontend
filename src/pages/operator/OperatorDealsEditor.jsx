@@ -26,6 +26,11 @@ import {
   normalizeDealMealPeriodList,
 } from "../../lib/dealMealPeriods.js";
 import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
+import {
+  videoDealTermsFromDeal,
+  videoDealTermsProblem,
+  videoDealTermsSummary,
+} from "../../lib/videoDealTerms.js";
 
 // ── Shared styles ─────────────────────────────────────────────────────────
 const INPUT = {
@@ -327,10 +332,31 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     }
   }
 
+  // Video deals are structured deals (Andre, 2026-10-22): the video unlocks once the written
+  // terms are complete. A saved deal is checked as saved, since the upload reads the stored deal.
+  const formTerms = {
+    dealType: form.deal_type,
+    value:
+      form.deal_type === "percent_off"
+        ? form.discount_percent
+        : form.deal_type === "amount_off"
+          ? form.discount_amount_cents
+          : form.fixed_price_cents,
+    itemCount: form.menu_item_id ? 1 + appliesItems.filter((c) => c.id).length : 0,
+    startsAt: form.starts_at,
+    expiresAt: form.expires_at,
+  };
+  const formTermsProblem = videoDealTermsProblem(formTerms);
+  const savedTermsProblem = initial.id ? videoDealTermsProblem(videoDealTermsFromDeal(initial)) : null;
+  const videoTermsProblem =
+    formTermsProblem || (savedTermsProblem ? "Save the deal terms first, then add the video." : null);
+  const videoNeedsTerms = Boolean((form.video_url.trim() || dealVideoFile) && formTermsProblem);
+
   // Start and end dates are both required; same-day deals are allowed (end of day > start of day).
   const datesOutOfOrder = Boolean(form.starts_at && form.expires_at && form.expires_at < form.starts_at);
   const valid =
-    form.title && form.description && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id;
+    form.title && form.description && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id &&
+    !videoNeedsTerms;
 
   return (
     <div style={{
@@ -629,6 +655,15 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
             Upload a short video for this offer. When the deal is <strong>active</strong> and has a
             video, it appears in Feed → Deals swipe. MP4 (H.264+AAC) preferred.
           </div>
+          {videoTermsProblem ? (
+            <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }} data-testid="deal-form-video-terms-needed">
+              {videoTermsProblem}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "#1F4E3D", marginBottom: 8 }} data-testid="deal-form-video-terms">
+              This video is for: {videoDealTermsSummary(formTerms)}
+            </div>
+          )}
           <input
             ref={videoInputRef}
             type="file"
@@ -661,7 +696,7 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
             <button
               type="button"
               style={BTN("ghost", { fontSize: 12, padding: "6px 12px" })}
-              disabled={busy || dealVideoUploadBusy}
+              disabled={busy || dealVideoUploadBusy || Boolean(videoTermsProblem)}
               onClick={() => videoInputRef.current?.click()}
             >
               {dealVideoUploadBusy
@@ -690,7 +725,7 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
               value={form.video_url}
               onChange={f("video_url")}
               placeholder="https://… (mp4, H.264+AAC preferred)"
-              disabled={Boolean(dealVideoFile) || dealVideoUploadBusy}
+              disabled={Boolean(dealVideoFile) || dealVideoUploadBusy || Boolean(videoTermsProblem)}
             />
           </details>
         </div>
