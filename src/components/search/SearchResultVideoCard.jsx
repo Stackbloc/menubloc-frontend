@@ -64,8 +64,13 @@ function contextLabel(video, omitRestaurantContext) {
   return video.context_line || video.menu_item_name || "Clip";
 }
 
-/** Strip caption: who made the clip (one line). Falls back to the context line. */
+/**
+ * Strip caption (one line): the dish when the clip has one (Andre 2026-10-22 — a restaurant's
+ * own clips all read "IHOP" otherwise), else who made it, else the context line.
+ */
 function creatorLabel(video, omitRestaurantContext) {
+  const dish = String(video?.menu_item_name || "").trim();
+  if (dish) return dish;
   return String(video?.creator_label || "").trim() || contextLabel(video, omitRestaurantContext);
 }
 

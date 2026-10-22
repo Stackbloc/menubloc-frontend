@@ -42,3 +42,13 @@ test("menu-browsing PIP queues the same restaurant's next clip", () => {
   const feedSrc = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
   assert.match(feedSrc, /if \(menuBrowserOpen\) \{\s*playNextRestaurantClip\(\);/);
 });
+
+test("phone clip player is full-screen and autoplays (muted fallback), dish link separate", () => {
+  const src = read("src/components/restaurant/publicProfile/ProfileVideosSection.jsx");
+  assert.match(src, /data-layout=\{isDesktop \? "sheet" : "fullscreen"\}/);
+  assert.match(src, /err\?\.name !== "NotAllowedError"/);
+  assert.match(src, /Tap for sound/);
+  assert.match(src, /data-testid="profile-video-dish-link"/);
+  const card = read("src/components/search/SearchResultVideoCard.jsx");
+  assert.match(card, /const dish = String\(video\?\.menu_item_name \|\| ""\)\.trim\(\);\s*if \(dish\) return dish;/);
+});

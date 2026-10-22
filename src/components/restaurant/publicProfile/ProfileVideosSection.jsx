@@ -328,6 +328,8 @@ function PlayerSheet({
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [aspectRatio, setAspectRatio] = useState(9 / 16);
+  // Phones block autoplay with sound outside the tap itself: play muted, offer "Tap for sound".
+  const [mutedFallback, setMutedFallback] = useState(false);
   const src = video?.video_url ? resolveConsumerMediaUrl(video.video_url) : "";
   const caption = dishCaption(video, restaurantName);
   const dishHref =
@@ -407,9 +409,19 @@ function PlayerSheet({
     const el = videoElRef.current;
     if (!el) return undefined;
     el.muted = video?.play_muted === true;
+    setMutedFallback(false);
     const p = el.play();
     if (p && typeof p.catch === "function") {
-      p.catch(() => setLoadError(true));
+      p.catch((err) => {
+        if (err?.name !== "NotAllowedError") {
+          setLoadError(true);
+          return;
+        }
+        el.muted = true;
+        setMutedFallback(video?.play_muted !== true);
+        const retry = el.play();
+        if (retry && typeof retry.catch === "function") retry.catch(() => setLoadError(true));
+      });
     }
     return () => {
       try {
@@ -428,7 +440,8 @@ function PlayerSheet({
   return (
     <div
       data-testid="profile-video-player-scrim"
-      style={styles.scrim}
+      data-layout={isDesktop ? "sheet" : "fullscreen"}
+      style={{ ...styles.scrim, ...(isDesktop ? null : styles.scrimFull) }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -442,28 +455,28 @@ function PlayerSheet({
         data-testid="profile-video-player-sheet"
         style={{
           ...styles.sheet,
-          ...(isDesktop ? styles.sheetDesktop : null),
+          ...(isDesktop ? styles.sheetDesktop : styles.sheetFull),
           ...(reducedMotion ? null : styles.sheetMotion),
         }}
       >
-        <div style={styles.handle} aria-hidden="true" />
+        {isDesktop ? <div style={styles.handle} aria-hidden="true" /> : null}
         <button
           type="button"
           aria-label="Close"
           data-testid="profile-video-player-close"
           onClick={onClose}
-          style={styles.closeX}
+          style={{ ...styles.closeX, ...(isDesktop ? null : styles.closeXFull) }}
         >
           ×
         </button>
-        <div style={styles.sheetBody}>
+        <div style={{ ...styles.sheetBody, ...(isDesktop ? null : styles.sheetBodyFull) }}>
           <div
             style={{
               ...styles.playerFrame,
               aspectRatio: String(aspectRatio),
               ...(isDesktop
                 ? { maxWidth: desktopMaxWidth, width: "clamp(130px, 38%, 200px)" }
-                : null),
+                : styles.playerFrameFull),
             }}
             data-testid="profile-video-player-frame"
             data-aspect={isLandscape ? "landscape" : "portrait"}
@@ -511,19 +524,39 @@ function PlayerSheet({
                     No sound.
                   </div>
                 ) : null}
+                {mutedFallback ? (
+                  <button
+                    type="button"
+                    data-testid="profile-video-tap-for-sound"
+                    style={styles.tapForSound}
+                    onClick={() => {
+                      const el = videoElRef.current;
+                      if (!el) return;
+                      el.muted = false;
+                      setMutedFallback(false);
+                      const p = el.play();
+                      if (p && typeof p.catch === "function") p.catch(() => {});
+                    }}
+                  >
+                    🔇 Tap for sound
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
-          <div style={styles.sheetMeta}>
-            <h2 id={titleId} style={styles.sheetTitle}>
-              {dishHref ? (
-                <Link to={dishHref} style={{ color: "inherit", textDecoration: "none" }}>
-                  {caption}
-                </Link>
-              ) : (
-                caption
-              )}
+          <div style={{ ...styles.sheetMeta, ...(isDesktop ? null : styles.sheetMetaFull) }}>
+            <h2 id={titleId} style={{ ...styles.sheetTitle, ...(isDesktop ? null : styles.inkOnDark) }}>
+              {caption}
             </h2>
+            {dishHref ? (
+              <Link
+                to={dishHref}
+                data-testid="profile-video-dish-link"
+                style={{ ...styles.dishLink, ...(isDesktop ? null : styles.dishLinkOnDark) }}
+              >
+                View dish →
+              </Link>
+            ) : null}
             {video.creator_label ? (
               <p style={styles.sheetCreator} data-testid="profile-video-creator-label">
                 {video.creator_label}
@@ -1173,6 +1206,73 @@ const styles = {
     padding: "10px 16px 24px",
     position: "relative",
     outline: "none",
+  },
+  // Phones: full-screen reels-style player above the bottom nav (2026-10-22).
+  scrimFull: {
+    zIndex: 1200,
+    background: "#000",
+    alignItems: "stretch",
+  },
+  sheetFull: {
+    maxHeight: "none",
+    height: "100%",
+    borderRadius: 0,
+    background: "#000",
+    padding: "max(12px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom))",
+    display: "flex",
+    flexDirection: "column",
+  },
+  closeXFull: {
+    top: "max(8px, env(safe-area-inset-top))",
+    right: 12,
+    zIndex: 3,
+    color: "#fff",
+    fontSize: 34,
+    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+  },
+  sheetBodyFull: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "center",
+    gap: 10,
+    minHeight: 0,
+  },
+  playerFrameFull: {
+    width: "100%",
+    maxWidth: "100%",
+    maxHeight: "calc(100svh - 150px)",
+    borderRadius: 0,
+  },
+  sheetMetaFull: {
+    flex: "0 0 auto",
+    padding: "0 16px",
+  },
+  inkOnDark: { color: "#fff" },
+  dishLink: {
+    display: "inline-block",
+    marginTop: 6,
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#15803d",
+    textDecoration: "none",
+  },
+  dishLinkOnDark: { color: "#5eead4" },
+  tapForSound: {
+    position: "absolute",
+    left: "50%",
+    bottom: 56,
+    transform: "translateX(-50%)",
+    zIndex: 2,
+    padding: "8px 14px",
+    borderRadius: 999,
+    border: "none",
+    background: "rgba(0,0,0,0.65)",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
   sheetDesktop: {
     alignSelf: "center",
