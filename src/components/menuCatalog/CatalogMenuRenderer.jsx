@@ -990,8 +990,7 @@ export default function CatalogMenuRenderer({
                     subtotal: subtotalCents,
                     restaurantName: cartRestaurantState?.restaurantName,
                     isCurrentRestaurant: basketMatchesCurrentRestaurant,
-                    summaryLabel: `${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoney(subtotalCents)}`,
-                    ctaLabel: "Review Order",
+                    summaryLabel: `${itemCount} ${itemCount === 1 ? "item" : "items"} · ${formatMoney(subtotalCents)}`,
                     onOpenBasket: () => navigate("/checkout"),
                     onClear: () => { for (const line of activeCartItems) removeItem(line.lineId); },
                   }

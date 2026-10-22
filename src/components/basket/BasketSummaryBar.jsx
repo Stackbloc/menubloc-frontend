@@ -3,6 +3,10 @@ function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
 
+/**
+ * Basket bar (design system BasketBar, Andre 2026-10-22): restaurant, item count, total and
+ * View basket, the same on web and in the app.
+ */
 export default function BasketSummaryBar({
   itemCount,
   subtotal,
@@ -11,7 +15,7 @@ export default function BasketSummaryBar({
   isCurrentRestaurant = true,
   headingLabel,
   summaryLabel,
-  ctaLabel = "View Cart",
+  ctaLabel,
   onClear,
   /** Menu Browser renders the bar inside its own sticky slot instead of fixed to the viewport. */
   inline = false,
@@ -21,39 +25,40 @@ export default function BasketSummaryBar({
 
   const itemLabel = itemCount === 1 ? "1 item" : `${itemCount} items`;
   const heading = headingLabel || (isCurrentRestaurant
-    ? "Basket"
+    ? (restaurantName || t("basket.heading", "Basket"))
     : `Basket from ${restaurantName || "another restaurant"}`);
-  const subcopy = summaryLabel || (isCurrentRestaurant
-    ? `${itemLabel} • ${formatMoney(subtotal)}`
-    : `${itemLabel} already selected • ${formatMoney(subtotal)}`);
+  const subcopy = summaryLabel || `${itemLabel} · ${formatMoney(subtotal)}`;
+  const cta = ctaLabel || t("basket.viewBasket", "View basket");
 
   return (
-    <div style={{
-      ...(inline
-        ? { position: "relative" }
-        : { position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 1100 }),
-      maxWidth: 540,
-      margin: "0 auto",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-    }}>
+    <div
+      style={{
+        ...(inline
+          ? { position: "relative" }
+          : { position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 1100 }),
+        maxWidth: 540,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        fontFamily: "var(--mp-font-sans)",
+      }}
+      data-testid="basket-summary-bar"
+    >
       {onClear && (
         <button
           type="button"
           onClick={onClear}
           style={{
             alignSelf: "flex-end",
-            border: "none",
-            borderRadius: 999,
-            background: "rgba(17,33,26,0.80)",
-            color: "#f8fafc",
+            border: "1px solid var(--mp-border)",
+            borderRadius: "var(--mp-radius-pill)",
+            background: "var(--mp-surface)",
+            color: "var(--mp-ink)",
             fontSize: 12,
-            fontWeight: 800,
+            fontWeight: 600,
             padding: "5px 14px",
             cursor: "pointer",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
           }}
         >
           × Remove from basket
@@ -63,13 +68,12 @@ export default function BasketSummaryBar({
         type="button"
         onClick={onOpenBasket}
         style={{
-          border: "none",
-          borderRadius: 20,
-          background:
-            "linear-gradient(135deg, rgba(17,33,26,0.98), rgba(24,60,44,0.98))",
-          color: "#f8fafc",
-          padding: "14px 18px",
-          boxShadow: "0 18px 44px rgba(15,23,42,0.22)",
+          border: "1px solid var(--mp-border)",
+          borderRadius: "var(--mp-radius-lg)",
+          background: "var(--mp-surface-alt)",
+          color: "var(--mp-ink)",
+          padding: "var(--mp-space-3) var(--mp-space-4)",
+          boxShadow: "var(--mp-shadow-bar)",
           cursor: "pointer",
           width: "100%",
         }}
@@ -83,26 +87,26 @@ export default function BasketSummaryBar({
             width: "100%",
           }}
         >
-          <div style={{ display: "grid", gap: 2, textAlign: "left" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase", color: "rgba(248,250,252,0.74)" }}>
+          <div style={{ display: "grid", gap: 2, textAlign: "left", minWidth: 0 }}>
+            <div style={{ fontSize: 15, lineHeight: "21px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {heading}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 900 }}>
+            <div style={{ fontSize: 13, lineHeight: "18px", color: "var(--mp-ink-muted)", fontVariantNumeric: "tabular-nums" }}>
               {subcopy}
             </div>
           </div>
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 14,
-              fontWeight: 900,
+              borderRadius: "var(--mp-radius-md)",
+              background: "var(--mp-accent)",
+              color: "var(--mp-on-accent)",
+              padding: "10px 16px",
+              fontSize: 15,
+              fontWeight: 600,
               whiteSpace: "nowrap",
             }}
           >
-            {ctaLabel}
-            <span aria-hidden="true">→</span>
+            {cta}
           </div>
         </div>
       </button>

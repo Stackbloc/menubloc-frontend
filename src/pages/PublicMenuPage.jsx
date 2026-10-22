@@ -2000,8 +2000,7 @@ export default function PublicMenuPage() {
           subtotal={subtotalCents}
           restaurantName={cartRestaurantState?.restaurantName}
           isCurrentRestaurant={basketMatchesCurrentRestaurant}
-          summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoneyFromCents(subtotalCents)}`}
-          ctaLabel="Review Order"
+          summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} · ${formatMoneyFromCents(subtotalCents)}`}
           onOpenBasket={() => navigate("/checkout")}
           onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
         />
