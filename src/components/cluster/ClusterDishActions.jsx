@@ -1,6 +1,7 @@
 import { useState } from "react";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
+import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import { buildDishShareData } from "../share/shareUtils.js";
@@ -89,6 +90,15 @@ export default function ClusterDishActions({ item, counts = null }) {
           />
           <Count value={likeCount} testId="cluster-dish-like-count" />
         </span>
+      ) : null}
+      {ckId ? (
+        <DishVideoCommentButton
+          menuItemId={ckId}
+          menuItemName={name}
+          restaurantId={restaurantId}
+          tone="ghost"
+          size="row"
+        />
       ) : null}
       <InviteToEatButton
         restaurantId={restaurantId}

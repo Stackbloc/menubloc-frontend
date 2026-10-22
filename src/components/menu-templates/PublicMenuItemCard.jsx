@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
+import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -639,6 +640,15 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
+                    />
+                  ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}
                     restaurantName={restaurantName}
@@ -713,6 +723,15 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
+                    />
+                  ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}
                     restaurantName={restaurantName}
@@ -786,6 +805,15 @@ export default function PublicMenuItemCard({
                   ) : null}
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
+                  ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
+                    />
                   ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}

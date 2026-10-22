@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
+import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import MenuItemSaveToMyMenuplyIcon from "../consumer/MenuItemSaveToMyMenuplyIcon.jsx";
@@ -119,6 +120,15 @@ export default function MenuItemDetailActionRail({
         />
       ) : null}
       {menuItemId ? <LikeMenuItemButton menuItemId={menuItemId} tone="ghost" size="row" /> : null}
+      {menuItemId ? (
+        <DishVideoCommentButton
+          menuItemId={menuItemId}
+          menuItemName={itemName}
+          restaurantId={restaurantId}
+          tone="ghost"
+          size="row"
+        />
+      ) : null}
       {restaurantId ? (
         <InviteToEatButton
           restaurantId={restaurantId}
