@@ -492,3 +492,33 @@ textarea:focus-visible {
   scroll-margin-top: calc(var(--sph-h, 64px) + 12px);
   scroll-margin-bottom: 24px;
 }
+
+/* Menuply Design System (approved by Andre 2026-10-22) — shared by web and app.
+   https://claude.ai/artifact/L6P2CFUStuzpfFRggBkTgv · Adopted screen by screen; --gb-* stays for older pages. */
+:root {
+  --mp-brand-deep: #129928;
+  --mp-brand-lime: #77c517;
+  --mp-accent: #0f7a24;
+  --mp-on-accent: #ffffff;
+  --mp-accent-soft: #e8f5e3;
+  --mp-surface: #ffffff;
+  --mp-surface-alt: #f5f7f4;
+  --mp-ink: #111613;
+  --mp-ink-muted: #5c665f;
+  --mp-border: #e1e6e1;
+  --mp-danger: #b42318;
+  --mp-scrim: rgba(0, 0, 0, 0.45);
+  --mp-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mp-space-1: 4px;
+  --mp-space-2: 8px;
+  --mp-space-3: 12px;
+  --mp-space-4: 16px;
+  --mp-space-6: 24px;
+  --mp-space-8: 32px;
+  --mp-radius-sm: 6px;
+  --mp-radius-md: 10px;
+  --mp-radius-lg: 16px;
+  --mp-radius-pill: 999px;
+  --mp-shadow-bar: 0 -4px 16px rgba(17, 22, 19, 0.10);
+  --mp-shadow-sheet: 0 -8px 32px rgba(17, 22, 19, 0.16);
+}

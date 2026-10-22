@@ -198,6 +198,7 @@ export function OrderCartProvider({ children }) {
         open={Boolean(pendingReplacement)}
         currentRestaurantName={pendingReplacement?.currentRestaurantName}
         nextRestaurantName={pendingReplacement?.restaurant?.restaurantName}
+        dishName={pendingReplacement?.item?.name}
         onKeep={dismissReplacement}
         onReplace={commitReplacement}
       />
