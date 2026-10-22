@@ -1,5 +1,7 @@
 /**
  * Default Feed video caption — restaurant name (white) + menu item (green).
+ * Andre 2026-10-21: the restaurant name opens the restaurant's profile; the dish opens the menu
+ * (Menu Browser via onOpenMenu when the feed provides it).
  */
 
 import { Link } from "react-router-dom";
@@ -67,8 +69,8 @@ export default function FeedPlaceCaption({
   compact = false,
   onMenuLinkClick,
   /**
-   * Feed reels: open the restaurant's menu (dish from the video pinned + highlighted) in the
-   * Menu Browser instead of navigating to the dish-detail / profile page.
+   * Feed reels: the dish opens the restaurant's menu (dish pinned + highlighted) in the Menu
+   * Browser instead of the dish-detail page. The restaurant name always goes to the profile.
    */
   onOpenMenu = null,
   testId = "feed-video-place-caption",
@@ -98,10 +100,6 @@ export default function FeedPlaceCaption({
             onClick={(e) => {
               e.stopPropagation();
               onMenuLinkClick?.();
-              if (onOpenMenu) {
-                e.preventDefault();
-                onOpenMenu(e);
-              }
             }}
           >
             {placeCaption.restaurant.label}
@@ -113,9 +111,9 @@ export default function FeedPlaceCaption({
         )
       ) : null}
       {placeCaption.menuItem ? (
-        placeCaption.menuItem.href ? (
+        placeCaption.menuItem.href || onOpenMenu ? (
           <Link
-            to={placeCaption.menuItem.href}
+            to={placeCaption.menuItem.href || placeCaption.restaurant?.href || "#"}
             style={styles.menuItemLink}
             data-testid="feed-video-menu-item-caption"
             onClick={(e) => {

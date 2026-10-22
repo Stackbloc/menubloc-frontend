@@ -38,6 +38,7 @@ import {
 } from "../../../lib/feedMenuLibrary.js";
 import {
   buildBrowseMenuTrail,
+  queueNextRestaurantClip,
   clampBrowseTrailIndex,
 } from "../../../lib/feedMenuBrowserTrail.js";
 import { buildFeedVideoShareData, feedClipSharePath, feedClipShareUrl } from "../../../lib/feedShare.js";
@@ -363,6 +364,23 @@ export default function SeeWhosEatingFullscreen({
       return;
     }
     setIndex((i) => (i + 1 < activeItems.length ? i + 1 : i));
+  }
+
+  // Menu browsing (Andre 2026-10-21): the mini player keeps playing this restaurant's clips;
+  // with only one clip it replays. Not browsing → the Feed advances as normal (onEnded above).
+  function playNextRestaurantClip() {
+    const queued = queueNextRestaurantClip(playlist, index, restaurantRefFromFeedItem);
+    if (!queued) {
+      const el = videoRef.current;
+      if (el) {
+        el.currentTime = 0;
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      }
+      return;
+    }
+    if (queued.items !== playlist) setPlaylist(queued.items);
+    setIndex(queued.index);
   }
 
   function goPrevOrClose() {
@@ -807,6 +825,10 @@ export default function SeeWhosEatingFullscreen({
         onEnded={
           isFeedHome && activeItems.length > 1
             ? () => {
+                if (menuBrowserOpen) {
+                  playNextRestaurantClip();
+                  return;
+                }
                 if (holdForOrder) return;
                 goNext();
               }

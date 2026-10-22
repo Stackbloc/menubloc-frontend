@@ -1043,10 +1043,12 @@ const styles = {
     paddingTop: 6,
     paddingBottom: 6,
   },
+  // Reels-style grid (2026-10-21): small 9:16 tiles that wrap — 3 across on phones,
+  // ~6 on desktop — instead of three full-width columns.
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 8,
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(31%, 150px), 1fr))",
+    gap: 4,
     width: "100%",
   },
   tile: {
@@ -1055,9 +1057,9 @@ const styles = {
     border: "none",
     padding: 0,
     margin: 0,
-    borderRadius: 10,
+    borderRadius: 6,
     overflow: "hidden",
-    aspectRatio: "9 / 14",
+    aspectRatio: "9 / 16",
     background: "#e7e5e4",
     cursor: "pointer",
     textAlign: "left",
@@ -1120,8 +1122,8 @@ const styles = {
     lineHeight: 1.25,
   },
   skeletonTile: {
-    aspectRatio: "9 / 14",
-    borderRadius: 10,
+    aspectRatio: "9 / 16",
+    borderRadius: 6,
     background: "linear-gradient(90deg, #e7e5e4 0%, #f5f5f4 50%, #e7e5e4 100%)",
   },
   seeAllBtn: {

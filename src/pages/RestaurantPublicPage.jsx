@@ -595,8 +595,11 @@ export default function RestaurantPublicPage() {
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const operatingHours = Array.isArray(data?.operating_hours) ? data.operating_hours : [];
+  // Franchise stores share the brand's one profile and are never claimed store by store.
+  const isFranchiseStore = Boolean(data?.chain_id) && data?.is_canonical_parent !== true;
   const showClaimInvites =
     Boolean(data) &&
+    !isFranchiseStore &&
     !isClaimedRestaurant(data) &&
     !isOwner &&
     data?.claimable !== false &&
@@ -708,6 +711,14 @@ export default function RestaurantPublicPage() {
           current={data.location}
           selection={data.location_selection}
           restaurantName={name}
+        />
+      ) : null}
+      {!loading && !err && isFranchiseStore ? (
+        <BrandLocationsSection
+          mode="store"
+          chainId={data.chain_id}
+          brandName={data?.brand_profile?.name || name}
+          currentRestaurantId={data?.id}
         />
       ) : null}
       {!loading && !err && data?.is_canonical_parent === true && data?.chain_id ? (

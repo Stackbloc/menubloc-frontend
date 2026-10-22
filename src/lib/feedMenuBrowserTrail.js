@@ -59,3 +59,38 @@ export function clampBrowseTrailIndex(index, length) {
   if (!Number.isFinite(i)) return 0;
   return Math.max(0, Math.min(Math.trunc(i), len - 1));
 }
+
+/**
+ * Menu-browsing mini player (Andre 2026-10-21): when a clip ends while the diner is browsing a
+ * menu, keep playing THAT restaurant's clips instead of the next Feed clip. Finds the restaurant's
+ * next clip after `index` (wrapping through the loaded Feed) and moves it to `index + 1`, so the
+ * Feed order — and the Menu Browser trail — stay intact when browsing ends.
+ * Returns null when the restaurant has no other clip loaded (caller replays the current clip).
+ * @param {object[]} items
+ * @param {number} index
+ * @param {(item: object) => object|null} refFromItem
+ * @returns {{ items: object[], index: number } | null}
+ */
+export function queueNextRestaurantClip(items, index, refFromItem) {
+  const list = Array.isArray(items) ? items : [];
+  if (list.length < 2 || typeof refFromItem !== "function") return null;
+  const current = normalizeBrowseTrailRef(refFromItem(list[index]));
+  if (!current) return null;
+  const sameRestaurant = (i) =>
+    i !== index && normalizeBrowseTrailRef(refFromItem(list[i]))?.restaurant_id === current.restaurant_id;
+  let found = -1;
+  for (let step = 1; step < list.length; step += 1) {
+    const i = (index + step) % list.length;
+    if (sameRestaurant(i)) {
+      found = i;
+      break;
+    }
+  }
+  if (found < 0) return null;
+  if (found === index + 1) return { items: list, index: found };
+  const next = [...list];
+  const [clip] = next.splice(found, 1);
+  const insertAt = found < index ? index : index + 1;
+  next.splice(insertAt, 0, clip);
+  return { items: next, index: insertAt };
+}

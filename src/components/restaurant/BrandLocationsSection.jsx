@@ -5,9 +5,14 @@
  * GET /chains/:chainId/locations. The backend returns only stores with a street
  * address, so stores appear here automatically as addresses are added.
  * Picking a store opens the brand menu with that location preselected.
+ * Store mode (franchise store pages, 2026-10-21): one shared brand profile across stores, so the
+ * page offers "Find closest location" — no location prompt until tapped, and each row opens that
+ * store's own page (store pages keep local SEO: address, hours, menu).
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { restaurantPath } from "../../lib/canonicalUrlCore.js";
+import { saveDetectedLocation } from "../../lib/discoveryLocationPersistence.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const RADIUS_MILES = 25;
@@ -25,7 +30,17 @@ function withLocationParam(path, restaurantId) {
   return `${base}?${params.toString()}`;
 }
 
-export default function BrandLocationsSection({ chainId, brandName, menuHref, initialLat = null, initialLng = null }) {
+export default function BrandLocationsSection({
+  chainId,
+  brandName,
+  menuHref,
+  initialLat = null,
+  initialLng = null,
+  /** "brand" (brand page: asks on load, rows open the menu) | "store" (rows open store pages). */
+  mode = "brand",
+  currentRestaurantId = null,
+}) {
+  const storeMode = mode === "store";
   const [coords, setCoords] = useState(() => {
     const lat = asFinite(initialLat);
     const lng = asFinite(initialLng);
@@ -42,17 +57,19 @@ export default function BrandLocationsSection({ chainId, brandName, menuHref, in
     setGeoState("asking");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCoords(next);
         setGeoState("ready");
+        if (typeof window !== "undefined") saveDetectedLocation(window.localStorage, next);
       },
       () => setGeoState("denied"),
       { maximumAge: 300000, timeout: 10000 }
     );
   }
 
-  // Ask once on mount when the page has no coordinates yet.
+  // Brand page asks once on mount when it has no coordinates yet; store pages wait for a tap.
   useEffect(() => {
-    if (!coords) askForLocation();
+    if (!coords && !storeMode) askForLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,10 +102,33 @@ export default function BrandLocationsSection({ chainId, brandName, menuHref, in
   const muted = { fontSize: 13, color: "#6b7280" };
 
   return (
-    <section data-testid="brand-locations-section" style={sectionStyle} aria-label={`${brandName || "Brand"} locations`}>
-      <h2 style={{ fontSize: 18, fontWeight: 800, margin: "8px 0 10px" }}>Locations near you</h2>
+    <section
+      id="profile-locations"
+      data-testid="brand-locations-section"
+      data-mode={mode}
+      style={sectionStyle}
+      aria-label={`${brandName || "Brand"} locations`}
+    >
+      <h2 style={{ fontSize: 18, fontWeight: 800, margin: "8px 0 10px" }}>
+        {storeMode ? `Other ${brandName || ""} locations`.replace(/\s+/g, " ") : "Locations near you"}
+      </h2>
 
-      {!coords ? (
+      {!coords && storeMode ? (
+        <button
+          type="button"
+          data-testid="find-closest-location"
+          onClick={askForLocation}
+          disabled={geoState === "asking"}
+          style={findClosestButtonStyle}
+        >
+          {geoState === "asking" ? "Finding the closest location…" : "📍 Find closest location"}
+        </button>
+      ) : null}
+      {!coords && storeMode && (geoState === "denied" || geoState === "unavailable") ? (
+        <div style={{ ...muted, marginTop: 8 }}>Location is off — allow it in your browser to find the closest store.</div>
+      ) : null}
+
+      {!coords && storeMode ? null : !coords ? (
         <div style={muted}>
           {geoState === "asking" ? "Finding locations near you…" : null}
           {geoState === "denied" || geoState === "unavailable" || geoState === "idle" ? (
@@ -113,13 +153,22 @@ export default function BrandLocationsSection({ chainId, brandName, menuHref, in
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {state.locations.map((loc) => {
-            const href = withLocationParam(menuHref, loc.restaurant_id);
+            const isHere = currentRestaurantId != null && String(loc.restaurant_id) === String(currentRestaurantId);
+            const href = storeMode
+              ? isHere
+                ? null
+                : restaurantPath({ slug: loc.slug, city: loc.city, state: loc.state }) ||
+                  `/restaurants/${encodeURIComponent(String(loc.restaurant_id))}`
+              : withLocationParam(menuHref, loc.restaurant_id);
             const cityLine = [loc.city, loc.state].filter(Boolean).join(", ");
             const body = (
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{loc.address_line1}</div>
                   {cityLine ? <div style={muted}>{cityLine}</div> : null}
+                  {isHere ? (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", marginTop: 2 }}>You're here</div>
+                  ) : null}
                 </div>
                 {loc.distance_miles != null ? (
                   <div style={{ ...muted, flexShrink: 0 }}>{Number(loc.distance_miles).toFixed(1)} mi</div>
@@ -146,3 +195,15 @@ export default function BrandLocationsSection({ chainId, brandName, menuHref, in
     </section>
   );
 }
+
+const findClosestButtonStyle = {
+  padding: "10px 14px",
+  borderRadius: 999,
+  border: "1px solid #16a34a",
+  background: "#fff",
+  color: "#15803d",
+  fontWeight: 700,
+  fontSize: 14,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};

@@ -655,10 +655,8 @@ export default function DealVideoSwipe({
             style={styles.restaurantLink}
             data-testid="feed-deals-restaurant"
             onClick={(e) => {
-              // Open this restaurant's menu in the Menu Browser (video keeps playing in the mini player).
-              e.preventDefault();
+              // Restaurant name → profile (Andre 2026-10-21); the rail's menu button opens the menu.
               e.stopPropagation();
-              openMenuBrowser(e);
             }}
           >
             {item.restaurant_name}

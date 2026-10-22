@@ -17,9 +17,9 @@ test("ProfileVideosSection: tile grid, no inline multi-player cards, See all she
   assert.match(src, /PROFILE_VIDEOS_FETCH_LIMIT\s*=\s*60/);
   assert.match(src, /excludeKinds:\s*\["plan"\]/);
   assert.match(src, /selectPreviewVideos/);
-  assert.match(src, /gridTemplateColumns:\s*"repeat\(3/);
+  assert.match(src, /gridTemplateColumns:\s*"repeat\(auto-fill, minmax\(min\(31%, 150px\)/);
   assert.match(src, /gap:\s*8/);
-  assert.match(src, /aspectRatio:\s*"9 \/ 14"/);
+  assert.match(src, /aspectRatio:\s*"9 \/ 16"/);
   assert.match(src, /profile-videos-see-all/);
   assert.match(src, /profile-video-player-sheet/);
   assert.match(src, /role="dialog"/);

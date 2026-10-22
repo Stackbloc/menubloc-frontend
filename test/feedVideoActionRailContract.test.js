@@ -142,10 +142,13 @@ test("Menu Browser mini player has the same play/pause toggle as the full feed",
   }
 });
 
-test("Video caption links open the restaurant menu (dish highlighted) in the Menu Browser", () => {
+test("Clip captions: restaurant name opens the profile, dish opens the menu (Andre 2026-10-21)", () => {
   const cap = read("src/components/consumer/feed/FeedPlaceCaption.jsx");
   assert.match(cap, /onOpenMenu = null/);
-  assert.equal((cap.match(/if \(onOpenMenu\) \{\s*e\.preventDefault\(\);\s*onOpenMenu\(e\);/g) || []).length, 2);
+  // Only the dish link hands off to the Menu Browser.
+  assert.equal((cap.match(/if \(onOpenMenu\) \{\s*e\.preventDefault\(\);\s*onOpenMenu\(e\);/g) || []).length, 1);
+  const restaurantLink = cap.slice(cap.indexOf('data-testid="feed-video-restaurant-caption"'), cap.indexOf("</Link>"));
+  assert.doesNotMatch(restaurantLink, /onOpenMenu/);
   assert.match(read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"), /onOpenMenu=\{restaurantRef\?\.restaurant_id \? openMenuBrowser : null\}/);
-  assert.match(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /data-testid="feed-deals-restaurant"[\s\S]{0,300}openMenuBrowser\(e\)/);
+  assert.doesNotMatch(read("src/components/consumer/feed/DealVideoSwipe.jsx"), /data-testid="feed-deals-restaurant"[\s\S]{0,300}openMenuBrowser\(e\)/);
 });
