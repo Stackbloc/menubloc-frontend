@@ -50,7 +50,7 @@ assert.match(page, /PUBLIC_PROFILE_IS_DARK/);
 assert.match(editorial, /PublicProfileShell/);
 // Homepage redesign: Now Hiring module removed from shell; owners use Profile Updates.
 assert.doesNotMatch(shell, /ProfileNowHiring/);
-assert.match(shell, /ProfileUpdates/);
+assert.match(shell, /ProfileToday/); // Today at card renders profile updates + deals (2026-10-21)
 assert.match(updates, /profile-updates/);
 assert.match(nowHiring, /profile-now-hiring/);
 assert.doesNotMatch(page, /function readTheme/);

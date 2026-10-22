@@ -10,7 +10,7 @@
  *   • About Us    — benefit: about_us
  *   • Founded — profile_edit (draft → Publish); public hero shows “Est. YYYY”
  *   • Logo / banner / billboards / deals — public homepage photos + sections
- *   • Favorite Menu Items + Updates — live homepage sections
+ *   • Favorite Menu Items + Today at (profile updates) — live homepage sections
  *   • Hours       — link to /operator/hours
  *
  * Pattern: edits go to draft → Publish makes them live.
@@ -128,7 +128,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [profileUpdates, setProfileUpdates] = useState([]);
-  const [updateDraft, setUpdateDraft] = useState({ title: "", body: "" });
+  const [updateDraft, setUpdateDraft] = useState({ title: "", body: "", todayOnly: true });
   const [updateSaving, setUpdateSaving] = useState(false);
   const logoFileRef = useRef(null);
   const bannerFileRef = useRef(null);
@@ -151,13 +151,17 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
     setUpdateSaving(true);
     setError("");
     try {
+      // "Today only" ends at the owner's local midnight; otherwise it stays up until removed.
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
       await api.createProfileUpdate(rid, {
         title: updateDraft.title,
         body: updateDraft.body,
+        ends_at: updateDraft.todayOnly ? midnight.toISOString() : null,
       });
       const updatesData = await api.getProfileUpdates(rid);
       setProfileUpdates(Array.isArray(updatesData?.profile_updates) ? updatesData.profile_updates : []);
-      setUpdateDraft({ title: "", body: "" });
+      setUpdateDraft({ title: "", body: "", todayOnly: true });
     } catch (err) {
       setError(err.message || "Could not create update.");
     } finally {
@@ -983,15 +987,15 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         </Section>
 
         <Section
-          title="Profile Updates"
-          sub="Hiring, live music, and other news on the public Updates section. Posts go live immediately."
+          title="Today at your restaurant"
+          sub="Anything you want diners to know — today's special, live music, sold out, hiring. Shows in the Today card on your profile together with your active deals. Posts go live immediately."
         >
           <div data-testid="operator-profile-updates" style={{ display: "grid", gap: 10 }}>
             <input
               style={INPUT}
               value={updateDraft.title}
               onChange={(e) => setUpdateDraft((p) => ({ ...p, title: e.target.value }))}
-              placeholder="e.g. Live music Friday"
+              placeholder="e.g. Oxtail special until it runs out"
               data-testid="operator-profile-update-title"
             />
             <textarea
@@ -1000,6 +1004,15 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
               onChange={(e) => setUpdateDraft((p) => ({ ...p, body: e.target.value }))}
               placeholder="Optional details"
             />
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#44403c" }}>
+              <input
+                type="checkbox"
+                checked={updateDraft.todayOnly !== false}
+                onChange={(e) => setUpdateDraft((p) => ({ ...p, todayOnly: e.target.checked }))}
+                data-testid="operator-profile-update-today-only"
+              />
+              Today only (comes down at midnight)
+            </label>
             <button
               type="button"
               onClick={handleCreateUpdate}
@@ -1017,7 +1030,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
                 fontFamily: "inherit",
               }}
             >
-              Post update
+              Post
             </button>
             {profileUpdates.length ? (
               <div style={{ display: "grid", gap: 8 }}>
@@ -1037,6 +1050,13 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
                     <div>
                       <div style={{ fontWeight: 700 }}>{row.title}</div>
                       {row.body ? <div style={{ color: "#78716c", marginTop: 2 }}>{row.body}</div> : null}
+                      {row.ends_at ? (
+                        <div style={{ color: "#a8a29e", marginTop: 2, fontSize: 12 }}>
+                          {new Date(row.ends_at) <= new Date()
+                            ? "Ended"
+                            : `Until ${new Date(row.ends_at).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}`}
+                        </div>
+                      ) : null}
                     </div>
                     <button
                       type="button"

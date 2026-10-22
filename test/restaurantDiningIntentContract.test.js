@@ -17,7 +17,7 @@ test("People who want to go section is off the public profile (2026-10-21; Wish 
 
   const section = read("src/components/restaurant/RestaurantDiningIntentSection.jsx");
   assert.match(section, /People who want to go/);
-  assert.match(section, /Wanna Go!/);
+  assert.match(section, /\+Wish List/);
   assert.match(section, /fetchRestaurantDiningIntent/);
   assert.match(section, /dining_intent_viewed/);
   assert.match(section, /See people who want to go/);
@@ -31,7 +31,7 @@ test("People who want to go section is off the public profile (2026-10-21; Wish 
   assert.match(peopleSheet, /restaurant-dining-intent-list/);
 
   const sheet = read("src/components/restaurant/DiningIntentSheet.jsx");
-  assert.match(sheet, /Wanna Go!/);
+  assert.match(sheet, /Wish List/);
   assert.match(sheet, /want_to_go/);
   assert.match(sheet, /planning_to_go/);
   assert.match(sheet, /looking_for_company/);

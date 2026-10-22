@@ -10,6 +10,50 @@ import {
   profileReadableSurfaceStyle,
 } from "./profilePrimitives.jsx";
 
+/** Update rows shared by Updates and the Today at card. */
+export function ProfileUpdateRows({ updates = [] }) {
+  return (
+    <ul
+      style={{
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+        display: "grid",
+        gap: 8,
+      }}
+    >
+      {updates.map((update) => (
+        <li
+          key={update.id || update.title}
+          data-testid="profile-update-row"
+          style={{
+            padding: "12px 14px",
+            borderRadius: 12,
+            border: `1px solid ${profileCardBorderVar}`,
+            background: "#fff",
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 700, color: PROFILE_INK, lineHeight: 1.35 }}>
+            {update.title}
+          </div>
+          {update.body ? (
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: PROFILE_MUTED,
+                lineHeight: 1.45,
+              }}
+            >
+              {update.body}
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function ProfileUpdates({
   updates = [],
   isMobile = false,
@@ -43,44 +87,7 @@ export default function ProfileUpdates({
       {!list.length ? (
         <ProfileSectionBlank testId="profile-updates-blank" message="No updates yet." />
       ) : (
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            display: "grid",
-            gap: 8,
-          }}
-        >
-          {list.map((update) => (
-            <li
-              key={update.id || update.title}
-              data-testid="profile-update-row"
-              style={{
-                padding: "12px 14px",
-                borderRadius: 12,
-                border: `1px solid ${profileCardBorderVar}`,
-                background: "#fff",
-              }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 700, color: PROFILE_INK, lineHeight: 1.35 }}>
-                {update.title}
-              </div>
-              {update.body ? (
-                <div
-                  style={{
-                    marginTop: 4,
-                    fontSize: 13,
-                    color: PROFILE_MUTED,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {update.body}
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <ProfileUpdateRows updates={list} />
       )}
     </section>
   );

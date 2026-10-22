@@ -61,3 +61,47 @@ export default function WishListMenuItemButton({
     </IconHoverLabel>
   );
 }
+
+/**
+ * Restaurant-level "+Wish List" (no dish) — profile hero, first of the Feed rail's order
+ * (Wish List · Fav · Invite · Share). Saves the restaurant to the profile Wish List.
+ */
+export function WishListRestaurantButton({ restaurantId, restaurantName = "", size = "row", dark = false }) {
+  const { available, added, busy, toggle } = useWishListEntry({ restaurantId, restaurantName });
+  if (!available) return null;
+
+  const dim = typeof size === "number" ? size : size === "row" ? 28 : size === "compact" ? 32 : 36;
+  const hoverLabel = added ? "On Wish List" : "+Wish List";
+  const style = likeButtonVisualStyle({ selected: false, ghost: !dark, dark, loading: busy });
+  const place = restaurantName || "this restaurant";
+
+  return (
+    <IconHoverLabel label={hoverLabel}>
+      <button
+        type="button"
+        data-testid="restaurant-wish-list"
+        aria-label={added ? `Remove ${place} from Wish List` : `Add ${place} to Wish List`}
+        aria-pressed={added}
+        title={hoverLabel}
+        disabled={busy}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggle();
+        }}
+        style={{
+          ...style,
+          ...(added
+            ? { border: `1px solid ${WISH_LIST_ACCENT}`, background: "rgba(212,83,126,0.12)", color: WISH_LIST_ACCENT }
+            : null),
+          width: dim,
+          height: dim,
+          minWidth: dim,
+          minHeight: dim,
+        }}
+      >
+        <WishListIcon size={Math.max(14, Math.round(dim * 0.5))} filled={added} color="currentColor" />
+      </button>
+    </IconHoverLabel>
+  );
+}

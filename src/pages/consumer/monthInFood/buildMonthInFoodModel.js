@@ -350,10 +350,10 @@ export function buildMonthInFoodModel(payload = {}) {
   const intentCards = diningIntents.slice(0, 8).map((w) => ({
     key: `di-${w.id}`,
     kind: "dining_intent",
-    food_name: w.food_name || w.restaurant_name || "Wanna Go!",
+    food_name: w.food_name || w.restaurant_name || "Wish List",
     restaurant_name: [w.city, w.state].filter(Boolean).join(", ") || null,
     photo_url: mediaUrl(w.photo_url),
-    badge: w.badge || "Wanna Go!",
+    badge: w.badge || "Wish List",
     href: restaurantHref(w),
   }));
   const wantBudget = Math.max(0, 8 - intentCards.length);

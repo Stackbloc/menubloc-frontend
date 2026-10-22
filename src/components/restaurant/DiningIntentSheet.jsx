@@ -1,5 +1,5 @@
 /**
- * Create / edit explicit restaurant dining intent (Wanna Go!).
+ * Create / edit explicit restaurant dining intent (want_to_go shows as Wish List).
  */
 
 import { useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import {
 } from "../../lib/consumerApi.js";
 
 const INTENT_OPTIONS = [
-  { id: "want_to_go", label: "Wanna Go!" },
+  { id: "want_to_go", label: "Wish List" },
   { id: "planning_to_go", label: "Planning to go" },
   { id: "looking_for_company", label: "Looking for company" },
 ];
@@ -105,7 +105,7 @@ export default function DiningIntentSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="dining-intent-sheet-title" style={styles.title}>
-          Wanna Go!
+          Wish List
         </h2>
         <p style={styles.lead}>
           {restaurantName

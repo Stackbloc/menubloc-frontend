@@ -22,6 +22,90 @@ function formatPrice(raw) {
   return s.startsWith("$") ? s : s ? `$${s}` : "";
 }
 
+/** Deal rows (≤5) shared by Deals and the Today at card. */
+export function ProfileDealRows({ deals = [], placement = "profile_deals", badge = false }) {
+  // Engagement analytics: only rows with a real deal id are counted as deal impressions/clicks.
+  const dealEngagementAttrs = (deal) =>
+    deal?.deal_id
+      ? {
+          "data-mp-event": "deal_click",
+          "data-mp-impression": "deal_impression",
+          "data-mp-deal-id": deal.deal_id,
+          "data-mp-placement": placement,
+        }
+      : {};
+
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      {deals.slice(0, 5).map((deal) => {
+        const title = firstNonEmpty(deal.deal_title, deal.title, deal.name);
+        const price = formatPrice(deal.price);
+        const itemId = deal.menu_item_id || deal.id;
+        const href = itemId ? `/menu-items/${encodeURIComponent(String(itemId))}?from=profile` : null;
+        const inner = (
+          <div
+            data-testid="profile-deal-row"
+            style={{
+              padding: "12px 14px",
+              borderRadius: 12,
+              border: `1px solid ${profileCardBorderVar}`,
+              background: "#fff",
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 700, color: PROFILE_INK }}>
+              {badge ? (
+                <span
+                  data-testid="profile-deal-badge"
+                  style={{
+                    display: "inline-block",
+                    marginRight: 8,
+                    padding: "1px 8px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 0.3,
+                    verticalAlign: 2,
+                    color: "#9a3412",
+                    background: "#ffedd5",
+                  }}
+                >
+                  🔥 Deal
+                </span>
+              ) : null}
+              {title}
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: PROFILE_MUTED,
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              {deal.name && deal.deal_title ? <span>{deal.name}</span> : null}
+              {price ? <span>{price}</span> : null}
+            </div>
+          </div>
+        );
+        return href ? (
+          <Link
+            key={deal.deal_id || deal.id || title}
+            to={href}
+            style={{ textDecoration: "none" }}
+            {...dealEngagementAttrs(deal)}
+          >
+            {inner}
+          </Link>
+        ) : (
+          <div key={deal.deal_id || deal.id || title}>{inner}</div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ProfileDealsSection({
   dealItems = [],
   restaurantId = null,
@@ -32,17 +116,6 @@ export default function ProfileDealsSection({
     (d) => firstNonEmpty(d?.deal_title, d?.name, d?.title)
   );
   if (!deals.length && !showClaimInvites) return null;
-
-  // Engagement analytics: only rows with a real deal id are counted as deal impressions/clicks.
-  const dealEngagementAttrs = (deal) =>
-    deal?.deal_id
-      ? {
-          "data-mp-event": "deal_click",
-          "data-mp-impression": "deal_impression",
-          "data-mp-deal-id": deal.deal_id,
-          "data-mp-placement": "profile_deals",
-        }
-      : {};
 
   const browseHref = restaurantId
     ? `/deals?restaurant_id=${encodeURIComponent(String(restaurantId))}`
@@ -88,52 +161,7 @@ export default function ProfileDealsSection({
       {!deals.length ? (
         <ProfileSectionBlank testId="profile-deals-blank" message="No deals yet." />
       ) : null}
-      <div style={{ display: "grid", gap: 8 }}>
-        {deals.slice(0, 5).map((deal) => {
-          const title = firstNonEmpty(deal.deal_title, deal.title, deal.name);
-          const price = formatPrice(deal.price);
-          const itemId = deal.menu_item_id || deal.id;
-          const href = itemId ? `/menu-items/${encodeURIComponent(String(itemId))}?from=profile` : null;
-          const inner = (
-            <div
-              data-testid="profile-deal-row"
-              style={{
-                padding: "12px 14px",
-                borderRadius: 12,
-                border: `1px solid ${profileCardBorderVar}`,
-                background: "#fff",
-              }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 700, color: PROFILE_INK }}>{title}</div>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 13,
-                  color: PROFILE_MUTED,
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                {deal.name && deal.deal_title ? <span>{deal.name}</span> : null}
-                {price ? <span>{price}</span> : null}
-              </div>
-            </div>
-          );
-          return href ? (
-            <Link
-              key={deal.deal_id || deal.id || title}
-              to={href}
-              style={{ textDecoration: "none" }}
-              {...dealEngagementAttrs(deal)}
-            >
-              {inner}
-            </Link>
-          ) : (
-            <div key={deal.deal_id || deal.id || title}>{inner}</div>
-          );
-        })}
-      </div>
+      <ProfileDealRows deals={deals} placement="profile_deals" />
     </section>
   );
 }

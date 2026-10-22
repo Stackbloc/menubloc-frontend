@@ -18,10 +18,9 @@ function testHomepageSectionOrder() {
   const order = [
     "ProfileHero",
     "ProfileBillboardBlock",
+    "ProfileToday",
     "ProfileAboutFounded",
     "ProfileFavoriteMenuItems",
-    "ProfileDealsSection",
-    "ProfileUpdates",
   ];
   let last = -1;
   for (const name of order) {
@@ -147,7 +146,7 @@ function testFoodTruckPlanOrType() {
 /** 2026-10-21 simplification: diners never see empty owner prompts or public diner-signal sections. */
 function testSimplifiedDinerProfile() {
   const shell = read("src/components/restaurant/publicProfile/PublicProfileShell.jsx");
-  for (const tag of ["ProfileAboutFounded", "ProfileFavoriteMenuItems", "ProfileDealsSection", "ProfileUpdates"]) {
+  for (const tag of ["ProfileAboutFounded", "ProfileFavoriteMenuItems", "ProfileToday"]) {
     const start = shell.indexOf(`<${tag}`);
     assert.ok(start >= 0, `${tag} mounted`);
     const block = shell.slice(start, shell.indexOf("/>", start));
@@ -168,6 +167,21 @@ function testSimplifiedDinerProfile() {
   assert.match(primitives, /`Est\. \$\{match\[1\]\}`/);
 }
 
+/** Phase 2 (2026-10-21): Today at card, Your Connects, Wish List naming. */
+function testTodayAndYourConnects() {
+  const today = read("src/components/restaurant/publicProfile/ProfileToday.jsx");
+  assert.match(today, /`Today at \$\{placeName\}`/);
+  assert.match(today, /if \(!posts\.length && !deals\.length\) return null/);
+  assert.match(today, /placement="profile_today" badge/);
+  const proof = read("src/components/social/ConnectionSocialProof.jsx");
+  assert.match(proof, />Your Connects</);
+  assert.match(proof, /has this on their Wish List/);
+  assert.match(proof, /if \(!isAuthenticated\)/);
+  const editor = read("src/pages/operator/OperatorProfileEditor.jsx");
+  assert.match(editor, /Today at your restaurant/);
+  assert.match(editor, /todayOnly/);
+}
+
 testHomepageSectionOrder();
 testFavoritesCapAndViewMenu();
 testUpdatesHideWhenEmpty();
@@ -176,5 +190,6 @@ testSplashPreserved();
 testOwnerFavoritesAndUpdates();
 testFoodTruckPlanOrType();
 testSimplifiedDinerProfile();
+testTodayAndYourConnects();
 
 console.log("restaurantProfileHomepageContract: ok");

@@ -9,6 +9,7 @@ import RestaurantStatusLight from "../../RestaurantStatusLight.jsx";
 import FollowRestaurantButton from "../../FollowRestaurantButton.jsx";
 import ShareButton from "../../share/ShareButton.jsx";
 import InviteToEatButton from "../../InviteToEatButton.jsx";
+import { WishListRestaurantButton } from "../../WishListMenuItemButton.jsx";
 import FoodCommentNavButton from "../../FoodCommentNavButton.jsx";
 import FoodTruckCurrentLocation from "./FoodTruckCurrentLocation.jsx";
 import {
@@ -310,6 +311,7 @@ export default function ProfileHero({
               flexShrink: 0,
             }}
           >
+            {/* Menu icon first, then the Feed rail's order: Wish List · Fav · Invite · Share. */}
             {showAddMenu ? (
               <AddMenuAction
                 restaurant={addMenuRestaurant}
@@ -319,11 +321,28 @@ export default function ProfileHero({
             ) : (
               <ViewMenuLink href={menuHref} dark={onPhoto} testId={viewMenuTestId} />
             )}
+            {restaurantId && profileType !== "dining_hall" ? (
+              <WishListRestaurantButton
+                restaurantId={restaurantId}
+                restaurantName={name}
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
+              />
+            ) : null}
             {restaurantId ? (
               <FollowRestaurantButton
                 restaurantId={restaurantId}
                 restaurantName={name}
                 source={followSource}
+                size={MENU_ROW_ICON_SIZE}
+                dark={onPhoto}
+              />
+            ) : null}
+            {restaurantId ? (
+              <InviteToEatButton
+                restaurantId={restaurantId}
+                restaurantName={name}
+                tone="ghost"
                 size={MENU_ROW_ICON_SIZE}
                 dark={onPhoto}
               />
@@ -335,15 +354,6 @@ export default function ProfileHero({
                 tone="ghost"
                 shareData={shareData}
                 analyticsContext={shareAnalytics || undefined}
-              />
-            ) : null}
-            {restaurantId ? (
-              <InviteToEatButton
-                restaurantId={restaurantId}
-                restaurantName={name}
-                tone="ghost"
-                size={MENU_ROW_ICON_SIZE}
-                dark={onPhoto}
               />
             ) : null}
             {/* Only dining halls keep the public #food-comments thread (2026-10-21). */}

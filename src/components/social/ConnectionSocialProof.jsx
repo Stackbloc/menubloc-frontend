@@ -1,6 +1,8 @@
 /**
  * Compact connection social proof for restaurant / menu-item pages.
  * Renders nothing when logged out, preference OFF, or no eligible signals.
+ * Restaurant variant = profile "Your Connects" (2026-10-21): named lines (Wish List, Fav,
+ * eaten, plans) + a few recent notes. Never on the public page — Connects-only API.
  */
 
 import React, { useEffect, useState } from "react";
@@ -38,6 +40,52 @@ function SignalLines({ counts, variant }) {
       {line}
     </p>
   ));
+}
+
+/** "Maya" · "Maya and Jordan" · "Maya and 2 other Connects" (total = real count from API). */
+function whoLabel(names, total) {
+  const shown = names.slice(0, 2);
+  if (!shown.length) return `${total} ${total === 1 ? "Connect" : "Connects"}`;
+  if (total <= shown.length) return shown.join(" and ");
+  const others = total - 1;
+  return `${shown[0]} and ${others} other ${others === 1 ? "Connect" : "Connects"}`;
+}
+
+function RestaurantConnectLines({ counts, avatars }) {
+  const namesFor = (signal) =>
+    avatars.filter((a) => Array.isArray(a.signals) && a.signals.includes(signal)).map((a) => a.display_name);
+  const line = (signal, icon, one, many) => {
+    const total = Number(counts[signal]) || 0;
+    if (total <= 0) return null;
+    const who = whoLabel(namesFor(signal), total);
+    return { key: signal, text: `${icon} ${who} ${total === 1 ? one : many}` };
+  };
+  const lines = [
+    line("wish", "🔖", "has this on their Wish List", "have this on their Wish List"),
+    line("like", "❤️", "has this as a Fav", "have this as a Fav"),
+    line("eaten", "🍽️", "has eaten here", "have eaten here"),
+    line("plan", "📅", "plans to eat here", "plan to eat here"),
+  ].filter(Boolean);
+  return lines.map((l) => (
+    <p key={l.key} data-testid={`your-connects-${l.key}`} style={styles.signalLine}>
+      {l.text}
+    </p>
+  ));
+}
+
+function RecentConnectNotes({ recent }) {
+  if (!recent.length) return null;
+  return (
+    <ul data-testid="your-connects-recent" style={styles.recentList}>
+      {recent.map((entry, i) => (
+        <li key={`${entry.user_id}-${i}`} style={styles.recentRow}>
+          <span style={styles.recentName}>{entry.display_name}</span>
+          {entry.food_name ? <span>{` had ${entry.food_name}`}</span> : null}
+          {entry.comment ? <span style={styles.recentNote}>{` “${entry.comment}”`}</span> : null}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
@@ -91,10 +139,10 @@ export default function ConnectionSocialProof({ restaurantId = null, menuItemId 
     <section
       data-testid="connection-social-proof"
       data-variant={variant}
-      aria-label="Your connections"
+      aria-label="Your Connects"
       style={styles.wrap}
     >
-      <h3 style={styles.title}>Your connections</h3>
+      <h3 style={styles.title}>Your Connects</h3>
       <div style={styles.avatarRow} aria-hidden={avatars.length === 0}>
         {avatars.map((peer) => (
           <DinerAvatar
@@ -105,7 +153,14 @@ export default function ConnectionSocialProof({ restaurantId = null, menuItemId 
         ))}
         {overflow > 0 ? <span style={styles.overflow}>+{overflow}</span> : null}
       </div>
-      <SignalLines counts={counts} variant={variant} />
+      {variant === "restaurant" ? (
+        <>
+          <RestaurantConnectLines counts={counts} avatars={avatars} />
+          <RecentConnectNotes recent={Array.isArray(proof.recent) ? proof.recent : []} />
+        </>
+      ) : (
+        <SignalLines counts={counts} variant={variant} />
+      )}
     </section>
   );
 }
@@ -141,5 +196,25 @@ const styles = {
     margin: "2px 0",
     fontSize: 13,
     color: "var(--gb-color-ink-soft, #333)",
+  },
+  recentList: {
+    listStyle: "none",
+    margin: "10px 0 0",
+    padding: "10px 0 0",
+    borderTop: "1px solid var(--gb-color-border, rgba(0,0,0,0.08))",
+    display: "grid",
+    gap: 6,
+  },
+  recentRow: {
+    fontSize: 13,
+    lineHeight: 1.45,
+    color: "var(--gb-color-ink-soft, #333)",
+  },
+  recentName: {
+    fontWeight: 700,
+    color: "var(--gb-color-ink, #111)",
+  },
+  recentNote: {
+    fontStyle: "italic",
   },
 };

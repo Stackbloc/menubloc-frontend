@@ -282,7 +282,7 @@ test("Detail action rail order includes Invite after Share and Comment after Inv
   assert.ok(commentIdx > shareIdx, "Comment after Share");
 });
 
-test("Restaurant profile hero includes Invite and Comment after Share", () => {
+test("Restaurant profile hero is Menu, then the Feed rail order: Wish List · Fav · Invite · Share", () => {
   const hero = read("src/components/restaurant/publicProfile/ProfileHero.jsx");
   assert.match(hero, /InviteToEatButton/);
   assert.match(hero, /FoodCommentNavButton/);
@@ -291,6 +291,6 @@ test("Restaurant profile hero includes Invite and Comment after Share", () => {
   const railSlice = hero.slice(railStart, railStart + 2200);
   assert.match(
     railSlice,
-    /ShareButton[\s\S]*InviteToEatButton[\s\S]*FoodCommentNavButton/
+    /ViewMenuLink[\s\S]*WishListRestaurantButton[\s\S]*FollowRestaurantButton[\s\S]*InviteToEatButton[\s\S]*ShareButton[\s\S]*FoodCommentNavButton/
   );
 });

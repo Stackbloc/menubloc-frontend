@@ -1,6 +1,6 @@
 /**
  * Unified Menuply public profile shell — restaurant homepage layout.
- * Claimed: Hero → Windows (if any) → About [Name] → Favorites → Deals → Updates (each only when filled)
+ * Claimed: Hero → Windows (if any) → Today at [Name] → About [Name] → Favorites (each only when filled)
  * Unclaimed: Hero → claim banner → the same sections, only when filled
  * Photos strip temporarily hidden (showPhotos=false) — Windows remains the photo row.
  * Windows shows only manually added window/deal offers (not brand splash art); In-N-Out exception.
@@ -9,6 +9,8 @@
  * Diners never see empty owner prompts: empty About / Favorites / Deals / Updates / Upcoming
  * locations hide; unclaimed profiles keep only the page-level claim banner (2026-10-21).
  * Founded shows inline in the hero as "Est. YYYY".
+ * Today at [Name] = active owner updates + active deals in one card (Deals/Updates sections retired).
+ * Your Connects (ConnectionSocialProof) is signed-in, Connects-only, and renders nothing when empty.
  * No public diner-signal sections on restaurants/food trucks (status chips, What Diners Are
  * Saying, People Who Want To Go) — owners won't keep them up. Connect-only social proof stays.
  * Dining halls keep WhatDinersAreSaying ("what's good today") — no owner to moderate it.
@@ -18,8 +20,7 @@ import ProfileHero from "./ProfileHero.jsx";
 import ProfileBillboardBlock from "./ProfileBillboardBlock.jsx";
 import ProfileAboutFounded from "./ProfileAboutFounded.jsx";
 import ProfileFavoriteMenuItems from "./ProfileFavoriteMenuItems.jsx";
-import ProfileUpdates from "./ProfileUpdates.jsx";
-import ProfileDealsSection from "./ProfileDealsSection.jsx";
+import ProfileToday from "./ProfileToday.jsx";
 import ProfileVideosSection from "./ProfileVideosSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
@@ -328,6 +329,16 @@ export default function PublicProfileShell({
           />
         ) : null}
 
+        {isDiningHall ? null : (
+          <ProfileToday
+            name={name || ""}
+            updates={updates}
+            dealItems={deals}
+            restaurantId={restaurantId}
+            isMobile={isMobile}
+          />
+        )}
+
         <ProfileAboutFounded
           aboutText={shortDescription}
           name={name}
@@ -346,24 +357,12 @@ export default function PublicProfileShell({
           />
         )}
 
-        {isDiningHall ? null : (
-          <ProfileDealsSection
-            dealItems={deals}
-            restaurantId={restaurantId}
-            isMobile={isMobile}
-          />
-        )}
-
         {isDiningHall || !restaurantId ? null : (
           <ProfileVideosSection
             restaurantId={restaurantId}
             restaurantName={name || ""}
             isMobile={isMobile}
           />
-        )}
-
-        {isDiningHall ? null : (
-          <ProfileUpdates updates={updates} isMobile={isMobile} />
         )}
 
         {restaurantId ? <ConnectionSocialProof restaurantId={restaurantId} /> : null}

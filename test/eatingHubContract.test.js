@@ -203,7 +203,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
   assert.match(bits, /WantToEatUnifiedList/);
   assert.doesNotMatch(bits, /wanna-go-invite/);
   assert.doesNotMatch(bits, /Wanna Go\?/);
-  assert.match(bits, /want_to_go: "Wanna Go!"/);
+  assert.match(bits, /want_to_go: "Wish List"/);
   assert.match(bits, /wanna-go-item/);
   assert.match(bits, /testIdPrefix="want-to-eat"/);
   assert.match(bits, /HubLongPressActions/);
