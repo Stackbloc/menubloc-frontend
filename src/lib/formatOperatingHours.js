@@ -173,3 +173,64 @@ export function formatHoursRows(
 
   return out;
 }
+
+/** "11:00" → "11 AM", "21:30" → "9:30 PM" (drops :00, like most hours listings). */
+function formatShortTimeLabel(raw) {
+  const s = asStr(raw).trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return s;
+  let h = Number(m[1]);
+  const ampm = h >= 12 && h < 24 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return m[2] === "00" ? `${h} ${ampm}` : `${h}:${m[2]} ${ampm}`;
+}
+
+function shortScheduleText(row) {
+  if (row.is_closed) return "Closed";
+  if (row.label) return String(row.label);
+  const open = formatShortTimeLabel(row.opens_at);
+  const close = formatShortTimeLabel(row.closes_at);
+  if (open && close) return `${open} – ${close}`;
+  return open || close || "—";
+}
+
+/**
+ * Typical weekly hours (public profile hero, 2026-10-21) — calendar order Mon → Sun,
+ * consecutive days with the same hours merged, no dates:
+ *   Mon – Fri  11 AM – 9 PM
+ *   Sat        10 AM – 10 PM
+ *   Sun        Closed
+ * `isToday` marks the row containing today (restaurant timezone). Missing days are skipped.
+ */
+export function formatWeeklyHoursRows(rows, { timezone = null, now = new Date() } = {}) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  const byDow = new Map();
+  for (const row of rows) {
+    const dow = Number(row?.day_of_week);
+    if (Number.isInteger(dow) && dow >= 0 && dow <= 6) byDow.set(dow, row);
+  }
+  if (!byDow.size) return [];
+
+  const todayDow = getTodayDayOfWeek(timezone, now);
+  const out = [];
+  let group = null;
+  for (const dow of [1, 2, 3, 4, 5, 6, 0]) {
+    const row = byDow.get(dow);
+    if (!row) {
+      group = null;
+      continue;
+    }
+    const key = scheduleKeyForRow(row);
+    if (group && group.key === key) {
+      group.days.push(dow);
+      continue;
+    }
+    group = { key, days: [dow], text: shortScheduleText(row) };
+    out.push(group);
+  }
+  return out.map((g) => ({
+    day: dayRangeLabel(g.days[0], g.days[g.days.length - 1]),
+    text: g.text,
+    isToday: g.days.includes(todayDow),
+  }));
+}

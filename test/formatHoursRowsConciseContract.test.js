@@ -176,3 +176,23 @@ function main() {
 }
 
 main();
+
+// 2026-10-21: typical weekly hours for profile heroes — Mon → Sun, merged, short times, no dates.
+{
+  const { formatWeeklyHoursRows } = await import("../src/lib/formatOperatingHours.js");
+  const week = [1, 2, 3, 4, 5].map((d) => ({ day_of_week: d, opens_at: "11:00", closes_at: "21:00" }));
+  week.push({ day_of_week: 6, opens_at: "10:00", closes_at: "22:30" });
+  week.push({ day_of_week: 0, is_closed: true });
+  const wed = new Date("2026-10-21T19:00:00Z");
+  const rows = formatWeeklyHoursRows(week, { timezone: "America/Los_Angeles", now: wed });
+  assert.deepEqual(
+    rows.map((r) => [r.day, r.text, r.isToday]),
+    [
+      ["Mon – Fri", "11 AM – 9 PM", true],
+      ["Sat", "10 AM – 10:30 PM", false],
+      ["Sun", "Closed", false],
+    ]
+  );
+  assert.deepEqual(formatWeeklyHoursRows([]), []);
+  console.log("formatWeeklyHoursRows: ok");
+}

@@ -19,8 +19,7 @@ import {
   PROFILE_CONTENT_MAX,
   ghostIconStyle,
   canShowOrderAction,
-  formatHoursRows,
-  formatFoodTruckHoursTodayHeading,
+  formatWeeklyHoursRows,
 } from "./profilePrimitives.jsx";
 import AddMenuAction from "../../AddMenuAction.jsx";
 import { canShowAddMenu } from "../../../lib/addMenuContribution.js";
@@ -168,9 +167,6 @@ export default function ProfileHero({
       </span>
     ) : null;
   const cuisineLabel = metaBits[0] || "";
-  const openLabel =
-    openStatus?.label ||
-    (openStatus?.is_open === true ? "Open" : openStatus?.is_open === false ? "Closed" : "");
   const showOrder = profileType !== "food_truck" && canShowOrderAction(profile, menuHref);
   const showAddMenu = profileType !== "dining_hall" && canShowAddMenu(addMenuRestaurant);
   const callHref = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : "";
@@ -182,12 +178,8 @@ export default function ProfileHero({
   const isFoodTruck = profileType === "food_truck";
   const hoursTimezone =
     profile?.timezone || profile?.restaurant_timezone || null;
-  // All public profiles: dated Today heading + chronological ranges from tomorrow
-  // (same programming for restaurants and food trucks).
-  const hoursRows = formatHoursRows(operatingHours, {
-    timezone: hoursTimezone,
-    includeTodayLine: false,
-  });
+  // All public profiles (2026-10-21): typical weekly hours, Mon → Sun, no dates; today's row bold.
+  const hoursRows = formatWeeklyHoursRows(operatingHours, { timezone: hoursTimezone });
   const showRestaurantContact = profileType === "restaurant";
   const hasAddress = Boolean(streetAddr || cityLine);
   const showFoodTruckHomeAddress =
@@ -198,65 +190,71 @@ export default function ProfileHero({
     ? mapsHref || directionsUrl || ""
     : "";
 
-  const hoursEmpty = hoursRows.length === 0;
-  const hoursHeading = `${formatFoodTruckHoursTodayHeading(hoursTimezone)}:`;
-  const hoursPanel = (
+  // No posted hours → no hours panel at all.
+  const hoursStatus =
+    openStatus?.is_open === true ? "Open now" : openStatus?.is_open === false ? "Closed now" : "";
+  const hoursPanel = hoursRows.length ? (
     <div
       data-testid="profile-hero-hours"
       style={{
-        flex: hoursEmpty ? "0 0 auto" : isMobile ? "1 1 auto" : "0 0 240px",
+        flex: isMobile ? "1 1 auto" : "0 0 240px",
         alignSelf: "flex-start",
-        minWidth: hoursEmpty ? undefined : isMobile ? 0 : 200,
-        maxWidth: isMobile ? "100%" : hoursEmpty ? "fit-content" : 280,
-        width: hoursEmpty ? "fit-content" : undefined,
+        minWidth: isMobile ? 0 : 200,
+        maxWidth: isMobile ? "100%" : 280,
         marginTop: isMobile ? 10 : 0,
-        padding: hoursEmpty ? "6px 10px" : isMobile ? "10px 12px" : "12px 14px",
+        padding: isMobile ? "10px 12px" : "12px 14px",
         borderRadius: 12,
         background: "rgba(28,25,23,0.28)",
         border: "1px solid rgba(250,250,249,0.18)",
         boxSizing: "border-box",
-        whiteSpace: hoursEmpty ? "nowrap" : undefined,
       }}
     >
       <div
         style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 10,
           fontSize: 14,
           fontWeight: 700,
-          letterSpacing: "normal",
-          textTransform: "none",
           color: muted,
-          marginBottom: hoursEmpty ? 0 : 8,
+          marginBottom: 8,
           lineHeight: 1.4,
         }}
       >
-        {hoursHeading}
-        {openLabel ? ` ${openLabel}` : hoursEmpty ? " not posted" : ""}
+        <span>Hours</span>
+        {hoursStatus ? (
+          <span
+            data-testid="profile-hero-hours-status"
+            style={{ fontSize: 12, color: openStatus?.is_open ? "#86efac" : "#fca5a5" }}
+          >
+            {hoursStatus}
+          </span>
+        ) : null}
       </div>
-      {hoursRows.length ? (
-        <div style={{ display: "grid", gap: 3 }}>
-          {hoursRows.map((row) => (
-            <div
-              key={row.day}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "auto 1fr",
-                gap: 10,
-                fontSize: 12,
-                color: ink,
-              }}
-            >
-              <span style={{ color: muted, fontWeight: 700, whiteSpace: "nowrap" }}>
-                {row.day}
-              </span>
-              <span>{row.text}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <span data-testid="profile-hero-hours-blank" hidden />
-      )}
+      <div style={{ display: "grid", gap: 3 }}>
+        {hoursRows.map((row) => (
+          <div
+            key={row.day}
+            data-today={row.isToday ? "true" : undefined}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              gap: 10,
+              fontSize: 12,
+              color: ink,
+              fontWeight: row.isToday ? 700 : 400,
+            }}
+          >
+            <span style={{ color: row.isToday ? ink : muted, fontWeight: 700, whiteSpace: "nowrap" }}>
+              {row.day}
+            </span>
+            <span>{row.text}</span>
+          </div>
+        ))}
+      </div>
     </div>
-  );
+  ) : null;
 
   const identityLeft = (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minWidth: 0, flex: "1 1 280px" }}>

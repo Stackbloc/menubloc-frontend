@@ -227,9 +227,9 @@ function testClaimedProfileUsesEditorialPresentation() {
   assert.match(updates, /showClaimInvites|ProfileSectionBlank/);
   assert.match(hero, /profile-hero-actions/);
   assert.match(hero, /profile-hero-hours/);
-  assert.match(hero, /formatFoodTruckHoursTodayHeading/);
-  assert.match(hero, /includeTodayLine:\s*false/);
-  assert.doesNotMatch(hero, /includeTodayLine:\s*!isFoodTruck/);
+  assert.match(hero, /formatWeeklyHoursRows/); // typical Mon → Sun hours, no dates (2026-10-21)
+  assert.match(hero, /const hoursPanel = hoursRows\.length \?/); // no hours → no panel
+  assert.doesNotMatch(hero, /not posted/);
   assert.doesNotMatch(hero, /Hours:/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /openStatus/);

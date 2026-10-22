@@ -80,11 +80,11 @@ function testUnclaimedHomepageBlanks() {
   assert.match(shell, /showPhotos=\{false\}/);
   assert.match(hero, /profile-hero-maps-address/);
   assert.match(hero, /profile-hero-hours/);
-  assert.match(hero, /formatFoodTruckHoursTodayHeading/);
-  assert.match(hero, /includeTodayLine:\s*false/);
+  assert.match(hero, /formatWeeklyHoursRows/); // typical Mon → Sun hours, no dates (2026-10-21)
+  assert.match(hero, /const hoursPanel = hoursRows\.length \?/); // no hours → no panel
+  assert.doesNotMatch(hero, /not posted/);
   assert.doesNotMatch(hero, /"Hours:"/);
-  assert.match(hero, /fit-content/);
-  assert.match(hero, /formatHoursRows\(operatingHours,\s*\{/);
+  assert.match(hero, /formatWeeklyHoursRows\(operatingHours,\s*\{/);
   assert.match(hero, /timezone:\s*hoursTimezone/);
   assert.match(hero, /gridTemplateColumns: "auto 1fr"/);
   // Instagram removed from restaurant profiles (Andre 2026-10-20).
