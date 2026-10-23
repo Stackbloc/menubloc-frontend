@@ -655,6 +655,14 @@ export const startFranchiseBotPreview = (body) => post("/api/owner/franchise-bot
 export const startFranchiseBotInstall = (body) => post("/api/owner/franchise-bot/install", body);
 export const getFranchiseBotJob = (jobId) => get(`/api/owner/franchise-bot/jobs/${encodeURIComponent(jobId)}`);
 
+// ─── Location Bot (paste a chain's locations → per-store changes → apply) ─────
+// Chains + paste parsing reuse the Franchise Bot endpoints; jobs share its job store.
+
+/** Starts a background check job: { chain_id, locations, locator_base_url, default_state } */
+export const startLocationBotPreview = (body) => post("/api/owner/location-bot/preview", body);
+/** Starts a background apply job: { chain_id, rows } */
+export const startLocationBotApply = (body) => post("/api/owner/location-bot/apply", body);
+
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
 const menuConsoleRestaurantPath = (restaurantId) =>
