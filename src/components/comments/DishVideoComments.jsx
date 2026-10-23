@@ -1,9 +1,10 @@
 /**
  * Dish video comments on the dish page (C2, Andre 2026-10-22). A row of portrait tiles; tap one
- * to play it with sound. Hidden when the dish has no video comments. Refreshes after a post
+ * to play it with sound (play() runs inside the tap so browsers allow sound). Hidden when the dish
+ * has no video comments. `renderFrame(content, total)` lets the host page wrap it in its own card. Refreshes after a post
  * from DishVideoCommentSheet (DISH_VIDEO_COMMENT_POSTED_EVENT).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DISH_VIDEO_COMMENT_POSTED_EVENT,
   listDishVideoComments,
@@ -18,10 +19,11 @@ function formatWhen(iso) {
   }
 }
 
-export default function DishVideoComments({ menuItemId }) {
+export default function DishVideoComments({ menuItemId, renderFrame }) {
   const [comments, setComments] = useState([]);
   const [total, setTotal] = useState(0);
   const [playingId, setPlayingId] = useState(null);
+  const videoRefs = useRef(new Map());
 
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -54,33 +56,48 @@ export default function DishVideoComments({ menuItemId }) {
 
   if (!comments.length) return null;
 
-  return (
-    <section data-testid="dish-video-comments" aria-label="Video comments" style={styles.section}>
-      <div style={styles.title}>
-        Video comments <span style={styles.count}>{total}</span>
-      </div>
-      <div style={styles.row}>
+  function play(id) {
+    videoRefs.current.forEach((el, key) => {
+      if (key !== id && el && !el.paused) el.pause();
+    });
+    const el = videoRefs.current.get(id);
+    if (el) {
+      el.muted = false;
+      el.play().catch(() => {});
+    }
+    setPlayingId(id);
+  }
+
+  function stop(id) {
+    videoRefs.current.get(id)?.pause();
+    setPlayingId(null);
+  }
+
+  const content = (
+    <div data-testid="dish-video-comments" aria-label="Video comments" style={styles.row}>
         {comments.map((c) => {
           const playing = playingId === c.id;
           return (
             <figure key={c.id} style={styles.tile} data-testid="dish-video-comment-tile">
               <video
+                ref={(el) => {
+                  if (el) videoRefs.current.set(c.id, el);
+                  else videoRefs.current.delete(c.id);
+                }}
                 src={c.video_url}
                 style={styles.video}
                 playsInline
                 preload="metadata"
                 controls={playing}
-                muted={!playing}
-                autoPlay={playing}
                 onEnded={() => setPlayingId(null)}
-                onClick={() => setPlayingId(playing ? null : c.id)}
+                onClick={() => (playing ? stop(c.id) : play(c.id))}
                 aria-label={`Video comment by ${c.author_display_name || "a diner"}`}
               />
               {!playing ? (
                 <button
                   type="button"
                   style={styles.play}
-                  onClick={() => setPlayingId(c.id)}
+                  onClick={() => play(c.id)}
                   aria-label={`Play video comment by ${c.author_display_name || "a diner"}`}
                 >
                   ▶
@@ -93,7 +110,16 @@ export default function DishVideoComments({ menuItemId }) {
             </figure>
           );
         })}
+    </div>
+  );
+
+  if (renderFrame) return renderFrame(content, total);
+  return (
+    <section style={styles.section}>
+      <div style={styles.title}>
+        Video comments <span style={styles.count}>{total}</span>
       </div>
+      {content}
     </section>
   );
 }
@@ -126,6 +152,6 @@ const styles = {
     cursor: "pointer",
   },
   caption: { display: "flex", justifyContent: "space-between", gap: 6, marginTop: 6, fontSize: 12 },
-  author: { fontWeight: 600, color: "var(--mp-ink, #111613)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  when: { color: "var(--mp-ink-muted, #5c665f)", flexShrink: 0 },
+  author: { fontWeight: 600, color: "var(--gb-color-ink-soft, #5c665f)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  when: { color: "var(--gb-color-ink-muted, #5c665f)", flexShrink: 0 },
 };

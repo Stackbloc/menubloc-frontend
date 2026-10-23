@@ -1884,7 +1884,18 @@ export default function MenuItemDetailPage() {
       />
 
       {item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
-        <DishVideoComments menuItemId={Number(item.menu_item_id)} />
+        <DishVideoComments
+          menuItemId={Number(item.menu_item_id)}
+          renderFrame={(content, total) => (
+            <SectionCard
+              eyebrow="Video comments"
+              title={`${total} video comment${total === 1 ? "" : "s"}`}
+              style={{ marginTop: 24 }}
+            >
+              {content}
+            </SectionCard>
+          )}
+        />
       ) : null}
 
       {focusFoodComments && item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (

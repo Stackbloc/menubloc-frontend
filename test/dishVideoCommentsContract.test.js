@@ -57,7 +57,7 @@ test("Record uses the shared camera sheet capped at 25 s; file picker kept", () 
 
 test("C2: dish page lists video comments and refreshes after a post", () => {
   const page = read("src/pages/MenuItemDetailPage.jsx");
-  assert.match(page, /<DishVideoComments menuItemId=/);
+  assert.match(page, /<DishVideoComments\s+menuItemId=/);
   const list = read("src/components/comments/DishVideoComments.jsx");
   assert.match(list, /listDishVideoComments\(menuItemId/);
   assert.match(list, /if \(!comments\.length\) return null;/);
