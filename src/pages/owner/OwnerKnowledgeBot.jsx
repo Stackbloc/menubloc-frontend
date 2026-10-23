@@ -31,9 +31,12 @@ const TYPE_OPTIONS = [
   { value: "location", label: "One franchise location" },
 ];
 
-// The server takes at most 12 files per request; a full menu can be many more photos.
-const UPLOAD_BATCH_SIZE = 10;
+// One file per request, a few at a time: each photo/PDF is OCR'd while the request is open
+// (~30 s each), and 10 in one request ran past the browser's 5-minute limit ("Failed to fetch").
+const PARALLEL_UPLOADS = 3;
 const MAX_FILE_MB = 25;
+// Notes like "update … prices" turn on price mode until the checkbox is touched (same rule as the server).
+const PRICE_NOTE_PATTERN = /\b(update|change|new|current|correct|fix)\b[^.\n]{0,40}\bprices?\b/i;
 
 const EMPTY_FORM = {
   target_type: "restaurant",
@@ -44,6 +47,8 @@ const EMPTY_FORM = {
   cluster_slug: "",
   menu_urls: "",
   admin_notes: "",
+  // "prices" = update prices on the menu already on Menuply; "menu" = add the menu.
+  update_mode: "menu",
 };
 
 const inputStyle = {
@@ -211,6 +216,61 @@ function MenuPreview({ items }) {
   );
 }
 
+function PriceChanges({ plan }) {
+  const [showAll, setShowAll] = useState(false);
+  const changes = plan?.changes || [];
+  const notOnMenu = plan?.not_on_menu || [];
+  const limit = 60;
+  const visible = showAll ? changes : changes.slice(0, limit);
+  return (
+    <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 12, padding: "12px 16px", maxHeight: 420, overflow: "auto" }}>
+      {changes.length ? (
+        <>
+          <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: OWNER_COLORS.muted, marginBottom: 6 }}>
+            Price changes
+          </div>
+          {visible.map((c) => (
+            <div key={c.id} style={{ display: "flex", gap: 12, fontSize: 14, padding: "3px 0" }}>
+              <div style={{ flex: 1, minWidth: 0, fontWeight: 600 }}>
+                {c.name}
+                {c.section ? <span style={{ fontWeight: 400, fontSize: 12, color: OWNER_COLORS.muted }}> · {c.section}</span> : null}
+              </div>
+              <div style={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                <span style={{ color: OWNER_COLORS.muted, textDecoration: "line-through" }}>{formatPrice(c.before) || "no price"}</span>
+                {" → "}
+                <strong>{formatPrice(c.after)}</strong>
+              </div>
+            </div>
+          ))}
+          {changes.length > limit ? (
+            <button type="button" onClick={() => setShowAll((v) => !v)} style={smallButtonStyle}>
+              {showAll ? "Show fewer" : `Show all ${changes.length} changes`}
+            </button>
+          ) : null}
+        </>
+      ) : null}
+      {plan?.unchanged_count ? (
+        <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 8 }}>
+          {plan.unchanged_count} dish{plan.unchanged_count === 1 ? " already has" : "es already have"} the right price.
+        </div>
+      ) : null}
+      {notOnMenu.length ? (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: OWNER_COLORS.muted, marginBottom: 6 }}>
+            Not on the menu — not added
+          </div>
+          {notOnMenu.map((item, i) => (
+            <div key={`${item.name}-${i}`} style={{ display: "flex", gap: 12, fontSize: 13, padding: "2px 0", color: OWNER_COLORS.muted }}>
+              <div style={{ flex: 1, minWidth: 0 }}>{item.name}</div>
+              <div style={{ fontVariantNumeric: "tabular-nums" }}>{formatPrice(item.price)}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function urlsFromTextarea(value) {
   return String(value || "")
     .split("\n")
@@ -246,8 +306,18 @@ export default function OwnerKnowledgeBot() {
   const [pastedMenuText, setPastedMenuText] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
+  // Until the admin ticks/unticks "Update prices", notes like "update prices" decide it.
+  const [updateModeTouched, setUpdateModeTouched] = useState(false);
 
   const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const setNotes = (e) => {
+    const notes = e.target.value;
+    setForm((f) => ({
+      ...f,
+      admin_notes: notes,
+      update_mode: updateModeTouched ? f.update_mode : PRICE_NOTE_PATTERN.test(notes) ? "prices" : "menu",
+    }));
+  };
 
   useEffect(() => {
     listKnowledgeBotClusters()
@@ -268,6 +338,8 @@ export default function OwnerKnowledgeBot() {
       cluster_slug: row.scope?.cluster_slug || "",
       menu_urls: [...(row.reference_urls || []), ...(row.additional_urls || [])].join("\n"),
       admin_notes: row.admin_notes || "",
+      update_mode:
+        row.scope?.update_mode || (PRICE_NOTE_PATTERN.test(row.admin_notes || "") ? "prices" : "menu"),
     });
   }, []);
 
@@ -312,7 +384,7 @@ export default function OwnerKnowledgeBot() {
       admin_notes: values.admin_notes,
       reference_urls: urlsFromTextarea(values.menu_urls),
       additional_urls: [],
-      scope: { ...scopeRest, cluster_slug: values.cluster_slug || null },
+      scope: { ...scopeRest, cluster_slug: values.cluster_slug || null, update_mode: values.update_mode || "menu" },
     };
   }
 
@@ -379,19 +451,37 @@ export default function OwnerKnowledgeBot() {
         );
       }
       const id = await saveJob();
-      // Upload in batches; drop each batch from the list once saved, so a retry only sends what's left.
-      let remaining = files;
+      // One file per request, PARALLEL_UPLOADS at a time. Each saved file leaves the list, so a
+      // retry only sends what's left (the server also skips a file it already read).
       const total = files.length;
+      const saved = new Set();
+      let failure = null;
       try {
-        while (remaining.length) {
-          const batch = remaining.slice(0, UPLOAD_BATCH_SIZE);
-          const done = total - remaining.length;
-          setUploadProgress(`Uploading and reading files ${done + 1}–${done + batch.length} of ${total}…`);
-          const fd = new FormData();
-          for (const file of batch) fd.append("files", file);
-          await uploadKnowledgeBotEvidence(id, fd);
-          remaining = remaining.slice(batch.length);
-          setFiles(remaining);
+        let next = 0;
+        const worker = async () => {
+          while (next < files.length && !failure) {
+            const file = files[next++];
+            const fd = new FormData();
+            fd.append("files", file);
+            try {
+              await uploadKnowledgeBotEvidence(id, fd);
+              saved.add(file);
+              setUploadProgress(`Reading files… ${saved.size} of ${total} done. Each photo takes about half a minute.`);
+            } catch (err) {
+              failure = failure || err;
+            }
+          }
+        };
+        if (total) {
+          setUploadProgress(`Reading files… 0 of ${total} done. Each photo takes about half a minute.`);
+          await Promise.all(Array.from({ length: Math.min(PARALLEL_UPLOADS, total) }, worker));
+          setFiles(files.filter((f) => !saved.has(f)));
+          if (failure) {
+            const reason = failure?.payload?.error || failure?.message || "upload failed";
+            throw new Error(
+              `${saved.size} of ${total} files were read; ${total - saved.size} didn't upload (${reason}). Click Find menu again to send the rest.`
+            );
+          }
         }
         if (pastedMenuText.trim()) {
           setUploadProgress("Reading the pasted menu text…");
@@ -438,6 +528,7 @@ export default function OwnerKnowledgeBot() {
     setError("");
     setConfirmLarge(false);
     setForm(EMPTY_FORM);
+    setUpdateModeTouched(false);
     setSearchParams({}, { replace: true });
     setStep("restaurant");
   }
@@ -448,6 +539,9 @@ export default function OwnerKnowledgeBot() {
   const applyResult = row?.apply_result && Object.keys(row.apply_result).length ? row.apply_result : null;
   const evidenceFiles = (job?.evidence || []).filter((e) => e.file_name);
   const items = research.menu_candidates || [];
+  // "Update prices" job: the review shows price changes, not a menu to publish.
+  const pricePlan = preview.price_update || null;
+  const priceChangeCount = pricePlan?.changes?.length || 0;
   // Chain store (e.g. one IHOP): the menu is the chain menu, not something scraped for this store.
   const chainStore = research.chain_store || null;
   const isFranchise = form.target_type === "franchise" || form.target_type === "location";
@@ -455,7 +549,9 @@ export default function OwnerKnowledgeBot() {
   const needsRestaurantChoice = Boolean(restaurantConflict) && !row?.restaurant_id;
   const published = row?.status === "completed" && applyResult;
   const publishBlocked =
-    (!items.length && !isFranchise) || needsRestaurantChoice || (preview.requires_confirmation && !confirmLarge);
+    (pricePlan ? !priceChangeCount : !items.length && !isFranchise) ||
+    needsRestaurantChoice ||
+    (preview.requires_confirmation && !confirmLarge);
   const clusterName = useMemo(() => {
     const slug = research.cluster_slug || form.cluster_slug;
     if (!slug) return null;
@@ -600,8 +696,27 @@ export default function OwnerKnowledgeBot() {
               />
             </Field>
             <Field label="Notes (optional)">
-              <textarea style={{ ...inputStyle, minHeight: 60 }} value={form.admin_notes} onChange={setField("admin_notes")} />
+              <textarea style={{ ...inputStyle, minHeight: 60 }} value={form.admin_notes} onChange={setNotes} />
             </Field>
+            {!isFranchise || form.target_type === "location" ? (
+              <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 4, fontSize: 14, lineHeight: 1.4 }}>
+                <input
+                  type="checkbox"
+                  checked={form.update_mode === "prices"}
+                  onChange={(e) => {
+                    setUpdateModeTouched(true);
+                    setForm((f) => ({ ...f, update_mode: e.target.checked ? "prices" : "menu" }));
+                  }}
+                  style={{ marginTop: 3 }}
+                />
+                <span>
+                  <strong>Update prices on the current menu</strong>
+                  <span style={{ display: "block", fontSize: 12, color: OWNER_COLORS.muted }}>
+                    Prices read from your screenshots or pasted text replace the prices of the same dishes on Menuply. Nothing is added or removed. For one chain store, only that store's prices change.
+                  </span>
+                </span>
+              </label>
+            ) : null}
 
             {busy === "find" ? (
               <Notice>{uploadProgress || "Finding and reading the menu… websites and photos can take up to a minute."}</Notice>
@@ -630,7 +745,19 @@ export default function OwnerKnowledgeBot() {
                 </Notice>
               ) : (
                 <Notice tone="ok">
-                  <strong>Published.</strong> The menu is live.
+                  {(() => {
+                    const prices = (applyResult.updated || []).find((u) => u.entity === "menu_prices");
+                    return prices ? (
+                      <>
+                        <strong>Prices updated.</strong> {prices.updated} price{prices.updated === 1 ? "" : "s"} changed
+                        {prices.target === "store_overrides" ? " on this store only" : ""}.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Published.</strong> The menu is live.
+                      </>
+                    );
+                  })()}
                   {(() => {
                     const fanout = (applyResult.updated || []).find((u) => u.entity === "chain_menu_fanout");
                     return fanout
@@ -658,7 +785,7 @@ export default function OwnerKnowledgeBot() {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 16 }}>
               {[
-                ["Menu items", items.length],
+                pricePlan ? ["Price changes", priceChangeCount] : ["Menu items", items.length],
                 ["Hours", (research.hours || []).length ? `${research.hours.length} days` : "—"],
                 ["Phone", research.identity?.phone || "—"],
                 ["Cluster", clusterName || "—"],
@@ -671,7 +798,9 @@ export default function OwnerKnowledgeBot() {
             </div>
 
             <div style={{ fontSize: 14, marginBottom: 12, lineHeight: 1.5 }}>
-              {chainStore && research.restaurant ? (
+              {pricePlan && research.restaurant ? (
+                <>Updates prices on <RestaurantSummary restaurant={research.restaurant} />.</>
+              ) : chainStore && research.restaurant ? (
                 <>Store: <RestaurantSummary restaurant={research.restaurant} />.</>
               ) : research.restaurant ? (
                 <>Menu goes onto existing restaurant <RestaurantSummary restaurant={research.restaurant} />.</>
@@ -713,7 +842,9 @@ export default function OwnerKnowledgeBot() {
               </Notice>
             ) : null}
 
-            {items.length ? (
+            {pricePlan ? (
+              <PriceChanges plan={pricePlan} />
+            ) : items.length ? (
               <MenuPreview items={items} />
             ) : chainStore ? null : (
               <Notice tone="error">
@@ -742,11 +873,13 @@ export default function OwnerKnowledgeBot() {
                 >
                   {busy === "publish"
                     ? "Publishing…"
-                    : chainStore?.ready
-                      ? `Publish ${chainStore.chain_name} menu to this store (${items.length} items)`
-                      : items.length
-                        ? `Publish ${items.length} items`
-                        : "Publish"}
+                    : pricePlan
+                      ? `Update ${priceChangeCount} price${priceChangeCount === 1 ? "" : "s"}`
+                      : chainStore?.ready
+                        ? `Publish ${chainStore.chain_name} menu to this store (${items.length} items)`
+                        : items.length
+                          ? `Publish ${items.length} items`
+                          : "Publish"}
                 </button>
               )}
               {!published ? (
