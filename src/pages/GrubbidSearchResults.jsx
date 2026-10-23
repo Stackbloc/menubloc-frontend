@@ -38,6 +38,13 @@ import {
 } from "../lib/homeContextChipApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import {
+  SEARCH_GEO_WAIT_MS,
+  nextStableSearchGeo,
+  readRecentSearchGeo,
+  saveSearchGeo,
+  searchGeoGate,
+} from "../lib/searchStableGeo.js";
 import HomemadeDishSearchCard from "../components/homemade/HomemadeDishSearchCard.jsx";
 import { captureEvent } from "../services/posthog.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -194,25 +201,44 @@ function SearchResultsShareControl({ copied, onShare }) {
   );
 }
 
+function readSearchGeoStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function useGeolocation() {
-  const [geo, setGeo] = useState({ status: "pending", lat: null, lng: null });
+  // Start from the last fix so repeat searches send the same point (searchStableGeo.js).
+  const [geo, setGeo] = useState(() => {
+    const recent = readRecentSearchGeo(readSearchGeoStorage());
+    return recent
+      ? { status: "granted", lat: recent.lat, lng: recent.lng }
+      : { status: "pending", lat: null, lng: null };
+  });
 
   useEffect(() => {
     if (!navigator?.geolocation) {
-      setGeo({ status: "unavailable", lat: null, lng: null });
+      setGeo((prev) => (prev.status === "granted" ? prev : { status: "unavailable", lat: null, lng: null }));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGeo({
-          status: "granted",
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
+        setGeo((prev) => {
+          const stable = nextStableSearchGeo(
+            prev.status === "granted" ? prev : null,
+            { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          );
+          if (!stable) return prev;
+          saveSearchGeo(readSearchGeoStorage(), stable);
+          if (prev.status === "granted" && prev.lat === stable.lat && prev.lng === stable.lng) return prev;
+          return { status: "granted", lat: stable.lat, lng: stable.lng };
         });
       },
       () => {
-        setGeo({ status: "denied", lat: null, lng: null });
+        setGeo((prev) => (prev.status === "granted" ? prev : { status: "denied", lat: null, lng: null }));
       },
       { timeout: 8000, maximumAge: 300000 }
     );
@@ -2056,6 +2082,12 @@ export default function GrubbidSearchResults({
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
+  const [geoWaitExpired, setGeoWaitExpired] = useState(false);
+  useEffect(() => {
+    if (geo.status !== "pending") return undefined;
+    const timer = setTimeout(() => setGeoWaitExpired(true), SEARCH_GEO_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [geo.status]);
   const isMobile = useIsMobile();
   const isFeedDesktop = useFeedShellDesktop();
   const sessionLocation = useMemo(() => {
@@ -2297,7 +2329,7 @@ export default function GrubbidSearchResults({
     waiterRestoredRef.current = true;
   }, [loading, rows, q, waiterIntentContext]);
 
-  const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
+  const { primaryUrl, fallbackUrl, hasGeoFilter, geoGate } = useMemo(() => {
     const u = new URL(`${API}/search`);
     const hasRouteCoords = routeLat != null && routeLat !== "" && routeLng != null && routeLng !== "";
     // Only URL-authored manual location filters should suppress geo mode.
@@ -2363,7 +2395,14 @@ export default function GrubbidSearchResults({
 
     appendSearchAnalyticsParams(u.searchParams);
 
-    return { primaryUrl: u.toString(), fallbackUrl: baseUrl, hasGeoFilter: geoAdded };
+    const gate = searchGeoGate({
+      geoStatus: geo.status,
+      hasExplicitLocation,
+      hasRouteCoords,
+      waitExpired: geoWaitExpired,
+    });
+
+    return { primaryUrl: u.toString(), fallbackUrl: baseUrl, hasGeoFilter: geoAdded, geoGate: gate };
   }, [
     q,
     vegan,
@@ -2388,6 +2427,8 @@ export default function GrubbidSearchResults({
     routeRadiusMiles,
     geo.lat,
     geo.lng,
+    geo.status,
+    geoWaitExpired,
     routeCuisine,
     routeCategory,
     language,
@@ -2617,6 +2658,14 @@ export default function GrubbidSearchResults({
         if (!alive) return;
       }
 
+      // Don't fire a location-less search while the browser location is on its way;
+      // it returned a different (city-wide) result set than the search right after it.
+      if (geoGate === "wait") {
+        setLoading(true);
+        setErr("");
+        return;
+      }
+
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
@@ -2716,6 +2765,7 @@ export default function GrubbidSearchResults({
     primaryUrl,
     fallbackUrl,
     hasGeoFilter,
+    geoGate,
     q,
     foodNav.pendingNavigation,
     location.state,
