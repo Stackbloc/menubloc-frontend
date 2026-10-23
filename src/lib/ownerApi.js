@@ -623,6 +623,36 @@ export const runNutribotForRestaurant = (restaurantId) =>
 
 export const getNutribotRun = (logId) => get(`/api/owner/bots/nutribot/runs/${encodeURIComponent(logId)}`);
 
+function nutribotQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v != null && v !== "") qs.set(k, String(v));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Nutribot: items it could not process (no dish template). params: { restaurantId, q, limit, offset } */
+export const listNutribotUnprocessed = (params) =>
+  get(`/api/owner/bots/nutribot/unprocessed${nutribotQuery(params)}`);
+
+/** Nutribot: active dish templates. params: { q, limit, offset } */
+export const listNutribotTemplates = (params) =>
+  get(`/api/owner/bots/nutribot/templates${nutribotQuery(params)}`);
+
+/** Nutribot: ingredient picker for new templates. */
+export const searchNutribotIngredients = (q) =>
+  get(`/api/owner/bots/nutribot/ingredients${nutribotQuery({ q })}`);
+
+/**
+ * Nutribot: create a dish template. body = template fields + { dry_run?, acknowledge_warnings? }.
+ * A 409 with code "critical_warnings" carries the preview in error.payload.
+ */
+export const createNutribotTemplate = (body) => post("/api/owner/bots/nutribot/templates", body);
+
+/** Nutribot: assign templates by hand and recompute those items. body = { assignments: [{ menu_item_id, template_id }] } */
+export const assignNutribotTemplates = (assignments) => post("/api/owner/bots/nutribot/assign", { assignments });
+
 /** Hours Bot: find hours for one restaurant now. */
 export const runHoursBotForRestaurant = (restaurantId) =>
   post(`/api/owner/bots/hours_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
