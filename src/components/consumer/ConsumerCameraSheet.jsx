@@ -41,6 +41,8 @@ export default function ConsumerCameraSheet({
   allowVideo = false,
   /** Default video when allowVideo so Video|Photo opens on Video. */
   initialMode = "video",
+  /** In-sheet recorder auto-stops here (dish video comments pass 25). */
+  maxRecordSeconds = MAX_RECORD_SECONDS,
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -49,6 +51,7 @@ export default function ConsumerCameraSheet({
   const chunksRef = useRef([]);
   const mimeRef = useRef("video/webm");
   const recordStartedAtRef = useRef(0);
+  const recordedSecondsRef = useRef(null);
   const timerRef = useRef(null);
   const reviewUrlRef = useRef("");
   const nativeVideoInputId = useId();
@@ -243,7 +246,7 @@ export default function ConsumerCameraSheet({
     timerRef.current = window.setInterval(() => {
       const sec = Math.floor((Date.now() - recordStartedAtRef.current) / 1000);
       setElapsedSec(sec);
-      if (sec >= MAX_RECORD_SECONDS) {
+      if (sec >= maxRecordSeconds) {
         const recorder = recorderRef.current;
         if (recorder && recorder.state === "recording") {
           try {
@@ -265,7 +268,7 @@ export default function ConsumerCameraSheet({
         timerRef.current = null;
       }
     };
-  }, [recording]);
+  }, [recording, maxRecordSeconds]);
 
   useEffect(() => {
     if (!reviewUrl || !reviewFile) return;
@@ -342,6 +345,10 @@ export default function ConsumerCameraSheet({
       };
 
       recorder.onstop = async () => {
+        recordedSecondsRef.current = Math.min(
+          maxRecordSeconds,
+          Math.max(0, (Date.now() - recordStartedAtRef.current) / 1000)
+        );
         setBusy(true);
         try {
           const poster = capturePosterFromVideoElement(videoRef.current);
@@ -414,7 +421,8 @@ export default function ConsumerCameraSheet({
     if (!reviewFile) return;
     const file = reviewFile;
     clearReview();
-    onCapture?.(file);
+    // Recorder webm often reports no duration; pass how long it actually recorded.
+    onCapture?.(file, { recordedSeconds: recordedSecondsRef.current });
     onClose?.();
   }
 

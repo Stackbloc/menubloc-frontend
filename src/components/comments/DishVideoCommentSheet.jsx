@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { uploadWhatIAteTodayPhoto } from "../../lib/consumerApi.js";
 import { eatingMediaFromUpload } from "../../lib/eatingMediaUtils.js";
 import { probeNativeVideoFile } from "../../lib/nativeVideoCapture.js";
+import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
 import {
   createDishVideoComment,
   DISH_VIDEO_COMMENT_MAX_SECONDS,
@@ -10,8 +11,9 @@ import {
 
 /**
  * Record or pick a short video about one dish (auto-tagged) and post it as a comment.
- * The phone's camera can't be stopped at 25 s from a web page, so longer clips are refused
- * right after they are picked (same approach as cluster hall clips).
+ * Record opens the shared ConsumerCameraSheet: laptop webcam records in the page and stops
+ * at 25 s; phones open the OS camera, which can't be stopped from a web page, so longer
+ * clips are refused right after they come back (same approach as cluster hall clips).
  */
 export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuItemName, restaurantId, onPosted }) {
   const inputRef = useRef(null);
@@ -22,6 +24,7 @@ export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuI
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(null);
   const [posted, setPosted] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   useEffect(() => () => previewUrl && URL.revokeObjectURL(previewUrl), [previewUrl]);
   if (!open) return null;
@@ -43,11 +46,18 @@ export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuI
   async function handlePick(event) {
     const picked = event.target.files?.[0];
     event.target.value = "";
-    if (!picked) return;
+    if (picked) await acceptVideo(picked, null);
+  }
+
+  async function acceptVideo(picked, recordedSeconds) {
     setError("");
     try {
-      const probe = await probeNativeVideoFile(picked);
-      const length = Number(probe?.duration);
+      const probe = await probeNativeVideoFile(picked).catch((err) => {
+        if (recordedSeconds > 0) return null;
+        throw err;
+      });
+      let length = Number(probe?.duration);
+      if ((!Number.isFinite(length) || length <= 0) && recordedSeconds > 0) length = recordedSeconds;
       if (!Number.isFinite(length) || length <= 0) {
         setError("We couldn't read that video. Try recording it again.");
         return;
@@ -104,7 +114,6 @@ export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuI
               ref={inputRef}
               type="file"
               accept="video/*"
-              capture="environment"
               style={{ display: "none" }}
               onChange={handlePick}
               data-testid="dish-video-comment-input"
@@ -115,15 +124,28 @@ export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuI
                 <button type="button" style={styles.primary} onClick={post} disabled={busy} data-testid="dish-video-comment-post">
                   {busy ? (pct != null ? `Posting… ${Math.round(pct)}%` : "Posting…") : "Post comment"}
                 </button>
-                <button type="button" style={styles.quiet} onClick={() => inputRef.current?.click()} disabled={busy}>
-                  Use a different video
+                <button type="button" style={styles.quiet} onClick={() => setCameraOpen(true)} disabled={busy}>
+                  Record again
                 </button>
               </>
             ) : (
-              <button type="button" style={styles.primary} onClick={() => inputRef.current?.click()} data-testid="dish-video-comment-record">
-                Record a video
-              </button>
+              <>
+                <button type="button" style={styles.primary} onClick={() => setCameraOpen(true)} data-testid="dish-video-comment-record">
+                  Record a video
+                </button>
+                <button type="button" style={styles.quiet} onClick={() => inputRef.current?.click()} data-testid="dish-video-comment-choose">
+                  Choose a video file
+                </button>
+              </>
             )}
+            <ConsumerCameraSheet
+              open={cameraOpen}
+              onClose={() => setCameraOpen(false)}
+              allowPhoto={false}
+              allowVideo
+              maxRecordSeconds={DISH_VIDEO_COMMENT_MAX_SECONDS}
+              onCapture={(captured, meta) => acceptVideo(captured, meta?.recordedSeconds)}
+            />
           </>
         )}
       </div>

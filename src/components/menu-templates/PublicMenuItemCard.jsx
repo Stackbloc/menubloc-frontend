@@ -640,15 +640,6 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}
                     restaurantName={restaurantName}
@@ -671,6 +662,15 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
+                    />
+                  ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
                     />
                   ) : null}
                 </>
@@ -723,15 +723,6 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}
                     restaurantName={restaurantName}
@@ -754,6 +745,15 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
+                    />
+                  ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
                     />
                   ) : null}
                 </>
@@ -806,15 +806,6 @@ export default function PublicMenuItemCard({
                   {canNavigate ? (
                     <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                   ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
                   <InviteToEatButton
                     restaurantId={currentRestaurantId}
                     restaurantName={restaurantName}
@@ -837,6 +828,15 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
+                    />
+                  ) : null}
+                  {canNavigate ? (
+                    <DishVideoCommentButton
+                      menuItemId={normalizedItemId}
+                      menuItemName={name}
+                      restaurantId={currentRestaurantId}
+                      tone="ghost"
+                      size="row"
                     />
                   ) : null}
                 </>

@@ -74,7 +74,7 @@ function ReturnToSearchButton({ onClick, label = "Return to results" }) {
 /**
  * Detail-page action icons — same ghost controls as public menu rows.
  * Order: View Full Menu (or return-to-search), Wish List, Like, Invite, Share (same four as menu
- * rows and the Feed rail), then Comment.
+ * rows and the Feed rail), then Comment, Save; the video comment icon is always last.
  */
 export default function MenuItemDetailActionRail({
   menuItemId,
@@ -120,15 +120,6 @@ export default function MenuItemDetailActionRail({
         />
       ) : null}
       {menuItemId ? <LikeMenuItemButton menuItemId={menuItemId} tone="ghost" size="row" /> : null}
-      {menuItemId ? (
-        <DishVideoCommentButton
-          menuItemId={menuItemId}
-          menuItemName={itemName}
-          restaurantId={restaurantId}
-          tone="ghost"
-          size="row"
-        />
-      ) : null}
       {restaurantId ? (
         <InviteToEatButton
           restaurantId={restaurantId}
@@ -167,6 +158,15 @@ export default function MenuItemDetailActionRail({
           menuItemId={menuItemId}
           foodName={itemName}
           returnTo={saveReturnTo}
+        />
+      ) : null}
+      {menuItemId ? (
+        <DishVideoCommentButton
+          menuItemId={menuItemId}
+          menuItemName={itemName}
+          restaurantId={restaurantId}
+          tone="ghost"
+          size="row"
         />
       ) : null}
     </div>
