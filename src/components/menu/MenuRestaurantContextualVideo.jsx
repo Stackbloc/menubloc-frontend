@@ -153,7 +153,11 @@ export default function MenuRestaurantContextualVideo({
         style={styles.video}
         playsInline
         muted={effectiveMuted}
-        loop
+        // One clip repeats; several play through in order and wrap back to the first.
+        loop={videos.length <= 1}
+        onEnded={() => {
+          if (videos.length > 1) setIndex((i) => (i + 1) % videos.length);
+        }}
         autoPlay
         controls={false}
         preload="auto"
