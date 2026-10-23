@@ -192,6 +192,7 @@ import OwnerMenubotClusterRun from "./pages/owner/OwnerMenubotClusterRun.jsx";
 import OwnerBots from "./pages/owner/OwnerBots.jsx";
 import OwnerScheduledBot from "./pages/owner/OwnerScheduledBot.jsx";
 import OwnerFranchiseBot from "./pages/owner/OwnerFranchiseBot.jsx";
+import OwnerLocationBot from "./pages/owner/OwnerLocationBot.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1155,6 +1156,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/bots/hours-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="hours_bot" botKey="hours_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/address-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="address_bot" botKey="address_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/franchise-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerFranchiseBot /></OwnerRoute>} />
+        <Route path="/owner/bots/location-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerLocationBot /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
