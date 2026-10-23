@@ -18,6 +18,8 @@ import {
 } from "../../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../../lib/menuAppearanceRecommendation.js";
 import { buildMenuChromeRootStyle, pickFeedMenuChrome } from "../../lib/menuWallpapers.js";
+import { buildBrandMenuRootStyle, resolveBrandMenuTheme } from "../../lib/brandMenuThemes.js";
+import BrandMenuStripe from "../menu-templates/BrandMenuStripe.jsx";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import {
@@ -548,9 +550,16 @@ export default function CatalogMenuRenderer({
     [basketMatchesCurrentRestaurant, cartItems]
   );
 
+  // National chains: menu wears the same brand colors as the brand profile (display-only).
+  const brandMenuTheme = resolveBrandMenuTheme(data, restaurantName);
   const menuBrand = data ? buildRestaurantMenuBrand({
     ...data,
-    accent_color: menuThemeSettings.primary_color || menuThemeSettings.accent_color || data?.accent_color || null,
+    accent_color:
+      menuThemeSettings.primary_color ||
+      menuThemeSettings.accent_color ||
+      data?.accent_color ||
+      brandMenuTheme?.tokens.accent ||
+      null,
     hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
@@ -566,7 +575,7 @@ export default function CatalogMenuRenderer({
   const hasOwnerChrome =
     String(data?.menu_appearance_key || "").trim() !== "" ||
     String(data?.menu_wallpaper_key || "").trim() !== "";
-  const useFeedChrome = Boolean(feedChrome && data && !hasOwnerChrome);
+  const useFeedChrome = Boolean(feedChrome && data && !hasOwnerChrome && !brandMenuTheme);
   const effectiveMenuAppearance = useFeedChrome
     ? feedChrome.menu_appearance_key
     : data?.effective_menu_appearance ||
@@ -581,7 +590,7 @@ export default function CatalogMenuRenderer({
       ? null
       : String(data.menu_wallpaper_key).trim();
   const appearanceTokens = applyMenuAppearance
-    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    ? brandMenuTheme?.tokens || getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
   const catalogShellStyle = applyMenuAppearance
     ? {
@@ -589,11 +598,13 @@ export default function CatalogMenuRenderer({
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
-        ...buildMenuChromeRootStyle(
-          effectiveMenuAppearance,
-          effectiveMenuWallpaper,
-          useFeedChrome ? null : data?.resolved_menu_wallpaper || null
-        ),
+        ...(brandMenuTheme
+          ? buildBrandMenuRootStyle(brandMenuTheme.tokens)
+          : buildMenuChromeRootStyle(
+              effectiveMenuAppearance,
+              effectiveMenuWallpaper,
+              useFeedChrome ? null : data?.resolved_menu_wallpaper || null
+            )),
         overflow: "hidden",
       }
     : {
@@ -909,6 +920,7 @@ export default function CatalogMenuRenderer({
       style={{ ...catalogShellStyle, position: "relative" }}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
       data-menu-chrome={applyMenuAppearance && useFeedChrome ? "feed" : undefined}
+      data-brand-theme={applyMenuAppearance && brandMenuTheme ? brandMenuTheme.name : undefined}
     >
       {menuNotice ? (
         <MenuTapToOrderHint
@@ -971,6 +983,7 @@ export default function CatalogMenuRenderer({
                   color: appearanceTokens.ink,
                 }}
               >
+                {appearanceTokens.heroStripe ? <BrandMenuStripe background={appearanceTokens.heroStripe} /> : null}
                 <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
               </div>
             ) : (
