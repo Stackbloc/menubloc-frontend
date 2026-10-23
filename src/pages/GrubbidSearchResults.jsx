@@ -39,6 +39,10 @@ import {
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import {
+  applySimilarAvailabilityToSearchRows,
+  collectVisibleSimilarUnknownIds,
+} from "../lib/searchSlimPayload.js";
+import {
   SEARCH_GEO_WAIT_MS,
   nextStableSearchGeo,
   readRecentSearchGeo,
@@ -2368,6 +2372,10 @@ export default function GrubbidSearchResults({
       if (requestNear) u.searchParams.set("near", requestNear);
     }
     u.searchParams.set("limit", String(SEARCH_LIMIT));
+    // Slim card payload (hidden dishes trimmed, no duplicate arrays) and similar-item
+    // availability loaded after results render — searchSlimPayload.js.
+    u.searchParams.set("slim", "1");
+    u.searchParams.set("defer_similar", "1");
     if (language && language !== "en") {
       u.searchParams.set("lang", language);
     }
@@ -2978,6 +2986,37 @@ export default function GrubbidSearchResults({
       perRestaurantInitialCap,
     ]
   );
+
+  // Search no longer checks similar items before responding (defer_similar=1):
+  // ask once for the dishes on screen, including cards added by Load more.
+  const similarRequestedIdsRef = useRef(new Set());
+  const similarSearchUrlRef = useRef(primaryUrl);
+  useEffect(() => {
+    similarRequestedIdsRef.current = new Set();
+    similarSearchUrlRef.current = primaryUrl;
+  }, [primaryUrl]);
+  useEffect(() => {
+    if (loading || searchMeta?.similar_availability_preflight?.deferred !== true) return;
+    const ids = collectVisibleSimilarUnknownIds(rows).filter((id) => !similarRequestedIdsRef.current.has(id));
+    if (!ids.length) return;
+    for (const id of ids) similarRequestedIdsRef.current.add(id);
+    const requestUrl = similarSearchUrlRef.current;
+    fetchSimilarAvailabilityBatch(ids, {
+      city: city || null,
+      state: state || null,
+      clusterScoped: searchMeta?.cluster_scoped === true,
+      clusterId: searchMeta?.cluster_id ?? null,
+    })
+      .then((json) => {
+        const availability = json?.availability || {};
+        // Drop answers for a search the diner has already moved on from.
+        if (similarSearchUrlRef.current !== requestUrl || !Object.keys(availability).length) return;
+        setRows((prev) => applySimilarAvailabilityToSearchRows(prev, availability, applySimilarAvailabilityToRows));
+      })
+      .catch(() => {
+        // Unknown availability keeps the Similar chip enabled — same as before.
+      });
+  }, [rows, loading, searchMeta, city, state, applySimilarAvailabilityToRows]);
 
   function resolveRowSimilarAvailabilityUnknown(row) {
     if (row?.has_similar_items === true || row?.has_similar_items === false) return false;
