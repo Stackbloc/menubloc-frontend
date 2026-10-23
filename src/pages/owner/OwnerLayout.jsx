@@ -144,6 +144,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/bots/hours-bot", label: "Hours Bot" },
           { to: "/owner/bots/address-bot", label: "Address Bot" },
           { to: "/owner/bots/franchise-bot", label: "Franchise Bot" },
+          { to: "/owner/bots/location-bot", label: "Location Bot" },
         ],
       },
       NAV_SECTIONS_STATIC[1],
