@@ -62,6 +62,8 @@ import {
 } from "../lib/clusterReturnNavigation.js";
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
+import MenuInfoButton from "../components/menu/MenuInfoButton.jsx";
+import { MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import MenuRestaurantContextualVideo from "../components/menu/MenuRestaurantContextualVideo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
@@ -1714,6 +1716,21 @@ export default function PublicMenuPage() {
     searchParams.get("menuStyle") || searchParams.get("previewStyle") || pageState.data?.menu_style
   );
 
+  // W4 compact header (Andre, 2026-10-23): templates on the shared header row (Classic, Fine)
+  // drop the address under the name; it moves into the ⓘ sheet at the end of the icon row.
+  const compactMenuHeader = ["v1", "v16", "v17"].includes(menuPresentationStyle);
+  const menuInfoAction = compactMenuHeader ? (
+    <MenuInfoButton
+      restaurantName={restaurantName}
+      addressLine1={addressLine1}
+      addressLine2={addressLine2}
+      addressLine={addressLine}
+      directionsHref={directionsHref}
+      phone={data?.phone || null}
+      website={data?.website_url || data?.website || null}
+    />
+  ) : null;
+
   const franchiseSlot = franchiseGroup ? (
     <FranchiseBanner
       group={franchiseGroup}
@@ -1734,10 +1751,10 @@ export default function PublicMenuPage() {
           restaurantProfileHref,
           menuTypeLabel,
           scheduledActiveMenuLabel,
-          addressLine1,
-          addressLine2,
-          addressLine,
-          directionsHref,
+          addressLine1: compactMenuHeader ? "" : addressLine1,
+          addressLine2: compactMenuHeader ? "" : addressLine2,
+          addressLine: compactMenuHeader ? "" : addressLine,
+          directionsHref: compactMenuHeader ? null : directionsHref,
           logoUrl: data?.logo_url || null,
           logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,
@@ -1968,6 +1985,7 @@ export default function PublicMenuPage() {
           </div>
         ) : null}
 
+        <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
         {applyMenuAppearance && appearanceTokens ? (
           <div
             style={{
@@ -1989,6 +2007,7 @@ export default function PublicMenuPage() {
             <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
           </MenuRowActionsContext.Provider>
         )}
+        </MenuHeaderTrailingActionContext.Provider>
       </div>
 
       {/* Item detail sheet */}
