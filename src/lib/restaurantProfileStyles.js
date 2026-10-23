@@ -8,7 +8,7 @@
 
 export const DEFAULT_PROFILE_STYLE_KEY = "modern_minimal";
 
-function svgDataUri(svgMarkup) {
+export function svgDataUri(svgMarkup) {
   return `url("data:image/svg+xml,${encodeURIComponent(svgMarkup)}")`;
 }
 
@@ -491,12 +491,22 @@ export function profileStyleToCssVars(tokens) {
     "--profile-card-shadow": t.cardShadow,
     "--profile-button-background": t.buttonBackground,
     "--profile-button-text": t.buttonText,
-    ...buildHeroCssVarsFromAccent(t.accent),
+    ...(Array.isArray(t.hero) && t.hero.length === 3
+      ? {
+          "--profile-hero-from": t.hero[0],
+          "--profile-hero-via": t.hero[1],
+          "--profile-hero-to": t.hero[2],
+        }
+      : buildHeroCssVarsFromAccent(t.accent)),
   };
 }
 
 export function buildProfileStyleRootStyle(styleKey) {
-  const tokens = getProfileStyleTokens(styleKey);
+  return buildProfileStyleRootStyleFromTokens(getProfileStyleTokens(styleKey));
+}
+
+/** Same as buildProfileStyleRootStyle, for tokens not in the owner picker (brand themes). */
+export function buildProfileStyleRootStyleFromTokens(tokens) {
   const vars = profileStyleToCssVars(tokens);
   return {
     ...vars,

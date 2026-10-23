@@ -45,8 +45,10 @@ import {
 } from "./profilePrimitives.jsx";
 import {
   buildProfileStyleRootStyle,
+  buildProfileStyleRootStyleFromTokens,
   DEFAULT_PROFILE_STYLE_KEY,
 } from "../../../lib/restaurantProfileStyles.js";
+import { resolveBrandProfileTheme } from "../../../lib/brandProfileThemes.js";
 import { resolveEffectiveProfileStyle } from "../../../lib/restaurantProfileStyleRecommendation.js";
 import { normalizeWindowsPhotoOrientation } from "../../../lib/windowsPhotoOrientation.js";
 
@@ -130,9 +132,22 @@ export default function PublicProfileShell({
     cuisine,
   ]);
 
+  const brandTheme = useMemo(
+    () =>
+      resolveBrandProfileTheme({
+        name: profile?.name || name,
+        brand_profile: profile?.brand_profile,
+        profile_style_key: profile?.profile_style_key,
+      }),
+    [profile?.name, name, profile?.brand_profile, profile?.profile_style_key]
+  );
+
   const styleRoot = useMemo(
-    () => buildProfileStyleRootStyle(effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY),
-    [effectiveStyleKey]
+    () =>
+      brandTheme
+        ? buildProfileStyleRootStyleFromTokens(brandTheme)
+        : buildProfileStyleRootStyle(effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY),
+    [brandTheme, effectiveStyleKey]
   );
 
   const isFoodTruck = isFoodTruckProfile(profile, profileType);
@@ -235,6 +250,7 @@ export default function PublicProfileShell({
       }
       data-profile-type={resolvedProfileType}
       data-profile-style={effectiveStyleKey || DEFAULT_PROFILE_STYLE_KEY}
+      data-brand-theme={brandTheme ? brandTheme.name : undefined}
       style={{
         minHeight: "100vh",
         ...styleRoot,
