@@ -70,6 +70,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/diners", label: "Diner accounts" },
       { to: "/owner/videos", label: "Clip Manager" },
       { to: "/owner/phms", label: "Platform Health" },
+      { to: "/owner/errors", label: "Errors" },
       { to: "/owner/homepage", label: "Homepage Controls" },
       { to: "/owner/deployments", label: "Deployment Operations" },
       { to: "/owner/intelligence", label: "Platform Intelligence" },
