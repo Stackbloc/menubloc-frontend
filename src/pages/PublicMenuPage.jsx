@@ -84,6 +84,8 @@ import {
 } from "../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../lib/menuAppearanceRecommendation.js";
 import { buildMenuChromeRootStyle } from "../lib/menuWallpapers.js";
+import { buildBrandMenuRootStyle, resolveBrandMenuTheme } from "../lib/brandMenuThemes.js";
+import BrandMenuStripe from "../components/menu-templates/BrandMenuStripe.jsx";
 import {
   readMenuAppearanceQueryOverride,
   readMenuWallpaperQueryOverride,
@@ -1516,9 +1518,22 @@ export default function PublicMenuPage() {
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
 
+  const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
+  const wallpaperQueryOverride = readMenuWallpaperQueryOverride(searchParams);
+  // National chains: menu wears the same brand colors as the brand profile (display-only).
+  // Owner looks, ?menuAppearance/?menuWallpaper previews and template previews win.
+  const brandMenuTheme =
+    isMenuTemplatePreview || appearanceQueryOverride || wallpaperQueryOverride !== undefined
+      ? null
+      : resolveBrandMenuTheme(data, restaurantName);
   const menuBrand = data ? buildRestaurantMenuBrand({
     ...data,
-    accent_color: menuThemeSettings.primary_color || menuThemeSettings.accent_color || data?.accent_color || null,
+    accent_color:
+      menuThemeSettings.primary_color ||
+      menuThemeSettings.accent_color ||
+      data?.accent_color ||
+      brandMenuTheme?.tokens.accent ||
+      null,
     hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
@@ -1531,8 +1546,6 @@ export default function PublicMenuPage() {
     data?.menu_style ||
     "v1";
   const applyMenuAppearance = shouldApplyMenuAppearance(appearanceStyleSource);
-  const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
-  const wallpaperQueryOverride = readMenuWallpaperQueryOverride(searchParams);
   const effectiveMenuAppearance = applyMenuAppearance
     ? appearanceQueryOverride ||
       (isValidMenuAppearanceKey(data?.effective_menu_appearance)
@@ -1552,7 +1565,7 @@ export default function PublicMenuPage() {
         : String(data.menu_wallpaper_key).trim()
     : null;
   const appearanceTokens = applyMenuAppearance
-    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    ? brandMenuTheme?.tokens || getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
   const stickyBarBackground = applyMenuAppearance
     ? appearanceTokens.pageBackground
@@ -1560,11 +1573,13 @@ export default function PublicMenuPage() {
   const pageShellStyle = applyMenuAppearance
     ? {
         minHeight: "100vh",
-        ...buildMenuChromeRootStyle(
-          effectiveMenuAppearance,
-          effectiveMenuWallpaper,
-          data?.resolved_menu_wallpaper || null
-        ),
+        ...(brandMenuTheme
+          ? buildBrandMenuRootStyle(brandMenuTheme.tokens)
+          : buildMenuChromeRootStyle(
+              effectiveMenuAppearance,
+              effectiveMenuWallpaper,
+              data?.resolved_menu_wallpaper || null
+            )),
       }
     : {
         minHeight: "100vh",
@@ -1932,6 +1947,7 @@ export default function PublicMenuPage() {
       ref={engagementRootRef}
       style={pageShellStyle}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
+      data-brand-theme={applyMenuAppearance && brandMenuTheme ? brandMenuTheme.name : undefined}
     >
       <StickyPageHeader
         barBackground={stickyBarBackground}
@@ -1998,6 +2014,7 @@ export default function PublicMenuPage() {
               color: appearanceTokens.ink,
             }}
           >
+            {appearanceTokens.heroStripe ? <BrandMenuStripe background={appearanceTokens.heroStripe} /> : null}
             <MenuRowActionsContext.Provider value={menuRowActions}>
               <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
             </MenuRowActionsContext.Provider>
