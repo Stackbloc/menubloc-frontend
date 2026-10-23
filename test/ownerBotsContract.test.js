@@ -55,3 +55,28 @@ test("Hours Bot page: restaurant lookup, market run, recent results, coverage", 
   const fmt = read("src/pages/owner/ownerBotFormat.js");
   assert.match(fmt, /path: "\/owner\/bots\/hours-bot"/);
 });
+
+test("Nutribot page: unprocessed items, template picker, bulk assign, template list and create form", () => {
+  const page = read("src/pages/owner/OwnerScheduledBot.jsx");
+  assert.match(page, /import NutribotTemplatesPanel from "\.\/NutribotTemplatesPanel\.jsx"/);
+  assert.match(page, /botKey === "nutribot" \? <NutribotTemplatesPanel \/> : null/);
+  const panel = read("src/pages/owner/NutribotTemplatesPanel.jsx");
+  for (const text of ["Unprocessed items", "All restaurants", "Assign to", "Dish templates", "Create template", "Preview", "Save template", "Save anyway", "Ingredient rules (at least one)", "Franchise items are never listed"]) {
+    assert.ok(panel.includes(text), `has "${text}"`);
+  }
+  // All seven macro levels are asked for (the backend requires them).
+  for (const field of ["calorie_density_level", "protein_level", "carb_level", "fat_level", "fiber_level", "sodium_level", "sugar_level"]) {
+    assert.ok(panel.includes(`"${field}"`), `asks for ${field}`);
+  }
+  const api = read("src/lib/ownerApi.js");
+  for (const [fn, route] of [
+    ["listNutribotUnprocessed", "/api/owner/bots/nutribot/unprocessed"],
+    ["listNutribotTemplates", "/api/owner/bots/nutribot/templates"],
+    ["searchNutribotIngredients", "/api/owner/bots/nutribot/ingredients"],
+    ["createNutribotTemplate", "/api/owner/bots/nutribot/templates"],
+    ["assignNutribotTemplates", "/api/owner/bots/nutribot/assign"],
+  ]) {
+    assert.match(api, new RegExp(`export const ${fn} =`));
+    assert.ok(api.includes(route), `${fn} calls ${route}`);
+  }
+});
