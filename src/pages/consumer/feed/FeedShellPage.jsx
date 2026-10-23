@@ -17,6 +17,7 @@ import FeedVideoCreateSheet from "../../../components/consumer/feed/FeedVideoCre
 import FeedShareMyMenuplySheet from "../../../components/consumer/feed/FeedShareMyMenuplySheet.jsx";
 import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideoComposeOverlay.jsx";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import useDiscoveryAutoLocation from "../../../hooks/useDiscoveryAutoLocation.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { clearStuckMediaChrome, CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../myMenuply/pendingHighlightMedia.js";
 import {
@@ -36,6 +37,8 @@ export default function FeedShellPage({ children = null }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
+  // Feed pages read the saved city; refill it when only coordinates were saved.
+  useDiscoveryAutoLocation({ repairOnly: true });
   const showShopBasket = isFeedShopRoute(location.pathname);
   // Search & Shop → Menu Browser: menus take orders, so mobile shows the ordering
   // BottomNav (Home · Waiter · X · Basket · My Menuply) rendered by BrowseMenus instead.

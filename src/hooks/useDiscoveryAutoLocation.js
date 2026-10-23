@@ -9,8 +9,10 @@ import {
 /**
  * Device geolocation + reverse geocode, with IP city/state fallback.
  * Shared by home feed and menu catalog browse.
+ * `repairOnly`: only re-resolve a saved coordinates-only location (permission already
+ * granted, so no new prompt); never asks first-time visitors.
  */
-export default function useDiscoveryAutoLocation() {
+export default function useDiscoveryAutoLocation({ repairOnly = false } = {}) {
   const [state, setState] = useState(() => {
     if (typeof window === "undefined") {
       return { status: "unavailable", label: "", city: "", state: "", lat: null, lng: null };
@@ -30,8 +32,10 @@ export default function useDiscoveryAutoLocation() {
   useEffect(() => {
     const cached = readDetectedLocation(window.localStorage);
     if (!shouldRequestGeolocation(cached)) return undefined;
+    if (repairOnly && !cached) return undefined;
 
     async function ipFallback() {
+      if (repairOnly) return;
       try {
         const res = await fetch("https://ipapi.co/json/");
         const json = await res.json().catch(() => ({}));

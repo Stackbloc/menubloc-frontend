@@ -45,3 +45,23 @@ test("E: manual location overrides cached detection", () => {
   });
   assert.deepEqual(preference, { source: "manual", label: "Seattle, WA" });
 });
+
+test("F: coordinates-only save nearby keeps the detected city (Find closest location)", () => {
+  const store = storage();
+  saveDetectedLocation(store, { label: "Los Angeles, CA", city: "Los Angeles", state: "CA", lat: 34.0224, lng: -118.2851 });
+  saveDetectedLocation(store, { lat: 34.03, lng: -118.29 });
+  const cached = readDetectedLocation(store);
+  assert.equal(cached.city, "Los Angeles");
+  assert.equal(cached.label, "Los Angeles, CA");
+  assert.equal(cached.lat, 34.03);
+  assert.equal(shouldRequestGeolocation(cached), false);
+});
+
+test("G: coordinates-only cache (no city) re-requests detection on the next visit", () => {
+  const store = storage();
+  saveDetectedLocation(store, { label: "Mobile, AL", city: "Mobile", state: "AL", lat: 30.69, lng: -88.04 });
+  saveDetectedLocation(store, { lat: 34.03, lng: -118.29 });
+  const cached = readDetectedLocation(store);
+  assert.equal(cached.city, "");
+  assert.equal(shouldRequestGeolocation(cached), true);
+});
