@@ -7,6 +7,8 @@ import MenuItemModifiersEditor, {
   toEditorGroups,
   fromEditorGroups,
 } from "./MenuItemModifiersEditor.jsx";
+import MenuSectionLayoutPanel from "./MenuSectionLayoutPanel.jsx";
+import { orderSectionsByLayout } from "../../lib/menuSectionLayout.js";
 
 /** Default theme — matches owner Menu Manager palette for visual continuity. */
 export const MENU_EDITOR_COLORS = {
@@ -611,6 +613,10 @@ export function MenuEditor({
   }
 
   const isPublished = menu.status === "published";
+  const orderedSections = useMemo(
+    () => orderSectionsByLayout(sections, menu.section_layout),
+    [sections, menu.section_layout]
+  );
 
   return (
     <PageCard style={{ padding: 22 }}>
@@ -769,6 +775,20 @@ export function MenuEditor({
         </div>
       )}
 
+      {sections.length > 1 && (
+        <MenuSectionLayoutPanel
+          restaurantId={restaurantId}
+          menu={menu}
+          sectionNames={orderedSections.map((s) => s.name)}
+          api={api}
+          colors={colors}
+          fieldStyle={fieldStyle}
+          onSaved={(updated) => {
+            if (updated) onMenuUpdated?.(updated);
+          }}
+        />
+      )}
+
       <div style={{ marginBottom: 18 }}>
         <form onSubmit={handleAddSection} style={{ display: "flex", gap: 8 }}>
           <input
@@ -840,7 +860,7 @@ export function MenuEditor({
       {sections.length === 0 ? (
         <EmptyState colors={colors}>No items yet. Add a section above or add an item below.</EmptyState>
       ) : (
-        sections.map((section) => (
+        orderedSections.map((section) => (
           <SectionEditor
             key={section.name}
             section={section}

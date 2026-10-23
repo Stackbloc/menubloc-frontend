@@ -908,6 +908,8 @@ export default function PublicMenuPage() {
   const [tabLoading, setTabLoading] = useState(false);
   const [tabError, setTabError] = useState(null);
   const userSelectedTabRef = useRef(false);
+  // Owner tabs inside one menu (e.g. Food / Drinks): position in data.section_tabs.
+  const [activeSectionTab, setActiveSectionTab] = useState(0);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
     restaurantId: "",
@@ -1402,7 +1404,40 @@ export default function PublicMenuPage() {
   // Use tabSections if a menu with a real day+time schedule is currently active.
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
-  const sections        = tabSections?.sections ?? normalizeSections(presentationData || data);
+  const allSections     = tabSections?.sections ?? normalizeSections(presentationData || data);
+  // Owner tabs inside one menu — only when the menu-level tab bar is not already showing.
+  const basePresentation = data?.menu_presentation || data?.presentation || {};
+  const menuLevelTabsShown = basePresentation.tabs_allowed_for_public_view === true && _allMenus.length > 1;
+  const sectionTabs = useMemo(
+    () =>
+      !menuLevelTabsShown && !tabSections && Array.isArray(data?.section_tabs) && data.section_tabs.length > 1
+        ? data.section_tabs
+        : [],
+    [menuLevelTabsShown, tabSections, data?.section_tabs]
+  );
+  const sectionTabPos = sectionTabs.length ? Math.min(activeSectionTab, sectionTabs.length - 1) : 0;
+  const sections = useMemo(() => {
+    if (!sectionTabs.length) return allSections;
+    const want = sectionTabs[sectionTabPos].index;
+    return allSections.filter((s) => (Number.isInteger(s?.tab_index) ? s.tab_index : 0) === want);
+  }, [allSections, sectionTabs, sectionTabPos]);
+  useEffect(() => {
+    setActiveSectionTab(0);
+  }, [data?.restaurant_id, data?.selected_menu_id]);
+  // A search deep link (?highlightItem=) opens the tab that holds the dish.
+  const highlightItemParam = searchParams.get("highlightItem");
+  useEffect(() => {
+    if (!highlightItemParam || sectionTabs.length < 2) return;
+    const target = String(highlightItemParam);
+    const hit = allSections.find((s) =>
+      (s?.items || []).some((it) =>
+        [it?.id, it?.menu_item_id, it?.canonical_menu_item_id].some((v) => v != null && String(v) === target)
+      )
+    );
+    if (!hit) return;
+    const pos = sectionTabs.findIndex((t) => t.index === (Number.isInteger(hit.tab_index) ? hit.tab_index : 0));
+    if (pos >= 0) setActiveSectionTab(pos);
+  }, [highlightItemParam, sectionTabs, allSections]);
   const dietLabels = useMemo(() => buildDietPreferenceLabels(dietPrefs), [dietPrefs]);
   const allergenLabels = useMemo(
     () => buildAllergenPreferenceLabels(enabledAllergenKeys),
@@ -1417,7 +1452,7 @@ export default function PublicMenuPage() {
       }),
     [sections, dietaryFilterActive, dietPrefs, enabledAllergenKeys]
   );
-  const totalMenuItemCount = useMemo(() => countMenuDisplayItems(sections), [sections]);
+  const totalMenuItemCount = useMemo(() => countMenuDisplayItems(allSections), [allSections]);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1778,6 +1813,26 @@ export default function PublicMenuPage() {
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
+          ...(sectionTabs.length
+            ? {
+                // Synthetic negative ids never collide with real menu ids.
+                menus: sectionTabs.map((tab) => ({ id: -(tab.index + 1), tab_label: tab.label, name: tab.label })),
+                selectedMenuId: -(sectionTabs[sectionTabPos].index + 1),
+                onSelectMenu: (tabId) => {
+                  const pos = sectionTabs.findIndex((tab) => -(tab.index + 1) === Number(tabId));
+                  if (pos < 0 || pos === sectionTabPos) return;
+                  trackEngagement("menu_category_select", {
+                    menu_id: data?.selected_menu_id ?? null,
+                    label: sectionTabs[pos].label,
+                    section_tab: true,
+                  });
+                  setActiveSectionTab(pos);
+                },
+                tabLoading: false,
+                tabError: null,
+                menuPresentation: { ...basePresentation, tabs_allowed_for_public_view: true },
+              }
+            : null),
           designHeroIsStock,
           designSectionIsStock,
           menuAppearanceKey: applyMenuAppearance ? effectiveMenuAppearance : null,
