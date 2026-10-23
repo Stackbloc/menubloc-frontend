@@ -64,8 +64,10 @@ import {
 import {
   CLUSTER_DRINK_SUBCATEGORY_ALL,
   isClusterBeveragesCategory,
+  isUniversityCluster,
   normalizeClusterDrinkSubcategory,
   resolveAvailableDrinkCategoriesFromResponse,
+  sortNonAlcoholicDrinksFirst,
   visibleClusterDrinkSubcategoryChips,
 } from "../lib/clusterDrinkSubcategories.js";
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
@@ -598,9 +600,11 @@ function ClusterMenuExplorerTab({
 
   const searchActive = Boolean(submittedSearch.trim());
   const drinksCategorySelected = isClusterBeveragesCategory(selectedCategory);
+  // College clusters (USC, UCLA, …): coffee, tea and other non-alcoholic drinks before alcohol.
+  const nonAlcoholicDrinksFirst = isUniversityCluster(cluster);
   const visibleDrinkChips = useMemo(
-    () => visibleClusterDrinkSubcategoryChips(availableDrinkCategories),
-    [availableDrinkCategories],
+    () => visibleClusterDrinkSubcategoryChips(availableDrinkCategories, { nonAlcoholicFirst: nonAlcoholicDrinksFirst }),
+    [availableDrinkCategories, nonAlcoholicDrinksFirst],
   );
 
   const availableZones = useMemo(() => collectClusterZones(items), [items]);
@@ -629,15 +633,14 @@ function ClusterMenuExplorerTab({
     }
   }, [drinkSubcategory, availableDrinkCategories]);
 
-  const displayItems = useMemo(
-    () =>
-      applyClusterZoneAndPriceSort(items, {
-        zone: selectedZone,
-        priceSort,
-        getPriceCents: getConsumerDisplayPrice,
-      }),
-    [items, selectedZone, priceSort],
-  );
+  const displayItems = useMemo(() => {
+    const sorted = applyClusterZoneAndPriceSort(items, {
+      zone: selectedZone,
+      priceSort,
+      getPriceCents: getConsumerDisplayPrice,
+    });
+    return drinksCategorySelected && nonAlcoholicDrinksFirst ? sortNonAlcoholicDrinksFirst(sorted) : sorted;
+  }, [items, selectedZone, priceSort, drinksCategorySelected, nonAlcoholicDrinksFirst]);
 
   /** Same price-sort infrastructure as category browse — applies on search for every cluster. */
   const displaySearchItems = useMemo(

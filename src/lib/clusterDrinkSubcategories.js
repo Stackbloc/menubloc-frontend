@@ -16,12 +16,42 @@ export const CLUSTER_DRINK_SUBCATEGORY_CHIPS = [
   ),
 ];
 
+/** Alcoholic drink chips; everything else (coffee, tea, juice…) is non-alcoholic. */
+const ALCOHOLIC_DRINK_CATEGORY_IDS = new Set(["cocktails", "beer", "wine", "spirits"]);
+
+/** College clusters (USC, UCLA, any type "university") list non-alcoholic drinks first. */
+export function isUniversityCluster(cluster) {
+  return String(cluster?.type || cluster?.cluster_type || "")
+    .trim()
+    .toLowerCase() === "university";
+}
+
+function isAlcoholicDrinkItem(item) {
+  const cats = Array.isArray(item?.drinks_browser_categories) ? item.drinks_browser_categories : [];
+  if (cats.includes("mocktails")) return false;
+  return cats.some((id) => ALCOHOLIC_DRINK_CATEGORY_IDS.has(id));
+}
+
+/** Stable: coffee / tea / other non-alcoholic drinks before alcohol, price order kept in each group. */
+export function sortNonAlcoholicDrinksFirst(items) {
+  if (!Array.isArray(items)) return items;
+  const nonAlcoholic = [];
+  const alcoholic = [];
+  for (const item of items) (isAlcoholicDrinkItem(item) ? alcoholic : nonAlcoholic).push(item);
+  return [...nonAlcoholic, ...alcoholic];
+}
+
+function isAlcoholicChip(chip) {
+  return ALCOHOLIC_DRINK_CATEGORY_IDS.has(chip.id) || chip.id === "happy_hour";
+}
+
 /**
  * Yellow Browser drink chips present in this cluster only.
  * Hides empty subcategory chips; hides the whole set when nothing beyond All would show.
  * @param {string[]|null|undefined} availableIds from API available_drink_categories
+ * @param {{ nonAlcoholicFirst?: boolean }} [options] college clusters: Coffee, Tea… before Cocktails, Beer…
  */
-export function visibleClusterDrinkSubcategoryChips(availableIds) {
+export function visibleClusterDrinkSubcategoryChips(availableIds, { nonAlcoholicFirst = false } = {}) {
   const ids = Array.isArray(availableIds)
     ? availableIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
     : null;
@@ -31,9 +61,12 @@ export function visibleClusterDrinkSubcategoryChips(availableIds) {
     (chip) => chip.id !== CLUSTER_DRINK_SUBCATEGORY_ALL && present.has(chip.id)
   );
   if (typed.length === 0) return [];
+  const ordered = nonAlcoholicFirst
+    ? [...typed.filter((chip) => !isAlcoholicChip(chip)), ...typed.filter(isAlcoholicChip)]
+    : typed;
   return [
     CLUSTER_DRINK_SUBCATEGORY_CHIPS.find((chip) => chip.id === CLUSTER_DRINK_SUBCATEGORY_ALL),
-    ...typed,
+    ...ordered,
   ].filter(Boolean);
 }
 
