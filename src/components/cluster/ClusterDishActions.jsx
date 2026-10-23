@@ -2,6 +2,7 @@ import { useState } from "react";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
+import DishMoreActions from "../menu/DishMoreActions.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import { buildDishShareData } from "../share/shareUtils.js";
@@ -99,31 +100,48 @@ export default function ClusterDishActions({ item, counts = null }) {
         tone="ghost"
         size="row"
       />
-      {shareData ? (
-        <ShareButton
-          variant="dish"
-          iconOnly={true}
-          tone="ghost"
-          shareData={shareData}
-          analyticsContext={{
-            restaurantId,
-            restaurantSlug: item?.restaurant_slug || null,
-            menuItemId: routeId,
-            menuItemName: name,
-            pageType: "cluster_menu",
-            shareTarget: "dish",
-          }}
-        />
-      ) : null}
-      {ckId ? (
-        <DishVideoCommentButton
-          menuItemId={ckId}
-          menuItemName={name}
-          restaurantId={restaurantId}
-          tone="ghost"
-          size="row"
-        />
-      ) : null}
+      <DishMoreActions
+        dishName={name}
+        items={[
+          shareData
+            ? {
+                key: "share",
+                label: "Share",
+                node: (
+                  <ShareButton
+                    variant="dish"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={shareData}
+                    analyticsContext={{
+                      restaurantId,
+                      restaurantSlug: item?.restaurant_slug || null,
+                      menuItemId: routeId,
+                      menuItemName: name,
+                      pageType: "cluster_menu",
+                      shareTarget: "dish",
+                    }}
+                  />
+                ),
+              }
+            : null,
+          ckId
+            ? {
+                key: "video-comment",
+                label: "Comment with a video",
+                node: (
+                  <DishVideoCommentButton
+                    menuItemId={ckId}
+                    menuItemName={name}
+                    restaurantId={restaurantId}
+                    tone="ghost"
+                    size="row"
+                  />
+                ),
+              }
+            : null,
+        ]}
+      />
     </span>
   );
 }
