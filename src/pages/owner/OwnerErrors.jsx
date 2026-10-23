@@ -60,7 +60,7 @@ export default function OwnerErrors() {
         </Banner>
       ) : null}
       {data && data.available === false ? (
-        <Banner tone="info">The error log is not set up yet (migration 0362). Error emails still arrive.</Banner>
+        <Banner tone="info">The error log is not set up yet (migration 0363). Error emails still arrive.</Banner>
       ) : null}
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 18 }}>
