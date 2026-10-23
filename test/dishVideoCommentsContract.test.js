@@ -32,14 +32,35 @@ test("button sends signed-out diners to sign in and back", () => {
   assert.match(btn, /\/account\/login\?next=/);
 });
 
-test("Comment sits after Like on every dish action row", () => {
+test("video comment icon is last on every dish action row", () => {
   const card = read("src/components/menu-templates/PublicMenuItemCard.jsx");
   assert.equal((card.match(/<DishVideoCommentButton/g) || []).length, 3);
   for (const f of ["src/components/menu/MenuItemDetailActionRail.jsx", "src/components/cluster/ClusterDishActions.jsx"]) {
-    assert.match(read(f), /<DishVideoCommentButton/, f);
+    const src = read(f);
+    assert.match(src, /<DishVideoCommentButton/, f);
+    assert.ok(src.lastIndexOf("<DishVideoCommentButton") > src.lastIndexOf("<ShareButton"), f);
   }
   // Protected card actions still present.
   for (const el of ["<WishListMenuItemButton", "<LikeMenuItemButton", "<InviteToEatButton", "<ShareButton"]) {
     assert.ok(card.includes(el), el);
   }
+});
+
+test("Record uses the shared camera sheet capped at 25 s; file picker kept", () => {
+  const sheet = read("src/components/comments/DishVideoCommentSheet.jsx");
+  assert.match(sheet, /<ConsumerCameraSheet/);
+  assert.match(sheet, /maxRecordSeconds=\{DISH_VIDEO_COMMENT_MAX_SECONDS\}/);
+  assert.match(sheet, /Choose a video file/);
+  const cam = read("src/components/consumer/ConsumerCameraSheet.jsx");
+  assert.match(cam, /maxRecordSeconds = MAX_RECORD_SECONDS/);
+});
+
+test("C2: dish page lists video comments and refreshes after a post", () => {
+  const page = read("src/pages/MenuItemDetailPage.jsx");
+  assert.match(page, /<DishVideoComments menuItemId=/);
+  const list = read("src/components/comments/DishVideoComments.jsx");
+  assert.match(list, /listDishVideoComments\(menuItemId/);
+  assert.match(list, /if \(!comments\.length\) return null;/);
+  assert.match(list, /playsInline/);
+  assert.match(read("src/components/comments/DishVideoCommentSheet.jsx"), /DISH_VIDEO_COMMENT_POSTED_EVENT/);
 });

@@ -7,6 +7,7 @@ import ConsumerCameraSheet from "../consumer/ConsumerCameraSheet.jsx";
 import {
   createDishVideoComment,
   DISH_VIDEO_COMMENT_MAX_SECONDS,
+  DISH_VIDEO_COMMENT_POSTED_EVENT,
 } from "../../lib/dishVideoCommentsApi.js";
 
 /**
@@ -84,6 +85,7 @@ export default function DishVideoCommentSheet({ open, onClose, menuItemId, menuI
       if (!videoUrl) throw new Error("The video didn't upload. Try again.");
       const res = await createDishVideoComment(menuItemId, { videoUrl, durationSeconds: seconds, restaurantId });
       setPosted(true);
+      window.dispatchEvent(new CustomEvent(DISH_VIDEO_COMMENT_POSTED_EVENT, { detail: { menuItemId } }));
       onPosted?.(res?.comment || null);
     } catch (err) {
       setError(err?.message || "Your comment didn't post. Try again.");

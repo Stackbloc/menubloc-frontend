@@ -5,6 +5,8 @@
 import { apiGet, apiPost } from "./api.js";
 
 export const DISH_VIDEO_COMMENT_MAX_SECONDS = 25;
+/** window event fired after a post; detail: { menuItemId }. */
+export const DISH_VIDEO_COMMENT_POSTED_EVENT = "menuply:dish-video-comment-posted";
 
 export function listDishVideoComments(menuItemId, { limit } = {}) {
   const qs = limit ? `?limit=${encodeURIComponent(limit)}` : "";

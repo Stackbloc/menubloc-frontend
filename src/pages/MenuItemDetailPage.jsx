@@ -60,6 +60,7 @@ import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import FoodComments from "../components/comments/FoodComments.jsx";
+import DishVideoComments from "../components/comments/DishVideoComments.jsx";
 import FoodCommentNavButton from "../components/FoodCommentNavButton.jsx";
 import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
 import InviteToEatButton from "../components/InviteToEatButton.jsx";
@@ -1881,6 +1882,10 @@ export default function MenuItemDetailPage() {
             : id || item?.menu_item_id || null
         }
       />
+
+      {item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
+        <DishVideoComments menuItemId={Number(item.menu_item_id)} />
+      ) : null}
 
       {focusFoodComments && item.menu_item_id && Number.isFinite(Number(item.menu_item_id)) ? (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20 }}>
