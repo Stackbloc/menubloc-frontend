@@ -37,6 +37,7 @@ const PARALLEL_UPLOADS = 3;
 const MAX_FILE_MB = 25;
 // Notes like "update … prices" turn on price mode until the checkbox is touched (same rule as the server).
 const PRICE_NOTE_PATTERN = /\b(update|change|new|current|correct|fix)\b[^.\n]{0,40}\bprices?\b/i;
+const LA_STORES_NOTE_PATTERN = /\b(all|every)\b[^.\n]{0,30}\b(la|l\.a\.|los angeles)\b/i;
 
 const EMPTY_FORM = {
   target_type: "restaurant",
@@ -49,6 +50,8 @@ const EMPTY_FORM = {
   admin_notes: "",
   // "prices" = update prices on the menu already on Menuply; "menu" = add the menu.
   update_mode: "menu",
+  // Chain stores in price mode: "store" = this store only; "los-angeles" = every store of the chain in the LA area.
+  price_scope: "store",
 };
 
 const inputStyle = {
@@ -222,12 +225,29 @@ function PriceChanges({ plan }) {
   const notOnMenu = plan?.not_on_menu || [];
   const limit = 60;
   const visible = showAll ? changes : changes.slice(0, limit);
+  // All stores in an area: each dish is set to one price everywhere, so show the new price only.
+  const market = plan?.target === "market_overrides";
   return (
     <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 12, padding: "12px 16px", maxHeight: 420, overflow: "auto" }}>
+      {market ? (
+        <details style={{ marginBottom: 10, fontSize: 13 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+            {plan.store_count} store{plan.store_count === 1 ? "" : "s"} in the {plan.market_name}
+          </summary>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18, color: OWNER_COLORS.muted }}>
+            {(plan.stores || []).map((st) => (
+              <li key={st.id}>
+                #{st.id} {st.address || st.name}
+                {st.city ? `, ${st.city}` : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
       {changes.length ? (
         <>
           <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: OWNER_COLORS.muted, marginBottom: 6 }}>
-            Price changes
+            {market ? "Prices for every store" : "Price changes"}
           </div>
           {visible.map((c) => (
             <div key={c.id} style={{ display: "flex", gap: 12, fontSize: 14, padding: "3px 0" }}>
@@ -236,8 +256,12 @@ function PriceChanges({ plan }) {
                 {c.section ? <span style={{ fontWeight: 400, fontSize: 12, color: OWNER_COLORS.muted }}> · {c.section}</span> : null}
               </div>
               <div style={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-                <span style={{ color: OWNER_COLORS.muted, textDecoration: "line-through" }}>{formatPrice(c.before) || "no price"}</span>
-                {" → "}
+                {market ? null : (
+                  <>
+                    <span style={{ color: OWNER_COLORS.muted, textDecoration: "line-through" }}>{formatPrice(c.before) || "no price"}</span>
+                    {" → "}
+                  </>
+                )}
                 <strong>{formatPrice(c.after)}</strong>
               </div>
             </div>
@@ -316,6 +340,7 @@ export default function OwnerKnowledgeBot() {
       ...f,
       admin_notes: notes,
       update_mode: updateModeTouched ? f.update_mode : PRICE_NOTE_PATTERN.test(notes) ? "prices" : "menu",
+      price_scope: updateModeTouched ? f.price_scope : LA_STORES_NOTE_PATTERN.test(notes) ? "los-angeles" : "store",
     }));
   };
 
@@ -340,6 +365,8 @@ export default function OwnerKnowledgeBot() {
       admin_notes: row.admin_notes || "",
       update_mode:
         row.scope?.update_mode || (PRICE_NOTE_PATTERN.test(row.admin_notes || "") ? "prices" : "menu"),
+      price_scope:
+        row.scope?.price_scope || (LA_STORES_NOTE_PATTERN.test(row.admin_notes || "") ? "los-angeles" : "store"),
     });
   }, []);
 
@@ -384,7 +411,7 @@ export default function OwnerKnowledgeBot() {
       admin_notes: values.admin_notes,
       reference_urls: urlsFromTextarea(values.menu_urls),
       additional_urls: [],
-      scope: { ...scopeRest, cluster_slug: values.cluster_slug || null, update_mode: values.update_mode || "menu" },
+      scope: { ...scopeRest, cluster_slug: values.cluster_slug || null, update_mode: values.update_mode || "menu", price_scope: values.price_scope || "store" },
     };
   }
 
@@ -712,10 +739,25 @@ export default function OwnerKnowledgeBot() {
                 <span>
                   <strong>Update prices on the current menu</strong>
                   <span style={{ display: "block", fontSize: 12, color: OWNER_COLORS.muted }}>
-                    Prices read from your screenshots or pasted text replace the prices of the same dishes on Menuply. Nothing is added or removed. For one chain store, only that store's prices change.
+                    Prices read from your screenshots or pasted text replace the prices of the same dishes on Menuply. Nothing is added or removed.
                   </span>
                 </span>
               </label>
+            ) : null}
+            {form.update_mode === "prices" && form.target_type !== "franchise" ? (
+              <Field label="Which stores? (chain stores only)">
+                <select
+                  value={form.price_scope}
+                  onChange={(e) => {
+                    setUpdateModeTouched(true);
+                    setForm((f) => ({ ...f, price_scope: e.target.value }));
+                  }}
+                  style={inputStyle}
+                >
+                  <option value="store">This store only</option>
+                  <option value="los-angeles">Every store of this chain in the Los Angeles area (LA + Orange County)</option>
+                </select>
+              </Field>
             ) : null}
 
             {busy === "find" ? (
@@ -750,7 +792,12 @@ export default function OwnerKnowledgeBot() {
                     return prices ? (
                       <>
                         <strong>Prices updated.</strong> {prices.updated} price{prices.updated === 1 ? "" : "s"} changed
-                        {prices.target === "store_overrides" ? " on this store only" : ""}.
+                        {prices.target === "market_overrides"
+                          ? ` across ${prices.stores_updated} of ${prices.store_count} ${prices.market || "area"} stores`
+                          : prices.target === "store_overrides"
+                            ? " on this store only"
+                            : ""}
+                        .
                       </>
                     ) : (
                       <>
@@ -855,7 +902,9 @@ export default function OwnerKnowledgeBot() {
             {preview.requires_confirmation && !published ? (
               <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 14, fontSize: 13 }}>
                 <input type="checkbox" checked={confirmLarge} onChange={(e) => setConfirmLarge(e.target.checked)} />
-                I confirm this franchise-wide or large change should be published.
+                {pricePlan?.target === "market_overrides"
+                  ? `I confirm these prices should be set on all ${pricePlan.store_count} stores.`
+                  : "I confirm this franchise-wide or large change should be published."}
               </label>
             ) : null}
 
@@ -874,7 +923,9 @@ export default function OwnerKnowledgeBot() {
                   {busy === "publish"
                     ? "Publishing…"
                     : pricePlan
-                      ? `Update ${priceChangeCount} price${priceChangeCount === 1 ? "" : "s"}`
+                      ? pricePlan.target === "market_overrides"
+                        ? `Update prices on ${pricePlan.store_count} stores`
+                        : `Update ${priceChangeCount} price${priceChangeCount === 1 ? "" : "s"}`
                       : chainStore?.ready
                         ? `Publish ${chainStore.chain_name} menu to this store (${items.length} items)`
                         : items.length
