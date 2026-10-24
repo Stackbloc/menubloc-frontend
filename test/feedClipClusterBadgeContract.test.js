@@ -36,7 +36,7 @@ test("Feed rail keeps the original 64px column; Order pill hangs below; hover hi
     "Add this item to your Wish List",
     "Add this restaurant to your Wish List",
     "Add this restaurant to your Favorites",
-    "Like this dish",
+    "Fav this dish",
     "Invite a Connect to eat this",
     "Share this clip",
   ]) {

@@ -108,7 +108,7 @@ describe("distributor public profile contracts", () => {
     assert.match(page, /data-distributor-offer-slot/);
     assert.doesNotMatch(page, /menuply_contacts|Menuply Contact/);
     assert.doesNotMatch(page, /Company information/);
-    assert.doesNotMatch(page, /Favorite Menu Items/);
+    assert.doesNotMatch(page, /House Favorites|Favorite Menu Items/);
     assert.doesNotMatch(page, /ProfileDealsSection/);
     assert.doesNotMatch(page, /ProfilePhotoStrip/);
     assert.doesNotMatch(page, /Visit Website/);

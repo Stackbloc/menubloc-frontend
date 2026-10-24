@@ -45,7 +45,7 @@ export default function ProfileFavoriteMenuItems({
     <section
       data-testid="profile-favorite-menu-items"
       data-profile-surface="card"
-      aria-label="Favorite Menu Items"
+      aria-label="House Favorites"
       style={profileReadableSurfaceStyle({
         marginBottom: isMobile ? 20 : 28,
       })}
@@ -59,12 +59,12 @@ export default function ProfileFavoriteMenuItems({
           marginBottom: 12,
         }}
       >
-        Favorite Menu Items
+        House Favorites
       </div>
       {!list.length ? (
         <ProfileSectionBlank
           testId="profile-favorites-blank"
-          message="No favorite menu items yet. Feature up to 3 dishes."
+          message="No House Favorites yet. Feature up to 3 dishes."
         />
       ) : (
         <div

@@ -227,7 +227,7 @@ test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept 
   assert.match(page, /feed-menus-bookmark/);
   assert.match(page, /feed-menus-sample-hint/);
   assert.match(page, /feed-menus-stack-hint/);
-  assert.match(page, /Liked restaurants stay here until you unlike them/);
+  assert.match(page, /Fav restaurants stay here until you remove them from your Favs/);
   assert.match(page, /48 hours/);
   assert.match(page, /getFollowedRestaurants/);
   assert.match(page, /buildFeedMenuSampleDeck/);

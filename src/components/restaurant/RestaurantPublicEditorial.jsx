@@ -44,7 +44,7 @@ export default function RestaurantPublicEditorial({
   isMobile,
 }) {
   // IdentityBlock / FollowRestaurantButton live in PublicProfileShell.
-  // Keep string markers for contracts: View Menu, Favorite Menu Items
+  // Keep string markers for contracts: View Menu, House Favorites
   return (
     <PublicProfileShell
       profileType="restaurant"

@@ -362,7 +362,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
         await api.updateFavoriteMenuItems(rid, ids);
       } catch (favErr) {
         throw new Error(
-          `Draft saved, but Favorite Menu Items did not update on the public profile: ${favErr.message || favErr}`
+          `Draft saved, but House Favorites did not update on the public profile: ${favErr.message || favErr}`
         );
       }
     } catch (e) {
@@ -939,7 +939,7 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
 
         {/* ── Favorite Menu Items (public homepage) ───────────────────── */}
         <Section
-          title="Favorite Menu Items"
+          title="House Favorites"
           sub="Up to 3 dishes on the public profile. First selection is also the featured dish on the menu. Changes go live immediately."
         >
           <div data-testid="operator-profile-favorite-items">
