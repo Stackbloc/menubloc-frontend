@@ -7,6 +7,7 @@
  * blocked jumps to the group that still needs a choice.
  */
 import { createPortal } from "react-dom";
+import NutritionIcon from "../icons/NutritionIcon.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 import { findAvoidedInIngredientList } from "../../lib/foodsToAvoidMatch.js";
@@ -69,6 +70,28 @@ function Chevron({ open }) {
     </svg>
   );
 }
+
+const NUTRITION_BUTTON_STYLE = {
+  marginTop: 14,
+  padding: 0,
+  border: "none",
+  background: "none",
+  cursor: "pointer",
+  display: "inline-flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 4,
+};
+const NUTRITION_CIRCLE_STYLE = {
+  width: 40,
+  height: 40,
+  borderRadius: "50%",
+  border: "1.5px solid #e1e6e1",
+  background: "#e8f5e3",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 export default function MenuItemOrderSheet({
   item,
@@ -223,12 +246,19 @@ export default function MenuItemOrderSheet({
               </button>
             </div>
             {onOpenDetails ? (
+              // Nutrition icon instead of the old underlined text link (Andre, 2026-10-24).
               <button
                 type="button"
                 onClick={onOpenDetails}
-                style={{ marginTop: 14, padding: 0, border: "none", background: "none", color: "#4b5560", fontSize: 14, textDecoration: "underline", cursor: "pointer" }}
+                aria-label="Nutrition & dish details"
+                title="Nutrition & dish details"
+                data-testid="item-sheet-nutrition"
+                style={NUTRITION_BUTTON_STYLE}
               >
-                Nutrition &amp; dish details
+                <span style={NUTRITION_CIRCLE_STYLE}>
+                  <NutritionIcon size={20} color="#0f7a24" />
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#4b5560" }}>Nutrition</span>
               </button>
             ) : null}
           </div>
