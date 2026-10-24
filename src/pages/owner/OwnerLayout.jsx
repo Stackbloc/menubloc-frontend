@@ -127,9 +127,11 @@ export default function OwnerLayout({ title, children, actions = null }) {
       {
         id: "restaurant-manager",
         label: "Restaurant Manager",
-        // One search-first workspace (search → Details · Public profile · Menus, or Add).
+        // One search-first workspace (search → Details · Public profile · Menus · Deals, or Add);
+        // Deals also has its own page for jumping straight to a restaurant's deals.
         items: [
           { to: "/owner/restaurant-manager", label: "Restaurants" },
+          { to: "/owner/deals", label: "Deals" },
         ],
       },
       {

@@ -46,7 +46,7 @@ test("deal detail lists the other items the deal applies to", () => {
 
 test("owner deal video panel links up to 3 items from the deal menu", () => {
   const src = read("src/pages/owner/OwnerVideoCuration.jsx");
-  assert.match(src, /const MAX_DEAL_MENU_ITEMS = 3;/);
+  assert.match(read("src/pages/owner/OwnerDealMenuItemsPicker.jsx"), /const MAX_DEAL_MENU_ITEMS = 3;/);
   assert.match(src, /listOwnerDealMenuItems\(dealRestaurantId\)/);
   assert.match(src, /applies_to_menu_item_ids: dealItems\.slice\(1\)/);
   assert.match(src, /linked_items_source: dealMenu\.source/);

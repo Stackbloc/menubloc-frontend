@@ -1094,8 +1094,16 @@ export const listOwnerDealMenuItems = (restaurantId) =>
 export const updateOwnerDeal = (restaurantId, dealId, body) =>
   patch(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`, body);
 
-export const publishOwnerDeal = (restaurantId, dealId) =>
-  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, {});
+/** Clip Manager publishes to Feed → Deals (video required); the Deals panel passes
+ * { require_video: false } so structured deals without a video can go live. */
+export const publishOwnerDeal = (restaurantId, dealId, body = {}) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, body);
+
+export const pauseOwnerDeal = (restaurantId, dealId) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/pause`, {});
+
+export const removeOwnerDeal = (restaurantId, dealId) =>
+  del(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`);
 
 export const uploadOwnerDealMediaVideo = (restaurantId, dealId, file) => {
   const form = new FormData();
