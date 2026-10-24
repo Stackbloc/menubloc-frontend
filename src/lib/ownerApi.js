@@ -553,6 +553,17 @@ export const putMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId, m
   });
 export const getMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId) =>
   get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/modifier-groups`);
+/** Every modifier group on a menu with its scope (this item / section / picked items) and items. */
+export const listMenuConsoleModifierGroups = (restaurantId, menuId) =>
+  get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups`);
+/** body: { group, applies_to: { type: "item" | "section" | "items", section? }, item_ids? } */
+export const putMenuConsoleModifierGroupScope = (restaurantId, menuId, groupId, body) =>
+  req(
+    `/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups/${encodeURIComponent(groupId)}`,
+    { method: "PUT", body: JSON.stringify(body) }
+  );
+export const deleteMenuConsoleModifierGroup = (restaurantId, menuId, groupId) =>
+  del(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups/${encodeURIComponent(groupId)}`);
 export const deleteMenuConsoleItem = (restaurantId, menuId, itemId) =>
   req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
     method: "DELETE",

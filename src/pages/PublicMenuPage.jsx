@@ -25,6 +25,8 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
+import MenuItemOrderSheet from "../components/basket/MenuItemOrderSheet.jsx";
+import CartAddedPopover from "../components/basket/CartAddedPopover.jsx";
 import SmartCustomizationSheet, { isCustomizableItem } from "../components/basket/SmartCustomizationSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
@@ -903,6 +905,8 @@ export default function PublicMenuPage() {
     setItemSheetState(next);
   }, []);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
+  // "Your cart (N)" popover after adding from the item sheet: { lineId, photoUrl }.
+  const [cartPopover, setCartPopover] = useState(null);
   const [hoveredItemId, setHoveredItemId] = useState(null);
   // Multi-menu tab state
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -1645,10 +1649,18 @@ export default function PublicMenuPage() {
   }
 
 
-  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
+  function commitMenuItemToBasket(
+    item,
+    itemName,
+    itemDescription,
+    modifiers = [],
+    preparationInstructions = null,
+    { quantity = 1, announce = true } = {}
+  ) {
     if (!isOnlineOrderingAvailable(presentationData || data)) return null;
     return addMenuItem({
       restaurant: cartRestaurant,
+      announce,
       item: {
         menu_item_id: item?.menu_item_id,
         restaurant_id: item?.restaurant_id,
@@ -1660,9 +1672,25 @@ export default function PublicMenuPage() {
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
         preparationInstructions: preparationInstructions || null,
+        quantity,
       },
     });
   }
+
+  /** Item sheet "Add to order": basket line + "Your cart" popover instead of the generic toast. */
+  function addFromOrderSheet(sheet, { quantity, modifiers, preparationInstructions }) {
+    const result = commitMenuItemToBasket(sheet.item, sheet.name, sheet.desc, modifiers, preparationInstructions, {
+      quantity,
+      announce: false,
+    });
+    setItemSheet(null);
+    if (result?.ok && result.addedLine?.lineId) {
+      setAddedConfirmation(null);
+      setCartPopover({ lineId: result.addedLine.lineId, photoUrl: getMenuItemImageUrl(sheet.item) || null });
+    }
+  }
+
+  const closeCartPopover = useCallback(() => setCartPopover(null), []);
 
   function openCheckout() {
     navigate("/checkout");
@@ -1718,6 +1746,7 @@ export default function PublicMenuPage() {
     () => ({
       hideDishShare: false,
       tapRowToAdd: true,
+      tapRowOpensSheet: true,
       nonOrderableOpensDish: true,
       keepNutritionChip: true,
       onRemoveOne: removeOneFromBasket,
@@ -2027,8 +2056,29 @@ export default function PublicMenuPage() {
         </MenuHeaderTrailingActionContext.Provider>
       </div>
 
-      {/* Item detail sheet */}
-      {itemSheet ? (
+      {/* Orderable dish → order sheet (photo, quantity, choices, Add to order $X); otherwise info sheet. */}
+      {itemSheet && isItemOrderable(itemSheet.item) && isOnlineOrderingAvailable(presentationData || data) ? (
+        <MenuItemOrderSheet
+          key={String(getNormalizedMenuItemId(itemSheet.item) ?? itemSheet.name)}
+          item={itemSheet.item}
+          name={itemSheet.name}
+          description={itemSheet.desc}
+          basePriceCents={getConsumerDisplayPrice(itemSheet.item) ?? 0}
+          foodsToAvoid={foodsToAvoid}
+          brand={menuBrand}
+          onClose={() => setItemSheet(null)}
+          onAdd={(choice) => addFromOrderSheet(itemSheet, choice)}
+          onOpenDetails={
+            itemSheet.canNavigate
+              ? () => {
+                  const target = getNormalizedMenuItemId(itemSheet.item);
+                  setItemSheet(null);
+                  navigate(`/menu-items/${target}?from=menu`);
+                }
+              : null
+          }
+        />
+      ) : itemSheet ? (
         <ItemDetailSheet
           sheetData={itemSheet}
           activeCartItems={activeCartItems}
@@ -2094,6 +2144,20 @@ export default function PublicMenuPage() {
           summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} · ${formatMoneyFromCents(subtotalCents)}`}
           onOpenBasket={() => navigate("/checkout")}
           onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
+        />
+      ) : null}
+
+      {cartPopover ? (
+        <CartAddedPopover
+          line={activeCartItems.find((line) => line.lineId === cartPopover.lineId) || null}
+          photoUrl={cartPopover.photoUrl}
+          itemCount={itemCount}
+          subtotalCents={subtotalCents}
+          brand={menuBrand}
+          onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
+          onRemove={(lineId) => { removeItem(lineId); setCartPopover(null); }}
+          onContinue={() => { setCartPopover(null); navigate("/checkout"); }}
+          onClose={closeCartPopover}
         />
       ) : null}
 

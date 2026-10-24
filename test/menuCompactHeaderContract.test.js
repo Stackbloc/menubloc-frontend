@@ -35,8 +35,8 @@ test("Classic and Fine render the trailing slot in the header icon row", () => {
   }
 });
 
-test("purchase hint keeps tap-to-add messaging and stays sticky", () => {
+test("purchase hint keeps tap-to-order messaging and stays sticky", () => {
   const hint = read("src/components/menu/MenuPurchaseWaiterHint.jsx");
-  assert.match(hint, /Order here · Tap a dish to add it to your basket · Hold to remove/);
+  assert.match(hint, /Order here · Tap a dish to see it, pick options and add it/);
   assert.match(hint, /position: "sticky"/);
 });

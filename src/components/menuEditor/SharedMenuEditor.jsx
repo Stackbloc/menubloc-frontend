@@ -8,6 +8,8 @@ import MenuItemModifiersEditor, {
   fromEditorGroups,
 } from "./MenuItemModifiersEditor.jsx";
 import MenuSectionLayoutPanel from "./MenuSectionLayoutPanel.jsx";
+import MenuModifierGroupsOverview from "./MenuModifierGroupsOverview.jsx";
+import { attachScopeFromIndex, planItemModifierSave } from "./modifierScopeModel.js";
 import { orderSectionsByLayout } from "../../lib/menuSectionLayout.js";
 
 /** Default theme — matches owner Menu Manager palette for visual continuity. */
@@ -265,6 +267,23 @@ export function MenuEditor({
   const [newSectionName, setNewSectionName] = useState("");
   const [addingSection, setAddingSection] = useState(false);
 
+  // Modifier group scope (owner): menu-wide index of groups → which items each is on.
+  const canScopeModifiers =
+    typeof api.listMenuModifierGroups === "function" && typeof api.putModifierGroupScope === "function";
+  const [modifierIndex, setModifierIndex] = useState(null);
+  const modifierIndexRef = useRef(null);
+  async function loadModifierIndex() {
+    if (!canScopeModifiers || !menu?.id) return null;
+    try {
+      const data = await api.listMenuModifierGroups(restaurantId, menu.id);
+      modifierIndexRef.current = data;
+      setModifierIndex(data);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
   const fieldStyle = buildInputStyle(colors);
   const labelStyle = {
     display: "block",
@@ -278,6 +297,11 @@ export function MenuEditor({
 
   const canManagePhotos =
     typeof api.listItemPhotos === "function" && typeof api.uploadItemPhoto === "function";
+
+  useEffect(() => {
+    loadModifierIndex();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canScopeModifiers, restaurantId, menu?.id, menuDetail]);
 
   useEffect(() => {
     setSections(menuDetail.sections || []);
@@ -403,10 +427,13 @@ export function MenuEditor({
     }));
     setEditingItemId(itemId);
     if (typeof api.getModifierGroups === "function" && menu?.id) {
-      api
-        .getModifierGroups(restaurantId, menu.id, itemId)
-        .then((data) => {
-          const groups = toEditorGroups(data?.modifier_groups);
+      Promise.all([
+        api.getModifierGroups(restaurantId, menu.id, itemId),
+        canScopeModifiers ? modifierIndexRef.current || loadModifierIndex() : null,
+      ])
+        .then(([data, index]) => {
+          const loaded = toEditorGroups(data?.modifier_groups);
+          const groups = canScopeModifiers ? attachScopeFromIndex(loaded, index, itemId) : loaded;
           setPendingEdits((prev) => ({
             ...prev,
             [itemId]: {
@@ -448,9 +475,26 @@ export function MenuEditor({
       if (edits.price !== undefined) body.price = edits.price === "" ? null : Number(edits.price);
       if (edits.section !== undefined) body.section = edits.section || null;
 
-      const data = await api.updateItem(restaurantId, menu.id, itemId, body);
+      if (canScopeModifiers && typeof api.putModifierGroups === "function") {
+        // Modifiers first: the item PATCH then moves section-wide groups if the section changed.
+        const current = sections.flatMap((s) => s.items).find((i) => i.id === itemId);
+        const plan = planItemModifierSave(edits.modifier_groups, {
+          itemId,
+          itemSection: edits.section ?? current?.section ?? "",
+        });
+        await api.putModifierGroups(restaurantId, menu.id, itemId, plan.itemGroups);
+        for (const call of plan.scopeCalls) {
+          await api.putModifierGroupScope(restaurantId, menu.id, call.groupId, call.body);
+        }
+        for (const groupId of plan.deleteIds) {
+          await api.deleteModifierGroup?.(restaurantId, menu.id, groupId);
+        }
+      }
 
-      if (typeof api.putModifierGroups === "function") {
+      const data = await api.updateItem(restaurantId, menu.id, itemId, body);
+      if (canScopeModifiers) loadModifierIndex();
+
+      if (!canScopeModifiers && typeof api.putModifierGroups === "function") {
         await api.putModifierGroups(
           restaurantId,
           menu.id,
@@ -616,6 +660,18 @@ export function MenuEditor({
   const orderedSections = useMemo(
     () => orderSectionsByLayout(sections, menu.section_layout),
     [sections, menu.section_layout]
+  );
+  const modifierScopeBase = useMemo(
+    () =>
+      canScopeModifiers
+        ? {
+            sections: orderedSections.map((sec) => sec.name).filter(Boolean),
+            menuItems: sections.flatMap((sec) =>
+              (sec.items || []).map((it) => ({ id: it.id, name: it.name, section: it.section || sec.name || "" }))
+            ),
+          }
+        : null,
+    [canScopeModifiers, orderedSections, sections]
   );
 
   return (
@@ -789,6 +845,19 @@ export function MenuEditor({
         />
       )}
 
+      {canScopeModifiers && modifierIndex?.groups?.length ? (
+        <MenuModifierGroupsOverview
+          index={modifierIndex}
+          colors={colors}
+          onEditItem={(id) => {
+            startEditItem(id);
+            window.requestAnimationFrame(() =>
+              document.getElementById(`menu-editor-item-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+            );
+          }}
+        />
+      ) : null}
+
       <div style={{ marginBottom: 18 }}>
         <form onSubmit={handleAddSection} style={{ display: "flex", gap: 8 }}>
           <input
@@ -876,6 +945,7 @@ export function MenuEditor({
             onCancelEdit={cancelEditItem}
             onUpdateEdit={updatePendingEdit}
             onSaveEdit={saveEditItem}
+            modifierScopeBase={modifierScopeBase}
             onDeleteItem={handleDeleteItem}
             itemPhotos={itemPhotos}
             photoBusyId={photoBusyId}
@@ -949,6 +1019,7 @@ function SectionEditor({
   onCancelEdit,
   onUpdateEdit,
   onSaveEdit,
+  modifierScopeBase = null,
   onDeleteItem,
   itemPhotos = {},
   photoBusyId = null,
@@ -1006,8 +1077,8 @@ function SectionEditor({
       </div>
 
       {section.items.map((item) => (
+        <div key={item.id} id={`menu-editor-item-${item.id}`} style={{ scrollMarginTop: 80 }}>
         <ItemRow
-          key={item.id}
           item={item}
           sectionOptions={sectionOptions}
           onEnsureSection={onEnsureSection}
@@ -1021,6 +1092,15 @@ function SectionEditor({
           onCancelEdit={() => onCancelEdit(item.id)}
           onUpdateEdit={(field, value) => onUpdateEdit(item.id, field, value)}
           onSaveEdit={() => onSaveEdit(item.id)}
+          modifierScope={
+            modifierScopeBase
+              ? {
+                  ...modifierScopeBase,
+                  itemId: item.id,
+                  itemSection: pendingEdits[item.id]?.section ?? item.section ?? "",
+                }
+              : null
+          }
           onDelete={() => onDeleteItem(item.id)}
           photoUrl={itemPhotos[item.id]?.url || null}
           photoBusy={photoBusyId === item.id}
@@ -1028,6 +1108,7 @@ function SectionEditor({
           onPhotoUpload={(file) => onPhotoUpload?.(item.id, file)}
           onPhotoRemove={() => onPhotoRemove?.(item.id)}
         />
+        </div>
       ))}
 
       {isAddingHere && (
@@ -1064,6 +1145,7 @@ function ItemRow({
   onCancelEdit,
   onUpdateEdit,
   onSaveEdit,
+  modifierScope = null,
   onDelete,
   photoUrl = null,
   photoBusy = false,
@@ -1231,6 +1313,7 @@ function ItemRow({
           value={pendingEdit.modifier_groups || []}
           onChange={(next) => onUpdateEdit("modifier_groups", next)}
           compact
+          scope={modifierScope}
         />
         <div style={{ display: "flex", gap: 8 }}>
           <button
