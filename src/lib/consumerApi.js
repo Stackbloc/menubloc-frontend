@@ -202,6 +202,13 @@ export const peekEduVerification = (token) =>
   get(`/api/consumer-auth/edu/verify?token=${encodeURIComponent(token)}`);
 export const confirmEduVerification = (token) =>
   post("/api/consumer-auth/edu/verify", { token });
+// Account email verification (2026-10-24). `pendingToken` = email_verification_token from a 202.
+export const requestEmailVerification = (pendingToken = null) =>
+  post("/api/consumer-auth/email/verify/request", pendingToken ? { email_verification_token: pendingToken } : {});
+export const peekEmailVerification = (token) =>
+  get(`/api/consumer-auth/email/verify?token=${encodeURIComponent(token)}`);
+export const confirmEmailVerification = (token) =>
+  post("/api/consumer-auth/email/verify", { token });
 
 // ── Connections (people — not restaurant Following) ───────────────────────
 export const listConnections = (status = null, peerId = null) => {

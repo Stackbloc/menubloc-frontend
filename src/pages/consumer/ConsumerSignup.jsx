@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
+import CheckEmailNotice from "../../components/consumer/CheckEmailNotice.jsx";
+import { needsEmailVerification } from "../../lib/emailVerification.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
@@ -35,6 +37,8 @@ export default function ConsumerSignup() {
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+  // Set when signup answers email_verification_required (gate on): { email, token }.
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   function navigateAfterAuth() {
     if (isDinerQrConnectPath(redirectTo)) {
@@ -75,6 +79,10 @@ export default function ConsumerSignup() {
           fromQrConnect: isDinerQrConnectPath(redirectTo),
         }),
       });
+      if (needsEmailVerification(result)) {
+        setPendingEmail({ email: result.email || email.trim(), token: result.email_verification_token || "" });
+        return;
+      }
       if (result?.requires_phone_verification) {
         setPhoneVerificationToken(result.phone_verification_token || "");
         setSmsOpen(true);
@@ -126,6 +134,9 @@ export default function ConsumerSignup() {
           </p>
         )}
       >
+        {pendingEmail ? (
+          <CheckEmailNotice email={pendingEmail.email} pendingToken={pendingEmail.token} />
+        ) : (
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div style={styles.fieldGroup}>
@@ -215,6 +226,7 @@ export default function ConsumerSignup() {
             {loading ? "Creating account…" : "Create account"}
           </button>
         </form>
+        )}
 
         <SocialAuthSection
           mode="signup"

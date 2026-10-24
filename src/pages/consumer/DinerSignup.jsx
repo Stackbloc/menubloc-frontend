@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
+import CheckEmailNotice from "../../components/consumer/CheckEmailNotice.jsx";
+import { needsEmailVerification } from "../../lib/emailVerification.js";
 import SiteFooter from "../../components/SiteFooter.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
@@ -156,6 +158,8 @@ export default function DinerSignup() {
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+  // Set when signup answers email_verification_required (gate on): { email, token }.
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -185,6 +189,10 @@ export default function DinerSignup() {
         ...buildLegalConsentPayload(),
         ...buildDinerSignupAttribution({ signupPage: "diner" }),
       });
+      if (needsEmailVerification(result)) {
+        setPendingEmail({ email: result.email || email.trim(), token: result.email_verification_token || "" });
+        return;
+      }
       if (result?.requires_phone_verification) {
         setPhoneVerificationToken(result.phone_verification_token || "");
         setSmsOpen(true);
@@ -290,6 +298,9 @@ export default function DinerSignup() {
           <p style={styles.signupIntro}>
             Enter your first and last name, email, and password. Your default screen name is your first name and last initial unless you choose one below. We&apos;ll verify your phone once before you can order.
           </p>
+          {pendingEmail ? (
+            <CheckEmailNotice email={pendingEmail.email} pendingToken={pendingEmail.token} />
+          ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div style={styles.nameRow}>
               <div style={styles.fieldGroup}>
@@ -379,6 +390,7 @@ export default function DinerSignup() {
               </button>
             </div>
           </form>
+          )}
           <p style={styles.signIn}>Already have an account? <Link to="/account/login" style={styles.legalLink}>Sign in</Link></p>
         </section>
       </main>

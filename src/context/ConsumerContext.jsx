@@ -153,6 +153,12 @@ export function ConsumerProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const payload = await loginConsumer(email, password);
+    if (payload?.requires_email_verification || payload?.code === "email_verification_required") {
+      const error = new Error(payload?.error || "Verify your email to continue.");
+      error.payload = payload;
+      error.status = 202;
+      throw error;
+    }
     if (payload?.requires_phone_verification || payload?.code === "phone_verification_required") {
       const error = new Error(payload?.error || "Complete phone verification to continue.");
       error.payload = payload;
