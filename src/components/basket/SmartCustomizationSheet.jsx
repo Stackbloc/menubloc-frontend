@@ -37,7 +37,7 @@ export function isCustomizableItem(item) {
   return detectItemType(item) !== null;
 }
 
-function getIngredients(item) {
+export function getIngredients(item) {
   const type = detectItemType(item);
   if (!type) return [];
   return DEFAULT_INGREDIENTS[type] || [];
