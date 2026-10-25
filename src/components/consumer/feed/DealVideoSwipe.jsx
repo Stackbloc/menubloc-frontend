@@ -677,6 +677,7 @@ export default function DealVideoSwipe({
         ) : null}
         {item.discount_label ? (
           <span style={styles.discount} data-testid="feed-deals-discount">
+            <span aria-hidden="true">🏷️ </span>
             {item.discount_label}
           </span>
         ) : null}

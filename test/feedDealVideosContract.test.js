@@ -41,6 +41,10 @@ test("feedDealVideos: maps video deals only", () => {
   assert.equal(row.deal_href, "/deals/42");
   assert.equal(mapDealsToFeedVideoItems([{ id: 1 }, row]).length, 1);
   assert.equal(formatDealDiscountLabel({ deal_type: "bogo" }), "");
+  // Whole dollars drop the cents (Andre 2026-10-25).
+  assert.equal(formatDealDiscountLabel({ deal_type: "fixed_price", fixed_price_cents: 900 }), "$9");
+  assert.equal(formatDealDiscountLabel({ deal_type: "fixed_price", fixed_price_cents: 950 }), "$9.50");
+  assert.equal(formatDealDiscountLabel({ deal_type: "amount_off", discount_amount_cents: 200 }), "$2 off");
 });
 
 test("Feed deals: video swipe reel, no meal chips", () => {
