@@ -1771,7 +1771,7 @@ export default function PublicMenuPage() {
       addressLine={addressLine}
       directionsHref={directionsHref}
       phone={data?.phone || null}
-      website={data?.website_url || data?.website || null}
+      profileHref={restaurantProfileHref || null}
     />
   ) : null;
 

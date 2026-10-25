@@ -20,11 +20,15 @@ test("menu page hides the header address only for Classic/Fine and provides the 
   assert.match(page, /<MenuHeaderTrailingActionContext\.Provider value=\{menuInfoAction\}>/);
 });
 
-test("ⓘ sheet carries address, directions, phone and website", () => {
+test("ⓘ sheet carries address, directions, phone and the Menuply profile — never the restaurant's website (Andre 2026-10-24)", () => {
   const btn = read("src/components/menu/MenuInfoButton.jsx");
-  for (const s of ["MenuAddressLines", "Get directions", "tel:", "Website", 'aria-label="Restaurant info"']) {
+  for (const s of ["MenuAddressLines", "Get directions", "tel:", "Restaurant profile", "profileHref", 'aria-label="Restaurant info"']) {
     assert.ok(btn.includes(s), s);
   }
+  assert.ok(!btn.includes(">\n                      Website"), "no restaurant website link");
+  assert.doesNotMatch(btn, /website_url|websiteHref/);
+  const page = read("src/pages/PublicMenuPage.jsx");
+  assert.match(page, /profileHref=\{restaurantProfileHref \|\| null\}/);
 });
 
 test("Classic and Fine render the trailing slot in the header icon row", () => {
