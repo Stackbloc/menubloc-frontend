@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.menuply.app",
+      "sha256_cert_fingerprints": [
+        "CF:5D:42:B6:50:5F:36:38:91:79:2F:20:A9:21:DA:A4:EB:DD:17:F1:DC:9D:F8:74:73:38:C4:BB:4B:35:B0:E7"
+      ]
+    }
+  }
+]
