@@ -64,7 +64,7 @@ export default function WalletActivityTab({
       </section>
 
       <section style={styles.section} id="meals-liked">
-        <h2 style={styles.sectionTitle}>Liked meals</h2>
+        <h2 style={styles.sectionTitle}>Fav dishes</h2>
         <p style={styles.sectionDesc}>Dishes you liked from Menuply menus.</p>
         {unlikeError ? <p style={styles.statusErr}>{unlikeError}</p> : null}
         {likedMeals.length === 0 ? (

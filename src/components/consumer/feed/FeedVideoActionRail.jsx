@@ -10,13 +10,12 @@
 
 import { useState } from "react";
 import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
-import ThumbsUpIcon from "../../icons/ThumbsUpIcon.jsx";
 import FavHeartIcon from "../../icons/FavHeartIcon.jsx";
 import WishListIcon from "../../icons/WishListIcon.jsx";
 import ShareIcon from "../../share/ShareIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
 import { trackShareEvent } from "../../share/shareUtils.js";
-import { FAV_ACCENT, LIKE_ACCENT } from "../../../lib/likeButtonStyles.js";
+import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
@@ -84,13 +83,14 @@ function DishLikeButton({ menuItemId }) {
   return (
     <RailButton
       testId="feed-rail-like"
-      label={liked ? "Liked" : "Like"}
-      hint={liked ? "You like this dish — tap to unlike" : "Like this dish"}
+      label={liked ? "My Fav" : "Fav"}
+      hint={liked ? "In your Favs — tap to remove this dish" : "Fav this dish"}
       pressed={liked}
       disabled={loading || busy}
       onClick={toggle}
     >
-      <ThumbsUpIcon size={20} filled={liked} color={liked ? LIKE_ACCENT : "#fff"} />
+      {/* One Fav for restaurants and dishes (Andre 2026-10-24): same heart as the restaurant Fav. */}
+      <FavHeartIcon size={20} filled={liked} color={liked ? FAV_ACCENT : "#fff"} />
     </RailButton>
   );
 }

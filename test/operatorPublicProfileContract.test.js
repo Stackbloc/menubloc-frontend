@@ -144,7 +144,7 @@ function testPublicProfileMenuLikeShareRail() {
   assert.match(hero, /profile-action-order/);
   assert.match(shell, /followSource=\{isFoodTruck \? "food_truck_profile" : "restaurant_profile"\}/);
   assert.match(shell, /restaurant-profile-view-menu|food-truck-view-menu/);
-  assert.match(favorites, /Favorite Menu Items/);
+  assert.match(favorites, /House Favorites/);
   assert.doesNotMatch(favorites, /View Menu →/);
   assert.doesNotMatch(favorites, /restaurant-profile-view-menu/);
   const railStart = hero.indexOf('data-testid="profile-hero-actions"');

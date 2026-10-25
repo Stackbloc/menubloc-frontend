@@ -136,3 +136,11 @@ test("popover: Your cart (N), line stepper + trash, Continue to cart $X", () => 
   assert.match(pop, /aria-label=\{`Remove \$\{formatMenuItemName\(line\.name\)\}`\}/);
   assert.match(pop, /CART_POPOVER_AUTO_CLOSE_MS = 5000/);
 });
+
+test("nutrition & dish details is a nutrition icon button, not an underlined text link (Andre 2026-10-24)", () => {
+  const sheet = read("src/components/basket/MenuItemOrderSheet.jsx");
+  assert.match(sheet, /import NutritionIcon from "\.\.\/icons\/NutritionIcon\.jsx"/);
+  assert.match(sheet, /aria-label="Nutrition & dish details"[\s\S]{0,200}data-testid="item-sheet-nutrition"/);
+  assert.match(sheet, /<NutritionIcon size=\{20\}/);
+  assert.doesNotMatch(sheet, /textDecoration: "underline"[^}]*\}\}\s*>\s*Nutrition &amp; dish details/);
+});

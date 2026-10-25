@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import MenuAddressLines from "../menu-templates/MenuAddressLines.jsx";
 import { MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
 
 /**
  * Compact menu header ⓘ (W4, Andre 2026-10-23): the restaurant's address, directions, phone and
- * website live in this sheet instead of under the name. Rendered at the end of the header icon
+ * a link to its Menuply profile live in this sheet instead of under the name. Never the restaurant's
+ * own website (Andre 2026-10-24). Rendered at the end of the header icon
  * row through MenuHeaderTrailingActionContext.
  */
 function formatPhone(raw) {
@@ -15,12 +17,6 @@ function formatPhone(raw) {
   return String(raw || "").trim();
 }
 
-function websiteHref(raw) {
-  const s = String(raw || "").trim();
-  if (!s) return "";
-  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
-}
-
 export default function MenuInfoButton({
   restaurantName,
   addressLine1,
@@ -28,11 +24,10 @@ export default function MenuInfoButton({
   addressLine,
   directionsHref,
   phone,
-  website,
+  profileHref,
 }) {
   const [open, setOpen] = useState(false);
   const phoneLabel = formatPhone(phone);
-  const site = websiteHref(website);
   const hasAddress = Boolean(String(addressLine1 || addressLine2 || addressLine || "").trim());
 
   return (
@@ -73,11 +68,11 @@ export default function MenuInfoButton({
                     </a>
                   </div>
                 ) : null}
-                {site ? (
+                {profileHref ? (
                   <div style={styles.row}>
-                    <a href={site} target="_blank" rel="noreferrer" style={styles.link}>
-                      Website
-                    </a>
+                    <Link to={profileHref} style={styles.link} data-testid="menu-info-profile" onClick={() => setOpen(false)}>
+                      Restaurant profile
+                    </Link>
                   </div>
                 ) : null}
                 <button type="button" style={styles.close} onClick={() => setOpen(false)}>
