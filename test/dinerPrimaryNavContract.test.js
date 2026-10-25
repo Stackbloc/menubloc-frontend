@@ -15,7 +15,7 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("BottomNav is Home Waiter X Basket My Menuply (no Menu Browser tab)", () => {
+test("BottomNav is Home Waiter X Basket My Profile (no Menu Browser tab)", () => {
   const nav = read("src/components/BottomNav.jsx");
   assert.match(nav, /to: "\/"/);
   assert.match(nav, /to: "\/waiter"/);
@@ -31,6 +31,8 @@ test("BottomNav is Home Waiter X Basket My Menuply (no Menu Browser tab)", () =>
   assert.match(nav, /visibility: "hidden"/);
   assert.match(nav, /to: "\/checkout"/);
   assert.match(nav, /MY_MENUPLY_PROFILE_PATH/);
+  // Andre 2026-10-25: the tab reads "My Profile" (the hub page itself keeps "My Menuply").
+  assert.match(nav, /t\("nav\.myProfile", "My Profile"\)/);
   assert.doesNotMatch(nav, /<span>Browser<\/span>/);
   assert.match(nav, /MenuplyXMark size=\{24\}/);
   assert.match(nav, /translateY\(6px\)/);
