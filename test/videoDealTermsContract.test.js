@@ -71,6 +71,10 @@ test("videoDealTermsSummary: one line beside the video", () => {
     videoDealTermsSummary({ ...complete, dealType: "fixed_price", value: 9.99 }),
     "Special price $9.99 · 2026-10-22 – 2026-11-22"
   );
+  assert.equal(
+    videoDealTermsSummary({ ...complete, dealType: "fixed_price", value: 9 }),
+    "Special price $9 · 2026-10-22 – 2026-11-22"
+  );
 });
 
 test("operator deal editor locks the video until the terms are complete and saved", () => {

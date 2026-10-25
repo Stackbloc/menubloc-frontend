@@ -18,9 +18,10 @@ import useEngagementPage from "../hooks/useEngagementPage.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
+// Whole-dollar prices drop the cents: $9, not $9.00 (Andre 2026-10-25).
 function formatCents(cents) {
   if (!Number.isFinite(cents) || cents < 0) return null;
-  return `$${(cents / 100).toFixed(2)}`;
+  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`;
 }
 
 function parsePriceCents(value) {
@@ -55,12 +56,14 @@ function discountBadgeText(deal) {
     if (Number.isFinite(pct) && pct > 0) return `${pct}% off`;
   }
   if (deal.deal_type === "amount_off") {
-    const off = parsePriceCents(deal.discount_value ?? deal.discount_amount_cents);
+    const off = Number.isFinite(Number(deal.discount_amount_cents)) && deal.discount_amount_cents != null
+      ? Number(deal.discount_amount_cents)
+      : parsePriceCents(deal.discount_value);
     if (off != null) return `${formatCents(off)} off`;
   }
   if (deal.deal_type === "fixed_price") {
-    const p = parsePriceCents(deal.fixed_price_cents ?? deal.discount_value);
-    if (p != null) return `Special price ${formatCents(p)}`;
+    const p = getDealPriceCents(deal);
+    if (p != null) return formatCents(p);
   }
   if (deal.deal_type === "bogo") return "Buy one get one";
   if (deal.deal_type === "bundle") return "Bundle deal";
@@ -207,14 +210,13 @@ export default function DealDetailPage() {
         {/* Deal content */}
         {!loading && deal && (
           <>
-            {/* Discount badge */}
+            {/* Deal price on a price tag (not a rectangle) */}
             <div style={{ marginBottom: 14 }}>
-              <span style={{
-                display: "inline-block",
-                padding: "4px 14px", borderRadius: 999,
-                background: "#22C55E", color: "#0B0F0C",
-                fontSize: 13, fontWeight: 900, letterSpacing: "0.02em",
+              <span data-testid="deal-price-tag" style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                color: "#22C55E", fontSize: 20, fontWeight: 900,
               }}>
+                <span aria-hidden="true">🏷️</span>
                 {discountBadgeText(deal)}
               </span>
             </div>
