@@ -122,6 +122,17 @@ export default function DinerQrPage() {
     const url = payload?.card?.avatar_url;
     return url ? resolveConsumerMediaUrl(url) : "";
   }, [payload, showAvatar]);
+  // Motion profile photo (docs/12, 2026-10-25): muted loop over the still; still for reduced motion.
+  const avatarMotionSrc = useMemo(() => {
+    const url = showAvatar ? payload?.card?.avatar_motion_url : null;
+    let reduce = false;
+    try {
+      reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    } catch {
+      reduce = false;
+    }
+    return url && !reduce ? resolveConsumerMediaUrl(url) : "";
+  }, [payload, showAvatar]);
 
   async function togglePrivacy(field, value) {
     setBusy(true);
@@ -148,7 +159,7 @@ export default function DinerQrPage() {
     try {
       const data = await uploadDinerAvatar(file);
       setPayload(data);
-      setNotice("Profile photo updated.");
+      setNotice(data.avatar_motion_url ? "Motion photo saved." : "Profile photo updated.");
     } catch (err) {
       setError(err.message || "Unable to upload photo");
     } finally {
@@ -191,7 +202,19 @@ export default function DinerQrPage() {
                 </div>
 
                 <div style={styles.identity}>
-                  {avatarSrc ? (
+                  {avatarMotionSrc ? (
+                    <video
+                      src={avatarMotionSrc}
+                      poster={avatarSrc || undefined}
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                      aria-hidden="true"
+                      data-testid="diner-qr-avatar-motion"
+                      style={{ ...styles.avatar, objectFit: "cover" }}
+                    />
+                  ) : avatarSrc ? (
                     <img src={avatarSrc} alt="" style={styles.avatar} />
                   ) : (
                     <div style={styles.avatarFallback} aria-hidden>

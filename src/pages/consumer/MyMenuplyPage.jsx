@@ -751,7 +751,7 @@ export default function MyMenuplyPage() {
     try {
       const data = await uploadDinerAvatar(file);
       setAvatarUrl(resolveConsumerMediaUrl(data.avatar_url || data.card?.avatar_url || ""));
-      setIdentityNotice("Profile photo updated.");
+      setIdentityNotice(data.avatar_motion_url ? "Motion photo saved. It plays where your photo is small." : "Profile photo updated.");
     } catch (err) {
       setAvatarUrl(resolveConsumerMediaUrl(profile?.avatar_url || ""));
       setIdentityError(err.message || "Unable to upload photo");
