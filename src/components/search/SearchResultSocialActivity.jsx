@@ -47,6 +47,7 @@ export default function SearchResultSocialActivity({ items }) {
             <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
               <DinerAvatar
                 avatarUrl={row.avatar_url}
+                avatarMotionUrl={row.avatar_motion_url}
                 displayName={row.display_name}
                 size={20}
                 title={null}
