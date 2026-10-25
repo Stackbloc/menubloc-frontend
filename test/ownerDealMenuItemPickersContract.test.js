@@ -20,7 +20,7 @@ test("CK menu picker loads the restaurant's full menu once and filters locally",
 });
 
 test("deal items picker lists every item without typing", () => {
-  const src = read("src/pages/owner/OwnerVideoCuration.jsx");
+  const src = read("src/pages/owner/OwnerDealMenuItemsPicker.jsx");
   assert.match(src, /\(!q \|\| String\(i\.name \|\| ""\)\.toLowerCase\(\)\.includes\(q\)\)/);
   assert.match(src, /owner-deal-menu-item-list/);
   assert.doesNotMatch(src, /\.slice\(0, 8\)/);
