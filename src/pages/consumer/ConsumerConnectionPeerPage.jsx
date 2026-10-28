@@ -327,7 +327,8 @@ export default function ConsumerConnectionPeerPage() {
               }
               eduConsumer={peer}
               catchMe={peer?.catch_me || null}
-              currentVibe={peer?.current_vibe || peer?.currentVibe || "im_good"}
+              currentVibe={peer?.current_vibe || peer?.currentVibe || "not_sure_today"}
+              currentVibes={peer?.current_vibe_meta?.current_vibes || null}
             />
 
             <DinerActivitySelectionLayer

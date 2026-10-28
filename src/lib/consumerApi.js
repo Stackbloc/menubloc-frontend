@@ -658,10 +658,14 @@ export const updatePrimaryLocation = (body) => put("/api/consumer/profile/primar
 export const updateCatchMe = (body) => put("/api/consumer/profile/catch-me", body);
 export const clearCatchMe = () => del("/api/consumer/profile/catch-me");
 export const getCurrentVibe = () => get("/api/consumer/profile/current-vibe");
+/** docs/16: { vibes: [...], until: "today" | "week" | {hours} | {days} }; older { currentVibe } still works. */
 export const updateCurrentVibe = (body) =>
-  put("/api/consumer/profile/current-vibe", {
-    currentVibe: body?.currentVibe ?? body?.current_vibe ?? body,
-  });
+  put(
+    "/api/consumer/profile/current-vibe",
+    Array.isArray(body?.vibes)
+      ? { vibes: body.vibes, until: body.until || "today" }
+      : { currentVibe: body?.currentVibe ?? body?.current_vibe ?? body }
+  );
 /** Who may see my vibe in search: "connects" | "connects_of_connects". */
 export const updateSearchVibeAudience = (audience) =>
   put("/api/consumer/profile/current-vibe", { search_vibe_audience: audience });

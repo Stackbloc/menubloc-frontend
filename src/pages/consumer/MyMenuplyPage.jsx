@@ -793,7 +793,8 @@ export default function MyMenuplyPage() {
 
   async function onCurrentVibeChange(next) {
     setIdentityError("");
-    const data = await updateCurrentVibe({ currentVibe: next });
+    // docs/16: { vibes, until } from the picker; a plain value from older controls.
+    const data = await updateCurrentVibe(next && Array.isArray(next.vibes) ? next : { currentVibe: next });
     const value = data?.current_vibe || data?.currentVibe || next;
     setProfile((prev) => ({
       ...(prev || {}),
@@ -2398,7 +2399,9 @@ export default function MyMenuplyPage() {
               catchMe={profile?.catch_me || null}
               onCatchMeSave={previewAsConnect ? undefined : onCatchMeSave}
               onCatchMeClear={previewAsConnect ? undefined : onCatchMeClear}
-              currentVibe={profile?.current_vibe || profile?.currentVibe || "open_for_suggestions"}
+              currentVibe={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
+              currentVibes={profile?.current_vibe_meta?.current_vibes || null}
+              currentVibeExpiresAt={profile?.current_vibe_meta?.expires_at || null}
               currentVibeCatalog={profile?.current_vibe_catalog || null}
               onCurrentVibeChange={previewAsConnect ? undefined : onCurrentVibeChange}
               searchVibeAudience={profile?.search_vibe_audience || "connects"}

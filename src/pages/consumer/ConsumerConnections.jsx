@@ -24,7 +24,7 @@ import {
 
 function PeerLine({ peer }) {
   if (!peer) return null;
-  const vibeValue = peer.current_vibe || peer.currentVibe || "im_good";
+  const vibeValue = peer.current_vibe || peer.currentVibe || "not_sure_today";
   const vibeEntry = getCurrentVibeEntry(vibeValue);
   const showVibe = showsCurrentVibeBadge(vibeValue);
   const avatarSrc = peer.avatar_url ? resolveConsumerMediaUrl(peer.avatar_url) : "";

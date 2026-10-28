@@ -17,18 +17,20 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("default is open_for_suggestions; im_good shows no badge", () => {
-  assert.equal(DEFAULT_CURRENT_VIBE, "open_for_suggestions");
-  assert.equal(OPT_OUT_CURRENT_VIBE, "im_good");
+test("docs/16: default is Not sure today (no badge); old values read as Not sure; Me time is the opt-out", () => {
+  assert.equal(DEFAULT_CURRENT_VIBE, "not_sure_today");
+  assert.equal(OPT_OUT_CURRENT_VIBE, "me_time");
   assert.equal(coerceCurrentVibe(null), DEFAULT_CURRENT_VIBE);
-  assert.equal(showsCurrentVibeBadge("im_good"), false);
-  assert.equal(showsCurrentVibeBadge("open_for_suggestions"), true);
+  assert.equal(coerceCurrentVibe("craving"), DEFAULT_CURRENT_VIBE);
+  assert.equal(showsCurrentVibeBadge("not_sure_today"), false);
+  assert.equal(showsCurrentVibeBadge("open_for_suggestions"), false);
   assert.equal(showsCurrentVibeBadge("hungry"), true);
   assert.equal(showsCurrentVibeBadge("me_time"), true);
   assert.equal(getCurrentVibeEntry("me_time").badgeTone, "muted");
   assert.equal(getCurrentVibeEntry("me_time").icon, "🌙");
   // Social search Phase 4: the default is not search-surfaced.
-  assert.equal(getCurrentVibeEntry("open_for_suggestions").searchEligible, false);
+  assert.equal(getCurrentVibeEntry("not_sure_today").searchEligible, false);
+  assert.equal(getCurrentVibeEntry("open_for_dinner").searchEligible, true);
   assert.equal(getCurrentVibeEntry("hungry").searchEligible, true);
 });
 
@@ -40,15 +42,21 @@ test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
   assert.match(hero, /currentVibe/);
 });
 
-test("picker retap on default opts out to I'm good; hint documents search", () => {
+test("picker: pick several, Not sure / Me time alone, For today / hours / days / all week", async () => {
   const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
   assert.match(section, /Current vibe/);
   assert.match(section, /DEFAULT_CURRENT_VIBE/);
   assert.match(section, /OPT_OUT_CURRENT_VIBE/);
   assert.match(section, /chip-grid/);
-  assert.match(section, /I'm good/);
-  assert.match(section, /Open for suggestions/);
-  assert.match(section, /suggestion and invitation/);
+  assert.match(section, /toggleVibeSet\(active, opt\.value, entries\)/);
+  assert.match(section, /onChange\(\{ vibes: next, until: untilOf\(nextSpan, nextCount\) \}\)/);
+  assert.match(section, /\["week", "All week"\]/);
+  const { toggleVibeSet } = await import("../src/lib/currentVibeDisplay.js");
+  assert.deepEqual(toggleVibeSet(["not_sure_today"], "coffee"), ["coffee"]);
+  assert.deepEqual(toggleVibeSet(["coffee"], "open_for_lunch"), ["open_for_lunch", "coffee"]);
+  assert.deepEqual(toggleVibeSet(["open_for_lunch", "coffee"], "me_time"), ["me_time"]);
+  assert.deepEqual(toggleVibeSet(["me_time"], "hungry"), ["hungry"]);
+  assert.deepEqual(toggleVibeSet(["hungry"], "hungry"), ["not_sure_today"]);
 });
 
 test("profile mounts Current vibe under Favorite foods", () => {
@@ -84,5 +92,6 @@ test("My Menuply wires vibe update on identity hero", () => {
   assert.match(page, /onCurrentVibeChange/);
   assert.match(page, /updateCurrentVibe/);
   assert.match(page, /current_vibe_catalog/);
-  assert.match(page, /open_for_suggestions/);
+  assert.match(page, /not_sure_today/);
+  assert.match(page, /currentVibes=\{profile\?\.current_vibe_meta\?\.current_vibes \|\| null\}/);
 });

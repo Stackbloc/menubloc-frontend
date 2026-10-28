@@ -77,6 +77,8 @@ export default function DinerIdentityHero({
   currentVibe = DEFAULT_CURRENT_VIBE,
   currentVibeCatalog = null,
   onCurrentVibeChange = null,
+  currentVibes = null,
+  currentVibeExpiresAt = null,
   searchVibeAudience = "connects",
   onSearchVibeAudienceChange = null,
   busy,
@@ -365,6 +367,8 @@ export default function DinerIdentityHero({
               afterFavorites={
                 <CurrentVibeProfileSection
                   value={currentVibe}
+                  values={currentVibes}
+                  expiresAt={currentVibeExpiresAt}
                   catalog={currentVibeCatalog}
                   readOnly={typeof onCurrentVibeChange !== "function"}
                   busy={busy}
@@ -377,6 +381,8 @@ export default function DinerIdentityHero({
           ) : (
             <CurrentVibeProfileSection
               value={currentVibe}
+              values={currentVibes}
+              expiresAt={currentVibeExpiresAt}
               catalog={currentVibeCatalog}
               readOnly={typeof onCurrentVibeChange !== "function"}
               busy={busy}

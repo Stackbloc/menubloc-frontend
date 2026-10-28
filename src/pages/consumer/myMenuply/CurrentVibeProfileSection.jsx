@@ -1,15 +1,17 @@
 /**
- * Prominent Current Vibe control on the diner profile (under Favorite foods).
- * Default is Open for suggestions; food vibes (Hungry, Coffee, …) show to Connects in search.
- * I'm Good is the explicit opt-out (search-invisible for suggestions/invites).
+ * Current Vibe on the diner profile (Andre 2026-10-28, menuply-mobile docs/16): Not sure today
+ * (every day starts here) · Open for lunch · Open for coffee · Open for dinner · Hungry ·
+ * Eating @home · Me time (not available). Pick several, except Not sure today / Me time; For:
+ * Today · Hours · Days · All week. Each tap saves. Lunch, coffee, dinner and hungry show to Connects.
  */
 
 import { useEffect, useState } from "react";
 import {
   DEFAULT_CURRENT_VIBE,
   OPT_OUT_CURRENT_VIBE,
-  getCurrentVibeEntry,
   resolveCurrentVibeCatalog,
+  toggleVibeSet,
+  coerceCurrentVibe,
 } from "../../../lib/currentVibeDisplay.js";
 
 const labelStyle = {
@@ -33,8 +35,19 @@ const chipBase = {
   lineHeight: 1.2,
 };
 
+const SPANS = [
+  ["today", "Today"],
+  ["hours", "Hours"],
+  ["days", "Days"],
+  ["week", "All week"],
+];
+const COUNTS = { hours: [1, 2, 3, 4, 6, 8, 12], days: [1, 2, 3, 4, 5, 6, 7] };
+const untilOf = (span, n) => (span === "hours" ? { hours: n } : span === "days" ? { days: n } : span);
+
 export default function CurrentVibeProfileSection({
   value = DEFAULT_CURRENT_VIBE,
+  values = null,
+  expiresAt = null,
   catalog = null,
   readOnly = false,
   busy = false,
@@ -45,42 +58,47 @@ export default function CurrentVibeProfileSection({
 }) {
   const [optimistic, setOptimistic] = useState(null);
   const [error, setError] = useState("");
+  const [span, setSpan] = useState("today");
+  const [count, setCount] = useState(3);
 
   const entries = resolveCurrentVibeCatalog(catalog);
-  const effective = optimistic != null ? optimistic : value;
-  const entry = getCurrentVibeEntry(effective, entries);
-  const activeValue = entry?.value || DEFAULT_CURRENT_VIBE;
+  const saved = Array.isArray(values) && values.length ? values.map(coerceCurrentVibe) : [coerceCurrentVibe(value)];
+  const active = optimistic || saved;
+  const unset = active.length === 1 && active[0] === DEFAULT_CURRENT_VIBE;
 
   useEffect(() => {
     setOptimistic(null);
-  }, [value]);
+  }, [value, values]);
 
-  async function selectValue(nextRaw) {
+  async function save(next, nextSpan = span, nextCount = count) {
     if (busy || readOnly || typeof onChange !== "function") return;
-    const next = String(nextRaw || DEFAULT_CURRENT_VIBE);
-    // Re-tap active default → I'm Good (opt out of search suggestions).
-    // Re-tap any other active vibe → back to Open for suggestions.
-    const resolved =
-      next === activeValue
-        ? activeValue === DEFAULT_CURRENT_VIBE
-          ? OPT_OUT_CURRENT_VIBE
-          : DEFAULT_CURRENT_VIBE
-        : next;
-    const prev = activeValue;
+    const prev = active;
     setError("");
-    setOptimistic(resolved);
+    setOptimistic(next);
     try {
-      await onChange(resolved);
+      await onChange({ vibes: next, until: untilOf(nextSpan, nextCount) });
     } catch (err) {
       setOptimistic(prev);
       setError(err?.message || "Could not update vibe");
     }
   }
 
-  // Connect peers: hide only when opted out (I'm Good).
-  if (readOnly && activeValue === OPT_OUT_CURRENT_VIBE) {
+  function changeSpan(nextSpan, nextCount) {
+    setSpan(nextSpan);
+    setCount(nextCount);
+    if (!unset) save(active, nextSpan, nextCount);
+  }
+
+  // Connect peers: nothing to show on Not sure today or Me time.
+  if (readOnly && (unset || active[0] === OPT_OUT_CURRENT_VIBE)) {
     return null;
   }
+
+  const labels = active.map((v) => entries.find((e) => e.value === v)).filter(Boolean);
+  const until =
+    !unset && expiresAt
+      ? new Date(new Date(expiresAt).getTime() - 1000).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })
+      : null;
 
   return (
     <div
@@ -94,15 +112,14 @@ export default function CurrentVibeProfileSection({
       data-testid={testIdPrefix}
     >
       <p style={labelStyle} data-testid={`${testIdPrefix}-label`}>
-        Current vibe
+        {unset && !readOnly ? "What’s your vibe today?" : "Current vibe"}
       </p>
       {readOnly ? (
         <p
           style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#14532d" }}
           data-testid={`${testIdPrefix}-readonly`}
         >
-          {entry?.icon ? <span aria-hidden>{entry.icon} </span> : null}
-          {entry?.label || "I'm good"}
+          {labels.map((e) => `${e.icon ? `${e.icon} ` : ""}${e.label}`).join(" · ")}
         </p>
       ) : (
         <>
@@ -113,7 +130,7 @@ export default function CurrentVibeProfileSection({
             aria-label="Current vibe"
           >
             {entries.map((opt) => {
-              const active = activeValue === opt.value;
+              const on = active.includes(opt.value);
               const isOptOut = opt.value === OPT_OUT_CURRENT_VIBE;
               return (
                 <button
@@ -122,22 +139,12 @@ export default function CurrentVibeProfileSection({
                   data-testid={`${testIdPrefix}-chip-${opt.value}`}
                   title={opt.label}
                   disabled={busy}
-                  aria-pressed={active}
-                  onClick={() => selectValue(opt.value)}
+                  aria-pressed={on}
+                  onClick={() => save(toggleVibeSet(active, opt.value, entries))}
                   style={{
                     ...chipBase,
-                    border: active
-                      ? isOptOut
-                        ? "2px solid #64748b"
-                        : "2px solid #166534"
-                      : "1px solid #d1d5db",
-                    background: active
-                      ? isOptOut
-                        ? "#f8fafc"
-                        : opt.badgeTone === "muted"
-                          ? "#f1f5f9"
-                          : "#ecfdf3"
-                      : "#fff",
+                    border: on ? (isOptOut ? "2px solid #64748b" : "2px solid #166534") : "1px solid #d1d5db",
+                    background: on ? (isOptOut ? "#f8fafc" : "#ecfdf3") : "#fff",
                     color: "#0f172a",
                     cursor: busy ? "default" : "pointer",
                     opacity: busy ? 0.7 : 1,
@@ -149,13 +156,50 @@ export default function CurrentVibeProfileSection({
               );
             })}
           </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 10 }} data-testid={`${testIdPrefix}-for`}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#475569" }}>For</span>
+            {SPANS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={span === id}
+                disabled={busy}
+                onClick={() => changeSpan(id, id === "hours" ? 3 : id === "days" ? 2 : count)}
+                data-testid={`${testIdPrefix}-for-${id}`}
+                style={{ ...chipBase, padding: "5px 11px", fontSize: 13, border: span === id ? "2px solid #166534" : "1px solid #d1d5db", background: span === id ? "#ecfdf3" : "#fff" }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {span === "hours" || span === "days" ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              {COUNTS[span].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-pressed={count === n}
+                  disabled={busy}
+                  onClick={() => changeSpan(span, n)}
+                  data-testid={`${testIdPrefix}-for-${span}-${n}`}
+                  style={{ ...chipBase, padding: "4px 10px", fontSize: 12, border: count === n ? "2px solid #166534" : "1px solid #d1d5db", background: count === n ? "#ecfdf3" : "#fff" }}
+                >
+                  {`${n} ${span === "hours" ? (n === 1 ? "hour" : "hours") : n === 1 ? "day" : "days"}`}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {until ? (
+            <p style={{ margin: "8px 0 0", fontSize: 13, fontWeight: 700, color: "#166534" }} data-testid={`${testIdPrefix}-until`}>
+              Set until {until}
+            </p>
+          ) : null}
           <p
             style={{ margin: "10px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}
             data-testid={`${testIdPrefix}-hint`}
           >
-            Pick a food vibe like Hungry or Coffee and your Connects can see it in search when
-            it fits. Tap I&apos;m good to stay out of suggestion and invitation surfaces. This
-            is not a post.
+            Pick what you&apos;re up for — several at once — and your Connects can invite you. Lunch
+            shows 10:30 AM–3 PM and dinner 4–10 PM. Me time keeps you out of it. This is not a post.
           </p>
           {typeof onSearchVibeAudienceChange === "function" ? (
             <label
