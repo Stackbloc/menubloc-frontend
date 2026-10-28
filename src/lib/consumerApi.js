@@ -740,6 +740,19 @@ export const listMySocialPlans = (scope = "upcoming") =>
   get(`/api/consumer/social-plans?scope=${encodeURIComponent(scope)}`);
 /** Social Plans Phase C: My Menuply Connects section (requests, live vibes + Join Me, plans to join). */
 export const getConnectsNow = () => get("/api/consumer/social-plans/connects");
+/** Social Plans Phase B (docs/15): who can see my calendar, my plan's sharing, Can I come?. */
+export const getSocialCalendarSettings = () => get("/api/consumer/social-plans/settings");
+export const saveSocialCalendarSettings = (body) => put("/api/consumer/social-plans/settings", body);
+const socialPlanPath = (source, ref) =>
+  `/api/consumer/social-plans/${encodeURIComponent(String(source))}/${encodeURIComponent(String(ref))}`;
+export const saveSocialPlanSharing = (source, ref, body) => patch(socialPlanPath(source, ref), body);
+export const askToJoinSocialPlan = (source, ref, message) =>
+  post(`${socialPlanPath(source, ref)}/join-requests`, message ? { message } : {});
+export const cancelSocialPlanAsk = (source, ref) => del(`${socialPlanPath(source, ref)}/join-requests/mine`);
+export const answerSocialPlanJoinRequest = (requestId, approve) =>
+  post(`/api/consumer/social-plans/join-requests/${encodeURIComponent(String(requestId))}/${approve ? "approve" : "decline"}`, {});
+export const getPeerSocialCalendar = (peerId) =>
+  get(`/api/consumer/social-plans/connections/${encodeURIComponent(String(peerId))}`);
 
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");

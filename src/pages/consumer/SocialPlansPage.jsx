@@ -1,6 +1,7 @@
 /**
  * My Social Calendar — every meal, event and invite the diner is going to, in one list
- * (Andre approved 2026-10-28, menuply-mobile docs/15, Phase A: read-only).
+ * (Andre approved 2026-10-28, menuply-mobile docs/15). Phase B: who can see my calendar, and on
+ * plans I host, Only me + how Connects join (Sharing ›).
  * Route: /account/social-plans
  */
 
@@ -11,12 +12,15 @@ import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listMySocialPlans } from "../../lib/consumerApi.js";
 import { myMenuplyProfileHref } from "../../lib/myMenuplyRoutes.js";
+import { CalendarWhoCard, PlanSharingControls } from "./myMenuply/SocialPlanSharing.jsx";
 
 const SOCIAL_PLAN_KIND_LABELS = {
   dine: "Meal",
   my_event: "Event",
   venue_event: "Venue event",
 };
+
+const JOIN_LABELS = { invite_only: "Invite only", ask: "Ask to join", open: "Open to Connects" };
 
 const STATUS_LABELS = {
   organizer: "You're hosting",
@@ -48,6 +52,8 @@ export default function SocialPlansPage() {
   const [data, setData] = useState({ plans: [], today: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sharingOpen, setSharingOpen] = useState(null);
+  const replacePlan = (next) => setData((d) => ({ ...d, plans: d.plans.map((p) => (p.key === next.key ? next : p)) }));
 
   const load = useCallback(async (sc) => {
     setLoading(true);
@@ -82,6 +88,8 @@ export default function SocialPlansPage() {
             Plan an event
           </Link>
         </div>
+
+        <CalendarWhoCard />
 
         <div role="tablist" style={styles.tabs}>
           {[
@@ -128,6 +136,20 @@ export default function SocialPlansPage() {
                       .join(" · ")}
                   </span>
                 </Link>
+                {p.is_organizer && p.source !== "venue_event" && p.join_mode ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-expanded={sharingOpen === p.key}
+                      onClick={() => setSharingOpen((k) => (k === p.key ? null : p.key))}
+                      style={styles.sharing}
+                      data-testid={`social-plan-${p.key}-sharing`}
+                    >
+                      {`${p.visibility === "only_me" ? "Only me" : "Your calendar setting"} · ${JOIN_LABELS[p.join_mode] || p.join_mode} ${sharingOpen === p.key ? "▾" : "›"}`}
+                    </button>
+                    {sharingOpen === p.key ? <PlanSharingControls plan={p} onSaved={replacePlan} /> : null}
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -193,4 +215,13 @@ const styles = {
   when: { fontSize: 12, fontWeight: 700, color: "#7c3aed" },
   title: { fontSize: 15 },
   meta: { fontSize: 13, color: "#64748b" },
+  sharing: {
+    background: "none",
+    border: "none",
+    padding: "4px 2px",
+    color: "#7c3aed",
+    fontWeight: 600,
+    fontSize: 13,
+    cursor: "pointer",
+  },
 };

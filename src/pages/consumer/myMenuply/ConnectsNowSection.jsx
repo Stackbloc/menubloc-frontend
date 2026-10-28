@@ -1,15 +1,18 @@
 /**
  * My Menuply → Connects, things to do (Andre approved 2026-10-28, menuply-mobile docs/15, Phase C).
  * Same section as the app's Profile: only rows with a button; empty groups hidden.
- *   Needs your answer — Connect requests → Answer (/account/connections)
+ *   Needs your answer — "Can I come?" on my plans → Yes / Not this time (Phase B);
+ *     Connect requests → Answer (/account/connections)
  *   Right now — live Join Me → Join; live vibe → Invite (Invite to Eat)
- *   Coming up — Connects' plans I can join, Wish List / Fav matches first → Join / Going
- * Read-only (GET /api/consumer/social-plans/connects). Owner view only; quiet if it can't load.
+ *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
+ *     Join · Can I come? · Asked ✓ · Going ✓ (SocialPlanActionButton)
+ * GET /api/consumer/social-plans/connects. Owner view only; quiet if it can't load.
  */
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getConnectsNow } from "../../../lib/consumerApi.js";
+import { answerSocialPlanJoinRequest, getConnectsNow } from "../../../lib/consumerApi.js";
+import SocialPlanActionButton from "./SocialPlanActionButton.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 const SHOWN = 4;
@@ -38,6 +41,7 @@ function planWhen(p) {
 export default function ConnectsNowSection() {
   const [data, setData] = useState(null);
   const [now, setNow] = useState(0);
+  const [answered, setAnswered] = useState(() => new Set());
 
   useEffect(() => {
     let alive = true;
@@ -54,7 +58,15 @@ export default function ConnectsNowSection() {
   }, []);
 
   if (!data) return null;
-  const asks = data.needs_answer || [];
+  const asks = (data.needs_answer || []).filter((a) => !answered.has(a.key));
+  const answer = async (a, approve) => {
+    try {
+      await answerSocialPlanJoinRequest(a.request_id, approve);
+      setAnswered((prev) => new Set(prev).add(a.key));
+    } catch {
+      /* stays in the list; they can try again */
+    }
+  };
   // A vibe can run out between the server answering and the page showing.
   const rightNow = (data.right_now || []).filter(
     (r) => r.type !== "vibe" || !r.vibe?.expires_at || timeLeft(r.vibe.expires_at, now)
@@ -69,9 +81,27 @@ export default function ConnectsNowSection() {
 
         {asks.length ? (
           <Group title="Needs your answer" testId="connects-needs-answer">
-            {asks.map((a) => (
-              <Row key={a.key} peer={a.peer} line="Wants to connect" to="/account/connections" button="Answer" testId={a.key} />
-            ))}
+            {asks.map((a) =>
+              a.type === "join_request" ? (
+                <div key={a.key} style={styles.row} data-testid={`connects-row-${a.key}`}>
+                  <Avatar peer={a.peer} />
+                  <div style={styles.text}>
+                    <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
+                    <span style={styles.line}>
+                      {`Can I come? · ${a.plan_title}${a.message ? ` · “${a.message}”` : ""}`}
+                    </span>
+                  </div>
+                  <button type="button" style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }} onClick={() => answer(a, false)}>
+                    Not this time
+                  </button>
+                  <button type="button" style={{ ...styles.button, border: "none", cursor: "pointer" }} onClick={() => answer(a, true)}>
+                    Yes
+                  </button>
+                </div>
+              ) : (
+                <Row key={a.key} peer={a.peer} line="Wants to connect" to="/account/connections" button="Answer" testId={a.key} />
+              )
+            )}
           </Group>
         ) : null}
 
@@ -123,11 +153,7 @@ export default function ConnectsNowSection() {
                       .join(" · ")}
                   </span>
                 </div>
-                {p.href ? (
-                  <Link to={p.href} style={p.action === "join" ? styles.button : styles.buttonQuiet}>
-                    {p.action === "join" ? "Join" : "Going ✓"}
-                  </Link>
-                ) : null}
+                <SocialPlanActionButton plan={p} testId={`connects-plan-${p.key}-action`} />
               </div>
             ))}
           </Group>
@@ -156,16 +182,20 @@ function Group({ title, testId, children }) {
   );
 }
 
+function Avatar({ peer }) {
+  return peer?.avatar_url ? (
+    <img src={peer.avatar_url} alt="" style={styles.avatar} />
+  ) : (
+    <span style={{ ...styles.avatar, ...styles.initial }} aria-hidden>
+      {String(peer?.name || "?").slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
 function Row({ peer, line, to, button, testId }) {
   return (
     <div style={styles.row} data-testid={`connects-row-${testId}`}>
-      {peer?.avatar_url ? (
-        <img src={peer.avatar_url} alt="" style={styles.avatar} />
-      ) : (
-        <span style={{ ...styles.avatar, ...styles.initial }} aria-hidden>
-          {String(peer?.name || "?").slice(0, 1).toUpperCase()}
-        </span>
-      )}
+      <Avatar peer={peer} />
       <div style={styles.text}>
         <strong style={styles.name}>{peer?.name || "A diner"}</strong>
         <span style={styles.line}>{line}</span>

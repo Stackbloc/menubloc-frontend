@@ -60,8 +60,34 @@ test("Phase C: My Menuply Connects section — owner only, GET only, every row h
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /export const getConnectsNow = \(\) => get\("\/api\/consumer\/social-plans\/connects"\);/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
-  for (const label of ['"Needs your answer"', '"Right now"', '"Coming up"', 'button="Answer"', 'button="Join"', 'button="Invite"', '"Going ✓"', '"On your Wish List"']) {
+  for (const label of ['"Needs your answer"', '"Right now"', '"Coming up"', 'button="Answer"', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
     assert.ok(section.includes(label), label);
   }
-  assert.doesNotMatch(section, /\b(post|put|patch|del)\(/);
+});
+
+test("Phase B: calendar setting, plan sharing, Can I come?, answer — website calls and placement", () => {
+  const api = read("src/lib/consumerApi.js");
+  for (const re of [
+    /put\("\/api\/consumer\/social-plans\/settings", body\)/,
+    /patch\(socialPlanPath\(source, ref\), body\)/,
+    /post\(`\$\{socialPlanPath\(source, ref\)\}\/join-requests`/,
+    /del\(`\$\{socialPlanPath\(source, ref\)\}\/join-requests\/mine`\)/,
+    /social-plans\/join-requests\/\$\{encodeURIComponent\(String\(requestId\)\)\}\/\$\{approve \? "approve" : "decline"\}/,
+    /get\(`\/api\/consumer\/social-plans\/connections\/\$\{encodeURIComponent\(String\(peerId\)\)\}`\)/,
+  ]) {
+    assert.match(api, re);
+  }
+  const page = read("src/pages/consumer/SocialPlansPage.jsx");
+  assert.match(page, /<CalendarWhoCard \/>/);
+  assert.match(page, /<PlanSharingControls plan=\{p\} onSaved=\{replacePlan\} \/>/);
+  const sharing = read("src/pages/consumer/myMenuply/SocialPlanSharing.jsx");
+  for (const label of ['"All my Connects"', '"Selected Connects"', '"Only me"', '"Invite only"', '"Ask to join"', '"Open"']) {
+    assert.ok(sharing.includes(label), label);
+  }
+  assert.match(sharing, /never shown to people you aren’t connected with/);
+  const button = read("src/pages/consumer/myMenuply/SocialPlanActionButton.jsx");
+  assert.match(button, /ask: "Can I come\?", asked: "Asked ✓", going: "Going ✓"/);
+  const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
+  assert.match(section, /Can I come\? · \$\{a\.plan_title\}/);
+  assert.match(read("src/pages/consumer/ConsumerConnectionPeerPage.jsx"), /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
 });

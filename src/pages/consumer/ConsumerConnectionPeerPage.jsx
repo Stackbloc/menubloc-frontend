@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -346,6 +347,9 @@ export default function ConsumerConnectionPeerPage() {
               viewerMayInviteMeOut={viewerMayInviteMeOut}
               onInviteMeOut={() => setInviteMeOutOpen(true)}
             />
+
+            {/* Social Plans Phase B (docs/15): their plans, as far as they share them with me. */}
+            <PeerPlansSection peerId={peerId} name={name} />
 
             <section style={s.section} data-testid="peer-supporting-media">
               <FlashVideosDisplay items={flashVideos} readOnly />
