@@ -15,6 +15,7 @@ import {
   saveSocialPlanSharing,
 } from "../../../lib/consumerApi.js";
 import SocialPlanActionButton from "./SocialPlanActionButton.jsx";
+import PlanTag from "./PlanTag.jsx";
 
 const WHO = [
   ["connections", "All my Connects"],
@@ -157,7 +158,10 @@ export function PeerPlansSection({ peerId, name }) {
       {plans.map((p) => (
         <div key={p.key} style={styles.row} data-testid={`peer-plan-${p.key}`}>
           <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 1 }}>
-            <span style={styles.when}>{formatWhen(p)}</span>
+            <span style={styles.when}>
+              <PlanTag plan={p} />
+              {formatWhen(p)}
+            </span>
             <strong style={{ fontSize: 15, color: "#0f172a" }}>{p.title}</strong>
             <span style={styles.muted}>
               {[p.place?.name && p.place.name !== p.title ? p.place.name : null, p.going_count > 1 ? `${p.going_count} going` : null]

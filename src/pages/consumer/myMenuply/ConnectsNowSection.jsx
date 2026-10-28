@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { answerSocialPlanJoinRequest, getConnectsNow } from "../../../lib/consumerApi.js";
 import SocialPlanActionButton from "./SocialPlanActionButton.jsx";
+import PlanTag from "./PlanTag.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 const SHOWN = 4;
@@ -138,7 +139,10 @@ export default function ConnectsNowSection() {
             {comingUp.slice(0, SHOWN).map((p) => (
               <div key={p.key} style={styles.row} data-testid={`connects-plan-${p.key}`}>
                 <div style={styles.text}>
-                  <span style={styles.when}>{planWhen(p)}</span>
+                  <span style={styles.when}>
+                    <PlanTag plan={p} />
+                    {planWhen(p)}
+                  </span>
                   <strong style={styles.name}>
                     {p.peer?.name ? `${p.peer.name}: ` : ""}
                     {p.title}

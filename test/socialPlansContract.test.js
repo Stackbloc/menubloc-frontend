@@ -91,3 +91,17 @@ test("Phase B: calendar setting, plan sharing, Can I come?, answer — website c
   assert.match(section, /Can I come\? · \$\{a\.plan_title\}/);
   assert.match(read("src/pages/consumer/ConsumerConnectionPeerPage.jsx"), /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
 });
+
+test("tags + pick a day & time", async () => {
+  const { planTag } = await import("../src/lib/socialPlanTags.js");
+  assert.equal(planTag({ kind: "dine", time: "12:30" }).label, "Lunch");
+  assert.equal(planTag({ kind: "dine", time: "19:00" }).label, "Dinner");
+  assert.equal(planTag({ kind: "dine", time: null }).label, "Meal");
+  assert.equal(planTag({ source: "my_event", time: null }).label, "Event");
+  const page = read("src/pages/consumer/SocialPlansPage.jsx");
+  assert.match(page, /if \(!p\.time_open\) return;\n\s+e\.preventDefault\(\);/);
+  assert.match(page, /"Pick a day & time ›"/);
+  const pick = read("src/pages/consumer/myMenuply/PickPlanTime.jsx");
+  assert.match(pick, /saveSocialPlanSharing\(plan\.source, plan\.id, \{ date, time: needsTime \? time : null \}\)/);
+  assert.match(pick, /respondToEatInvitation\(plan\.id, "accepted", \{ proposedDate: date, proposedTime: time \}\)/);
+});

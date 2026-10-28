@@ -13,6 +13,8 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { listMySocialPlans } from "../../lib/consumerApi.js";
 import { myMenuplyProfileHref } from "../../lib/myMenuplyRoutes.js";
 import { CalendarWhoCard, PlanSharingControls } from "./myMenuply/SocialPlanSharing.jsx";
+import PickPlanTime from "./myMenuply/PickPlanTime.jsx";
+import PlanTag from "./myMenuply/PlanTag.jsx";
 
 const SOCIAL_PLAN_KIND_LABELS = {
   dine: "Meal",
@@ -53,6 +55,7 @@ export default function SocialPlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sharingOpen, setSharingOpen] = useState(null);
+  const [picking, setPicking] = useState(null);
   const replacePlan = (next) => setData((d) => ({ ...d, plans: d.plans.map((p) => (p.key === next.key ? next : p)) }));
 
   const load = useCallback(async (sc) => {
@@ -121,8 +124,21 @@ export default function SocialPlansPage() {
           <ul style={styles.list}>
             {data.plans.map((p) => (
               <li key={p.key}>
-                <Link to={p.href || "#"} style={styles.row} data-testid={`social-plan-${p.key}`}>
-                  <span style={styles.when}>{formatPlanWhen(p, data.today)}</span>
+                {/* "Day not set" / "You pick a time": pick it here instead of opening the restaurant. */}
+                <Link
+                  to={p.href || "#"}
+                  onClick={(e) => {
+                    if (!p.time_open) return;
+                    e.preventDefault();
+                    setPicking((k) => (k === p.key ? null : p.key));
+                  }}
+                  style={styles.row}
+                  data-testid={`social-plan-${p.key}`}
+                >
+                  <span style={styles.when}>
+                    <PlanTag plan={p} testId={`social-plan-${p.key}-tag`} />
+                    {p.time_open ? "Pick a day & time ›" : formatPlanWhen(p, data.today)}
+                  </span>
                   <strong style={styles.title}>{p.title}</strong>
                   <span style={styles.meta}>
                     {[
@@ -136,6 +152,15 @@ export default function SocialPlansPage() {
                       .join(" · ")}
                   </span>
                 </Link>
+                {picking === p.key ? (
+                  <PickPlanTime
+                    plan={p}
+                    onSaved={(next) => {
+                      replacePlan(next);
+                      setPicking(null);
+                    }}
+                  />
+                ) : null}
                 {p.is_organizer && p.source !== "venue_event" && p.join_mode ? (
                   <>
                     <button
