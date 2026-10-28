@@ -53,3 +53,15 @@ test("My Menuply copy: calendars say Social Plans", () => {
   }
   assert.match(read("src/pages/consumer/myMenuply/EventComposeSheet.jsx"), /Add to Social Plans/);
 });
+
+test("Phase C: My Menuply Connects section — owner only, GET only, every row has a button", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /\{previewAsConnect \? null : <ConnectsNowSection \/>\}/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /export const getConnectsNow = \(\) => get\("\/api\/consumer\/social-plans\/connects"\);/);
+  const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
+  for (const label of ['"Needs your answer"', '"Right now"', '"Coming up"', 'button="Answer"', 'button="Join"', 'button="Invite"', '"Going ✓"', '"On your Wish List"']) {
+    assert.ok(section.includes(label), label);
+  }
+  assert.doesNotMatch(section, /\b(post|put|patch|del)\(/);
+});
