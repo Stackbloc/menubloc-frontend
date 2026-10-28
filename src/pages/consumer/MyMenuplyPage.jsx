@@ -674,7 +674,7 @@ export default function MyMenuplyPage() {
   );
 
   function openEventsCalendar() {
-    setCalendarTitle("My Events");
+    setCalendarTitle("Social Plans · Events");
     setCalendarOpen(true);
   }
 
@@ -1516,7 +1516,7 @@ export default function MyMenuplyPage() {
     setPlanPrefill(prefill);
     setSchedulingPlans(true);
     setCalendarOpen(true);
-    setCalendarTitle("My Eating Plans");
+    setCalendarTitle("Social Plans · Meals");
   }
 
   function handleTakeMeOutFromCraving(selected) {

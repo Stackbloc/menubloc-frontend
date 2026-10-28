@@ -16,8 +16,8 @@ function read(rel) {
 test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   const sheet = read("src/components/MenuplyActionSheet.jsx");
   assert.match(sheet, /id: "event"/);
-  assert.match(sheet, /title: "My Events"/);
-  assert.match(sheet, /title: "My Eating Plans"/);
+  assert.match(sheet, /title: "Plan an event"/);
+  assert.match(sheet, /title: "Plan a meal"/);
   assert.match(sheet, /title: "My Crews"/);
   assert.match(sheet, /compose: "event"/);
   assert.match(sheet, /id: "events-browse"/);
@@ -58,10 +58,10 @@ test("My Menuply opens EventComposeSheet from compose=event and Edit View Add", 
   assert.match(page, /createDinerSocialEvent/);
   assert.match(page, /listDinerSocialEvents/);
   assert.match(page, /socialEvents/);
-  assert.match(page, /setCalendarTitle\("My Events"\)/);
+  assert.match(page, /setCalendarTitle\("Social Plans · Events"\)/);
   const compose = read("src/pages/consumer/myMenuply/EventComposeSheet.jsx");
   assert.match(compose, /event-compose-sheet/);
-  assert.match(compose, /My Events/);
+  assert.match(compose, /Plan an event/);
   assert.match(compose, /allowVideo/);
   assert.match(compose, /Food is optional/);
   assert.match(compose, /per event instance/);

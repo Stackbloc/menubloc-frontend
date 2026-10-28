@@ -5,24 +5,25 @@ export const LIVE_FEED_CHANNELS = [
   { id: "all", label: "All Content" },
   { id: "ate", label: "I'm Eating" },
   { id: "want", label: "Wanna Eat" },
-  { id: "plan", label: "Eating Plans" },
+  { id: "plan", label: "Social Plans" },
   { id: "reviews", label: "Reviews" },
   { id: "cooking", label: "What's Cooking @home" },
-  { id: "event", label: "Events" },
 ];
 
 const CHANNEL_LABEL_BY_KIND = Object.fromEntries(
   LIVE_FEED_CHANNELS.filter((ch) => ch.id !== "all").map((ch) => [ch.id, ch.label])
 );
+// Social Plans (docs/15): events and eating plans are one channel; older event posts keep their kind.
+CHANNEL_LABEL_BY_KIND.event = CHANNEL_LABEL_BY_KIND.plan;
 
 /** Full captions in fullscreen reel (hub section titles). */
 export const LIVE_FEED_FULL_CATEGORY_LABELS = {
   ate: "What I'm Eating",
   want: "Wish List",
-  plan: "My Eating Plans",
+  plan: "Social Plans",
   reviews: "Reviews",
   cooking: "What's Cooking @home",
-  event: "Events",
+  event: "Social Plans",
 };
 
 export function liveFeedCategoryLabel(kind) {

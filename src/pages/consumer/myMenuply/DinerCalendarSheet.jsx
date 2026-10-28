@@ -81,7 +81,7 @@ export default function DinerCalendarSheet({
   const monthEvents = (events || []).filter((event) => ymdInMonth(event.ymd, viewMonth));
   const dayEvents = monthEvents.filter((event) => event.ymd === selectedDate);
   const plansMode =
-    title === "Upcoming Plans" || title === "My Eating Plans" || title === "My Events";
+    title === "Upcoming Plans" || title === "Social Plans · Meals" || title === "Social Plans · Events";
   const dayLabel = formatChipDate(selectedDate);
 
   return createPortal(
@@ -118,7 +118,7 @@ export default function DinerCalendarSheet({
         {plansMode ? (
           <div data-testid="calendar-events" style={styles.events}>
             <p style={styles.eventsLabel}>
-              {title === "My Events" ? `Events & plans · ${dayLabel}` : `Plans · ${dayLabel}`}
+              {title === "Social Plans · Events" ? `Events & plans · ${dayLabel}` : `Plans · ${dayLabel}`}
             </p>
             {dayEvents.length > 0 ? (
               dayEvents.map((event) => (
@@ -132,15 +132,15 @@ export default function DinerCalendarSheet({
                   }}
                   style={{
                     ...styles.eventBtn,
-                    ...(plansMode && title !== "My Events" ? styles.eventBtnPlans : null),
+                    ...(plansMode && title !== "Social Plans · Events" ? styles.eventBtnPlans : null),
                     ...styles.eventBtnOnDay,
-                    ...(plansMode && title !== "My Events" ? styles.eventBtnOnDayPlans : null),
+                    ...(plansMode && title !== "Social Plans · Events" ? styles.eventBtnOnDayPlans : null),
                   }}
                 >
                   <span
                     style={{
                       ...styles.eventDot,
-                      ...(plansMode && title !== "My Events" ? styles.eventDotPlans : null),
+                      ...(plansMode && title !== "Social Plans · Events" ? styles.eventDotPlans : null),
                     }}
                     aria-hidden
                   />
