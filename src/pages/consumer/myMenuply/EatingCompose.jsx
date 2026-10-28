@@ -23,6 +23,7 @@ import { FAVORITE_FOOD_TYPE_OPTIONS } from "../../../lib/dinerFavoriteFoods.js";
 import { labelWithFoodIcon } from "../../../lib/foodInterestIcons.js";
 import { isAteLikeFeedCategory, isCookingFeedCategory } from "../../../lib/feedContentKinds.js";
 import EatingPlaceFields from "./EatingPlaceFields.jsx";
+import { unlistedRestaurantPlace } from "../../../lib/unlistedPlace.js";
 import InviteMeOutAudiencePicker from "./InviteMeOutAudiencePicker.jsx";
 import {
   socialBtn,
@@ -58,6 +59,9 @@ export default function EatingCompose({
 }) {
   const [category, setCategory] = useState(defaultCategory);
   const [text, setText] = useState("");
+  // Feed "What I'm Eating" is food first (Andre 2026-10-28); the place is optional.
+  const [foodText, setFoodText] = useState("");
+  const [otherPlace, setOtherPlace] = useState("");
   const [file, setFile] = useState(initialFile || null);
   const [mealPeriod, setMealPeriod] = useState(
     defaultMealPeriod || defaultWhatIAteMealPeriod()
@@ -65,10 +69,10 @@ export default function EatingCompose({
   const [homemade, setHomemade] = useState(false);
   const [whereType, setWhereType] = useState(() => {
     const w = String(initialWhereType || "").trim();
-    if (w === "happy_hour" || w === "home" || w === "restaurant") return w;
+    if (w === "happy_hour" || w === "home" || w === "restaurant" || w === "other") return w;
     if (identityLocked) return "restaurant";
     return null;
-  }); // restaurant | home | happy_hour
+  }); // restaurant | home | happy_hour | other
   const [happyHourIntent, setHappyHourIntent] = useState(
     String(initialWhereType || "").trim() === "happy_hour" ? "enjoying" : null
   );
@@ -191,6 +195,8 @@ export default function EatingCompose({
     setWhereType(null);
     setHappyHourIntent(null);
     setPortionAmount("");
+    setFoodText("");
+    setOtherPlace("");
   }
 
   function selectWhere(next) {
@@ -482,7 +488,7 @@ export default function EatingCompose({
     if (feedMode && isAteLikeFeedCategory(category)) {
       if (whereType === "happy_hour") {
         if (!restaurant || !happyHourFoodName(happyHourIntent)) return;
-      } else if (!whereType && !homemade && !(restaurant || dish)) {
+      } else if (!foodText.trim() && !homemade && !(restaurant || dish)) {
         return;
       }
     }
@@ -511,18 +517,19 @@ export default function EatingCompose({
       category === "ate" || isAteLikeFeedCategory(category)
         ? isHappyHour
           ? "restaurant"
-          : whereType === "home" || whereType === "restaurant"
+          : whereType === "home" || whereType === "restaurant" || whereType === "other"
             ? whereType
             : feedHomemade
               ? "home"
               : restaurant || dish
                 ? "restaurant"
-                : whereType
+                : "other"
         : null;
     const portionNum = Number(portionAmount);
     const feedPrimary = isHappyHour
       ? happyHourName
       : String(dish?.item_name || "").trim() ||
+        foodText.trim() ||
         String(restaurant?.restaurant_name || "").trim() ||
         value ||
         (feedHomemade ? "@home" : "Food");
@@ -556,7 +563,7 @@ export default function EatingCompose({
       portionUnit: "serving",
       eatenAt: new Date().toISOString(),
       homemade: feedHomemade,
-      restaurant,
+      restaurant: feedWhere === "other" ? unlistedRestaurantPlace(otherPlace) : restaurant,
       dish: isHappyHour ? null : dish,
       isRecommend:
         category === "ate" && isVideoFile(file) && !isHappyHour
@@ -577,11 +584,11 @@ export default function EatingCompose({
       isCookingFeedCategory(category) ||
       category === "want")
       ? isVideoFile(file) &&
-        (category !== "reviews" || Boolean(dish?.menu_item_id)) &&
+        (category !== "reviews" || Boolean(dish?.menu_item_id || dish?.unlisted)) &&
         (category !== "ate" ||
           (whereType === "happy_hour"
             ? Boolean(restaurant && happyHourIntent)
-            : Boolean(whereType || homemade || restaurant || dish)))
+            : Boolean(foodText.trim() || homemade || restaurant || dish)))
       : category === "plan"
         ? true
         : category === "want"
@@ -849,6 +856,7 @@ export default function EatingCompose({
                   locationCity={locationCity}
                   locationState={locationState}
                   allowDishSearch={false}
+                  allowUnlisted
                   allowHomemade={false}
                 />
               </>
@@ -994,6 +1002,7 @@ export default function EatingCompose({
                 followed={followed}
                 disabled={busy}
                 allowDishSearch
+                allowUnlisted
                 allowHomemade={false}
                 locationCity={locationCity}
                 locationState={locationState}
@@ -1114,8 +1123,20 @@ export default function EatingCompose({
         {category === "reviews" || (category === "ate" && feedMode) ? (
           <>
             {category === "ate" && feedMode ? (
+              <>
+              <p style={styles.stepLabel}>What are you eating?</p>
+              <input
+                type="text"
+                value={foodText}
+                onChange={(e) => setFoodText(e.target.value.slice(0, 160))}
+                placeholder="e.g. Al pastor tacos, a hot dog, mom's pho"
+                disabled={busy}
+                autoComplete="off"
+                style={styles.input}
+                data-testid="ate-food-input"
+              />
               <div data-testid="ate-where-step">
-                <p style={styles.stepLabel}>Where</p>
+                <p style={styles.stepLabel}>Where? (optional)</p>
                 <div style={styles.chips} role="group" aria-label="Where did you eat">
                   <button
                     type="button"
@@ -1170,8 +1191,27 @@ export default function EatingCompose({
                   >
                     @home
                   </button>
+                  <button
+                    type="button"
+                    data-testid="ate-where-other"
+                    disabled={busy}
+                    style={{
+                      ...styles.chip,
+                      ...(whereType === "other" ? styles.chipActive : null),
+                    }}
+                    onClick={() => {
+                      setWhereType("other");
+                      setHappyHourIntent(null);
+                      setHomemade(false);
+                      setRestaurant(null);
+                      setDish(null);
+                    }}
+                  >
+                    Somewhere else
+                  </button>
                 </div>
               </div>
+              </>
             ) : null}
             {category === "ate" && feedMode && whereType === "happy_hour" ? (
               <>
@@ -1213,10 +1253,22 @@ export default function EatingCompose({
                   locationCity={locationCity}
                   locationState={locationState}
                   allowDishSearch={false}
+                  allowUnlisted
                   allowHomemade={false}
                 />
               </>
-            ) : (
+            ) : category === "ate" && feedMode && whereType === "other" ? (
+              <input
+                type="text"
+                value={otherPlace}
+                onChange={(e) => setOtherPlace(e.target.value.slice(0, 120))}
+                placeholder="Where? e.g. Dodger Stadium (optional)"
+                disabled={busy}
+                autoComplete="off"
+                style={styles.input}
+                data-testid="ate-other-place"
+              />
+            ) : category === "ate" && feedMode && !identityLocked && whereType !== "restaurant" && !restaurant && !dish ? null : (
               <>
             <p style={styles.stepLabel}>
               {identityLocked
@@ -1240,6 +1292,7 @@ export default function EatingCompose({
               locationCity={locationCity}
               locationState={locationState}
               allowDishSearch
+              allowUnlisted={category !== "want" && category !== "plan"}
               identityLocked={identityLocked}
             />
               </>

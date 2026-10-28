@@ -17,6 +17,7 @@ import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
 import { createHomemadeDish } from "./homemadeDishApi.js";
 import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
 import { eatingFoodName, joinHomemadeComment } from "./eatingPlaceLink.js";
+import { unlistedPlaceName } from "./unlistedPlace.js";
 
 export async function postFeedAteVideo({
   file,
@@ -50,7 +51,7 @@ export async function postFeedAteVideo({
       "Food";
 
   const resolvedWhere =
-    whereType === "home" || whereType === "restaurant"
+    whereType === "home" || whereType === "restaurant" || whereType === "other"
       ? whereType
       : homemade
         ? "home"
@@ -88,6 +89,7 @@ export async function postFeedAteVideo({
   const data = await createWhatIAteMeal({
     where_type: resolvedWhere,
     restaurant_id: resolvedWhere === "restaurant" ? restaurantId : null,
+    place_name: resolvedWhere !== "home" && !restaurantId ? unlistedPlaceName(restaurant) : null,
     meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
     eaten_on: whatIAteTodayLocalDate(),
     eaten_at: new Date().toISOString(),
@@ -191,6 +193,7 @@ export async function postGuestFeedAteVideo(payload, { legalConsent, onUploadPro
   const foodName = homemade
     ? note || "@home"
     : String(payload.dish?.item_name || "").trim() ||
+      String(payload.items?.[0]?.food_name || "").trim() ||
       String(payload.restaurant?.restaurant_name || "").trim() ||
       note ||
       "Food";
