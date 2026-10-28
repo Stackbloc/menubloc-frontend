@@ -105,3 +105,20 @@ test("tags + pick a day & time", async () => {
   assert.match(pick, /saveSocialPlanSharing\(plan\.source, plan\.id, \{ date, time: needsTime \? time : null \}\)/);
   assert.match(pick, /respondToEatInvitation\(plan\.id, "accepted", \{ proposedDate: date, proposedTime: time \}\)/);
 });
+
+test("My Social Calendar: month grid on the page, week strip on My Menuply (owner only)", async () => {
+  const { plansByDay, ymdOf } = await import("../src/lib/socialPlanTags.js");
+  assert.equal(ymdOf(new Date(2026, 9, 5)), "2026-10-05");
+  const m = plansByDay([{ key: "a", date: "2026-10-30" }, { key: "b", date: "2026-10-30" }, { key: "c", date: null }]);
+  assert.equal(m.get("2026-10-30").length, 2);
+  assert.equal(m.size, 1);
+  const page = read("src/pages/consumer/SocialPlansPage.jsx");
+  assert.match(page, /<MonthGrid\n\s+month=\{month\}\n\s+plans=\{calPlans\}/);
+  assert.match(page, /searchParams\.get\("day"\)/);
+  assert.match(page, /const shown = day \? calPlans\.filter\(\(p\) => p\.date === day\) : data\.plans;/);
+  const mm = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(mm, /\{previewAsConnect \? null : <SocialCalendarCard \/>\}/);
+  const card = read("src/pages/consumer/myMenuply/SocialCalendarCard.jsx");
+  assert.match(card, /📅 My Social Calendar/);
+  assert.match(card, /navigate\(`\/account\/social-plans\?day=\$\{day\}`\)/);
+});

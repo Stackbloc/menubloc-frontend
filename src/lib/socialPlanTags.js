@@ -43,3 +43,18 @@ export function timeChoices() {
   }
   return out;
 }
+
+/** YYYY-MM-DD for a local date. */
+export function ymdOf(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Plans grouped by day (undated plans left out). */
+export function plansByDay(plans) {
+  const m = new Map();
+  for (const p of plans || []) {
+    if (!p?.date) continue;
+    m.set(p.date, [...(m.get(p.date) || []), p]);
+  }
+  return m;
+}

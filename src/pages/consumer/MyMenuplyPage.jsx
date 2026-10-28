@@ -85,6 +85,7 @@ import DinerSocialPresetsPanel, {
 } from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import ConnectsNowSection from "./myMenuply/ConnectsNowSection.jsx";
+import SocialCalendarCard from "./myMenuply/SocialCalendarCard.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
 import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
 import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
@@ -2430,6 +2431,7 @@ export default function MyMenuplyPage() {
             />
             {/* Social Plans Phase C (docs/15): things to do with Connects — owner view only. */}
             {previewAsConnect ? null : <ConnectsNowSection />}
+            {previewAsConnect ? null : <SocialCalendarCard />}
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
               onClose={closeHighlightPicker}

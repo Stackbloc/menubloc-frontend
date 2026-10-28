@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -15,6 +15,8 @@ import { myMenuplyProfileHref } from "../../lib/myMenuplyRoutes.js";
 import { CalendarWhoCard, PlanSharingControls } from "./myMenuply/SocialPlanSharing.jsx";
 import PickPlanTime from "./myMenuply/PickPlanTime.jsx";
 import PlanTag from "./myMenuply/PlanTag.jsx";
+import { MonthGrid } from "./myMenuply/PlanCalendar.jsx";
+import { ymdOf } from "../../lib/socialPlanTags.js";
 
 const SOCIAL_PLAN_KIND_LABELS = {
   dine: "Meal",
@@ -56,7 +58,21 @@ export default function SocialPlansPage() {
   const [error, setError] = useState("");
   const [sharingOpen, setSharingOpen] = useState(null);
   const [picking, setPicking] = useState(null);
-  const replacePlan = (next) => setData((d) => ({ ...d, plans: d.plans.map((p) => (p.key === next.key ? next : p)) }));
+  // Month grid: dots for upcoming + the last 30 days; ?day=YYYY-MM-DD (from My Menuply's week strip).
+  const [searchParams] = useSearchParams();
+  const dayParam = searchParams.get("day");
+  const [day, setDay] = useState(/^\d{4}-\d{2}-\d{2}$/.test(dayParam || "") ? dayParam : null);
+  const [month, setMonth] = useState(() => `${(day || ymdOf(new Date())).slice(0, 7)}-01`);
+  const [calPlans, setCalPlans] = useState([]);
+  const moveMonth = (delta) =>
+    setMonth((m) => {
+      const [y, mo] = m.split("-").map(Number);
+      return ymdOf(new Date(y, mo - 1 + delta, 1));
+    });
+  const replacePlan = (next) => {
+    setData((d) => ({ ...d, plans: d.plans.map((p) => (p.key === next.key ? next : p)) }));
+    setCalPlans((list) => list.map((p) => (p.key === next.key ? next : p)));
+  };
 
   const load = useCallback(async (sc) => {
     setLoading(true);
@@ -79,6 +95,15 @@ export default function SocialPlansPage() {
     if (!authLoading && isAuthenticated) load(scope);
   }, [authLoading, isAuthenticated, navigate, load, scope]);
 
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    Promise.all([listMySocialPlans("upcoming"), listMySocialPlans("past")])
+      .then(([up, past]) => setCalPlans([...(past.plans || []), ...(up.plans || [])]))
+      .catch(() => setCalPlans([]));
+  }, [authLoading, isAuthenticated]);
+
+  const shown = day ? calPlans.filter((p) => p.date === day) : data.plans;
+
   return (
     <>
       <StickyPageHeader title="My Social Calendar" />
@@ -94,7 +119,25 @@ export default function SocialPlansPage() {
 
         <CalendarWhoCard />
 
-        <div role="tablist" style={styles.tabs}>
+        <MonthGrid
+          month={month}
+          plans={calPlans}
+          today={data.today || ymdOf(new Date())}
+          selected={day}
+          onSelect={(d) => setDay((cur) => (cur === d ? null : d))}
+          onMonth={moveMonth}
+        />
+
+        {day ? (
+          <div style={styles.dayHead} data-testid="social-plans-day">
+            <strong>{new Date(`${day}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</strong>
+            <button type="button" onClick={() => setDay(null)} style={styles.sharing} data-testid="social-plans-day-clear">
+              Show all plans
+            </button>
+          </div>
+        ) : null}
+
+        <div role="tablist" style={{ ...styles.tabs, ...(day ? { display: "none" } : null) }}>
           {[
             ["upcoming", "Coming up"],
             ["past", "Past"],
@@ -116,13 +159,17 @@ export default function SocialPlansPage() {
         {error ? <p style={styles.error}>{error}</p> : null}
         {loading || authLoading ? (
           <p style={styles.muted}>Loading…</p>
-        ) : data.plans.length === 0 ? (
+        ) : shown.length === 0 ? (
           <p style={styles.muted} data-testid="social-plans-empty">
-            {scope === "upcoming" ? "Nothing planned yet. Plan a meal and invite your Connects." : "No plans in the last 30 days."}
+            {day
+              ? "Nothing planned that day."
+              : scope === "upcoming"
+                ? "Nothing planned yet. Plan a meal and invite your Connects."
+                : "No plans in the last 30 days."}
           </p>
         ) : (
           <ul style={styles.list}>
-            {data.plans.map((p) => (
+            {shown.map((p) => (
               <li key={p.key}>
                 {/* "Day not set" / "You pick a time": pick it here instead of opening the restaurant. */}
                 <Link
@@ -240,6 +287,7 @@ const styles = {
   when: { fontSize: 12, fontWeight: 700, color: "#7c3aed" },
   title: { fontSize: 15 },
   meta: { fontSize: 13, color: "#64748b" },
+  dayHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, fontSize: 15, color: "#0f172a" },
   sharing: {
     background: "none",
     border: "none",
