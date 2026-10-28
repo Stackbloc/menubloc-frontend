@@ -465,6 +465,11 @@ export const listMenuConsoleFranchiseBrands = (q = "") =>
 /** Stand-alone | MLE | franchise (joins or creates a chain; its menu becomes the chain menu). */
 export const setMenuConsoleBusinessType = (restaurantId, body) =>
   put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/business-type`, body);
+/** Dish photos on the menu rows (one switch per restaurant). */
+export const getMenuConsoleMenuPhotos = (restaurantId) =>
+  get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/menu-photos`);
+export const setMenuConsoleMenuPhotos = (restaurantId, body) =>
+  put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/menu-photos`, body);
 /** MLE locations: one restaurant, several kitchens. */
 const mleLocationsPath = (restaurantId) =>
   `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/locations`;

@@ -8,6 +8,7 @@ import MenuItemModifiersEditor, {
   fromEditorGroups,
 } from "./MenuItemModifiersEditor.jsx";
 import MenuSectionLayoutPanel from "./MenuSectionLayoutPanel.jsx";
+import MenuPhotosSwitch from "./MenuPhotosSwitch.jsx";
 import MenuModifierGroupsOverview from "./MenuModifierGroupsOverview.jsx";
 import { attachScopeFromIndex, planItemModifierSave } from "./modifierScopeModel.js";
 import { orderSectionsByLayout } from "../../lib/menuSectionLayout.js";
@@ -830,6 +831,10 @@ export function MenuEditor({
           it.
         </div>
       )}
+
+      {api.getMenuPhotos && api.setMenuPhotos ? (
+        <MenuPhotosSwitch restaurantId={restaurantId} api={api} colors={colors} />
+      ) : null}
 
       {sections.length > 1 && (
         <MenuSectionLayoutPanel

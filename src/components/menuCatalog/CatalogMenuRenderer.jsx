@@ -10,7 +10,7 @@ import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
 import PublicMenuItemCard from "../menu-templates/PublicMenuItemCard.jsx";
 import { pickHeroImageUrl, resolveTemplateMenuStyle } from "../menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
-import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
+import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor, shouldShowItemImages } from "../menu-templates/menuThemeSettings.js";
 import {
   buildMenuAppearanceRootStyle,
   getMenuAppearanceTokens,
@@ -804,7 +804,7 @@ export default function CatalogMenuRenderer({
           getConsumerDisplayPrice={getConsumerDisplayPrice}
           brand={menuBrand}
           menuThemeSettings={menuThemeSettings}
-          showImage={false}
+          showImage={shouldShowItemImages(menuThemeSettings)}
         />
         </div>
         ))}
