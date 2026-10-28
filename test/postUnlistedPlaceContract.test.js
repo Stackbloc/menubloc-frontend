@@ -46,3 +46,15 @@ test("picker offers Use “…” rows; posts send place_name; reviews accept a 
   assert.match(read("src/lib/feedVideoCompose.js"), /place_name:/);
   assert.match(read("src/pages/consumer/MyMenuplyPage.jsx"), /place_name:/);
 });
+
+test("Feed What I'm Eating is food first; Where is optional with Somewhere else", () => {
+  const compose = read("src/pages/consumer/myMenuply/EatingCompose.jsx");
+  assert.match(compose, /What are you eating\?/);
+  assert.match(compose, /data-testid="ate-food-input"/);
+  assert.match(compose, /Where\? \(optional\)/);
+  assert.match(compose, /data-testid="ate-where-other"/);
+  assert.match(compose, /Boolean\(foodText\.trim\(\) \|\| homemade \|\| restaurant \|\| dish\)/);
+  // No place picked → "other", never silently "home".
+  assert.match(compose, /\? "restaurant"\n\s+: "other"/);
+  assert.match(read("src/lib/feedVideoCompose.js"), /whereType === "other"/);
+});
