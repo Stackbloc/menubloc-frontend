@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
 import useClusterFavs from "../hooks/useClusterFavs.js";
@@ -469,7 +470,8 @@ const CLUSTER_STICKY_CHROME_STYLE = {
   minWidth: 0,
 };
 
-function ClusterFoodSearchForm({
+/** Shared with the Food by type screen (same search, same behavior). */
+export function ClusterFoodSearchForm({
   searchInput,
   onSearchInputChange,
   searchPlaceholder,
@@ -547,6 +549,7 @@ function ClusterMenuExplorerTab({
   postContent = null,
 }) {
   const PAGE_SIZE = 40;
+  const location = useLocation();
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -1187,6 +1190,26 @@ function ClusterMenuExplorerTab({
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {mksCategories.length === 0 && status === "ok" ? (
             <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
+          ) : null}
+          {isClusterFoodByTypeEnabled() && clusterSlug ? (
+            <Link
+              to={`${location.pathname.replace(/\/$/, "")}/food-by-type`}
+              data-testid="cluster-food-by-type-link"
+              style={{
+                display: "inline-flex",
+                alignSelf: "start",
+                justifySelf: "start",
+                padding: "0.55rem 0.9rem",
+                borderRadius: 999,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#111827",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Food by type · filter by calories, protein, diet →
+            </Link>
           ) : null}
           <ClusterMksCategoryGrid
             categories={mksCategories}

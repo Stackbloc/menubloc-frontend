@@ -1,7 +1,7 @@
 import React from "react";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "./ClusterDirectoryCard.jsx";
 
-const MKS_ACCENTS = {
+export const MKS_ACCENTS = {
   BEVERAGES: { border: "#7c3aed", bg: "#f5f3ff", emoji: "🍹" },
   BURGERS: { border: "#f59e0b", bg: "#fffbeb", emoji: "🍔" },
   PIZZA: { border: "#ef4444", bg: "#fef2f2", emoji: "🍕" },

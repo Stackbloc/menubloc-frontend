@@ -250,6 +250,7 @@ import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
+import ClusterFoodByTypePage from "./pages/ClusterFoodByTypePage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
 import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import {
@@ -866,6 +867,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
             )
           }
         />
+        <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug/food-by-type" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterFoodByTypePage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
         <Route

@@ -68,7 +68,7 @@ export const CLUSTER_DISH_CHIP_STYLE = {
   overflowWrap: "anywhere",
 };
 
-function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
+export function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
   const menuItemId = item?.menu_item_id ?? item?.id;
   if (menuItemId) {
     const encodedId = encodeURIComponent(String(menuItemId));
