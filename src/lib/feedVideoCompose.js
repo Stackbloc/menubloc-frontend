@@ -17,6 +17,7 @@ import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
 import { createHomemadeDish } from "./homemadeDishApi.js";
 import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
 import { eatingFoodName, joinHomemadeComment } from "./eatingPlaceLink.js";
+import { unlistedPlaceName } from "./unlistedPlace.js";
 
 export async function postFeedAteVideo({
   file,
@@ -88,6 +89,7 @@ export async function postFeedAteVideo({
   const data = await createWhatIAteMeal({
     where_type: resolvedWhere,
     restaurant_id: resolvedWhere === "restaurant" ? restaurantId : null,
+    place_name: resolvedWhere === "restaurant" && !restaurantId ? unlistedPlaceName(restaurant) : null,
     meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
     eaten_on: whatIAteTodayLocalDate(),
     eaten_at: new Date().toISOString(),

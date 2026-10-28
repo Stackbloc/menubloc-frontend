@@ -146,6 +146,7 @@ import {
   uploadHomemadeDishPhoto,
 } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
+import { unlistedPlaceName } from "../../lib/unlistedPlace.js";
 
 async function maybeFollowRestaurant(restaurantId) {
   const id = Number(restaurantId);
@@ -1142,6 +1143,7 @@ export default function MyMenuplyPage() {
       const data = await createWhatIAteMeal({
         where_type: resolvedWhere || undefined,
         restaurant_id: restaurantId,
+        place_name: restaurantId || resolvedWhere === "home" ? null : unlistedPlaceName(restaurant),
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         eaten_on: eatenOn,
         eaten_at: eatenAt || new Date().toISOString(),

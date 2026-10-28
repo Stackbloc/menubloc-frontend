@@ -577,7 +577,7 @@ export default function EatingCompose({
       isCookingFeedCategory(category) ||
       category === "want")
       ? isVideoFile(file) &&
-        (category !== "reviews" || Boolean(dish?.menu_item_id)) &&
+        (category !== "reviews" || Boolean(dish?.menu_item_id || dish?.unlisted)) &&
         (category !== "ate" ||
           (whereType === "happy_hour"
             ? Boolean(restaurant && happyHourIntent)
@@ -849,6 +849,7 @@ export default function EatingCompose({
                   locationCity={locationCity}
                   locationState={locationState}
                   allowDishSearch={false}
+                  allowUnlisted
                   allowHomemade={false}
                 />
               </>
@@ -994,6 +995,7 @@ export default function EatingCompose({
                 followed={followed}
                 disabled={busy}
                 allowDishSearch
+                allowUnlisted
                 allowHomemade={false}
                 locationCity={locationCity}
                 locationState={locationState}
@@ -1213,6 +1215,7 @@ export default function EatingCompose({
                   locationCity={locationCity}
                   locationState={locationState}
                   allowDishSearch={false}
+                  allowUnlisted
                   allowHomemade={false}
                 />
               </>
@@ -1240,6 +1243,7 @@ export default function EatingCompose({
               locationCity={locationCity}
               locationState={locationState}
               allowDishSearch
+              allowUnlisted={category !== "want" && category !== "plan"}
               identityLocked={identityLocked}
             />
               </>

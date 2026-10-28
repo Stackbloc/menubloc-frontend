@@ -12,6 +12,7 @@ import {
   restaurantPlaceMeta,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
+import { unlistedDishPlace, unlistedRestaurantPlace } from "../../../lib/unlistedPlace.js";
 import { dishPhotoUrl } from "../../../lib/eatingPlaceLink.js";
 import * as s from "./myMenuplyStyles.js";
 
@@ -30,6 +31,8 @@ export default function EatingPlaceFields({
   locationState = null,
   identityLocked = false,
   dishSearchPlaceholder = "Dish (optional)",
+  // Posts only: offer "Use what I typed" for a restaurant or dish not on Menuply yet.
+  allowUnlisted = false,
 }) {
   const [query, setQuery] = useState("");
   const [dishQuery, setDishQuery] = useState("");
@@ -124,6 +127,38 @@ export default function EatingPlaceFields({
     setDishHits([]);
   }
 
+  function pickTypedRestaurant() {
+    const next = unlistedRestaurantPlace(query);
+    if (!next) return;
+    onHomemadeChange?.(false);
+    onRestaurantChange?.(next);
+    onDishChange?.(null);
+    setQuery("");
+    setHits([]);
+    setDishQuery("");
+  }
+
+  function pickTypedDish() {
+    const next = unlistedDishPlace(dishQuery);
+    if (!next) return;
+    onDishChange?.(next);
+    setDishQuery("");
+    setDishHits([]);
+  }
+
+  // Last row of the suggestions; hidden when a suggestion already has exactly that name.
+  const typedRestaurant = query.trim();
+  const showUseRestaurant =
+    allowUnlisted &&
+    typedRestaurant.length >= 2 &&
+    !hits.some((hit) => restaurantLabel(hit).toLowerCase() === typedRestaurant.toLowerCase());
+  const typedDish = dishQuery.trim();
+  const showUseDish =
+    allowUnlisted &&
+    typedDish.length >= 2 &&
+    !dishHits.some((hit) => dishLabel(hit).toLowerCase() === typedDish.toLowerCase());
+  const restaurantUnlisted = Boolean(restaurant && !restaurant.restaurant_id);
+
   function chooseRestaurant() {
     onHomemadeChange?.(false);
   }
@@ -195,6 +230,8 @@ export default function EatingPlaceFields({
                   <div style={s.muted}>
                     {[restaurant.city, restaurant.state].filter(Boolean).join(", ")}
                   </div>
+                ) : restaurantUnlisted ? (
+                  <div style={s.muted}>Not on Menuply yet</div>
                 ) : null}
               </div>
               {identityLocked ? null : (
@@ -241,6 +278,17 @@ export default function EatingPlaceFields({
                   ))}
                 </ul>
               ) : null}
+              {showUseRestaurant ? (
+                <button
+                  type="button"
+                  style={styles.useTyped}
+                  disabled={disabled}
+                  onClick={pickTypedRestaurant}
+                  data-testid="eating-place-restaurant-use-typed"
+                >
+                  Use “{typedRestaurant}” <span style={s.muted}>· not on Menuply yet</span>
+                </button>
+              ) : null}
               {followedPicks.length > 0 ? (
                 <div style={styles.followed}>
                   {followedPicks.map((row) => (
@@ -279,6 +327,8 @@ export default function EatingPlaceFields({
                       </div>
                       {dish.restaurant_name ? (
                         <div style={s.muted}>{dish.restaurant_name}</div>
+                      ) : dish.unlisted ? (
+                        <div style={s.muted}>Not on the menu yet</div>
                       ) : null}
                     </div>
                   </div>
@@ -307,7 +357,7 @@ export default function EatingPlaceFields({
                     aria-labelledby="eating-place-menu-item-label"
                     data-testid="eating-place-dish-search"
                   />
-                  {loadingDishes ? <p style={s.muted}>Loading menu…</p> : null}
+                  {loadingDishes && !restaurantUnlisted ? <p style={s.muted}>Loading menu…</p> : null}
                   {dishHits.length > 0 ? (
                     <ul style={styles.hits} data-testid="eating-place-dish-hits">
                       {dishHits.map((hit) => (
@@ -323,10 +373,22 @@ export default function EatingPlaceFields({
                         </li>
                       ))}
                     </ul>
-                  ) : !loadingDishes ? (
+                  ) : !loadingDishes && !restaurantUnlisted && !showUseDish ? (
                     <p style={s.muted} data-testid="eating-place-dish-empty">
                       No matching dishes — try another search.
                     </p>
+                  ) : null}
+                  {showUseDish ? (
+                    <button
+                      type="button"
+                      style={styles.useTyped}
+                      disabled={disabled}
+                      onClick={pickTypedDish}
+                      data-testid="eating-place-dish-use-typed"
+                    >
+                      Use “{typedDish}”{" "}
+                      <span style={s.muted}>· {restaurantUnlisted ? "add this dish" : "not on the menu yet"}</span>
+                    </button>
                   ) : null}
                 </>
               ) : (
@@ -536,6 +598,20 @@ const styles = {
     overflow: "hidden",
     maxHeight: 220,
     overflowY: "auto",
+  },
+  useTyped: {
+    appearance: "none",
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    marginTop: 6,
+    border: "1px dashed #cbd5e1",
+    borderRadius: 10,
+    background: "#fff",
+    padding: "12px 14px",
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
   hitBtn: {
     appearance: "none",
