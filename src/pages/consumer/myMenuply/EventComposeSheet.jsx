@@ -159,12 +159,12 @@ export default function EventComposeSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={isEdit ? "Edit event" : "My Events"}
+        aria-label={isEdit ? "Edit event" : "Plan an event"}
         style={{ ...mobileDialogPanel(maxHeight), padding: "16px 16px 12px" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={styles.head}>
-          <p style={styles.title}>{isEdit ? "Edit event" : "My Events"}</p>
+          <p style={styles.title}>{isEdit ? "Edit event" : "Plan an event"}</p>
           <button
             type="button"
             style={styles.close}
@@ -292,7 +292,7 @@ export default function EventComposeSheet({
             style={styles.submit}
             data-testid="event-compose-submit"
           >
-            {busy ? "…" : isEdit ? "Save event" : "Post to My Events"}
+            {busy ? "…" : isEdit ? "Save event" : "Add to Social Plans"}
           </button>
           </div>
         </form>

@@ -632,7 +632,7 @@ export default function EatingHubSection({
   }
 
   function openPlansCalendar() {
-    setCalendarTitle("My Eating Plans");
+    setCalendarTitle("Social Plans · Meals");
     onCalendarOpenChange(true);
   }
 
@@ -680,7 +680,7 @@ export default function EatingHubSection({
     onHubDateChange(ymd);
     onSelectedPlanKeyChange?.(futurePlanKey(plan));
     onSchedulingPlansChange?.(false);
-    setCalendarTitle("My Eating Plans");
+    setCalendarTitle("Social Plans · Meals");
     onCalendarOpenChange(true);
   }
 

@@ -118,7 +118,7 @@ export default function SocialEventJoinPage() {
   return (
     <div style={styles.page} data-testid="social-event-join-landing">
       <div style={styles.card}>
-        <p style={styles.kicker}>Join Me · My Events</p>
+        <p style={styles.kicker}>Join Me · Social Plans</p>
         <h1 style={styles.h1}>{event.title}</h1>
         <p style={styles.meta}>
           {[organizer, formatWhen(event), event.location_label].filter(Boolean).join(" · ")}

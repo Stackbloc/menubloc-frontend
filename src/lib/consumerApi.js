@@ -735,6 +735,10 @@ export const submitOrderFeedback = (body) =>
 export const listMyVenueEvents = () => get("/api/consumer/my/events");
 export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups");
 
+/** Social Plans (docs/15 Phase A): my meals, events, invites and venue RSVPs in one list. */
+export const listMySocialPlans = (scope = "upcoming") =>
+  get(`/api/consumer/social-plans?scope=${encodeURIComponent(scope)}`);
+
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
 export const listPeerDinerSocialEvents = (peerId) =>
