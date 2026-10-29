@@ -27,6 +27,7 @@ import {
 import { fetchWaiterPeopleEating } from "../../lib/waiterApi.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
+import { buildMenuplyFriendInviteShareData } from "../../lib/menuplyAccountInvite.js";
 import {
   DEFAULT_ONBOARDING_CLUSTER,
   SOCIAL_ONBOARDING_STEPS,
@@ -50,6 +51,7 @@ const USC_CLUSTER_HREF =
 const STEP_META = {
   welcome: { title: "Welcome to Menuply" },
   dining_crew: { title: "Eating is social." },
+  invite_friends: { title: "Invite your friends and family" },
   expand_crew: { title: "Want to expand your Dining Crew?" },
   food_camera: { title: "Share food with the Menuply community" },
   student_edu: { title: "Are you a student?" },
@@ -103,6 +105,10 @@ export default function SocialOnboardingPage() {
   const [crewNameSaved, setCrewNameSaved] = useState(false);
   const [inviteShareData, setInviteShareData] = useState(null);
   const [inviteShareOpen, setInviteShareOpen] = useState(false);
+
+  // Invite friends and family step
+  const [friendInviteOpen, setFriendInviteOpen] = useState(false);
+  const friendInviteShareData = useMemo(() => buildMenuplyFriendInviteShareData(), []);
 
   // Expand / share / I'm Eating optional reveals
   const [showFindPeople, setShowFindPeople] = useState(false);
@@ -474,6 +480,45 @@ export default function SocialOnboardingPage() {
           </section>
         ) : null}
 
+        {stepId === "invite_friends" ? (
+          <section data-testid="social-onboarding-invite-friends">
+            <p style={styles.lead}>Menuply is better with your people.</p>
+            <p style={styles.body}>
+              When the people you eat with are on Menuply, you can send them a Quick Invite, plan
+              where to eat together, see the dishes they love, and share clips of what you&apos;re
+              eating.
+            </p>
+            <p style={styles.soft}>Joining is free. Send a link by text, email, or any app.</p>
+
+            <button
+              type="button"
+              style={styles.secondaryBtn}
+              disabled={busy || !friendInviteShareData}
+              onClick={() => setFriendInviteOpen(true)}
+              data-testid="invite-friends-share"
+            >
+              Invite friends and family
+            </button>
+
+            <button
+              type="button"
+              style={styles.primaryBtn}
+              disabled={busy}
+              onClick={() => settle("invite_friends", "done")}
+            >
+              Continue
+            </button>
+            <button
+              type="button"
+              style={styles.skipBtn}
+              disabled={busy}
+              onClick={() => settle("invite_friends", "skipped")}
+            >
+              Skip
+            </button>
+          </section>
+        ) : null}
+
         {stepId === "expand_crew" ? (
           <section>
             <p style={styles.lead}>Meet people through food.</p>
@@ -806,6 +851,15 @@ export default function SocialOnboardingPage() {
             pageType: "dining_crew_invite_onboarding",
             crewId: activeCrewId || null,
           }}
+        />
+      ) : null}
+      {friendInviteShareData ? (
+        <ShareModal
+          open={friendInviteOpen}
+          onClose={() => setFriendInviteOpen(false)}
+          modalTitle="Invite friends and family"
+          shareData={friendInviteShareData}
+          analyticsContext={{ pageType: "menuply_invite_onboarding" }}
         />
       ) : null}
       <BottomNav />

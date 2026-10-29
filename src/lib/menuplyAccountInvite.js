@@ -24,6 +24,20 @@ export function menuplySignupUrl(nextPath = "/feed") {
 }
 
 /**
+ * Onboarding "invite friends and family" share — a friendly note with the signup link inside.
+ * @returns {{ title: string, text: string, url: string } | null}
+ */
+export function buildMenuplyFriendInviteShareData() {
+  const url = menuplySignupUrl("/feed");
+  if (!url) return null;
+  return {
+    title: "Join me on Menuply",
+    text: `I'm using Menuply to find good food and plan where to eat. Join me so we can pick places together: ${url}`,
+    url,
+  };
+}
+
+/**
  * Append account invitation to outbound share text (SMS, Copy Link body).
  * @param {string} text
  * @param {{ nextPath?: string, includeSignupUrl?: boolean }} [opts]

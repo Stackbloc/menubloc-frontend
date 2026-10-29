@@ -353,8 +353,10 @@ export function buildShareLinks(shareData) {
   const safeTitle = asText(title);
   const safeText = asText(text);
   const safeUrl = normalizeConsumerShareUrl(url) || asText(url);
-  const combinedText = [safeText, safeUrl].filter(Boolean).join(" ");
-  const emailBody = [safeText, "", safeUrl].filter(Boolean).join("\n");
+  // Share notes may already carry the link inside the text — don't repeat it.
+  const linkForBody = safeUrl && safeText.includes(safeUrl) ? "" : safeUrl;
+  const combinedText = [safeText, linkForBody].filter(Boolean).join(" ");
+  const emailBody = [safeText, "", linkForBody].filter(Boolean).join("\n");
 
   return {
     sms: `sms:?&body=${encodeURIComponent(combinedText)}`,
