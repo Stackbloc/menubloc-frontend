@@ -1,12 +1,13 @@
 /**
  * Social Plans Phase B sharing controls (Andre approved 2026-10-28, menuply-mobile docs/15).
- *   CalendarWhoCard — who can see my Social Calendar: All my Connects · Selected Connects · Only me.
- *   PlanSharingControls — on a plan I host: my calendar setting / Only me, and Invite only · Ask · Open.
+ *   CalendarWhoCard — who sees my calendar: All my Connects · Only some Connects · Just me (behind ⚙︎).
+ *   WhoCanCome / PlanPanel — on a plan I host: Only people I invite · Let my Connects ask, Just me.
  *   PeerPlansSection — a Connect's plans I can act on (their page).
  * Plans are never shown to people you aren't connected with.
  */
 
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getPeerSocialCalendar,
   getSocialCalendarSettings,
@@ -17,15 +18,11 @@ import {
 import SocialPlanActionButton from "./SocialPlanActionButton.jsx";
 import PlanTag from "./PlanTag.jsx";
 
+// Plain words (Andre 2026-10-28, "think an Apple product").
 const WHO = [
   ["connections", "All my Connects"],
-  ["selected", "Selected Connects"],
-  ["only_me", "Only me"],
-];
-const JOIN = [
-  ["invite_only", "Invite only"],
-  ["ask", "Ask to join"],
-  ["open", "Open"],
+  ["selected", "Only some Connects"],
+  ["only_me", "Just me"],
 ];
 
 function Chip({ label, on, onClick, testId }) {
@@ -70,7 +67,7 @@ export function CalendarWhoCard() {
   const allowed = settings.allowed_user_ids || [];
   return (
     <div style={styles.card} data-testid="calendar-who">
-      <strong style={styles.heading}>Who can see my calendar</strong>
+      <strong style={styles.heading}>Who sees my calendar</strong>
       <div style={styles.chips}>
         {WHO.map(([value, label]) => (
           <Chip
@@ -104,15 +101,41 @@ export function CalendarWhoCard() {
       <span style={styles.muted}>
         {settings.calendar_visibility === "only_me"
           ? "Nobody else sees your plans."
-          : "Your plans are never shown to people you aren’t connected with."}
+          : "Only your Connects, never anyone else."}
       </span>
       {error ? <span style={styles.error}>{error}</span> : null}
     </div>
   );
 }
 
-export function PlanSharingControls({ plan, onSaved }) {
+/**
+ * Who can come — two choices (Andre 2026-10-28): only people I invite, or my Connects can ask
+ * (I say yes or no to each one). Older "anyone can join" plans keep working; not offered for new ones.
+ */
+export function WhoCanCome({ value, onChange, testId }) {
+  const current = value === "invite_only" || value === "invite" ? "invite" : value === "ask" ? "ask" : null;
+  const option = (v, label, hint) => (
+    <label key={v} style={styles.radioRow} data-testid={`${testId}-${v}`}>
+      <input type="radio" name={testId} checked={current === v} onChange={() => onChange(v)} />
+      <span style={{ display: "grid", gap: 1 }}>
+        <span style={{ fontSize: 14, color: "#0f172a" }}>{label}</span>
+        {hint ? <span style={styles.muted}>{hint}</span> : null}
+      </span>
+    </label>
+  );
+  return (
+    <div style={{ display: "grid", gap: 6 }} data-testid={testId}>
+      {option("invite", "Only people I invite", null)}
+      {option("ask", "Let my Connects ask", "You’ll say yes or no to each one.")}
+      {value === "open" ? <span style={styles.muted}>Right now any of your Connects can join this plan.</span> : null}
+    </div>
+  );
+}
+
+/** One of my plans, clicked on the calendar: Who can come, Just me, Invite people, See the plan. */
+export function PlanPanel({ plan, onSaved, onPickTime }) {
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
   if (!plan || plan.source === "venue_event") return null;
 
   async function save(change) {
@@ -125,16 +148,53 @@ export function PlanSharingControls({ plan, onSaved }) {
     }
   }
 
+  const link = plan.href ? `${window.location.origin}${plan.href}` : null;
   return (
-    <div style={styles.controls} data-testid={`plan-sharing-${plan.key}`}>
-      <div style={styles.chips}>
-        <Chip label="My calendar setting" on={plan.visibility !== "only_me"} onClick={() => save({ visibility: null })} testId={`plan-sharing-${plan.key}-calendar`} />
-        <Chip label="Only me" on={plan.visibility === "only_me"} onClick={() => save({ visibility: "only_me" })} testId={`plan-sharing-${plan.key}-only-me`} />
-      </div>
-      <div style={styles.chips}>
-        {JOIN.map(([value, label]) => (
-          <Chip key={value} label={label} on={plan.join_mode === value} onClick={() => save({ join_mode: value })} testId={`plan-sharing-${plan.key}-${value}`} />
-        ))}
+    <div style={styles.controls} data-testid={`plan-panel-${plan.key}`}>
+      {plan.time_open || !plan.date ? (
+        <button type="button" onClick={onPickTime} style={styles.linkButton} data-testid={`plan-panel-${plan.key}-when`}>
+          Pick a day & time ›
+        </button>
+      ) : null}
+      <strong style={{ fontSize: 13, color: "#475569" }}>Who can come</strong>
+      <WhoCanCome
+        value={plan.join_mode}
+        onChange={(v) => save({ join_mode: v === "invite" ? "invite_only" : "ask" })}
+        testId={`plan-panel-${plan.key}-who`}
+      />
+      <label style={styles.radioRow} data-testid={`plan-panel-${plan.key}-just-me`}>
+        <input type="checkbox" checked={plan.visibility === "only_me"} onChange={() => save({ visibility: plan.visibility === "only_me" ? null : "only_me" })} />
+        <span style={{ display: "grid", gap: 1 }}>
+          <span style={{ fontSize: 14, color: "#0f172a" }}>Just me</span>
+          <span style={styles.muted}>Hide this plan from my calendar for others.</span>
+        </span>
+      </label>
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {link ? (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                if (navigator.share) await navigator.share({ title: plan.title, text: `${plan.title} — want to come?`, url: link });
+                else {
+                  await navigator.clipboard.writeText(link);
+                  setCopied(true);
+                }
+              } catch {
+                /* closed the share sheet */
+              }
+            }}
+            style={styles.primary}
+            data-testid={`plan-panel-${plan.key}-invite`}
+          >
+            {copied ? "Link copied" : "Invite people"}
+          </button>
+        ) : null}
+        {plan.href ? (
+          <Link to={plan.href} style={styles.linkButton}>
+            See the plan ›
+          </Link>
+        ) : null}
       </div>
       {error ? <span style={styles.error}>{error}</span> : null}
     </div>
@@ -199,7 +259,10 @@ const styles = {
     cursor: "pointer",
   },
   chipOn: { background: "#15803d", borderColor: "#15803d", color: "#fff" },
-  controls: { display: "grid", gap: 6, padding: "6px 0 2px" },
+  controls: { display: "grid", gap: 8, padding: "8px 2px 6px" },
+  radioRow: { display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" },
+  primary: { padding: "8px 14px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  linkButton: { background: "none", border: "none", padding: 0, color: "#15803d", fontWeight: 700, fontSize: 13, cursor: "pointer", textDecoration: "none", justifySelf: "start" },
   row: { display: "flex", alignItems: "center", gap: 10 },
   when: { fontSize: 12, fontWeight: 700, color: "#15803d" },
   muted: { fontSize: 13, color: "#64748b" },

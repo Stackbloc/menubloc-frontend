@@ -79,12 +79,12 @@ test("Phase B: calendar setting, plan sharing, Can I come?, answer — website c
   }
   const page = read("src/pages/consumer/SocialPlansPage.jsx");
   assert.match(page, /<CalendarWhoCard \/>/);
-  assert.match(page, /<PlanSharingControls plan=\{p\} onSaved=\{replacePlan\} \/>/);
+  assert.match(page, /<PlanPanel\n\s+plan=\{p\}\n\s+onSaved=\{replacePlan\}/);
   const sharing = read("src/pages/consumer/myMenuply/SocialPlanSharing.jsx");
-  for (const label of ['"All my Connects"', '"Selected Connects"', '"Only me"', '"Invite only"', '"Ask to join"', '"Open"']) {
+  for (const label of ['"All my Connects"', '"Only some Connects"', '"Just me"', '"Only people I invite"', '"Let my Connects ask"', "You’ll say yes or no to each one."]) {
     assert.ok(sharing.includes(label), label);
   }
-  assert.match(sharing, /never shown to people you aren’t connected with/);
+  assert.match(sharing, /Only your Connects, never anyone else\./);
   const button = read("src/pages/consumer/myMenuply/SocialPlanActionButton.jsx");
   assert.match(button, /ask: "Can I come\?", asked: "Asked ✓", going: "Going ✓"/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
@@ -99,7 +99,7 @@ test("tags + pick a day & time", async () => {
   assert.equal(planTag({ kind: "dine", time: null }).label, "Meal");
   assert.equal(planTag({ source: "my_event", time: null }).label, "Event");
   const page = read("src/pages/consumer/SocialPlansPage.jsx");
-  assert.match(page, /if \(!p\.time_open\) return;\n\s+e\.preventDefault\(\);/);
+  assert.match(page, /\} else if \(p\.time_open\) \{\n\s+e\.preventDefault\(\);/);
   assert.match(page, /"Pick a day & time ›"/);
   const pick = read("src/pages/consumer/myMenuply/PickPlanTime.jsx");
   assert.match(pick, /saveSocialPlanSharing\(plan\.source, plan\.id, \{ date, time: needsTime \? time : null \}\)/);
@@ -121,4 +121,20 @@ test("My Social Calendar: month grid on the page, week strip on My Menuply (owne
   const card = read("src/pages/consumer/myMenuply/SocialCalendarCard.jsx");
   assert.match(card, /📅 My Social Calendar/);
   assert.match(card, /navigate\(`\/account\/social-plans\?day=\$\{day\}`\)/);
+});
+
+test("simpler calendar (Andre 2026-10-28): calendar first, + New plan adds to the calendar, two choices", () => {
+  const page = read("src/pages/consumer/SocialPlansPage.jsx");
+  assert.doesNotMatch(page, /compose: "plan"|Plan a meal/);
+  assert.ok(page.indexOf("social-plans-add") < page.indexOf("<MonthGrid"));
+  assert.match(page, /\{settingsOpen \? <CalendarWhoCard \/> : null\}/);
+  assert.match(page, /searchParams\.get\("new"\)/);
+  const form = read("src/pages/consumer/myMenuply/NewPlanPanel.jsx");
+  assert.match(form, /createSocialPlan\(\{\n\s+kind,\n\s+date,\n\s+time,/);
+  assert.match(form, /"Add to calendar"/);
+  assert.match(form, /"Invite people"/);
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /createSocialPlan = \(body\) => post\("\/api\/consumer\/social-plans", body\)/);
+  const sharing = read("src/pages/consumer/myMenuply/SocialPlanSharing.jsx");
+  assert.doesNotMatch(sharing, /"Ask to join"|"Invite only"|"Open"\]/);
 });

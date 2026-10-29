@@ -79,8 +79,9 @@ const ACTION_DEFS = {
   plan: {
     id: "plan",
     title: "Plan a meal",
-    description: "Put a restaurant on your Social Calendar. Connects can join.",
-    to: myMenuplyProfileHref({ compose: "plan" }),
+    description: "Add a meal to your Social Calendar.",
+    // Same New plan form as the calendar (Andre 2026-10-28): it adds the plan, not a post.
+    to: "/account/social-plans?new=meal",
     guestOk: false,
   },
   crew: {
@@ -93,8 +94,8 @@ const ACTION_DEFS = {
   event: {
     id: "event",
     title: "Plan an event",
-    description: "Dinner, concert, game, birthday — on your Social Calendar.",
-    to: myMenuplyProfileHref({ compose: "event" }),
+    description: "Add an event to your Social Calendar.",
+    to: "/account/social-plans?new=event",
     guestOk: false,
   },
   "social-calendar": {

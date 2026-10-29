@@ -19,7 +19,7 @@ test("MenuplyActionSheet creates My Events via My Menuply compose", () => {
   assert.match(sheet, /title: "Plan an event"/);
   assert.match(sheet, /title: "Plan a meal"/);
   assert.match(sheet, /title: "My Crews"/);
-  assert.match(sheet, /compose: "event"/);
+  assert.match(sheet, /to: "\/account\/social-plans\?new=event"/);
   assert.match(sheet, /id: "events-browse"/);
   assert.match(sheet, /to: "\/events"/);
   assert.doesNotMatch(sheet, /to: "\/clusters"/);
