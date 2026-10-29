@@ -180,7 +180,6 @@ export default function QuickPostSheet({
           food_name: foodLabel(food),
           menu_item_id: dish?.menu_item_id || null,
           restaurant_id: place?.restaurant_id || null,
-          ...(food.kind === "type" ? { food_type_code: food.type.code } : {}),
         },
       ],
     });
@@ -288,13 +287,11 @@ export default function QuickPostSheet({
               {food ? (
                 <div style={styles.flex} data-testid="quick-post-food-chosen">
                   <div style={styles.rowText}>{foodLabel(food)}</div>
-                  <div style={styles.muted}>
-                    {food.kind === "type"
-                      ? food.type.category
-                      : food.kind === "dish"
-                        ? `On the menu at ${restaurantLabel(place)}`
-                        : "New food · we'll review it"}
-                  </div>
+                  {food.kind === "type" ? null : (
+                    <div style={styles.muted}>
+                      {food.kind === "dish" ? `On the menu at ${restaurantLabel(place)}` : "New food · we'll review it"}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <input
@@ -329,10 +326,10 @@ export default function QuickPostSheet({
                     </button>
                   </li>
                 ))}
-                {foodTypes.map((t) => (
-                  <li key={`type-${t.code}`}>
-                    <button type="button" style={styles.hit} onClick={() => pickFood({ kind: "type", type: t })} data-testid={`quick-post-food-type-${t.code}`}>
-                      {t.name} {t.category ? <span style={styles.muted}>· {t.category}</span> : null}
+                {foodTypes.map((t, i) => (
+                  <li key={`type-${i}-${t.name}`}>
+                    <button type="button" style={styles.hit} onClick={() => pickFood({ kind: "type", type: t })} data-testid={`quick-post-food-type-${i}`}>
+                      {t.name}
                     </button>
                   </li>
                 ))}

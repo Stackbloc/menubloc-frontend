@@ -23,13 +23,14 @@ test("one screen: Upload media, @home, Recommend; no note, other tags or Invite"
   assert.match(sheet, /Post Clip/);
 });
 
-test("food is structured: CK food types or Use …; the type code is posted", () => {
+test("food is structured: suggested food names or Use …; no type codes in the browser", () => {
   assert.match(sheet, /searchFoodTypes\(q\)/);
   assert.match(sheet, /const canPost = Boolean\(file\) && !busy && Boolean\(food\) && !needsPlace/);
-  assert.match(sheet, /food_type_code: food\.type\.code/);
+  // Names only: no food type codes, ids or categories leave the server or come back.
+  assert.doesNotMatch(sheet, /food_type_code|food_type_id|\.category\b|\.code\b/);
   assert.match(sheet, /new food, we'll review it/);
   assert.match(read("src/lib/foodTypesApi.js"), /\/public\/food-types\?/);
-  assert.match(read("src/lib/feedVideoCompose.js"), /food_type_code: item\.food_type_code/);
+  assert.doesNotMatch(read("src/lib/feedVideoCompose.js"), /food_type/);
 });
 
 test("Quick Invite sits on My Profile, above My Social Calendar", () => {
