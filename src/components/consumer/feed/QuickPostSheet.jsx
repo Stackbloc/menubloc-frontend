@@ -190,6 +190,15 @@ export default function QuickPostSheet({
 
   const needsPlace = recommend && !place;
   const canPost = Boolean(file) && !busy && Boolean(food) && !needsPlace;
+  // Say what's missing next to a greyed-out Post Clip, so diners aren't left guessing (Andre 2026-10-29).
+  const missing =
+    busy || needsPlace
+      ? null
+      : !file && (food || place || atHome)
+        ? "Tap Record or Upload media to post."
+        : file && !food
+          ? "Add what you're eating to post."
+          : null;
 
   async function submit() {
     if (!canPost) return;
@@ -391,7 +400,7 @@ export default function QuickPostSheet({
                 <div style={styles.flex} data-testid="quick-post-place-chosen">
                   <div style={styles.rowText}>{atHome ? "@home" : restaurantLabel(place)}</div>
                   {place ? (
-                    <div style={styles.muted}>{place.restaurant_id ? restaurantPlaceMeta(place) : "Not on Menuply yet"}</div>
+                    <div style={styles.muted}>{place.restaurant_id ? restaurantPlaceMeta(place) : "New restaurant · we'll add it"}</div>
                   ) : null}
                 </div>
               ) : (
@@ -438,7 +447,7 @@ export default function QuickPostSheet({
                 {showUsePlace ? (
                   <li>
                     <button type="button" style={styles.useTyped} onClick={() => pickPlace(unlistedRestaurantPlace(typedPlace))} data-testid="quick-post-place-use-typed">
-                      Use “{typedPlace}” <span style={styles.muted}>· not on Menuply yet</span>
+                      Use “{typedPlace}” <span style={styles.muted}>· new restaurant, we'll add it</span>
                     </button>
                   </li>
                 ) : null}
@@ -459,7 +468,13 @@ export default function QuickPostSheet({
 
           {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
           <div style={styles.postRow}>
-            <p style={{ ...styles.muted, flex: 1 }}>Public post to Feed</p>
+            {missing ? (
+              <p style={{ ...styles.missing, flex: 1 }} data-testid="quick-post-missing">
+                {missing}
+              </p>
+            ) : (
+              <p style={{ ...styles.muted, flex: 1 }}>Public post to Feed</p>
+            )}
             <button
               type="button"
               disabled={!canPost}
@@ -539,6 +554,7 @@ const styles = {
   chip: { alignSelf: "flex-start", appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   chipOn: { background: GREEN, borderColor: GREEN, color: "#fff" },
   muted: { margin: 0, fontSize: 12, color: "#64748b" },
+  missing: { margin: 0, fontSize: 13, fontWeight: 600, color: "#0f172a" },
   error: { margin: 0, fontSize: 13, color: "#b42318", fontWeight: 600 },
   postRow: { display: "flex", alignItems: "center", gap: 12 },
   postBtn: { appearance: "none", border: "none", background: GREEN, color: "#fff", borderRadius: 999, padding: "10px 20px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
