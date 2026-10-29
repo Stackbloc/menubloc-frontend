@@ -145,10 +145,14 @@ export default function FeedShellPage({ children = null }) {
     return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onClearStuck);
   }, []);
 
+  // Post opens the one-screen Post straight away (Andre 2026-10-28); Invite lives in its header.
   function openCreateSheet() {
     openingShellOverlayRef.current = "create";
     clearStuckMediaChrome();
-    setCreateSheetOpen(true);
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
+    setComposeInitialWhere(null);
+    setComposeCategory("post");
     openingShellOverlayRef.current = null;
   }
 
@@ -293,6 +297,10 @@ export default function FeedShellPage({ children = null }) {
         openLibraryOnMount={composeOpenLibrary}
         initialWhereType={composeInitialWhere}
         onClose={closeCompose}
+        onInvite={(code) => {
+          closeCompose();
+          handlePickQuickInvite(code);
+        }}
       />
     </div>
   );

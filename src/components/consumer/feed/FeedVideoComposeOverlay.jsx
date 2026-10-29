@@ -20,6 +20,7 @@ import { LEGAL_VERSIONS } from "../../../content/legal.js";
 import { storeGuestFeedClaimSession } from "../../../lib/guestFeedClaimSession.js";
 import { markGuestPublicationConsentAccepted } from "../../../lib/guestLegalConsentSession.js";
 import EatingComposeSheet from "../../../pages/consumer/myMenuply/EatingComposeSheet.jsx";
+import QuickPostSheet from "./QuickPostSheet.jsx";
 import GuestFeedVideoConsentGate from "./GuestFeedVideoConsentGate.jsx";
 import GuestFeedVideoNextStep from "./GuestFeedVideoNextStep.jsx";
 
@@ -39,6 +40,7 @@ export default function FeedVideoComposeOverlay({
   openLibraryOnMount = false,
   initialWhereType = null,
   onClose,
+  onInvite,
 }) {
   const { isAuthenticated } = useConsumer();
   const [busy, setBusy] = useState(false);
@@ -154,9 +156,28 @@ export default function FeedVideoComposeOverlay({
     setShowGuestNextStep(false);
   }
 
+  // "post" = the one-screen Post (Andre 2026-10-28); the older kinds keep the long form.
+  const sheet =
+    category === "post" ? (
+      <QuickPostSheet
+        open={open && !consentOpen}
+        onClose={() => {
+          if (!busy && !consentOpen) onClose?.();
+        }}
+        onSubmit={handleSubmit}
+        onInvite={onInvite}
+        busy={busy}
+        uploadPercent={uploadPercent}
+        isAuthenticated={isAuthenticated}
+        locationCity={market.city}
+        locationState={market.state}
+      />
+    ) : null;
+
   return (
     <>
-      <EatingComposeSheet
+      {sheet}
+      {sheet ? null : <EatingComposeSheet
         open={open && !consentOpen}
         onClose={() => {
           if (!busy && !consentOpen) onClose?.();
@@ -171,7 +192,7 @@ export default function FeedVideoComposeOverlay({
         onSubmit={handleSubmit}
         locationCity={market.city}
         locationState={market.state}
-      />
+      />}
       <GuestFeedVideoConsentGate
         open={consentOpen}
         busy={busy}
@@ -188,7 +209,7 @@ export default function FeedVideoComposeOverlay({
             left: 16,
             right: 16,
             bottom: "calc(var(--feed-primary-nav-h, 72px) + 16px)",
-            zIndex: 1200,
+            zIndex: 1320,
             margin: 0,
             padding: "10px 12px",
             borderRadius: 10,

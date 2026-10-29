@@ -68,7 +68,9 @@ export async function postFeedAteVideo({
             restaurant_id:
               item.restaurant_id ?? item.restaurantId ?? (index === 0 ? restaurantId : null),
             is_recommend:
-              index === 0 ? Boolean(isRecommend && (restaurantId || menuItemId)) : false,
+              index === 0
+                ? Boolean(isRecommend && (restaurantId || menuItemId || unlistedPlaceName(restaurant)))
+                : false,
             market_discoverable: true,
           }))
           .filter((item) => item.food_name)
@@ -151,7 +153,7 @@ export async function postFeedWantVideo({
   return data?.item || data;
 }
 
-export async function postFeedCookingVideo({ file, text = "", onUploadProgress }) {
+export async function postFeedCookingVideo({ file, text = "", name: dishName = "", onUploadProgress }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
@@ -159,7 +161,8 @@ export async function postFeedCookingVideo({ file, text = "", onUploadProgress }
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
-  const name = String(text || "").trim() || "What's Cooking @home";
+  // One-screen Post sends the dish name separately; the long form puts it in text.
+  const name = String(dishName || text || "").trim() || "What's Cooking @home";
   const created = await createHomemadeDish({
     name,
     description: String(text || "").trim() || null,
