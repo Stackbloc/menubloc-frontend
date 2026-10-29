@@ -53,6 +53,7 @@ export default function QuickPostSheet({
   const [food, setFood] = useState(null);
   const [foodTypes, setFoodTypes] = useState([]);
   const [dishHits, setDishHits] = useState([]);
+  const [cityDishes, setCityDishes] = useState([]);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState([]);
   const [place, setPlace] = useState(null);
@@ -120,13 +121,21 @@ export default function QuickPostSheet({
         } catch {
           if (alive) setDishHits([]);
         }
+      } else if (!place) {
+        // People type the menu item ("big mac", "pastrami on rye"): dishes from any restaurant in the city.
+        try {
+          const data = await searchReportPlaces({ type: "dish", q, limit: 5, city: locationCity, state: locationState });
+          if (alive) setCityDishes(data.results || []);
+        } catch {
+          if (alive) setCityDishes([]);
+        }
       }
     }, TYPEAHEAD_MS);
     return () => {
       alive = false;
       clearTimeout(t);
     };
-  }, [foodQuery, food, place]);
+  }, [foodQuery, food, place, locationCity, locationState]);
 
   if (!open || typeof document === "undefined") return null;
 
@@ -146,6 +155,19 @@ export default function QuickPostSheet({
     setFoodQuery("");
     setFoodTypes([]);
     setDishHits([]);
+    setCityDishes([]);
+  }
+
+  /** "Big Mac · McDonald's": the dish and its restaurant (a franchise as its brand) in one tap. */
+  function pickCityDish(row) {
+    const dish = asDishPlace(row);
+    const restaurant = asRestaurantPlace({ restaurant_id: row.restaurant_id, restaurant_name: row.restaurant_name });
+    if (!dish || !restaurant) return;
+    pickFood({ kind: "dish", dish });
+    setPlace(restaurant);
+    setAtHome(false);
+    setQuery("");
+    setHits([]);
   }
 
   function pickPlace(next) {
@@ -195,7 +217,8 @@ export default function QuickPostSheet({
   const typedFood = cleanTyped(foodQuery);
   const foodTyping = !food && typedFood.length >= 2;
   const menuDishes = place?.restaurant_id ? dishHits : [];
-  const exactFood = [...foodTypes.map((t) => t.name), ...menuDishes.map(dishLabel)].some(
+  const nearbyDishes = place ? [] : cityDishes;
+  const exactFood = [...foodTypes.map((t) => t.name), ...menuDishes.map(dishLabel), ...nearbyDishes.map(dishLabel)].some(
     (n) => String(n).toLowerCase() === typedFood.toLowerCase()
   );
   const typedPlace = query.trim();
@@ -340,6 +363,13 @@ export default function QuickPostSheet({
                     </button>
                   </li>
                 ))}
+                {nearbyDishes.map((h) => (
+                  <li key={`near-${h.menu_item_id}`}>
+                    <button type="button" style={styles.hit} onClick={() => pickCityDish(h)} data-testid={`quick-post-city-dish-${h.menu_item_id}`}>
+                      {dishLabel(h)} <span style={styles.muted}>· {h.restaurant_name}</span>
+                    </button>
+                  </li>
+                ))}
                 {exactFood ? null : (
                   <li>
                     <button type="button" style={styles.useTyped} onClick={() => pickFood({ kind: "typed", name: typedFood })} data-testid="quick-post-food-use-typed">
@@ -369,11 +399,11 @@ export default function QuickPostSheet({
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value.slice(0, 120))}
-                  placeholder="Where? (optional)"
+                  placeholder="Restaurant (optional)"
                   autoComplete="off"
                   disabled={busy}
                   style={styles.rowInput}
-                  aria-label="Where"
+                  aria-label="Restaurant"
                   data-testid="quick-post-where"
                 />
               )}
@@ -425,7 +455,7 @@ export default function QuickPostSheet({
           >
             ⭐ Recommend
           </button>
-          {needsPlace ? <p style={styles.muted}>Add where it is to recommend it.</p> : null}
+          {needsPlace ? <p style={styles.muted}>Add the restaurant to recommend it.</p> : null}
 
           <p style={styles.muted}>Public post to Feed</p>
           <button

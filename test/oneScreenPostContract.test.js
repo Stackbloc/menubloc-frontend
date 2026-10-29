@@ -38,6 +38,12 @@ test("restaurant picks: one option per franchise (brand, no store location)", ()
   assert.match(read("src/lib/foodActivityApi.js"), /one_per_franchise \}\)/);
 });
 
+test("people type the menu item: dishes from any restaurant in the city; Restaurant (optional) label", () => {
+  assert.match(sheet, /type: "dish", q, limit: 5, city: locationCity, state: locationState/);
+  assert.match(sheet, /placeholder="Restaurant \(optional\)"/);
+  assert.doesNotMatch(sheet, /Where\? \(optional\)/);
+});
+
 test("Quick Invite sits on My Profile, above My Social Calendar", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.ok(page.indexOf("<QuickInviteCard />") < page.indexOf("<SocialCalendarCard />"));
