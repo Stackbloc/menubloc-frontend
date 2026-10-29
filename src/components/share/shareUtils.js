@@ -216,11 +216,13 @@ export function buildMenuShareMetadata({
 }) {
   const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
   const title = `Check out the menu for ${safeRestaurantName} on Menuply`;
-  const text = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Menuply.`;
+  // Shares are a short note from the sender (Andre 2026-10-29, like Quick invite); `description` stays page copy.
+  const text = `Here's the ${safeRestaurantName} menu. Want to eat there?`;
+  const description = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Menuply.`;
   const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state });
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
 
-  return { title, text, url, image, restaurantName: safeRestaurantName };
+  return { title, text, description, url, image, restaurantName: safeRestaurantName };
 }
 
 export function getCanonicalMenuItemPath({ restaurant, menuItem }) {
@@ -282,7 +284,8 @@ export function buildDishShareData({
 
   return {
     title: `Check out ${dishName} at ${restaurantName} on Menuply`,
-    text: `See price, nutrition insights, and menu details for ${dishName} at ${restaurantName} on Menuply.`,
+    text: `This ${dishName} at ${restaurantName} looks good. Want to go?`,
+    description: `See price, nutrition insights, and menu details for ${dishName} at ${restaurantName} on Menuply.`,
     url: canonicalUrl,
     image,
     restaurantName,
@@ -303,7 +306,7 @@ export function buildRestaurantShareData({
 }) {
   const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
   const title = `${safeRestaurantName} on Menuply`;
-  const text = `Check out ${safeRestaurantName} on Menuply — view the menu, nutrition insights, and deals.`;
+  const text = `Want to try ${safeRestaurantName}? It's on Menuply.`;
   const path = restaurantPath({ slug: restaurantSlug, city, state });
   const url = toConsumerShareAbsolute(
     path || (restaurantId ? `/public/restaurants/${encodeURIComponent(String(restaurantId))}` : "/")
@@ -338,7 +341,8 @@ export function buildClusterShareData({ cluster, origin = getPublicOrigin(), sea
     : shareFilters.query
       ? `See “${label}” results at ${name} on Menuply.`
       : `See ${label} at ${name} on Menuply: dishes, prices, and nutrition.`;
-  const text = description;
+  const food = label ? label.toLowerCase() : "food";
+  const text = `Look what I found on Menuply: ${food} around ${name}. Want to grab some?`;
   return { title, text, url, image, description, clusterName: name };
 }
 

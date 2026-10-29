@@ -2214,14 +2214,27 @@ export default function GrubbidSearchResults({
       geo,
       sessionLabel: locationLabelRef.current,
     });
+    // A short note with the link inside, like Quick invite (Andre 2026-10-29); same words as the app.
+    const food = String(q || "").trim().toLowerCase() || "food";
+    const near = String(locationLabelRef.current || "").split(",")[0].trim();
+    const note = `Look what I found on Menuply: ${food}${near ? ` near ${near}` : ""}. Want to go?`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "Menuply", text: note, url: shareUrl });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+    const message = `${note} ${shareUrl}`;
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(message);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2200);
     } catch {
-      prompt("Copy this search link:", shareUrl);
+      prompt("Copy this to share:", message);
     }
-  }, [geo]);
+  }, [geo, q]);
 
   const isRestaurantCardResults = searchMeta?.result_type === "restaurant_cards";
   const waiterInventoryRows = useMemo(

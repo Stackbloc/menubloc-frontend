@@ -1228,7 +1228,7 @@ export default function PublicMenuPage() {
 
     return applyDocumentSocialMetadata({
       title: liveShareData.title,
-      description: liveShareData.text,
+      description: liveShareData.description || liveShareData.text,
       url: liveShareData.url,
       image: liveShareData.image,
     });

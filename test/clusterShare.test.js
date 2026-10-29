@@ -81,3 +81,12 @@ test("ClusterPage keeps the tapped category in ?category= and restores it", asyn
   assert.match(page, /if \(match\) setSelectedCategory\(match\)/);
   assert.match(page, /filters: shareFilters/);
 });
+
+test("cluster shares are a short note from the sender; page description stays page copy", () => {
+  const cluster = { name: "USC", area_name: "USC", slug: "usc", city: "Los Angeles", state: "CA" };
+  const pasta = buildClusterShareData({ cluster, origin: "https://menuply.com", filters: { categoryCode: "PASTA", label: "Pasta", query: "" } });
+  assert.equal(pasta.text, "Look what I found on Menuply: pasta around USC. Want to grab some?");
+  assert.match(pasta.description, /See Pasta at USC on Menuply/);
+  const base = buildClusterShareData({ cluster, origin: "https://menuply.com" });
+  assert.equal(base.text, "Look what I found on Menuply: food around USC. Want to grab some?");
+});
