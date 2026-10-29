@@ -33,6 +33,11 @@ test("food is structured: suggested food names or Use …; no type codes in the 
   assert.doesNotMatch(read("src/lib/feedVideoCompose.js"), /food_type/);
 });
 
+test("restaurant picks: one option per franchise (brand, no store location)", () => {
+  assert.match(sheet, /one_per_franchise: 1/);
+  assert.match(read("src/lib/foodActivityApi.js"), /one_per_franchise \}\)/);
+});
+
 test("Quick Invite sits on My Profile, above My Social Calendar", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.ok(page.indexOf("<QuickInviteCard />") < page.indexOf("<SocialCalendarCard />"));

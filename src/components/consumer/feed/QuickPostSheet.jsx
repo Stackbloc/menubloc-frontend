@@ -84,7 +84,14 @@ export default function QuickPostSheet({
     let alive = true;
     const t = setTimeout(async () => {
       try {
-        const data = await searchReportPlaces({ type: "restaurant", q, limit: 6, city: locationCity, state: locationState });
+        const data = await searchReportPlaces({
+          type: "restaurant",
+          q,
+          limit: 6,
+          city: locationCity,
+          state: locationState,
+          one_per_franchise: 1,
+        });
         if (alive) setHits(data.results || []);
       } catch {
         if (alive) setHits([]);
