@@ -30,6 +30,12 @@ const ClusterVideoContext = createContext({
   openDishMenu: null,
 });
 
+/**
+ * True while the Food tab shows search results. The hero hides its clip strip then, but a clip
+ * that is already playing stays (sticky) so diners can keep watching while they search.
+ */
+export const ClusterSearchActiveContext = createContext(false);
+
 export function useClusterVideos() {
   return useContext(ClusterVideoContext);
 }

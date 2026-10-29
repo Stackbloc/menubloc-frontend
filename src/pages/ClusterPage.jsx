@@ -79,7 +79,7 @@ import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
-import { ClusterVideoProvider, useClusterVideos } from "../components/cluster/video/ClusterVideoContext.jsx";
+import { ClusterSearchActiveContext, ClusterVideoProvider, useClusterVideos } from "../components/cluster/video/ClusterVideoContext.jsx";
 import ClusterVideoHero from "../components/cluster/video/ClusterVideoHero.jsx";
 import ClusterVideoPlayButton, { ClusterVideosPill } from "../components/cluster/video/ClusterVideoPlayButton.jsx";
 
@@ -1237,7 +1237,7 @@ function ClusterMenuExplorerTab({
         </div>
       </div>
       <div style={{ overflowX: "clip", minWidth: 0 }}>
-        {searchActive ? null : preContent}
+        <ClusterSearchActiveContext.Provider value={searchActive}>{preContent}</ClusterSearchActiveContext.Provider>
         <main
           aria-label="Cluster content"
           style={{
@@ -1457,8 +1457,10 @@ export default function ClusterPage() {
   }
 
   // Video first; falls back to the delivered hero ad (see ClusterVideoHero for slot rules).
+  // display: contents so a playing clip can stick below the search bar over the food list;
+  // the hero owns its own spacing.
   const clusterFoodHero = (
-    <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={CLUSTER_AD_SPACE_STYLE}>
+    <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={{ display: "contents" }}>
       <ClusterVideoHero clusterSlug={cluster.slug} />
     </div>
   );

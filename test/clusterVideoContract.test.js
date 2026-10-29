@@ -104,3 +104,14 @@ test("cluster page calls them clips, never videos, in visible text", () => {
     assert.deepEqual(visible, [], `${rel} shows "video" to diners`);
   }
 });
+
+test("hero clips play in place, stick under search, and start on their own after 15 s", () => {
+  const hero = read("src/components/cluster/video/ClusterVideoHero.jsx");
+  assert.match(hero, /IDLE_AUTOPLAY_MS = 15000/);
+  assert.match(hero, /orderClipsForAutoplay\(clips\)/);
+  assert.match(hero, /position: "sticky"/);
+  assert.match(hero, /aspectRatio: "16 \/ 9"/, "portrait clips shown in a landscape frame inline");
+  assert.match(hero, /trigger: "hero_expand"/, "⤢ opens the full portrait clip");
+  const page = read("src/pages/ClusterPage.jsx");
+  assert.match(page, /data-testid="cluster-ad-space"[^>]*style=\{\{ display: "contents" \}\}/);
+});
