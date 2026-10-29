@@ -1,9 +1,8 @@
 /**
- * Post = one screen, no steps (Andre 2026-10-28: "posting should feel as simple as possible").
- * Clip (Record · Upload media) · what you're eating · where (optional: Menuply, typed, or At home)
- * · how is it, plus optional tags that replace the old post types:
- *   ⭐ Recommend (any place, incl. typed) · 🍹 Happy hour · 👩‍🍳 I made this (@home dish).
- * Invite sits in the header (it isn't a post). Same as the app's Post tab.
+ * Post = one screen, no steps (Andre 2026-10-28/29: "posting should feel as simple as possible").
+ * Clip (Record · Upload media) · what you're eating (Common Knowledge food types, the picked
+ * restaurant's dishes, or "Use …" for a new food the server keeps for review) · where (optional:
+ * Menuply, typed, or @home) · ⭐ Recommend. Quick Invite lives on My Profile. Same as the app.
  */
 import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -18,37 +17,31 @@ import {
   restaurantPlaceMeta,
   searchReportPlaces,
 } from "../../../lib/foodActivityApi.js";
+import { searchFoodTypes } from "../../../lib/foodTypesApi.js";
 import { unlistedRestaurantPlace } from "../../../lib/unlistedPlace.js";
-import { HAPPY_HOUR_INTENTS } from "../../../lib/happyHourActivity.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 
-export const QUICK_POST_TAGS = [
-  { key: "recommend", label: "⭐ Recommend" },
-  { key: "happy_hour", label: "🍹 Happy hour" },
-  { key: "made", label: "👩‍🍳 I made this" },
-];
-
-export const QUICK_INVITE_PHRASES = [
-  { code: "LDL", phrase: "Let's do lunch" },
-  { code: "LDD", phrase: "Let's do dinner" },
-  { code: "LHC", phrase: "Let's have coffee" },
-  { code: "LGD", phrase: "Let's get drinks" },
-  { code: "MMH", phrase: "Meet me here" },
-];
-
-/** The Feed recognizes Happy Hour posts by this food name (happyHourActivity.js). */
-const HAPPY_HOUR_FOOD = HAPPY_HOUR_INTENTS[0].foodName;
 const TYPEAHEAD_MS = 220;
 const GREEN = "#0f7a24";
+
+function cleanTyped(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, 160);
+}
+
+/** The food in a post: a CK food type, a menu dish, or typed ("Use …", reviewed later). */
+function foodLabel(food) {
+  if (!food) return "";
+  if (food.kind === "type") return food.type.name;
+  if (food.kind === "dish") return dishLabel(food.dish);
+  return food.name;
+}
 
 export default function QuickPostSheet({
   open,
   onClose,
   onSubmit,
-  onInvite,
   busy = false,
   uploadPercent = null,
-  isAuthenticated = false,
   locationCity = null,
   locationState = null,
 }) {
@@ -56,16 +49,15 @@ export default function QuickPostSheet({
   const uploadId = useId();
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState("");
-  const [food, setFood] = useState("");
-  const [dish, setDish] = useState(null);
+  const [foodQuery, setFoodQuery] = useState("");
+  const [food, setFood] = useState(null);
+  const [foodTypes, setFoodTypes] = useState([]);
   const [dishHits, setDishHits] = useState([]);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState([]);
   const [place, setPlace] = useState(null);
   const [atHome, setAtHome] = useState(false);
-  const [note, setNote] = useState("");
-  const [tags, setTags] = useState([]);
-  const [inviting, setInviting] = useState(false);
+  const [recommend, setRecommend] = useState(false);
   const inlineCamera = useMemo(() => inlineCameraSupported() && preferInlineCamera(), []);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
 
@@ -104,24 +96,30 @@ export default function QuickPostSheet({
     };
   }, [query, place, locationCity, locationState]);
 
-  // Once a Menuply restaurant is picked, its dishes are suggested in the food box.
+  // Food suggestions: Common Knowledge food types, plus the picked Menuply restaurant's dishes first.
   useEffect(() => {
-    const q = food.trim();
-    if (!place?.restaurant_id || dish || !q) return undefined;
+    const q = foodQuery.trim();
+    if (food || q.length < 2) return undefined;
+    const rid = place?.restaurant_id || null;
     let alive = true;
     const t = setTimeout(async () => {
-      try {
-        const data = await searchReportPlaces({ type: "menu_item", q, restaurant_id: place.restaurant_id, limit: 5 });
-        if (alive) setDishHits(data.results || []);
-      } catch {
-        if (alive) setDishHits([]);
+      searchFoodTypes(q)
+        .then((rows) => alive && setFoodTypes(rows))
+        .catch(() => alive && setFoodTypes([]));
+      if (rid) {
+        try {
+          const data = await searchReportPlaces({ type: "menu_item", q, restaurant_id: rid, limit: 4 });
+          if (alive) setDishHits(data.results || []);
+        } catch {
+          if (alive) setDishHits([]);
+        }
       }
     }, TYPEAHEAD_MS);
     return () => {
       alive = false;
       clearTimeout(t);
     };
-  }, [food, place, dish]);
+  }, [foodQuery, food, place]);
 
   if (!open || typeof document === "undefined") return null;
 
@@ -135,110 +133,68 @@ export default function QuickPostSheet({
     }
   }
 
+  function pickFood(next) {
+    if (!next) return;
+    setFood(next);
+    setFoodQuery("");
+    setFoodTypes([]);
+    setDishHits([]);
+  }
+
   function pickPlace(next) {
     if (!next) return;
     setPlace(next);
     setAtHome(false);
     setQuery("");
     setHits([]);
-    setDish(null);
     setDishHits([]);
+    // A dish from another restaurant's menu doesn't belong to this place.
+    if (food?.kind === "dish") setFood(null);
   }
 
   function clearPlace() {
     setPlace(null);
     setAtHome(false);
-    setDish(null);
     setDishHits([]);
+    if (food?.kind === "dish") setFood(null);
   }
 
-  function changeFood(v) {
-    const next = v.slice(0, 160);
-    setFood(next);
-    if (dish && next !== dishLabel(dish)) setDish(null);
-  }
-
-  function pickDish(row) {
-    const next = asDishPlace(row);
-    if (!next) return;
-    setDish(next);
-    setFood(dishLabel(next));
-    setDishHits([]);
-  }
-
-  function toggleTag(key) {
-    setTags((cur) => {
-      if (cur.includes(key)) return cur.filter((x) => x !== key);
-      // I made this is an @home dish, so it doesn't mix with Recommend / Happy hour.
-      return key === "made" ? ["made"] : [...cur.filter((x) => x !== "made"), key];
-    });
-  }
-
-  const made = tags.includes("made");
-  const happy = tags.includes("happy_hour");
-  const recommend = tags.includes("recommend");
-  const needsPlace = (recommend || happy) && !place;
-  const typedFood = food.trim().replace(/\s+/g, " ");
-  const canPost =
-    Boolean(file) &&
-    !busy &&
-    !needsPlace &&
-    (made ? Boolean(typedFood) : Boolean(typedFood || dish || place || atHome));
+  const needsPlace = recommend && !place;
+  const canPost = Boolean(file) && !busy && Boolean(food) && !needsPlace;
 
   async function submit() {
     if (!canPost) return;
-    if (made) {
-      await onSubmit?.({ category: "cooking", file, name: typedFood, text: note.trim() });
-      return;
-    }
-    const whereType = atHome ? "home" : place?.restaurant_id ? "restaurant" : "other";
-    const foodName = happy
-      ? HAPPY_HOUR_FOOD
-      : dishLabel(dish) || typedFood || restaurantLabel(place) || (atHome ? "@home" : "Food");
+    const dish = food.kind === "dish" ? food.dish : null;
     await onSubmit?.({
       category: "ate",
       file,
-      // Happy hour's food name is the marker, so what you're drinking goes in the note.
-      text: happy && typedFood ? [typedFood, note.trim()].filter(Boolean).join(" · ") : note.trim(),
+      text: "",
       mealPeriod: defaultWhatIAteMealPeriod(),
       homemade: atHome,
-      whereType,
+      whereType: atHome ? "home" : place?.restaurant_id ? "restaurant" : "other",
       restaurant: place,
-      dish: happy ? null : dish,
+      dish,
       isRecommend: recommend,
       items: [
         {
-          food_name: foodName,
-          menu_item_id: happy ? null : dish?.menu_item_id || null,
+          food_name: foodLabel(food),
+          menu_item_id: dish?.menu_item_id || null,
           restaurant_id: place?.restaurant_id || null,
+          ...(food.kind === "type" ? { food_type_code: food.type.code } : {}),
         },
       ],
     });
   }
 
+  const typedFood = cleanTyped(foodQuery);
+  const foodTyping = !food && typedFood.length >= 2;
+  const menuDishes = place?.restaurant_id ? dishHits : [];
+  const exactFood = [...foodTypes.map((t) => t.name), ...menuDishes.map(dishLabel)].some(
+    (n) => String(n).toLowerCase() === typedFood.toLowerCase()
+  );
   const typedPlace = query.trim();
   const showUsePlace =
     typedPlace.length >= 2 && !hits.some((h) => restaurantLabel(h).toLowerCase() === typedPlace.toLowerCase());
-
-  const header = (
-    <div style={styles.head}>
-      {inviting ? (
-        <button type="button" style={styles.textBtn} onClick={() => setInviting(false)} data-testid="quick-post-back">
-          ‹ Back
-        </button>
-      ) : (
-        <button type="button" style={styles.invitePill} onClick={() => setInviting(true)} data-testid="quick-post-invite">
-          Invite
-        </button>
-      )}
-      <h2 style={styles.title} id="quick-post-title">
-        {inviting ? "Invite someone" : "Post"}
-      </h2>
-      <button type="button" style={styles.textBtn} onClick={() => !busy && onClose?.()} aria-label="Close">
-        Close
-      </button>
-    </div>
-  );
 
   return createPortal(
     <div
@@ -250,230 +206,234 @@ export default function QuickPostSheet({
       }}
     >
       <div role="dialog" aria-modal="true" aria-labelledby="quick-post-title" style={styles.sheet}>
-        {header}
-        {inviting ? (
-          <div style={styles.body} data-testid="quick-post-invite-list">
-            <p style={styles.muted}>Share by text or Copy Link. Friends not on Menuply can still open it and RSVP.</p>
-            {QUICK_INVITE_PHRASES.map((q) => (
-              <button
-                key={q.code}
-                type="button"
-                style={styles.inviteRow}
-                onClick={() => onInvite?.(q.code)}
-                data-testid={`quick-post-invite-${q.code.toLowerCase()}`}
-              >
-                {q.phrase}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div style={styles.body}>
-            {/* Clip tile: Record in the middle, Upload media in the corner. */}
-            <div style={styles.tile} data-testid="quick-post-tile">
-              {previewUrl ? (
-                <video src={previewUrl} style={styles.preview} autoPlay muted loop playsInline data-testid="quick-post-preview" />
-              ) : null}
-              {inlineCamera ? (
-                <MenuplyMediaPicker
-                  source="camera"
-                  allowPhoto={false}
-                  allowVideo
-                  showPreview={false}
-                  file={file}
-                  onFile={(f) => void takeFile(f)}
-                  disabled={busy}
-                  testId="quick-post-camera"
-                  renderTrigger={({ open: openCamera }) => (
-                    <button type="button" style={file ? styles.recordAgain : styles.recordCard} onClick={openCamera} data-testid="quick-post-record">
-                      <RecordLabel again={Boolean(file)} />
-                    </button>
-                  )}
-                />
-              ) : (
-                <>
-                  {/* label + input capture: opens the phone camera (button→click opens a file picker on many phones). */}
-                  <label htmlFor={recordId} style={file ? styles.recordAgain : styles.recordCard} data-testid="quick-post-record">
-                    <RecordLabel again={Boolean(file)} />
-                  </label>
-                  <input
-                    id={recordId}
-                    type="file"
-                    accept="video/*"
-                    capture="environment"
-                    hidden
-                    disabled={busy}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      e.target.value = "";
-                      void takeFile(f);
-                    }}
-                  />
-                </>
-              )}
-              <label htmlFor={uploadId} style={styles.uploadPill} data-testid="quick-post-upload">
-                ⇪ Upload media
-              </label>
-              <input
-                id={uploadId}
-                type="file"
-                accept="video/*"
-                hidden
+        <div style={styles.head}>
+          <span style={styles.headSpacer} aria-hidden />
+          <h2 style={styles.title} id="quick-post-title">
+            Post
+          </h2>
+          <button type="button" style={styles.textBtn} onClick={() => !busy && onClose?.()} aria-label="Close">
+            Close
+          </button>
+        </div>
+        <div style={styles.body}>
+          {/* Clip tile: Record in the middle, Upload media in the corner. */}
+          <div style={styles.tile} data-testid="quick-post-tile">
+            {previewUrl ? (
+              <video src={previewUrl} style={styles.preview} autoPlay muted loop playsInline data-testid="quick-post-preview" />
+            ) : (
+              // Blurred food photo behind Record (Andre 2026-10-29: real food, not icons; placeholder photo for now).
+              <img src="/post-tile-food.jpg" alt="" aria-hidden style={styles.preview} data-testid="quick-post-tile-photo" />
+            )}
+            {inlineCamera ? (
+              <MenuplyMediaPicker
+                source="camera"
+                allowPhoto={false}
+                allowVideo
+                showPreview={false}
+                file={file}
+                onFile={(f) => void takeFile(f)}
                 disabled={busy}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  void takeFile(f);
-                }}
-                data-testid="quick-post-upload-input"
+                testId="quick-post-camera"
+                renderTrigger={({ open: openCamera }) => (
+                  <button type="button" style={file ? styles.recordAgain : styles.recordCard} onClick={openCamera} data-testid="quick-post-record">
+                    <RecordLabel again={Boolean(file)} />
+                  </button>
+                )}
               />
-            </div>
-            {fileError ? <p style={styles.error}>{fileError}</p> : null}
+            ) : (
+              <>
+                {/* label + input capture: opens the phone camera (button→click opens a file picker on many phones). */}
+                <label htmlFor={recordId} style={file ? styles.recordAgain : styles.recordCard} data-testid="quick-post-record">
+                  <RecordLabel again={Boolean(file)} />
+                </label>
+                <input
+                  id={recordId}
+                  type="file"
+                  accept="video/*"
+                  capture="environment"
+                  hidden
+                  disabled={busy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    void takeFile(f);
+                  }}
+                />
+              </>
+            )}
+            <label htmlFor={uploadId} style={styles.uploadPill} data-testid="quick-post-upload">
+              ⇪ Upload media
+            </label>
+            <input
+              id={uploadId}
+              type="file"
+              accept="video/*"
+              hidden
+              disabled={busy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                void takeFile(f);
+              }}
+              data-testid="quick-post-upload-input"
+            />
+          </div>
+          {fileError ? <p style={styles.error}>{fileError}</p> : null}
 
-            <div>
-              <label style={styles.row}>
-                <span style={styles.icon} aria-hidden>
-                  🍴
-                </span>
+          <div>
+            <div style={styles.row}>
+              <span style={styles.icon} aria-hidden>
+                🍴
+              </span>
+              {food ? (
+                <div style={styles.flex} data-testid="quick-post-food-chosen">
+                  <div style={styles.rowText}>{foodLabel(food)}</div>
+                  <div style={styles.muted}>
+                    {food.kind === "type"
+                      ? food.type.category
+                      : food.kind === "dish"
+                        ? `On the menu at ${restaurantLabel(place)}`
+                        : "New food · we'll review it"}
+                  </div>
+                </div>
+              ) : (
                 <input
                   type="text"
-                  value={food}
-                  onChange={(e) => changeFood(e.target.value)}
-                  placeholder={made ? "What did you make?" : "What are you eating?"}
+                  value={foodQuery}
+                  onChange={(e) => setFoodQuery(e.target.value.slice(0, 160))}
+                  placeholder="What are you eating?"
                   autoComplete="off"
                   disabled={busy}
                   style={styles.rowInput}
+                  aria-label="What are you eating?"
                   data-testid="quick-post-food"
                 />
-              </label>
-              {!dish && place?.restaurant_id && typedFood && dishHits.length ? (
-                <ul style={styles.hits}>
-                  {dishHits.map((h) => (
-                    <li key={h.menu_item_id}>
-                      <button type="button" style={styles.hit} onClick={() => pickDish(h)} data-testid={`quick-post-dish-${h.menu_item_id}`}>
-                        {dishLabel(h)} <span style={styles.muted}>· on the menu</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              )}
+              {food ? (
+                <button type="button" style={styles.clear} onClick={() => setFood(null)} aria-label="Change food" data-testid="quick-post-food-clear">
+                  ✕
+                </button>
               ) : null}
             </div>
-
-            {made ? null : (
-              <div>
-                <div style={styles.row}>
-                  <span style={styles.icon} aria-hidden>
-                    📍
-                  </span>
-                  {place || atHome ? (
-                    <div style={styles.flex} data-testid="quick-post-place-chosen">
-                      <div style={styles.rowText}>{atHome ? "At home" : restaurantLabel(place)}</div>
-                      {place ? (
-                        <div style={styles.muted}>
-                          {place.restaurant_id ? restaurantPlaceMeta(place) : "Not on Menuply yet"}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value.slice(0, 120))}
-                      placeholder="Where? (optional)"
-                      autoComplete="off"
-                      disabled={busy}
-                      style={styles.rowInput}
-                      aria-label="Where"
-                      data-testid="quick-post-where"
-                    />
-                  )}
-                  {place || atHome ? (
-                    <button type="button" style={styles.clear} onClick={clearPlace} aria-label="Clear where" data-testid="quick-post-where-clear">
-                      ✕
-                    </button>
-                  ) : (
+            {foodTyping ? (
+              <ul style={styles.hits}>
+                {menuDishes.map((h) => (
+                  <li key={`dish-${h.menu_item_id}`}>
                     <button
                       type="button"
-                      style={styles.homePill}
-                      onClick={() => {
-                        setAtHome(true);
-                        setQuery("");
-                      }}
-                      data-testid="quick-post-at-home"
+                      style={styles.hit}
+                      onClick={() => pickFood({ kind: "dish", dish: asDishPlace(h) })}
+                      data-testid={`quick-post-dish-${h.menu_item_id}`}
                     >
-                      At home
+                      {dishLabel(h)} <span style={styles.muted}>· on the menu</span>
                     </button>
-                  )}
-                </div>
-                {!place && !atHome && (hits.length || showUsePlace) && typedPlace.length >= 2 ? (
-                  <ul style={styles.hits}>
-                    {hits.map((h) => (
-                      <li key={h.restaurant_id}>
-                        <button type="button" style={styles.hit} onClick={() => pickPlace(asRestaurantPlace(h))} data-testid={`quick-post-place-${h.restaurant_id}`}>
-                          {restaurantLabel(h)}
-                          {restaurantPlaceMeta(h) ? <span style={styles.muted}> · {restaurantPlaceMeta(h)}</span> : null}
-                        </button>
-                      </li>
-                    ))}
-                    {showUsePlace ? (
-                      <li>
-                        <button type="button" style={styles.useTyped} onClick={() => pickPlace(unlistedRestaurantPlace(typedPlace))} data-testid="quick-post-place-use-typed">
-                          Use “{typedPlace}” <span style={styles.muted}>· not on Menuply yet</span>
-                        </button>
-                      </li>
-                    ) : null}
-                  </ul>
-                ) : null}
-              </div>
-            )}
-
-            <label style={{ ...styles.row, alignItems: "flex-start" }}>
-              <span style={{ ...styles.icon, paddingTop: 12 }} aria-hidden>
-                💬
-              </span>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value.slice(0, 200))}
-                placeholder="How is it? (optional)"
-                rows={2}
-                disabled={busy}
-                style={{ ...styles.rowInput, resize: "none", minHeight: 56 }}
-                data-testid="quick-post-note"
-              />
-            </label>
-
-            <div style={styles.chips} role="group" aria-label="Tags">
-              {QUICK_POST_TAGS.filter((t) => t.key !== "made" || isAuthenticated).map((t) => {
-                const on = tags.includes(t.key);
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    aria-pressed={on}
-                    style={{ ...styles.chip, ...(on ? styles.chipOn : null) }}
-                    onClick={() => toggleTag(t.key)}
-                    data-testid={`quick-post-tag-${t.key}`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-            {needsPlace ? (
-              <p style={styles.muted}>Add where it is to post a {recommend ? "recommendation" : "Happy hour"}.</p>
+                  </li>
+                ))}
+                {foodTypes.map((t) => (
+                  <li key={`type-${t.code}`}>
+                    <button type="button" style={styles.hit} onClick={() => pickFood({ kind: "type", type: t })} data-testid={`quick-post-food-type-${t.code}`}>
+                      {t.name} {t.category ? <span style={styles.muted}>· {t.category}</span> : null}
+                    </button>
+                  </li>
+                ))}
+                {exactFood ? null : (
+                  <li>
+                    <button type="button" style={styles.useTyped} onClick={() => pickFood({ kind: "typed", name: typedFood })} data-testid="quick-post-food-use-typed">
+                      Use “{typedFood}” <span style={styles.muted}>· new food, we'll review it</span>
+                    </button>
+                  </li>
+                )}
+              </ul>
             ) : null}
-
-            <p style={styles.muted}>Public post to Feed</p>
-            <button
-              type="button"
-              disabled={!canPost}
-              style={{ ...styles.postBtn, ...(canPost ? null : styles.disabled) }}
-              onClick={() => void submit().catch(() => {})}
-              data-testid="quick-post-submit"
-            >
-              {busy ? `Posting…${uploadPercent != null ? ` ${uploadPercent}%` : ""}` : "Post Clip"}
-            </button>
+            {foodTyping ? <p style={{ ...styles.muted, marginTop: 4 }}>Pick a food from the list, or use what you typed.</p> : null}
           </div>
-        )}
+
+          <div>
+            <div style={styles.row}>
+              <span style={styles.icon} aria-hidden>
+                📍
+              </span>
+              {place || atHome ? (
+                <div style={styles.flex} data-testid="quick-post-place-chosen">
+                  <div style={styles.rowText}>{atHome ? "@home" : restaurantLabel(place)}</div>
+                  {place ? (
+                    <div style={styles.muted}>{place.restaurant_id ? restaurantPlaceMeta(place) : "Not on Menuply yet"}</div>
+                  ) : null}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value.slice(0, 120))}
+                  placeholder="Where? (optional)"
+                  autoComplete="off"
+                  disabled={busy}
+                  style={styles.rowInput}
+                  aria-label="Where"
+                  data-testid="quick-post-where"
+                />
+              )}
+              {place || atHome ? (
+                <button type="button" style={styles.clear} onClick={clearPlace} aria-label="Clear where" data-testid="quick-post-where-clear">
+                  ✕
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  style={styles.homePill}
+                  onClick={() => {
+                    setAtHome(true);
+                    setQuery("");
+                  }}
+                  data-testid="quick-post-at-home"
+                >
+                  @home
+                </button>
+              )}
+            </div>
+            {!place && !atHome && (hits.length || showUsePlace) && typedPlace.length >= 2 ? (
+              <ul style={styles.hits}>
+                {hits.map((h) => (
+                  <li key={h.restaurant_id}>
+                    <button type="button" style={styles.hit} onClick={() => pickPlace(asRestaurantPlace(h))} data-testid={`quick-post-place-${h.restaurant_id}`}>
+                      {restaurantLabel(h)}
+                      {restaurantPlaceMeta(h) ? <span style={styles.muted}> · {restaurantPlaceMeta(h)}</span> : null}
+                    </button>
+                  </li>
+                ))}
+                {showUsePlace ? (
+                  <li>
+                    <button type="button" style={styles.useTyped} onClick={() => pickPlace(unlistedRestaurantPlace(typedPlace))} data-testid="quick-post-place-use-typed">
+                      Use “{typedPlace}” <span style={styles.muted}>· not on Menuply yet</span>
+                    </button>
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            aria-pressed={recommend}
+            style={{ ...styles.chip, ...(recommend ? styles.chipOn : null) }}
+            onClick={() => setRecommend((v) => !v)}
+            data-testid="quick-post-tag-recommend"
+          >
+            ⭐ Recommend
+          </button>
+          {needsPlace ? <p style={styles.muted}>Add where it is to recommend it.</p> : null}
+
+          <p style={styles.muted}>Public post to Feed</p>
+          <button
+            type="button"
+            disabled={!canPost}
+            style={{ ...styles.postBtn, ...(canPost ? null : styles.disabled) }}
+            onClick={() => void submit().catch(() => {})}
+            data-testid="quick-post-submit"
+          >
+            {busy ? `Posting…${uploadPercent != null ? ` ${uploadPercent}%` : ""}` : "Post Clip"}
+          </button>
+        </div>
       </div>
     </div>,
     document.body
@@ -497,7 +457,7 @@ const styles = {
   backdrop: {
     position: "fixed",
     inset: 0,
-    // Above the Feed's mobile header (1300) so Invite / Close stay visible.
+    // Above the Feed's mobile header (1300) so Close stays visible.
     zIndex: 1310,
     background: "rgba(0,0,0,0.55)",
     display: "flex",
@@ -515,9 +475,9 @@ const styles = {
     boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
   },
   head: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 4px" },
+  headSpacer: { width: 52 },
   title: { margin: 0, fontSize: 18, fontWeight: 800 },
   textBtn: { appearance: "none", border: "none", background: "transparent", color: "#475569", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 6 },
-  invitePill: { appearance: "none", border: `1px solid ${GREEN}`, background: "#fff", color: GREEN, borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   body: { display: "flex", flexDirection: "column", gap: 10, padding: "8px 14px 16px" },
   tile: { position: "relative", height: 220, borderRadius: 14, background: "#e8f5e3", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" },
   preview: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
@@ -539,12 +499,10 @@ const styles = {
   hits: { listStyle: "none", margin: "4px 0 0", padding: 0, background: "#fff", border: "1px solid #dfe5dc", borderRadius: 12, overflow: "hidden" },
   hit: { appearance: "none", width: "100%", textAlign: "left", border: "none", borderBottom: "1px solid #f1f5f9", background: "#fff", padding: "11px 14px", fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#111" },
   useTyped: { appearance: "none", width: "100%", textAlign: "left", border: "none", borderTop: "1px dashed #cbd5e1", background: "#fafcf9", padding: "11px 14px", fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#111" },
-  chips: { display: "flex", flexWrap: "wrap", gap: 8 },
-  chip: { appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "6px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  chip: { alignSelf: "flex-start", appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   chipOn: { background: GREEN, borderColor: GREEN, color: "#fff" },
   muted: { margin: 0, fontSize: 12, color: "#64748b" },
   error: { margin: 0, fontSize: 13, color: "#b42318", fontWeight: 600 },
   postBtn: { appearance: "none", border: "none", background: GREEN, color: "#fff", borderRadius: 12, padding: "14px 16px", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
   disabled: { opacity: 0.5, cursor: "not-allowed" },
-  inviteRow: { appearance: "none", textAlign: "left", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 12, padding: "14px", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

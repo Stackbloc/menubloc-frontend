@@ -1,7 +1,7 @@
 /**
- * Post = one screen, no steps (Andre 2026-10-28), same as the app's Post tab: Record + Upload media,
- * food · where (optional, typed or At home) · note, tags ⭐ Recommend · 🍹 Happy hour · 👩‍🍳 I made this,
- * Invite in the header. The Feed's Post button opens it straight away.
+ * Post = one screen, no steps (Andre 2026-10-28/29), same as the app's Post tab: Record + Upload media,
+ * what you're eating (Common Knowledge food types; "Use …" for a new food), where (optional, typed
+ * or @home), ⭐ Recommend. No note, Happy hour or I made this. Quick Invite is on My Profile.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -13,32 +13,29 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 const sheet = read("src/components/consumer/feed/QuickPostSheet.jsx");
 
-test("one screen: no numbered steps; Upload media, not Choose a clip", () => {
+test("one screen: Upload media, @home, Recommend; no note, other tags or Invite", () => {
   assert.match(sheet, /Upload media/);
-  assert.doesNotMatch(sheet, /Choose a clip/);
-  assert.doesNotMatch(sheet, /Step \d|\d · /);
-  for (const id of ["quick-post-record", "quick-post-upload", "quick-post-food", "quick-post-where", "quick-post-at-home", "quick-post-note", "quick-post-submit", "quick-post-invite"]) {
+  assert.doesNotMatch(sheet, /Choose a clip|How is it|Happy hour|I made this|At home|quick-post-invite/);
+  for (const id of ["quick-post-record", "quick-post-upload", "quick-post-food", "quick-post-where", "quick-post-at-home", "quick-post-tag-recommend", "quick-post-submit", "quick-post-tile-photo"]) {
     assert.match(sheet, new RegExp(`data-testid="${id}"`), id);
   }
+  assert.match(sheet, />\s*@home\s*</);
   assert.match(sheet, /Post Clip/);
-  assert.match(sheet, /Public post to Feed/);
 });
 
-test("tags replace the post types; Recommend and Happy hour need a place (typed counts)", () => {
-  assert.match(sheet, /⭐ Recommend/);
-  assert.match(sheet, /🍹 Happy hour/);
-  assert.match(sheet, /👩‍🍳 I made this/);
-  assert.match(sheet, /const needsPlace = \(recommend \|\| happy\) && !place/);
-  assert.match(sheet, /unlistedRestaurantPlace\(typedPlace\)/);
-  assert.match(sheet, /HAPPY_HOUR_INTENTS\[0\]\.foodName/);
-  assert.match(sheet, /category: "cooking", file, name: typedFood/);
+test("food is structured: CK food types or Use …; the type code is posted", () => {
+  assert.match(sheet, /searchFoodTypes\(q\)/);
+  assert.match(sheet, /const canPost = Boolean\(file\) && !busy && Boolean\(food\) && !needsPlace/);
+  assert.match(sheet, /food_type_code: food\.type\.code/);
+  assert.match(sheet, /new food, we'll review it/);
+  assert.match(read("src/lib/foodTypesApi.js"), /\/public\/food-types\?/);
+  assert.match(read("src/lib/feedVideoCompose.js"), /food_type_code: item\.food_type_code/);
 });
 
-test("Feed Post opens the one screen; Invite goes to the invite flow", () => {
-  const shell = read("src/pages/consumer/feed/FeedShellPage.jsx");
-  assert.match(shell, /setComposeCategory\("post"\)/);
-  assert.match(shell, /handlePickQuickInvite\(code\)/);
-  assert.match(read("src/components/consumer/feed/FeedVideoComposeOverlay.jsx"), /category === "post" \?/);
-  // Recommend with a typed restaurant still marks the dish row.
-  assert.match(read("src/lib/feedVideoCompose.js"), /restaurantId \|\| menuItemId \|\| unlistedPlaceName\(restaurant\)/);
+test("Quick Invite sits on My Profile, above My Social Calendar", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.ok(page.indexOf("<QuickInviteCard />") < page.indexOf("<SocialCalendarCard />"));
+  const card = read("src/pages/consumer/myMenuply/QuickInviteCard.jsx");
+  assert.match(card, /Quick Invite/);
+  assert.match(card, /seed_code: code, quick_invite: "1"/);
 });

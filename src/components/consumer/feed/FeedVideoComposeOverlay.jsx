@@ -40,7 +40,6 @@ export default function FeedVideoComposeOverlay({
   openLibraryOnMount = false,
   initialWhereType = null,
   onClose,
-  onInvite,
 }) {
   const { isAuthenticated } = useConsumer();
   const [busy, setBusy] = useState(false);
@@ -165,10 +164,8 @@ export default function FeedVideoComposeOverlay({
           if (!busy && !consentOpen) onClose?.();
         }}
         onSubmit={handleSubmit}
-        onInvite={onInvite}
         busy={busy}
         uploadPercent={uploadPercent}
-        isAuthenticated={isAuthenticated}
         locationCity={market.city}
         locationState={market.state}
       />

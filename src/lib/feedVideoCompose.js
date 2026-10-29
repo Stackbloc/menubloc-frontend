@@ -72,6 +72,8 @@ export async function postFeedAteVideo({
                 ? Boolean(isRecommend && (restaurantId || menuItemId || unlistedPlaceName(restaurant)))
                 : false,
             market_discoverable: true,
+            // Common Knowledge food type picked in Post (Andre 2026-10-29).
+            ...(item.food_type_code ? { food_type_code: item.food_type_code } : {}),
           }))
           .filter((item) => item.food_name)
       : [

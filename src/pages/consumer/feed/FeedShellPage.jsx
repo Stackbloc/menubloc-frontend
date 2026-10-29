@@ -145,7 +145,7 @@ export default function FeedShellPage({ children = null }) {
     return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onClearStuck);
   }, []);
 
-  // Post opens the one-screen Post straight away (Andre 2026-10-28); Invite lives in its header.
+  // Post opens the one-screen Post straight away (Andre 2026-10-28); Quick Invite is on My Profile.
   function openCreateSheet() {
     openingShellOverlayRef.current = "create";
     clearStuckMediaChrome();
@@ -297,10 +297,6 @@ export default function FeedShellPage({ children = null }) {
         openLibraryOnMount={composeOpenLibrary}
         initialWhereType={composeInitialWhere}
         onClose={closeCompose}
-        onInvite={(code) => {
-          closeCompose();
-          handlePickQuickInvite(code);
-        }}
       />
     </div>
   );
