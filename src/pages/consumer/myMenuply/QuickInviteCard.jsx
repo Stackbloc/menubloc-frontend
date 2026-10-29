@@ -1,6 +1,7 @@
 /**
  * Quick Invite on My Profile, above My Social Calendar (Andre 2026-10-29; moved out of Post:
  * an invite isn't a post). Same five phrases as the app; each opens the invite flow with it preset.
+ * The flow asks who first (2026-10-29): Connect → in Menuply or by text; anyone else → by text.
  */
 import { Link } from "react-router-dom";
 import * as s from "./myMenuplyStyles.js";
@@ -22,7 +23,7 @@ export default function QuickInviteCard() {
     <section style={s.section} data-testid="profile-quick-invite">
       <div style={styles.card}>
         <strong style={{ fontSize: 18, color: "#0f172a" }}>Quick Invite</strong>
-        <p style={styles.lead}>Share by text or Copy Link. Friends not on Menuply can still open it and RSVP.</p>
+        <p style={styles.lead}>Pick who it's for. Connects can get it in Menuply; anyone else by text, even without an account.</p>
         <div style={styles.list}>
           {QUICK_INVITE_PHRASES.map((q) => (
             <Link key={q.code} to={quickInvitePath(q.code)} style={styles.row} data-testid={`quick-invite-${q.code.toLowerCase()}`}>

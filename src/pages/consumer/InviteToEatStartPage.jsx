@@ -9,6 +9,8 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
+import QuickInviteWhoStep from "./QuickInviteWhoStep.jsx";
+import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { resolveEatingPrefill } from "../../lib/foodActivityApi.js";
 import { fetchRestaurantMenuCatalog } from "../../lib/api.js";
 import { buildLgdQuickInviteFormTitle } from "../../lib/eatInviteShareCopy.js";
@@ -40,6 +42,10 @@ export default function InviteToEatStartPage() {
   const seedCode = String(searchParams.get("seed_code") || "").trim().toUpperCase();
   const isLgdQuickInvite = seedCode === "LGD";
   const quickInvite = searchParams.get("quick_invite") === "1";
+  const { isAuthenticated } = useConsumer();
+  // Quick Invite asks who first (Andre 2026-10-29): { name, userId | null, via: "app" | "text" }.
+  const [to, setTo] = useState(null);
+  const needsWho = quickInvite && !to;
   const [messageType, setMessageType] = useState("restaurant");
   const [selected, setSelected] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -159,10 +165,14 @@ export default function InviteToEatStartPage() {
           {isLgdQuickInvite
             ? "Pick the bar or venue, optionally attach a drinks or full menu, then share the link. Friends can RSVP without a Menuply account."
             : quickInvite
-              ? "Pick a restaurant, set the details, then share the link by text or Copy Link. Your friend can RSVP without a Menuply account."
+              ? "Pick who it's for and the place, then set the details. Connects can get it in Menuply; anyone else by text, no account needed."
               : "Pick a restaurant, set a time, then share your invitation."}
         </p>
         {loadingPrefill ? <p style={styles.muted}>Loading restaurant…</p> : null}
+        {quickInvite ? <QuickInviteWhoStep value={to} onChange={setTo} signedIn={isAuthenticated} /> : null}
+        {needsWho ? null : (
+        <>
+        {quickInvite ? <div style={styles.step}>{seedCode === "MMH" ? "Where should they meet you?" : "Pick the place"}</div> : null}
         <DiningCrewFoodEntityPicker
           messageType={messageType}
           onMessageTypeChange={setMessageType}
@@ -222,6 +232,8 @@ export default function InviteToEatStartPage() {
         >
           Continue
         </button>
+        </>
+        )}
       </main>
       <InviteToEatModal
         open={modalOpen}
@@ -232,8 +244,9 @@ export default function InviteToEatStartPage() {
         menuItemName={resolved.menuItemName}
         attachedMenuId={resolved.attachedMenuId}
         initialSeedCode={seedCode || null}
-        initialInviteeName={String(searchParams.get("invitee_name") || "").trim()}
+        initialInviteeName={to?.name || String(searchParams.get("invitee_name") || "").trim()}
         initialInviteKind={
+          to ||
           String(searchParams.get("invite_kind") || "").trim().toLowerCase() === "private" ||
           String(searchParams.get("invitee_name") || "").trim()
             ? "private"
@@ -241,7 +254,8 @@ export default function InviteToEatStartPage() {
               ? "group"
               : null
         }
-        autoOpenShareOnReady={quickInvite}
+        autoOpenShareOnReady={quickInvite && to?.via !== "app"}
+        sendInAppTo={to?.via === "app" && to.userId ? { userId: to.userId, name: to.name } : null}
         flowTitle={
           isLgdQuickInvite
             ? buildLgdQuickInviteFormTitle(resolved.restaurantName || selectedPlaceName)
@@ -269,6 +283,7 @@ const styles = {
   },
   lead: { margin: "0 0 16px", fontSize: 14, color: "#4b5563", lineHeight: 1.45 },
   muted: { fontSize: 13, color: "#6b7280", margin: 0 },
+  step: { fontSize: 13, fontWeight: 800, color: "#15803d", marginBottom: 8 },
   menuFieldset: {
     margin: "16px 0 0",
     padding: 0,

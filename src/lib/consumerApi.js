@@ -219,6 +219,9 @@ export const listConnections = (status = null, peerId = null) => {
   return get(qs ? `/api/consumer/connections?${qs}` : "/api/consumer/connections");
 };
 export const requestConnection = (body) => post("/api/consumer/connections", body);
+/** Quick Invite "In Menuply": notify these Connects about an invite I made (non-Connects are skipped). */
+export const sendEatInvitationInApp = (token, userIds) =>
+  post(`/api/consumer/eat-invitations/${encodeURIComponent(String(token))}/send`, { user_ids: userIds });
 export const acceptConnection = (id) =>
   post(`/api/consumer/connections/${encodeURIComponent(String(id))}/accept`, {});
 export const declineConnection = (id) =>

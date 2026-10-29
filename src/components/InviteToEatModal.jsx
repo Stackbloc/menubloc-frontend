@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import ShareModal from "./share/ShareModal.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createEatInvitation } from "../lib/eatInvitationsApi.js";
+import { sendEatInvitationInApp } from "../lib/consumerApi.js";
 import {
   getEatInviteGuestDisplayName,
   getOrCreateEatInviteGuestKey,
@@ -58,6 +59,8 @@ export default function InviteToEatModal({
   quickShareData = null,
   quickShareTitle = "Share",
   quickShareAnalyticsContext = null,
+  /** Quick Invite "In Menuply" (2026-10-29): { userId, name } of the Connect to notify once created. */
+  sendInAppTo = null,
 }) {
   const { isAuthenticated } = useConsumer();
   const autoShareOpenedRef = useRef(false);
@@ -76,6 +79,7 @@ export default function InviteToEatModal({
   const [created, setCreated] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [quickShareOpen, setQuickShareOpen] = useState(false);
+  const [inAppStatus, setInAppStatus] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -104,6 +108,7 @@ export default function InviteToEatModal({
     setCreated(null);
     setShareOpen(false);
     setQuickShareOpen(false);
+    setInAppStatus(null);
     autoShareOpenedRef.current = false;
   }, [open, diningCrewId, initialInviteKind, initialInviteeName, initialSeedCode]);
 
@@ -272,6 +277,22 @@ export default function InviteToEatModal({
         }
       }
       setCreated(invitation);
+      if (sendInAppTo?.userId && isAuthenticated) {
+        const token =
+          invitation.invitation_token ||
+          String(invitation.url || "").split("/invite/").pop()?.split(/[?#]/)[0];
+        setInAppStatus("sending");
+        try {
+          const sent = await sendEatInvitationInApp(token, [sendInAppTo.userId]);
+          const ok = Array.isArray(sent?.sent_to) && sent.sent_to.map(Number).includes(Number(sendInAppTo.userId));
+          setInAppStatus(ok ? "sent" : "failed");
+          // The invite exists either way; if Menuply couldn't deliver it, share the link instead.
+          if (!ok) setShareOpen(true);
+        } catch {
+          setInAppStatus("failed");
+          setShareOpen(true);
+        }
+      }
     } catch (err) {
       setError(err?.message || "Could not create invitation");
     } finally {
@@ -816,6 +837,15 @@ export default function InviteToEatModal({
                 {created.message || selectedDraft || message.trim()}
               </div>
             ) : null}
+            {inAppStatus === "sent" ? (
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#166534" }} data-testid="invite-sent-in-app">
+                Sent to {sendInAppTo?.name} in Menuply.
+              </div>
+            ) : inAppStatus === "failed" ? (
+              <div style={{ fontSize: 13, color: "#b91c1c" }} role="alert" data-testid="invite-in-app-failed">
+                Couldn’t send it in Menuply. Share the link instead.
+              </div>
+            ) : null}
             <input
               readOnly
               value={created.url}
@@ -837,7 +867,7 @@ export default function InviteToEatModal({
                 cursor: "pointer",
               }}
             >
-              Share / Send
+              {inAppStatus === "sent" ? "Also share the link" : "Share / Send"}
             </button>
             <div style={{ fontSize: 12, color: "#78716c", lineHeight: 1.4 }}>
               Opens Menuply share options (Copy Link, Messages, and more). Anyone with the link can
