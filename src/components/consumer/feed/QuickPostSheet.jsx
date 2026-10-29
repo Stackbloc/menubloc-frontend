@@ -457,16 +457,19 @@ export default function QuickPostSheet({
           </button>
           {needsPlace ? <p style={styles.muted}>Add the restaurant to recommend it.</p> : null}
 
-          <p style={styles.muted}>Public post to Feed</p>
-          <button
-            type="button"
-            disabled={!canPost}
-            style={{ ...styles.postBtn, ...(canPost ? null : styles.disabled) }}
-            onClick={() => void submit().catch(() => {})}
-            data-testid="quick-post-submit"
-          >
-            {busy ? `Posting…${uploadPercent != null ? ` ${uploadPercent}%` : ""}` : "Post Clip"}
-          </button>
+          {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
+          <div style={styles.postRow}>
+            <p style={{ ...styles.muted, flex: 1 }}>Public post to Feed</p>
+            <button
+              type="button"
+              disabled={!canPost}
+              style={{ ...styles.postBtn, ...(canPost ? null : styles.disabled) }}
+              onClick={() => void submit().catch(() => {})}
+              data-testid="quick-post-submit"
+            >
+              {busy ? `Posting…${uploadPercent != null ? ` ${uploadPercent}%` : ""}` : "Post Clip"}
+            </button>
+          </div>
         </div>
       </div>
     </div>,
@@ -537,6 +540,7 @@ const styles = {
   chipOn: { background: GREEN, borderColor: GREEN, color: "#fff" },
   muted: { margin: 0, fontSize: 12, color: "#64748b" },
   error: { margin: 0, fontSize: 13, color: "#b42318", fontWeight: 600 },
-  postBtn: { appearance: "none", border: "none", background: GREEN, color: "#fff", borderRadius: 12, padding: "14px 16px", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
+  postRow: { display: "flex", alignItems: "center", gap: 12 },
+  postBtn: { appearance: "none", border: "none", background: GREEN, color: "#fff", borderRadius: 999, padding: "10px 20px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   disabled: { opacity: 0.5, cursor: "not-allowed" },
 };
