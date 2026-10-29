@@ -57,8 +57,8 @@ export default function SocialCalendarCard() {
           </Link>
         ))}
         {!next.length ? (
-          <Link to="/account/social-plans" style={{ ...styles.link, fontWeight: 600 }}>
-            Nothing planned yet. Plan a meal and invite your Connects ›
+          <Link to="/account/social-plans?new=1" style={{ ...styles.link, fontWeight: 600 }}>
+            Nothing planned yet. Add a plan ›
           </Link>
         ) : null}
       </div>

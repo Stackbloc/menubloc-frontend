@@ -745,6 +745,8 @@ export const listMySocialPlans = (scope = "upcoming") =>
 /** Social Plans Phase C: My Menuply Connects section (requests, live vibes + Join Me, plans to join). */
 export const getConnectsNow = () => get("/api/consumer/social-plans/connects");
 /** Social Plans Phase B (docs/15): who can see my calendar, my plan's sharing, Can I come?. */
+/** Add a meal or event from the calendar: { kind, date, time, restaurant_id, place_name, title, who: "invite" | "ask" }. */
+export const createSocialPlan = (body) => post("/api/consumer/social-plans", body);
 export const getSocialCalendarSettings = () => get("/api/consumer/social-plans/settings");
 export const saveSocialCalendarSettings = (body) => put("/api/consumer/social-plans/settings", body);
 const socialPlanPath = (source, ref) =>
