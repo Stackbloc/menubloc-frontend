@@ -294,3 +294,14 @@ test("Restaurant profile hero is Menu, then the Feed rail order: Wish List · Fa
     /ViewMenuLink[\s\S]*WishListRestaurantButton[\s\S]*FollowRestaurantButton[\s\S]*InviteToEatButton[\s\S]*ShareButton[\s\S]*FoodCommentNavButton/
   );
 });
+
+test("Wish List says what it does; a dish invite names the dish (Andre 2026-10-30)", () => {
+  const wish = readFileSync(new URL("../src/components/WishListMenuItemButton.jsx", import.meta.url), "utf8");
+  assert.match(wish, /WISH_LIST_ADD = "Add this to your Wish List"/);
+  assert.match(wish, /WISH_LIST_ADDED = "Added to your Wish List"/);
+  const rail = readFileSync(new URL("../src/components/consumer/feed/FeedVideoActionRail.jsx", import.meta.url), "utf8");
+  assert.match(rail, /hint=\{wish\.added \? WISH_LIST_ADDED : WISH_LIST_ADD\}/);
+  const invite = readFileSync(new URL("../src/components/InviteToEatModal.jsx", import.meta.url), "utf8");
+  assert.match(invite, /dishName \? "Invite someone to try this with you:"/);
+});
+

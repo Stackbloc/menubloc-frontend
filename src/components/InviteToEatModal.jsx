@@ -438,8 +438,13 @@ export default function InviteToEatModal({
         {!created && !inviteKind ? (
           <div data-testid="invite-kind-choice" style={{ display: "grid", gap: 14 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#44403c" }}>
-              Who do you want to invite?
+              {dishName ? "Invite someone to try this with you:" : "Who do you want to invite?"}
             </div>
+            {dishName ? (
+              <div data-testid="invite-dish-name" style={{ fontSize: 16, fontWeight: 800, color: "#1c1917" }}>
+                {dishName}
+              </div>
+            ) : null}
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1c1917" }}>{placeName}</div>
             <button
               type="button"

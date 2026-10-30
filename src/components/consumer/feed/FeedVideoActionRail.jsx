@@ -20,7 +20,7 @@ import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
-import { WISH_LIST_ACCENT } from "../../WishListMenuItemButton.jsx";
+import { WISH_LIST_ACCENT, WISH_LIST_ADD, WISH_LIST_ADDED } from "../../WishListMenuItemButton.jsx";
 
 /**
  * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
@@ -207,13 +207,7 @@ export default function FeedVideoActionRail({
           <RailButton
             testId="feed-rail-wanna-go"
             label={wish.added ? "Added" : WISH_LIST_LABEL}
-            hint={
-              wish.added
-                ? `On your Wish List — tap to remove this ${isDishVideo ? "item" : "restaurant"}`
-                : isDishVideo
-                  ? "Add this item to your Wish List"
-                  : "Add this restaurant to your Wish List"
-            }
+            hint={wish.added ? WISH_LIST_ADDED : WISH_LIST_ADD}
             pressed={wish.added}
             disabled={wish.busy}
             onClick={wish.toggle}

@@ -2,9 +2,10 @@ import { useState } from "react";
 
 /**
  * Wraps an icon button and reveals a short text label on hover — the same
- * affordance used by Follow / Share / Like on public menu pages.
+ * affordance used by Follow / Share / Like on public menu pages. `forceShow` keeps it up without a
+ * hover, for a confirmation on touch screens.
  */
-export default function IconHoverLabel({ label, children, style, wrap = false, maxWidth = 220 }) {
+export default function IconHoverLabel({ label, children, style, wrap = false, maxWidth = 220, forceShow = false }) {
   const [hovered, setHovered] = useState(false);
 
   if (!label) return children;
@@ -23,7 +24,7 @@ export default function IconHoverLabel({ label, children, style, wrap = false, m
       onMouseLeave={() => setHovered(false)}
     >
       {children}
-      {hovered ? (
+      {hovered || forceShow ? (
         <span
           role="tooltip"
           style={{
