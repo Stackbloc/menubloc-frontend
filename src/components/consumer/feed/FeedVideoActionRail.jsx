@@ -1,7 +1,7 @@
 /**
- * Live Feed right action rail — Wish List · Like · Invite · Share, then the clip's
- * "Order this" / "See menu" button (Andre, 2026-10-20 — same four actions as menu rows;
- * the green button is the cluster clip player's and replaces the Menu Browser icon).
+ * Live Feed right action rail — Wish List · Fav · Invite · Share · Menu Browser, as in the app
+ * (menuply-mobile FeedClip; app wins, Andre 2026-10-29): Menu Browser is a round button with a
+ * yellow ring and the menu icon, labeled like the others (it replaced the green "Order this" pill).
  * "+Wish List": linked dish → saves the dish; otherwise saves the restaurant. Both land in
  * the profile Wish List.
  * Like is for dishes; a clip with no linked dish shows the restaurant Fav heart (My Favs).
@@ -13,6 +13,7 @@ import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
 import FavHeartIcon from "../../icons/FavHeartIcon.jsx";
 import WishListIcon from "../../icons/WishListIcon.jsx";
 import ShareIcon from "../../share/ShareIcon.jsx";
+import AppIcon from "../../icons/AppIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
 import { trackShareEvent } from "../../share/shareUtils.js";
 import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
@@ -25,7 +26,7 @@ import { WISH_LIST_ACCENT } from "../../WishListMenuItemButton.jsx";
  * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
  * shown to the left of the icon on mouse hover; it is also the accessible name.
  */
-function RailButton({ testId, label, hint, disabled, onClick, children, pressed }) {
+function RailButton({ testId, label, hint, disabled, onClick, children, pressed, circleStyle = null }) {
   const [hovered, setHovered] = useState(false);
   const explanation = hint || label;
   return (
@@ -49,7 +50,7 @@ function RailButton({ testId, label, hint, disabled, onClick, children, pressed 
         ...(disabled ? styles.btnDisabled : null),
       }}
     >
-      <span style={styles.iconCircle}>{children}</span>
+      <span style={{ ...styles.iconCircle, ...circleStyle }}>{children}</span>
       <span style={styles.label}>{label}</span>
       {hovered ? (
         <span role="tooltip" data-testid={`${testId}-hint`} style={styles.hint}>
@@ -152,7 +153,6 @@ export default function FeedVideoActionRail({
   topSlot = null,
 }) {
   const [shareOpen, setShareOpen] = useState(false);
-  const [menuHover, setMenuHover] = useState(false);
 
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
@@ -257,28 +257,15 @@ export default function FeedVideoActionRail({
         ) : null}
 
         {showMenu ? (
-          <button
-            type="button"
-            data-testid="feed-rail-menu"
-            aria-label={isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
-            style={styles.orderBtn}
-            onPointerEnter={(e) => {
-              if (e.pointerType === "mouse") setMenuHover(true);
-            }}
-            onPointerLeave={() => setMenuHover(false)}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onMenu?.(e);
-            }}
+          <RailButton
+            testId="feed-rail-menu"
+            label="Menu Browser"
+            hint={isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
+            onClick={onMenu}
+            circleStyle={styles.menuCircle}
           >
-            {isDishVideo ? "Order this" : "See menu"}
-            {menuHover ? (
-              <span role="tooltip" data-testid="feed-rail-menu-hint" style={{ ...styles.hint, top: 4 }}>
-                {isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
-              </span>
-            ) : null}
-          </button>
+            <AppIcon name="menu" size={22} color="#fff" />
+          </RailButton>
         ) : null}
 
         {wish.error ? (
@@ -354,24 +341,10 @@ const styles = {
     maxWidth: 64,
     textAlign: "center",
   },
-  /** Same green pill as the cluster clip player's "Order this" / "See menu". */
-  orderBtn: {
-    position: "absolute",
-    top: "calc(100% + 10px)",
-    right: 0,
-    height: 32,
-    padding: "0 12px",
-    borderRadius: 999,
-    border: "none",
-    background: "#16a34a",
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: 800,
-    whiteSpace: "nowrap",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
-    WebkitTapHighlightColor: "transparent",
+  /** Menu Browser: the app's yellow-ringed circle. */
+  menuCircle: {
+    border: "2px solid #FACC15",
+    background: "rgba(0,0,0,0.2)",
   },
   /** Hover explanation, opens to the left of the rail so it never covers the icons. */
   hint: {

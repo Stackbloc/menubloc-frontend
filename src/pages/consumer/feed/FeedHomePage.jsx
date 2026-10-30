@@ -13,10 +13,6 @@ import {
   markFeedFirstVisitSeen,
   shouldShowFeedEmptyFirstVisitPrompt,
 } from "../../../lib/feedEmptyFirstVisitPrompt.js";
-import {
-  FEED_HOME_X_COACH_COPY,
-  FEED_HOME_X_COACH_DURATION_MS,
-} from "../../../lib/feedHomeXCoach.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
@@ -50,7 +46,6 @@ export default function FeedHomePage() {
   const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState("");
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
-  const [showXCoach, setShowXCoach] = useState(() => !isDesktop);
   const loadingMoreRef = useRef(false);
   const itemsRef = useRef([]);
   const market = resolveMarket();
@@ -58,16 +53,6 @@ export default function FeedHomePage() {
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
-
-  useEffect(() => {
-    if (isDesktop) {
-      setShowXCoach(false);
-      return undefined;
-    }
-    setShowXCoach(true);
-    const timer = window.setTimeout(() => setShowXCoach(false), FEED_HOME_X_COACH_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [isDesktop]);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,17 +147,9 @@ export default function FeedHomePage() {
     setItems((prev) => (prev || []).filter((row) => String(row?.id) !== id));
   }
 
-  const xCoachBanner =
-    showXCoach ? (
-      <p style={styles.xCoach} data-testid="feed-home-x-coach" role="status">
-        {FEED_HOME_X_COACH_COPY}
-      </p>
-    ) : null;
-
   if (loading && items.length === 0) {
     return (
       <div style={styles.loading} data-testid="feed-home-loading">
-        {xCoachBanner}
         <p style={styles.loadingText}>Loading Feed…</p>
       </div>
     );
@@ -181,7 +158,6 @@ export default function FeedHomePage() {
   if (error && items.length === 0) {
     return (
       <div style={styles.loading} data-testid="feed-home-error">
-        {xCoachBanner}
         <p style={styles.loadingText}>{error}</p>
       </div>
     );
@@ -189,7 +165,6 @@ export default function FeedHomePage() {
 
   return (
     <div data-testid="feed-home">
-      {xCoachBanner}
       <SeeWhosEatingFullscreen
         variant="feedHome"
         items={items}
@@ -248,24 +223,5 @@ const styles = {
     textAlign: "center",
     color: "rgba(255,255,255,0.8)",
     fontWeight: 600,
-  },
-  xCoach: {
-    position: "fixed",
-    left: 16,
-    right: 16,
-    bottom: `calc(${FEED_PRIMARY_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 12px)`,
-    zIndex: 45,
-    margin: 0,
-    padding: "12px 14px",
-    borderRadius: 12,
-    background: "rgba(16, 40, 32, 0.94)",
-    border: "1px solid rgba(94, 234, 212, 0.35)",
-    color: "#e8f0ec",
-    fontSize: 14,
-    lineHeight: 1.45,
-    fontWeight: 650,
-    textAlign: "center",
-    pointerEvents: "none",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
   },
 };

@@ -5,7 +5,18 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
+import {
+  AppBasketLocationCard,
+  AppDietaryNeeds,
+  AppDiscoverabilityCard,
+  AppIdentityCard,
+  AppMyActivity,
+  AppProfileGuest,
+  AppProfileLinks,
+  AppProfileStack,
+  AppVibeCard,
+} from "./myMenuply/AppProfileCards.jsx";
+import CurrentVibeProfileSection from "./myMenuply/CurrentVibeProfileSection.jsx";
 import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -250,7 +261,7 @@ function MyMenuplyAccountSettingsLink({ style }) {
 }
 
 export default function MyMenuplyPage() {
-  const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
+  const { isAuthenticated, loading: authLoading, consumer, logout } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -322,6 +333,7 @@ export default function MyMenuplyPage() {
   const [lastPost, setLastPost] = useState(null);
   const [wantDiscovery, setWantDiscovery] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [discoverLevel, setDiscoverLevel] = useState(null);
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarTitle, setCalendarTitle] = useState("Eating");
@@ -2337,14 +2349,31 @@ export default function MyMenuplyPage() {
 
 
   if (!authLoading && !isAuthenticated) {
-    return <FeedGuestProfileLanding />;
+    return (
+      <div
+        style={{
+          ...s.page,
+          background: "#f5f7f4",
+          paddingTop: isDesktopFeed ? 16 : "max(56px, calc(env(safe-area-inset-top, 0px) + 52px))",
+          paddingBottom: "calc(var(--feed-primary-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 16px)",
+        }}
+      >
+        <AppProfileGuest />
+      </div>
+    );
   }
+
+  // The app's Profile (Andre 2026-10-29: the app wins). The older hub stays for "view as a Connect"
+  // and for links that open one of its compose sheets (?compose= / ?focus= / ?mmt=).
+  const appLayout =
+    !previewAsConnect && !["compose", "focus", "mmt"].some((key) => String(searchParams.get(key) || "").trim());
 
   return (
     <>
       <div
         style={{
           ...s.page,
+          ...(appLayout ? { background: "#f5f7f4" } : null),
           paddingTop: 12,
           paddingBottom:
             "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
@@ -2374,14 +2403,53 @@ export default function MyMenuplyPage() {
                   variant="light"
                 />
               ) : null}
-              <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
+              {appLayout ? null : <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />}
             </div>
         ) : null}
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
         {authLoading || (isAuthenticated && loading) ? <p style={s.muted}>Loading…</p> : null}
 
-        {isAuthenticated && !loading ? (
+        {isAuthenticated && !loading && appLayout ? (
+          <AppProfileStack>
+            <AppIdentityCard
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+              email={consumer?.email || profile?.email || ""}
+              locationLabel={profile?.primary_location?.public_label || null}
+              busy={identityBusy}
+              notice={identityNotice}
+              error={identityError}
+              onAvatarFile={onAvatarFile}
+              onSignOut={async () => {
+                await logout();
+                navigate("/feed");
+              }}
+            />
+            <AppDiscoverabilityCard onChange={setDiscoverLevel} />
+            {discoverLevel === "hidden" ? null : (
+              <AppVibeCard>
+                <CurrentVibeProfileSection
+                  value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
+                  values={profile?.current_vibe_meta?.current_vibes || null}
+                  expiresAt={profile?.current_vibe_meta?.expires_at || null}
+                  catalog={profile?.current_vibe_catalog || null}
+                  busy={identityBusy}
+                  onChange={onCurrentVibeChange}
+                />
+              </AppVibeCard>
+            )}
+            <ConnectsNowSection />
+            <QuickInviteCard />
+            <SocialCalendarCard />
+            <AppMyActivity />
+            <AppDietaryNeeds />
+            <AppBasketLocationCard />
+            <AppProfileLinks />
+          </AppProfileStack>
+        ) : null}
+
+        {isAuthenticated && !loading && !appLayout ? (
           <>
             {profile?.profile_completion?.needs_primary_location && !previewAsConnect ? (
               <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />

@@ -562,10 +562,10 @@ export default function BrowseMenus({
           ? {
               boxSizing: "border-box",
               paddingTop: isFeedDesktop ? 0 : FEED_MOBILE_HEADER_OFFSET,
-              // Mobile: the ordering BottomNav (Basket) replaces the Feed nav and publishes
-              // its own --bottom-nav-h. Desktop: Feed rail already has Basket, no bottom bar.
-              paddingBottom: isFeedDesktop ? 0 : "var(--bottom-nav-h, 72px)",
-              ...(isFeedDesktop ? { "--bottom-nav-h": "0px" } : null),
+              // Mobile: the Feed tab bar stays (same tabs as the app); the basket is the
+              // header cart button. Desktop: Feed rail already has Basket, no bottom bar.
+              paddingBottom: isFeedDesktop ? 0 : "calc(var(--feed-primary-nav-h, 64px) + env(safe-area-inset-bottom, 0px))",
+              "--bottom-nav-h": isFeedDesktop ? "0px" : "calc(var(--feed-primary-nav-h, 64px) + env(safe-area-inset-bottom, 0px))",
             }
           : null),
       }}
@@ -870,7 +870,7 @@ export default function BrowseMenus({
         </div>
       </div>
 
-      {!embedInFeedShell || !isFeedDesktop ? <BottomNav /> : null}
+      {!embedInFeedShell ? <BottomNav /> : null}
     </div>
   );
 }
