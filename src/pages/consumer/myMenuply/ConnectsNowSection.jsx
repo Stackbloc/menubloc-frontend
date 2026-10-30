@@ -1,7 +1,8 @@
 /**
  * My Menuply → Connects, things to do (Andre approved 2026-10-28, menuply-mobile docs/15, Phase C).
  * Same section as the app's Profile: only rows with a button; empty groups hidden.
- *   Pending connect requests — Accept / Decline right here (Andre 2026-10-30)
+ *   Pending connect requests — Accept / Decline right here; always shown, with a line when there are
+ *     none, so diners know where requests land (Andre 2026-10-30)
  *   Needs your answer — "Can I come?" on my plans → Yes / Not this time (Phase B)
  *   Right now — live Join Me → Join; live vibe → Invite (Invite to Eat)
  *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
@@ -89,35 +90,38 @@ export default function ConnectsNowSection() {
       <div style={styles.card}>
         <h2 style={styles.heading}>Connects</h2>
 
-        {connectRequests.length ? (
-          <Group title="Pending connect requests" testId="connects-pending-requests">
-            {connectRequests.map((a) => (
-              <div key={a.key} style={styles.row} data-testid={`connects-request-${a.connection_id}`}>
-                <Avatar peer={a.peer} />
-                <div style={styles.text}>
-                  <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
-                  <span style={styles.line}>Wants to connect</span>
-                </div>
-                <button
-                  type="button"
-                  style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }}
-                  onClick={() => answer(a, false)}
-                  data-testid={`connects-request-${a.connection_id}-decline`}
-                >
-                  Decline
-                </button>
-                <button
-                  type="button"
-                  style={{ ...styles.button, border: "none", cursor: "pointer" }}
-                  onClick={() => answer(a, true)}
-                  data-testid={`connects-request-${a.connection_id}-accept`}
-                >
-                  Accept
-                </button>
+        <Group title="Pending connect requests" testId="connects-pending-requests">
+          {connectRequests.length ? null : (
+            <p style={s.muted} data-testid="connects-pending-none">
+              No pending connect requests.
+            </p>
+          )}
+          {connectRequests.map((a) => (
+            <div key={a.key} style={styles.row} data-testid={`connects-request-${a.connection_id}`}>
+              <Avatar peer={a.peer} />
+              <div style={styles.text}>
+                <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
+                <span style={styles.line}>Wants to connect</span>
               </div>
-            ))}
-          </Group>
-        ) : null}
+              <button
+                type="button"
+                style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }}
+                onClick={() => answer(a, false)}
+                data-testid={`connects-request-${a.connection_id}-decline`}
+              >
+                Decline
+              </button>
+              <button
+                type="button"
+                style={{ ...styles.button, border: "none", cursor: "pointer" }}
+                onClick={() => answer(a, true)}
+                data-testid={`connects-request-${a.connection_id}-accept`}
+              >
+                Accept
+              </button>
+            </div>
+          ))}
+        </Group>
 
         {asks.length ? (
           <Group title="Needs your answer" testId="connects-needs-answer">

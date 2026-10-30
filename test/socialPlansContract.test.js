@@ -141,3 +141,15 @@ test("simpler calendar (Andre 2026-10-28): calendar first, + New plan adds to th
   const sharing = read("src/pages/consumer/myMenuply/SocialPlanSharing.jsx");
   assert.doesNotMatch(sharing, /"Ask to join"|"Invite only"|"Open"\]/);
 });
+
+test("a Connect's profile follows the app's Connect screen (Andre 2026-10-30)", () => {
+  const page = read("src/pages/consumer/ConnectProfilePage.jsx");
+  for (const label of ['"Eating lately"', '"Wish List"', '"No vibe set right now"', '"Nothing in the last few days."', '"Nothing on it yet."', "Menu ›", "End connection", "Block", "Report"]) {
+    assert.ok(page.includes(label.replace(/^"|"$/g, "")), label);
+  }
+  assert.match(page, /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
+  assert.match(page, /listConnectionsEating\(12, peerId\)/);
+  assert.match(page, /listPeerWantToEat\(peerId\)/);
+  const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
+  assert.match(section, /No pending connect requests\./);
+});

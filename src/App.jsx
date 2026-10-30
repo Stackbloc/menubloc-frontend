@@ -62,7 +62,8 @@ import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
 import FindDinersPage from "./pages/consumer/FindDinersPage.jsx";
 import DiscoverableDinerProfilePage from "./pages/consumer/DiscoverableDinerProfilePage.jsx";
 import SocialEventJoinPage from "./pages/SocialEventJoinPage.jsx";
-import ConsumerConnectionPeerPage from "./pages/consumer/ConsumerConnectionPeerPage.jsx";
+// A Connect's profile follows the app (Andre 2026-10-30); ?hub=1 keeps ConsumerConnectionPeerPage.
+import ConnectProfilePage from "./pages/consumer/ConnectProfilePage.jsx";
 import DinerQrPage from "./pages/consumer/DinerQrPage.jsx";
 import MeetMeHerePage from "./pages/consumer/MeetMeHerePage.jsx";
 import WhatWeDoingPage from "./pages/consumer/WhatWeDoingPage.jsx";
@@ -1035,7 +1036,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
         <Route path="/account/connections/:peerId/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/account/connections/:peerId/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionPeerWhatIAtePage />} />
-        <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnectionPeerPage />} />
+        <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectProfilePage />} />
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
         <Route path="/account/diners/:userId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiscoverableDinerProfilePage />} />
         <Route path="/account/find-diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FindDinersPage />} />
