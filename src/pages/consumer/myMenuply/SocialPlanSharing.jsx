@@ -201,7 +201,8 @@ export function PlanPanel({ plan, onSaved, onPickTime }) {
   );
 }
 
-export function PeerPlansSection({ peerId, name, title = null, previewPlans = null, note = null }) {
+/** `onPlans`: told what a Connect's calendar shows once it loads (the empty-profile check). */
+export function PeerPlansSection({ peerId, name, title = null, previewPlans = null, note = null, onPlans = null }) {
   const [loaded, setLoaded] = useState([]);
   const plans = previewPlans || loaded;
   const setPlans = setLoaded;
@@ -209,8 +210,16 @@ export function PeerPlansSection({ peerId, name, title = null, previewPlans = nu
   useEffect(() => {
     if (!peerId) return;
     getPeerSocialCalendar(peerId)
-      .then((r) => setPlans(r.shared ? (r.plans || []).filter((p) => p.action !== "none") : []))
-      .catch(() => setPlans([]));
+      .then((r) => {
+        const shown = r.shared ? (r.plans || []).filter((p) => p.action !== "none") : [];
+        setPlans(shown);
+        onPlans?.(shown);
+      })
+      .catch(() => {
+        setPlans([]);
+        onPlans?.([]);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onPlans is a state setter
   }, [peerId]);
 
   if (!plans.length && !note) return null;

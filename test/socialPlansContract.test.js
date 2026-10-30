@@ -147,12 +147,25 @@ test("a Connect's profile follows the app's Connect screen (Andre 2026-10-30)", 
   for (const label of ['"Wish List"', '"No vibe set right now"', 'Social Calendar']) {
     assert.ok(page.includes(label.replace(/^"|"$/g, "")), label);
   }
-  assert.match(page, /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
+  assert.match(page, /<PeerPlansSection peerId=\{peerId\} name=\{name\} onPlans=\{setPeerPlans\} \/>/);
   assert.ok(page.indexOf('data-testid="connect-profile-clips"') < page.indexOf("<PeerPlansSection peerId"), "calendar last");
   assert.match(page, /listConnectionsEating\(12, peerId\)/);
   assert.match(page, /listPeerWantToEat\(peerId\)/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
   assert.match(section, /No pending connect requests\./);
+});
+
+test("empty profile: Still in the kitchen, Set up your profile, no link to an empty month (Andre 2026-10-30)", () => {
+  const page = read("src/pages/consumer/ConnectProfilePage.jsx");
+  assert.match(page, /Still in the kitchen/);
+  assert.match(page, /\{empty \? <EmptyProfileCard name=\{name\} self=\{self\} \/> : null\}/);
+  assert.match(page, /monthReportOn && monthHas && !empty \?/);
+  assert.match(page, /data-testid="empty-profile-nudge"/);
+  const cards = read("src/pages/consumer/myMenuply/AppProfileCards.jsx");
+  assert.match(cards, /export function AppProfileStarterCard/);
+  assert.match(cards, /\{monthHas \? \(\n\s+<Link to=\{MY_MENUPLY_MONTH_IN_FOOD_PATH\}/);
+  const profile = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(profile, /<AppProfileStarterCard avatarUrl=\{avatarUrl\} \/>/);
 });
 
 test("Connect View = the app's Connect screen with your own data (Andre 2026-10-30)", () => {

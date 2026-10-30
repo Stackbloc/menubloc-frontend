@@ -11,6 +11,7 @@ import {
   AppProfileGuest,
   AppSettings,
   AppProfileStack,
+  AppProfileStarterCard,
   AppVibeCard,
 } from "./myMenuply/AppProfileCards.jsx";
 import CurrentVibeProfileSection from "./myMenuply/CurrentVibeProfileSection.jsx";
@@ -2425,6 +2426,7 @@ export default function MyMenuplyPage() {
               onAvatarFile={onAvatarFile}
               onConnectView={toggleProfileViewMode}
             />
+            <AppProfileStarterCard avatarUrl={avatarUrl} />
             <MonthReportNudge />
             {discoverLevel === "hidden" ? null : (
               <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
