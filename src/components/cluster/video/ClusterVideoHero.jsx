@@ -27,6 +27,7 @@ import { getAdvertisementByRegion } from "../../../lib/advertisementApi.js";
 import { clusterVideoDealTitle, clusterVideoDishName } from "../../../lib/clusterVideoIndex.js";
 import { clusterVideoSrc } from "../../../lib/clusterVideoMedia.js";
 import { createWatchReporter, trackClusterVideoEvent } from "../../../lib/clusterVideoAnalytics.js";
+import useMatchMedia from "../../../hooks/useMatchMedia.js";
 import { ClusterAdCreative, adEngagementAttrs } from "../ClusterAdSlot.jsx";
 import { ClusterSearchActiveContext, useClusterVideos } from "./ClusterVideoContext.jsx";
 import { PlayGlyph } from "./ClusterVideoPlayButton.jsx";
@@ -36,6 +37,8 @@ const SURFACE = "cluster_hero";
 const IDLE_AUTOPLAY_MS = 15000;
 /** Below this width the inline player stacks: frame on top, one compact info row under it. */
 const NARROW_PX = 560;
+/** Phones skip the image billboard so the cluster info, clips and food search fit the first screen. */
+const PHONE_QUERY = "(max-width: 640px)";
 
 /** Spacing around the slot: the clip hero is compact; a paid image ad keeps its old breathing room. */
 const CLIP_SPACE_STYLE = { padding: "0.75rem 0 1rem" };
@@ -90,6 +93,7 @@ export default function ClusterVideoHero({ clusterSlug }) {
   const { cluster, status: videoStatus, index } = useClusterVideos();
   const searchActive = useContext(ClusterSearchActiveContext);
   const heroAd = useHeroAd(clusterSlug);
+  const isPhone = useMatchMedia(PHONE_QUERY);
 
   if (heroAd.status === "loading" || videoStatus === "loading") return null;
 
@@ -103,8 +107,16 @@ export default function ClusterVideoHero({ clusterSlug }) {
   if (index.videos.length > 0 && !sold) {
     return <VideoHero cluster={cluster} clips={index.videos} />;
   }
-  // Paid image ad / no clips: unchanged, and out of the way while search results show.
+  // Paid image ad / no clips: out of the way while search results show, and never on phones
+  // (a sold ad's clips row still shows there).
   if (searchActive || !ad) return null;
+  if (isPhone) {
+    return sold && index.videos.length > 0 ? (
+      <div style={CLIP_SPACE_STYLE}>
+        <ClusterVideoReelRow cluster={cluster} clips={index.videos} />
+      </div>
+    ) : null;
+  }
   const adCreative = (
     <ClusterAdCreative ad={ad} inventoryType={inventoryType} delivery={delivery} pageRegion={PAGE_REGION} />
   );
