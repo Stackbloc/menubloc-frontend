@@ -1,7 +1,7 @@
 /**
  * The button on a Connect's plan (Andre approved 2026-10-28, menuply-mobile docs/15 Phase B):
- *   Join / Can I come? → asks (an open plan lets you in straight away)
- *   Asked ✓ → click again to take the ask back · Going ✓ → opens the plan
+ *   Join / Ask to Join → asks (an open plan lets you in straight away)
+ *   Requested ✓ → click again to take the ask back · Going ✓ → opens the plan
  */
 
 import { useState } from "react";
@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { askToJoinSocialPlan, cancelSocialPlanAsk } from "../../../lib/consumerApi.js";
 import * as s from "./myMenuplyStyles.js";
 
-const LABEL = { join: "Join", ask: "Can I come?", asked: "Asked ✓", going: "Going ✓" };
+const LABEL = { join: "Join", ask: "Ask to Join", asked: "Requested ✓", going: "Going ✓" };
 
 export default function SocialPlanActionButton({ plan, testId }) {
   const [action, setAction] = useState(plan.action);

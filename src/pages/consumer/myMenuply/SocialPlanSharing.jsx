@@ -232,7 +232,7 @@ export function PeerPlansSection({ peerId, name, title = null, previewPlans = nu
             </span>
           </div>
           {previewPlans ? (
-            <span style={styles.previewAction}>{p.action === "join" ? "Join" : "Can I come?"}</span>
+            <span style={styles.previewAction}>{p.action === "join" ? "Join" : "Ask to Join"}</span>
           ) : (
             <SocialPlanActionButton plan={p} testId={`peer-plan-${p.key}-action`} />
           )}

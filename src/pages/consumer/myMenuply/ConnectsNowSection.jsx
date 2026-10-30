@@ -3,10 +3,10 @@
  * Same section as the app's Profile: only rows with a button; empty groups hidden.
  *   Pending connect requests — Accept / Decline right here; always shown, with a line when there are
  *     none, so diners know where requests land (Andre 2026-10-30)
- *   Needs your answer — "Can I come?" on my plans → Yes / Not this time (Phase B)
+ *   Needs your answer — "Ask to Join" on my plans → Yes / Not this time (Phase B)
  *   Right now — live Join Me → Join; live vibe → Invite (Invite to Eat)
  *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
- *     Join · Can I come? · Asked ✓ · Going ✓ (SocialPlanActionButton)
+ *     Join · Ask to Join · Requested ✓ · Going ✓ (SocialPlanActionButton)
  * GET /api/consumer/social-plans/connects. Owner view only; quiet if it can't load.
  */
 
@@ -131,7 +131,7 @@ export default function ConnectsNowSection() {
                 <div style={styles.text}>
                   <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
                   <span style={styles.line}>
-                    {`Can I come? · ${a.plan_title}${a.message ? ` · “${a.message}”` : ""}`}
+                    {`Wants to join · ${a.plan_title}${a.message ? ` · “${a.message}”` : ""}`}
                   </span>
                 </div>
                 <button type="button" style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }} onClick={() => answer(a, false)}>

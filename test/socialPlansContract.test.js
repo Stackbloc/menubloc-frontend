@@ -68,7 +68,7 @@ test("Phase C: My Menuply Connects section — owner only, GET only, every row h
   assert.doesNotMatch(section, /button="Answer"/);
 });
 
-test("Phase B: calendar setting, plan sharing, Can I come?, answer — website calls and placement", () => {
+test("Phase B: calendar setting, plan sharing, Ask to Join, answer — website calls and placement", () => {
   const api = read("src/lib/consumerApi.js");
   for (const re of [
     /put\("\/api\/consumer\/social-plans\/settings", body\)/,
@@ -89,9 +89,9 @@ test("Phase B: calendar setting, plan sharing, Can I come?, answer — website c
   }
   assert.match(sharing, /Only your Connects, never anyone else\./);
   const button = read("src/pages/consumer/myMenuply/SocialPlanActionButton.jsx");
-  assert.match(button, /ask: "Can I come\?", asked: "Asked ✓", going: "Going ✓"/);
+  assert.match(button, /ask: "Ask to Join", asked: "Requested ✓", going: "Going ✓"/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
-  assert.match(section, /Can I come\? · \$\{a\.plan_title\}/);
+  assert.match(section, /Wants to join · \$\{a\.plan_title\}/);
   assert.match(read("src/pages/consumer/ConsumerConnectionPeerPage.jsx"), /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
 });
 
