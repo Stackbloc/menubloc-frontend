@@ -1,8 +1,8 @@
 /**
  * My Menuply → Connects, things to do (Andre approved 2026-10-28, menuply-mobile docs/15, Phase C).
  * Same section as the app's Profile: only rows with a button; empty groups hidden.
- *   Needs your answer — "Can I come?" on my plans → Yes / Not this time (Phase B);
- *     Connect requests → Answer (/account/connections)
+ *   Pending connect requests — Accept / Decline right here (Andre 2026-10-30)
+ *   Needs your answer — "Can I come?" on my plans → Yes / Not this time (Phase B)
  *   Right now — live Join Me → Join; live vibe → Invite (Invite to Eat)
  *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
  *     Join · Can I come? · Asked ✓ · Going ✓ (SocialPlanActionButton)
@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { answerSocialPlanJoinRequest, getConnectsNow } from "../../../lib/consumerApi.js";
+import { acceptConnection, answerSocialPlanJoinRequest, declineConnection, getConnectsNow } from "../../../lib/consumerApi.js";
 import SocialPlanActionButton from "./SocialPlanActionButton.jsx";
 import PlanTag from "./PlanTag.jsx";
 import * as s from "./myMenuplyStyles.js";
@@ -59,11 +59,20 @@ export default function ConnectsNowSection() {
   }, []);
 
   if (!data) return null;
-  const asks = (data.needs_answer || []).filter((a) => !answered.has(a.key));
+  const open = (data.needs_answer || []).filter((a) => !answered.has(a.key));
+  const connectRequests = open.filter((a) => a.type === "connect_request");
+  const asks = open.filter((a) => a.type === "join_request");
   const answer = async (a, approve) => {
     try {
-      await answerSocialPlanJoinRequest(a.request_id, approve);
+      if (a.type === "connect_request") {
+        await (approve ? acceptConnection : declineConnection)(a.connection_id);
+      } else {
+        await answerSocialPlanJoinRequest(a.request_id, approve);
+      }
       setAnswered((prev) => new Set(prev).add(a.key));
+      if (a.type === "connect_request" && approve) {
+        setData((d) => (d ? { ...d, connection_count: (d.connection_count || 0) + 1 } : d));
+      }
     } catch {
       /* stays in the list; they can try again */
     }
@@ -73,36 +82,62 @@ export default function ConnectsNowSection() {
     (r) => r.type !== "vibe" || !r.vibe?.expires_at || timeLeft(r.vibe.expires_at, now)
   );
   const comingUp = data.coming_up || [];
-  const nothing = !asks.length && !rightNow.length && !comingUp.length;
+  const nothing = !connectRequests.length && !asks.length && !rightNow.length && !comingUp.length;
 
   return (
     <section style={s.section} data-testid="connects-now">
       <div style={styles.card}>
         <h2 style={styles.heading}>Connects</h2>
 
+        {connectRequests.length ? (
+          <Group title="Pending connect requests" testId="connects-pending-requests">
+            {connectRequests.map((a) => (
+              <div key={a.key} style={styles.row} data-testid={`connects-request-${a.connection_id}`}>
+                <Avatar peer={a.peer} />
+                <div style={styles.text}>
+                  <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
+                  <span style={styles.line}>Wants to connect</span>
+                </div>
+                <button
+                  type="button"
+                  style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }}
+                  onClick={() => answer(a, false)}
+                  data-testid={`connects-request-${a.connection_id}-decline`}
+                >
+                  Decline
+                </button>
+                <button
+                  type="button"
+                  style={{ ...styles.button, border: "none", cursor: "pointer" }}
+                  onClick={() => answer(a, true)}
+                  data-testid={`connects-request-${a.connection_id}-accept`}
+                >
+                  Accept
+                </button>
+              </div>
+            ))}
+          </Group>
+        ) : null}
+
         {asks.length ? (
           <Group title="Needs your answer" testId="connects-needs-answer">
-            {asks.map((a) =>
-              a.type === "join_request" ? (
-                <div key={a.key} style={styles.row} data-testid={`connects-row-${a.key}`}>
-                  <Avatar peer={a.peer} />
-                  <div style={styles.text}>
-                    <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
-                    <span style={styles.line}>
-                      {`Can I come? · ${a.plan_title}${a.message ? ` · “${a.message}”` : ""}`}
-                    </span>
-                  </div>
-                  <button type="button" style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }} onClick={() => answer(a, false)}>
-                    Not this time
-                  </button>
-                  <button type="button" style={{ ...styles.button, border: "none", cursor: "pointer" }} onClick={() => answer(a, true)}>
-                    Yes
-                  </button>
+            {asks.map((a) => (
+              <div key={a.key} style={styles.row} data-testid={`connects-row-${a.key}`}>
+                <Avatar peer={a.peer} />
+                <div style={styles.text}>
+                  <strong style={styles.name}>{a.peer?.name || "A diner"}</strong>
+                  <span style={styles.line}>
+                    {`Can I come? · ${a.plan_title}${a.message ? ` · “${a.message}”` : ""}`}
+                  </span>
                 </div>
-              ) : (
-                <Row key={a.key} peer={a.peer} line="Wants to connect" to="/account/connections" button="Answer" testId={a.key} />
-              )
-            )}
+                <button type="button" style={{ ...styles.buttonQuiet, border: "none", cursor: "pointer" }} onClick={() => answer(a, false)}>
+                  Not this time
+                </button>
+                <button type="button" style={{ ...styles.button, border: "none", cursor: "pointer" }} onClick={() => answer(a, true)}>
+                  Yes
+                </button>
+              </div>
+            ))}
           </Group>
         ) : null}
 

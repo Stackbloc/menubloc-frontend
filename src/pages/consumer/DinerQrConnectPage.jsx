@@ -2,10 +2,12 @@
  * Scanner landing for Personal Diner QR (Phase 1).
  * Route: /connect/d/:token
  * Copy is for the person being invited to connect (not the QR owner).
+ * Scanning never sends a request by itself: signed-in scanners are asked first
+ * (Send request / Not now), including after signup returns them here (Andre 2026-10-30).
  * Lunch / restaurant proposals use Meet Me Here → /invite/:token (separate).
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -40,7 +42,7 @@ export default function DinerQrConnectPage() {
   const [selfScan, setSelfScan] = useState(false);
   const [busy, setBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
-  const autoConnectAttempted = useRef(false);
+  const [notNow, setNotNow] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -99,7 +101,7 @@ export default function DinerQrConnectPage() {
       await connectViaDinerQr(token);
       setRequestSent(true);
       setNotice(
-        `Connection request sent to ${inviteName}. They can accept it in Connections — then you can invite each other to eat.`
+        `Connect request sent to ${inviteName}. They'll see it on their Profile under Pending connect requests.`
       );
     } catch (err) {
       if (err?.payload?.code === "self_scan") {
@@ -117,7 +119,6 @@ export default function DinerQrConnectPage() {
           err?.payload?.code === "auth_required" ||
           String(err?.message || "").toLowerCase().includes("authentication required");
         if (authFailure) {
-          autoConnectAttempted.current = false;
           try {
             await refreshSession();
           } catch {
@@ -139,33 +140,6 @@ export default function DinerQrConnectPage() {
     await sendConnectionRequest();
   }
 
-  useEffect(() => {
-    if (
-      autoConnectAttempted.current ||
-      !isAuthenticated ||
-      authLoading ||
-      loading ||
-      selfScan ||
-      requestSent ||
-      busy ||
-      !projection ||
-      !token
-    ) {
-      return;
-    }
-    autoConnectAttempted.current = true;
-    sendConnectionRequest();
-  }, [
-    isAuthenticated,
-    authLoading,
-    loading,
-    selfScan,
-    requestSent,
-    busy,
-    projection,
-    token,
-    sendConnectionRequest,
-  ]);
 
   return (
     <>
@@ -211,13 +185,13 @@ export default function DinerQrConnectPage() {
                   <ol style={styles.steps}>
                     <li>
                       {isAuthenticated
-                        ? `We are linking you with ${inviteName} now.`
+                        ? `Tap Send request and ${inviteName} gets your connect request.`
                         : "Create a free diner account (takes about a minute)."}
                     </li>
                     <li>
                       {isAuthenticated
-                        ? `${inviteName} confirms the connection in Connections.`
-                        : `After signup, you return here and we link you with ${inviteName}.`}
+                        ? `${inviteName} accepts it on their Profile.`
+                        : `After signup, you come back here and choose whether to send ${inviteName} a connect request.`}
                     </li>
                     <li>
                       After you are connected, you can invite each other to eat (Invite to Eat /
@@ -232,19 +206,27 @@ export default function DinerQrConnectPage() {
             {notice ? <p style={styles.notice}>{notice}</p> : null}
 
             {selfScan ? null : isAuthenticated ? (
-              requestSent || busy ? (
-                <Link to="/account/connections" style={styles.primaryLink}>
-                  Open Connections
-                </Link>
+              requestSent ? null : notNow ? (
+                <div style={styles.ask}>
+                  <p style={styles.askText}>No request sent.</p>
+                  <div style={styles.askButtons}>
+                    <button type="button" style={styles.pillQuiet} onClick={() => setNotNow(false)}>
+                      Changed my mind
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  disabled={busy}
-                  onClick={handleConnect}
-                >
-                  {busy ? "Linking…" : `Link with ${inviteName}`}
-                </button>
+                <div style={styles.ask} data-testid="diner-qr-ask">
+                  <p style={styles.askText}>Send {inviteName} a connect request?</p>
+                  <div style={styles.askButtons}>
+                    <button type="button" style={styles.pill} disabled={busy} onClick={handleConnect}>
+                      {busy ? "Sending…" : "Send request"}
+                    </button>
+                    <button type="button" style={styles.pillQuiet} disabled={busy} onClick={() => setNotNow(true)}>
+                      Not now
+                    </button>
+                  </div>
+                </div>
               )
             ) : (
               <div style={styles.actions}>
@@ -366,15 +348,32 @@ const styles = {
     display: "grid",
     gap: 8,
   },
-  primaryBtn: {
-    width: "100%",
+  ask: {
+    borderRadius: 16,
+    border: "1px solid #bbf7d0",
+    background: "#f0fdf4",
+    padding: 16,
+  },
+  askText: { margin: "0 0 12px", fontSize: 16, fontWeight: 800, color: "#0f172a" },
+  askButtons: { display: "flex", flexWrap: "wrap", gap: 10 },
+  pill: {
     border: "none",
-    borderRadius: 12,
-    background: "linear-gradient(90deg, #16a34a, #22c55e)",
-    color: "#052e16",
+    borderRadius: 999,
+    background: "#16a34a",
+    color: "#fff",
     fontWeight: 800,
     fontSize: 15,
-    padding: "12px 14px",
+    padding: "10px 20px",
+    cursor: "pointer",
+  },
+  pillQuiet: {
+    border: "1px solid #cbd5e1",
+    borderRadius: 999,
+    background: "#fff",
+    color: "#0f172a",
+    fontWeight: 700,
+    fontSize: 15,
+    padding: "10px 20px",
     cursor: "pointer",
   },
   actions: { display: "grid", gap: 10 },

@@ -60,9 +60,12 @@ test("Phase C: My Menuply Connects section — owner only, GET only, every row h
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /export const getConnectsNow = \(\) => get\("\/api\/consumer\/social-plans\/connects"\);/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
-  for (const label of ['"Needs your answer"', '"Right now"', '"Coming up"', 'button="Answer"', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
+  for (const label of ['"Pending connect requests"', '"Needs your answer"', '"Right now"', '"Coming up"', 'Accept', 'Decline', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
     assert.ok(section.includes(label), label);
   }
+  // Connect requests are answered on the Profile itself (Andre 2026-10-30), not by a link away.
+  assert.match(section, /\(approve \? acceptConnection : declineConnection\)\(a\.connection_id\)/);
+  assert.doesNotMatch(section, /button="Answer"/);
 });
 
 test("Phase B: calendar setting, plan sharing, Can I come?, answer — website calls and placement", () => {
