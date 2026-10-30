@@ -3,6 +3,7 @@ import { Link, useLocation, useParams, useSearchParams } from "react-router-dom"
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
+import useMatchMedia from "../hooks/useMatchMedia.js";
 import useClusterFavs from "../hooks/useClusterFavs.js";
 import FavHeartIcon from "../components/icons/FavHeartIcon.jsx";
 import { FAV_ACCENT } from "../lib/likeButtonStyles.js";
@@ -460,27 +461,11 @@ function shouldInsertClusterSearchAd(index, totalCount) {
   return (after - CLUSTER_SEARCH_AD_FIRST) % CLUSTER_SEARCH_AD_EVERY === 0;
 }
 
-/** Phone layout: food first — no hero ad, and the daily look / On campus / Events go below the food. */
-const CLUSTER_PHONE_QUERY = "(max-width: 640px)";
+/** Not boxes on the cluster page, same as the app (Andre 2026-10-26/30); their dishes still show in search. */
+const CLUSTER_HIDDEN_BOX_TYPES = new Set(["KIDS", "SIDES", "COMBOS", "SPECIALS", "BREAKFAST"]);
 
-function useMatchMedia(query) {
-  const [matches, setMatches] = useState(() => {
-    try {
-      return window.matchMedia?.(query)?.matches === true;
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    const mql = window.matchMedia?.(query);
-    if (!mql) return undefined;
-    const onChange = () => setMatches(mql.matches);
-    onChange();
-    mql.addEventListener?.("change", onChange);
-    return () => mql.removeEventListener?.("change", onChange);
-  }, [query]);
-  return matches;
-}
+/** Phones: in-result ads use the 16:9 creative; wider rows use the slim one so the artwork isn't cropped. */
+const CLUSTER_PHONE_QUERY = "(max-width: 640px)";
 
 const CLUSTER_STICKY_CHROME_STYLE = {
   position: "sticky",
@@ -766,7 +751,13 @@ function ClusterMenuExplorerTab({
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load food categories");
         const cats = Array.isArray(data.mks_categories) ? data.mks_categories : [];
-        setMksCategories(cats.filter((c) => Number(c?.item_count || 0) > 0 || c?.item_count == null));
+        setMksCategories(
+          cats.filter(
+            (c) =>
+              !CLUSTER_HIDDEN_BOX_TYPES.has(c?.code) &&
+              (Number(c?.item_count || 0) > 0 || c?.item_count == null)
+          )
+        );
         setPagination(data.pagination || null);
         setStatus("ok");
       })
@@ -1300,7 +1291,6 @@ export default function ClusterPage() {
   /** Campus live: venue filter shared by glance tiles, On campus rows and posts. */
   const [campusVenueFilter, setCampusVenueFilter] = useState(null);
   const [error, setError] = useState("");
-  const isPhone = useMatchMedia(CLUSTER_PHONE_QUERY);
 
   const viewMode = useMemo(() => {
     const raw = String(searchParams.get("view") || "").trim().toLowerCase();
@@ -1496,7 +1486,7 @@ export default function ClusterPage() {
   // Video first; falls back to the delivered hero ad (see ClusterVideoHero for slot rules).
   // display: contents so a playing clip can stick below the search bar over the food list;
   // the hero owns its own spacing.
-  const clusterFoodHero = isPhone ? null : (
+  const clusterFoodHero = (
     <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={{ display: "contents" }}>
       <ClusterVideoHero clusterSlug={cluster.slug} />
     </div>
@@ -1517,18 +1507,17 @@ export default function ClusterPage() {
     </footer>
   );
 
-  // Phones put the cluster context after the food, so the disclaimer moves below it.
   const clusterFoodTail = (
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      {isPhone ? null : clusterDisclaimer}
+      {clusterDisclaimer}
     </>
   );
 
   const clusterRestaurantsTail = (
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      {isPhone ? null : clusterDisclaimer}
+      {clusterDisclaimer}
     </>
   );
 
@@ -1679,7 +1668,7 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {isPhone ? null : clusterContext}
+      {clusterContext}
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div
@@ -1726,13 +1715,6 @@ export default function ClusterPage() {
           {clusterRestaurantsTail}
         </div>
       </div>
-
-      {isPhone ? (
-        <>
-          {clusterContext}
-          {clusterDisclaimer}
-        </>
-      ) : null}
 
       <BottomNav />
     </div>

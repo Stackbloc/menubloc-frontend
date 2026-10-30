@@ -1,5 +1,4 @@
 import React from "react";
-import { CLUSTER_DIRECTORY_GRID_STYLE } from "./ClusterDirectoryCard.jsx";
 
 export const MKS_ACCENTS = {
   BEVERAGES: { border: "#7c3aed", bg: "#f5f3ff", emoji: "🍹" },
@@ -12,8 +11,6 @@ export const MKS_ACCENTS = {
   APPETIZERS: { border: "#14b8a6", bg: "#f0fdfa", emoji: "🥟" },
 };
 
-const DEFAULT_ACCENT = { border: "#94a3b8", bg: "#f8fafc", emoji: "🍽️" };
-
 function clampLines(maxLines) {
   return {
     display: "-webkit-box",
@@ -23,70 +20,94 @@ function clampLines(maxLines) {
   };
 }
 
+/**
+ * Cluster Food boxes look like the app's (menuply-mobile foodTypeBoxes.ts; app wins, Andre
+ * 2026-10-30): small tinted tiles, three across on a phone, emoji + name + dish count.
+ */
+const BOX_LOOKS = {
+  SPECIALS: { emoji: "⭐", accent: "#ca8a04" },
+  BREAKFAST: { emoji: "🥞", accent: "#f97316" },
+  APPETIZERS: { emoji: "🥟", accent: "#14b8a6" },
+  SOUPS: { emoji: "🍲", accent: "#b45309" },
+  SALADS: { emoji: "🥗", accent: "#22c55e" },
+  BURGERS: { emoji: "🍔", accent: "#f59e0b" },
+  SANDWICHES: { emoji: "🥪", accent: "#a16207" },
+  TACOS: { emoji: "🌮", accent: "#ea580c" },
+  PIZZA: { emoji: "🍕", accent: "#ef4444" },
+  PASTA: { emoji: "🍝", accent: "#dc2626" },
+  BOWLS: { emoji: "🍚", accent: "#0d9488" },
+  CHICKEN_ENTREES: { emoji: "🍗", accent: "#d97706" },
+  BEEF_STEAK: { emoji: "🥩", accent: "#9f1239" },
+  PORK: { emoji: "🍖", accent: "#be185d" },
+  SEAFOOD: { emoji: "🦞", accent: "#0284c7" },
+  CURRIES: { emoji: "🍛", accent: "#c2410c" },
+  VEGETARIAN_ENTREES: { emoji: "🥦", accent: "#16a34a" },
+  VEGAN_ENTREES: { emoji: "🌱", accent: "#15803d" },
+  COMBOS: { emoji: "🍱", accent: "#4f46e5" },
+  SIDES: { emoji: "🍟", accent: "#eab308" },
+  KIDS: { emoji: "🧒", accent: "#0ea5e9" },
+  DESSERTS: { emoji: "🍰", accent: "#ec4899" },
+  BEVERAGES: { emoji: "🍹", accent: "#7c3aed" },
+};
+const DEFAULT_LOOK = { emoji: "🍽️", accent: "#64748b" };
+
+const BOX_GRID_STYLE = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(6.5rem, 1fr))",
+  gap: 10,
+  width: "100%",
+};
+
 export function ClusterMksCategoryBlock({ category, onSelect }) {
   if (!category) return null;
 
-  const accent = MKS_ACCENTS[category.code] || DEFAULT_ACCENT;
+  const look = BOX_LOOKS[category.code] || DEFAULT_LOOK;
   const title = category.label || category.code;
-  const subtitle = category.description || "Discover food";
+  const count = Number(category.item_count);
+  const sub = Number.isFinite(count) && category.item_count != null ? `${count} ${count === 1 ? "dish" : "dishes"}` : null;
 
   return (
     <button
       type="button"
       onClick={() => onSelect?.(category)}
+      data-testid={`cluster-type-${category.code}`}
+      aria-label={sub ? `${title}, ${sub}` : title}
       style={{
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        width: "100%",
-        maxWidth: "100%",
+        gap: 4,
         minWidth: 0,
-        minHeight: 220,
-        aspectRatio: "1 / 1",
-        padding: "1.1rem",
-        borderRadius: 6,
-        border: `2px solid ${accent.border}`,
-        background: accent.bg,
+        minHeight: 100,
+        padding: 12,
+        borderRadius: 16,
+        border: `2px solid ${look.accent}`,
+        background: `${look.accent}14`,
         boxSizing: "border-box",
-        boxShadow: "0 2px 0 rgba(15, 23, 42, 0.08)",
-        overflow: "hidden",
         color: "inherit",
         cursor: "pointer",
         textAlign: "left",
+        font: "inherit",
       }}
     >
-      <div style={{ display: "grid", gap: "0.5rem", minHeight: 0, minWidth: 0 }}>
-        <div style={{ fontSize: "1.35rem", lineHeight: 1 }} aria-hidden="true">
-          {accent.emoji}
-        </div>
-        <div
+      <span style={{ fontSize: 26, lineHeight: "32px" }} aria-hidden="true">
+        {look.emoji}
+      </span>
+      <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
+        <span
           style={{
             ...clampLines(2),
-            fontSize: "1.05rem",
+            fontSize: 14,
+            lineHeight: "18px",
             fontWeight: 700,
             color: "#111827",
-            lineHeight: 1.3,
             overflowWrap: "anywhere",
           }}
         >
           {title}
-        </div>
-        <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, ...clampLines(4) }}>
-          {subtitle}
-        </div>
-      </div>
-      <div
-        style={{
-          marginTop: "0.75rem",
-          paddingTop: "0.75rem",
-          borderTop: `1px solid ${accent.border}`,
-          fontWeight: 700,
-          color: accent.border,
-          fontSize: "0.92rem",
-        }}
-      >
-        Explore →
-      </div>
+        </span>
+        {sub ? <span style={{ fontSize: 11, lineHeight: "14px", color: "#6b7280" }}>{sub}</span> : null}
+      </span>
     </button>
   );
 }
@@ -95,7 +116,7 @@ export function ClusterMksCategoryGrid({ categories, onSelect }) {
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
-    <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
+    <div style={BOX_GRID_STYLE} data-testid="cluster-type-boxes">
       {categories.map((category) => (
         <ClusterMksCategoryBlock key={category.code} category={category} onSelect={onSelect} />
       ))}
