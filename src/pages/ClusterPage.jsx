@@ -11,7 +11,7 @@ import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
-import ClusterAdSlot from "../components/cluster/ClusterAdSlot.jsx";
+import ClusterAdSlot, { ClusterAdCreative, useClusterAd } from "../components/cluster/ClusterAdSlot.jsx";
 import {
   ClusterDishList,
   ClusterPlaceholderFoodCard,
@@ -450,10 +450,36 @@ function SpacedClusterAdSlot({ compact = false, slim = false, ...props }) {
   );
 }
 
+/** Ads sit between results: after the 4th, then every 6th, never as the last row. */
+const CLUSTER_SEARCH_AD_FIRST = 4;
+const CLUSTER_SEARCH_AD_EVERY = 6;
+
 function shouldInsertClusterSearchAd(index, totalCount) {
-  if (totalCount < 8) return false;
   const after = index + 1;
-  return after === 4 && totalCount - after >= 3;
+  if (after < CLUSTER_SEARCH_AD_FIRST || totalCount - after < 2) return false;
+  return (after - CLUSTER_SEARCH_AD_FIRST) % CLUSTER_SEARCH_AD_EVERY === 0;
+}
+
+/** Phone layout: food first — no hero ad, and the daily look / On campus / Events go below the food. */
+const CLUSTER_PHONE_QUERY = "(max-width: 640px)";
+
+function useMatchMedia(query) {
+  const [matches, setMatches] = useState(() => {
+    try {
+      return window.matchMedia?.(query)?.matches === true;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    const mql = window.matchMedia?.(query);
+    if (!mql) return undefined;
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    mql.addEventListener?.("change", onChange);
+    return () => mql.removeEventListener?.("change", onChange);
+  }, [query]);
+  return matches;
 }
 
 const CLUSTER_STICKY_CHROME_STYLE = {
@@ -571,6 +597,10 @@ function ClusterMenuExplorerTab({
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
   const { index: videoIndex } = useClusterVideos();
+  // One fetch for every ad between search results (house "Eating is Social" until one is sold).
+  // Phones get the 16:9 inline creative; wide rows get the slim one so the artwork isn't cropped.
+  const resultAdRegion = useMatchMedia(CLUSTER_PHONE_QUERY) ? "cluster_search_inline" : "cluster_search_top";
+  const searchInlineAd = useClusterAd({ clusterSlug, pageRegion: resultAdRegion });
   const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
     normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
   );
@@ -956,7 +986,13 @@ function ClusterMenuExplorerTab({
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {displaySearchItems.map((row, index) => {
               const inlineSlot = shouldInsertClusterSearchAd(index, displaySearchItems.length) ? (
-                <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
+                <div data-testid="cluster-ad-space" data-ad-result="true">
+                  <ClusterAdCreative
+                    {...searchInlineAd}
+                    pageRegion={resultAdRegion}
+                    size="result"
+                  />
+                </div>
               ) : null;
 
               if (row?.placeholder_item) {
@@ -1264,6 +1300,7 @@ export default function ClusterPage() {
   /** Campus live: venue filter shared by glance tiles, On campus rows and posts. */
   const [campusVenueFilter, setCampusVenueFilter] = useState(null);
   const [error, setError] = useState("");
+  const isPhone = useMatchMedia(CLUSTER_PHONE_QUERY);
 
   const viewMode = useMemo(() => {
     const raw = String(searchParams.get("view") || "").trim().toLowerCase();
@@ -1459,7 +1496,7 @@ export default function ClusterPage() {
   // Video first; falls back to the delivered hero ad (see ClusterVideoHero for slot rules).
   // display: contents so a playing clip can stick below the search bar over the food list;
   // the hero owns its own spacing.
-  const clusterFoodHero = (
+  const clusterFoodHero = isPhone ? null : (
     <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={{ display: "contents" }}>
       <ClusterVideoHero clusterSlug={cluster.slug} />
     </div>
@@ -1480,17 +1517,46 @@ export default function ClusterPage() {
     </footer>
   );
 
+  // Phones put the cluster context after the food, so the disclaimer moves below it.
   const clusterFoodTail = (
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      {clusterDisclaimer}
+      {isPhone ? null : clusterDisclaimer}
     </>
   );
 
   const clusterRestaurantsTail = (
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      {clusterDisclaimer}
+      {isPhone ? null : clusterDisclaimer}
+    </>
+  );
+
+  const clusterContext = (
+    <>
+      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
+      {cluster.slug ? (
+        <ClusterPublicFeed
+          cluster={cluster}
+          venueFilter={campusVenueFilter}
+          onVenueFilterChange={setCampusVenueFilter}
+        />
+      ) : null}
+
+      {/* University clusters only — hidden when no campus dining members. */}
+      <CampusDiningSection
+        cluster={cluster}
+        showGlance={false}
+        onSelectVenue={(venue) => {
+          setCampusVenueFilter(venue);
+          document.getElementById("cluster-live-posts")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+      />
+
+      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
     </>
   );
 
@@ -1613,29 +1679,7 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
-      {cluster.slug ? (
-        <ClusterPublicFeed
-          cluster={cluster}
-          venueFilter={campusVenueFilter}
-          onVenueFilterChange={setCampusVenueFilter}
-        />
-      ) : null}
-
-      {/* University clusters only — hidden when no campus dining members. */}
-      <CampusDiningSection
-        cluster={cluster}
-        showGlance={false}
-        onSelectVenue={(venue) => {
-          setCampusVenueFilter(venue);
-          document.getElementById("cluster-live-posts")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }}
-      />
-
-      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
+      {isPhone ? null : clusterContext}
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div
@@ -1682,6 +1726,13 @@ export default function ClusterPage() {
           {clusterRestaurantsTail}
         </div>
       </div>
+
+      {isPhone ? (
+        <>
+          {clusterContext}
+          {clusterDisclaimer}
+        </>
+      ) : null}
 
       <BottomNav />
     </div>
