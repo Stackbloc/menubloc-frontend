@@ -121,7 +121,15 @@ export function ConsumerProvider({ children }) {
         allergen_preferences: data?.allergen_preferences,
       });
       return data;
-    } catch {
+    } catch (err) {
+      // 401 right after a good login = the browser didn't keep the session cookie (iPhone Safari
+      // with the API on another site, 2026-10-30). Say so instead of showing an empty signed-in profile.
+      if (err?.status === 401) {
+        clearSession();
+        const notSaved = new Error("Sign in did not finish saving on this device.");
+        notSaved.code = "session_not_saved";
+        throw notSaved;
+      }
       const fallback = {
         ...payload,
         dietary_preferences: [],
@@ -132,7 +140,7 @@ export function ConsumerProvider({ children }) {
       maybeResetMenuPreferenceSession(fallback, fallback);
       return fallback;
     }
-  }, [applySession, loadMe, maybeResetMenuPreferenceSession]);
+  }, [applySession, clearSession, loadMe, maybeResetMenuPreferenceSession]);
 
   useEffect(() => {
     let cancelled = false;
