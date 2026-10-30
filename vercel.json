@@ -47,7 +47,7 @@
       "source": "/d/:token/image",
       "destination": "https://menubloc-backend-production.up.railway.app/d/:token/image"
     },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/((?!assets/).*)", "destination": "/" }
   ],
   "headers": [
     {
@@ -72,6 +72,12 @@
       "source": "/operator/service-worker.js",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/assets/:file([^/]+)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
