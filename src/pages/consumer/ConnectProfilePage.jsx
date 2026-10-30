@@ -2,7 +2,8 @@
  * A Connect's profile, the same as the app's Connect screen (menuply-mobile src/app/connects/[id].tsx;
  * the app wins, Andre 2026-10-30): who they are first (photo, tagline, vibe, about, clips, Favs,
  * Wish List, what they ate), then the Social Calendar, last on purpose: people need a reason to care
- * before they look at a calendar. Empty sections hide. End connection / Block / Report sit at the
+ * before they look at a calendar. Empty sections hide; a diner with nothing to show gets "Still in the
+ * kitchen" instead (Andre 2026-10-30). End connection / Block / Report sit at the
  * bottom, tucked away. Shown inside the Feed shell, so the header and tabs match the Profile.
  * Route: /account/connections/:peerId (?hub=1 keeps the older diner-hub page).
  * SelfConnectView is the same screen with your own data: Profile → Connect View (Andre 2026-10-30:
@@ -19,6 +20,8 @@ import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import {
   blockDiner,
   getFollowedRestaurants,
+  getMonthInFood,
+  getPeerMonthInFood,
   getSocialCalendarSettings,
   listConnections,
   listConnectionsEating,
@@ -34,6 +37,7 @@ import {
   resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { getCurrentVibeEntry } from "../../lib/currentVibeDisplay.js";
+import AppIcon from "../../components/icons/AppIcon.jsx";
 import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
 import ConsumerConnectionPeerPage from "./ConsumerConnectionPeerPage.jsx";
 
@@ -107,8 +111,8 @@ function ConnectProfile() {
   const [connection, setConnection] = useState(null);
   const [eating, setEating] = useState(null);
   const [wishes, setWishes] = useState(null);
-  const [clips, setClips] = useState([]);
-  const [favs, setFavs] = useState([]);
+  const [clips, setClips] = useState(null);
+  const [favs, setFavs] = useState(null);
   const [error, setError] = useState("");
   // Clock for the vibe's time left and "ago", read when the Connect loads (render stays pure).
   const [now, setNow] = useState(0);
@@ -141,10 +145,10 @@ function ConnectProfile() {
       .catch(() => alive && setWishes([]));
     listPeerProfileMedia(peerId)
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
-      .catch(() => undefined);
+      .catch(() => alive && setClips([]));
     listPeerFollowedRestaurants(peerId)
       .then((r) => alive && setFavs(Array.isArray(r?.restaurants) ? r.restaurants : []))
-      .catch(() => undefined);
+      .catch(() => alive && setFavs([]));
     return () => {
       alive = false;
     };
@@ -304,8 +308,11 @@ function ExpandableList({ items, size, testId, render }) {
   );
 }
 
-/** The app's Connect screen body. `self` = Connect View (your data, plans as a preview). */
-export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs = [], now, peerId = null, self = false, selfPlans = null, plansNote = null }) {
+/**
+ * The app's Connect screen body. `self` = Connect View (your data, plans as a preview). Eating, wishes,
+ * clips, favs and selfPlans are null while loading.
+ */
+export function ConnectScreenBody({ peer, name, eating, wishes, clips: clipsIn = null, favs: favsIn = null, now, peerId = null, self = false, selfPlans = null, plansNote = null }) {
   const first = name.split(" ")[0];
   const vibe = liveVibe(peer);
   const left = vibe ? timeLeft(vibe.expiresAt, now) : null;
@@ -313,6 +320,36 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
   const tagline = [peer?.diner_occupation, school].filter(Boolean).join(" · ");
   const foods = Array.isArray(peer?.favorite_foods) ? peer.favorite_foods.map((f) => f?.label).filter(Boolean) : [];
   const [allClips, setAllClips] = useState(false);
+  const [peerPlans, setPeerPlans] = useState(null);
+  const [monthHas, setMonthHas] = useState(false);
+  const clips = clipsIn || [];
+  const favs = favsIn || [];
+  const plans = self ? selfPlans : peerPlans;
+  const loaded = eating != null && wishes != null && clipsIn != null && favsIn != null && plans != null;
+  const empty =
+    loaded &&
+    !tagline &&
+    !peer.diner_about &&
+    !vibe &&
+    !foods.length &&
+    !favs.length &&
+    !clips.length &&
+    !wishes.length &&
+    !eating.length &&
+    !plans.length;
+  const monthReportOn = peer.month_report_on_profile !== false;
+
+  // The month-in-food link only when this month has something in it (Andre 2026-10-30).
+  useEffect(() => {
+    if (!monthReportOn || (!self && !peerId)) return undefined;
+    let alive = true;
+    (self ? getMonthInFood() : getPeerMonthInFood(peerId))
+      .then((r) => alive && setMonthHas(Number(r?.items_count || 0) + Number(r?.food_activity_count || 0) > 0))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [monthReportOn, self, peerId]);
   return (
     <>
       <section style={styles.head}>
@@ -323,9 +360,11 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
             {tagline}
           </p>
         ) : null}
-        <p style={styles.vibe} data-testid="connect-profile-vibe">
-          {vibe ? `${vibe.label}${left ? ` · ${left} left` : ""}` : "No vibe set right now"}
-        </p>
+        {empty ? null : (
+          <p style={styles.vibe} data-testid="connect-profile-vibe">
+            {vibe ? `${vibe.label}${left ? ` · ${left} left` : ""}` : "No vibe set right now"}
+          </p>
+        )}
         {peer.diner_about ? <p style={styles.about}>{peer.diner_about}</p> : null}
         {/* A live vibe is a reason to eat together now (Andre 2026-10-28). */}
         {vibe && left && !self ? (
@@ -334,6 +373,8 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
           </Link>
         ) : null}
       </section>
+
+      {empty ? <EmptyProfileCard name={name} self={self} /> : null}
 
       {clips.length ? (
         <section style={styles.section} data-testid="connect-profile-clips">
@@ -418,7 +459,7 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
         </section>
       ) : null}
 
-      {peer.month_report_on_profile !== false ? (
+      {monthReportOn && monthHas && !empty ? (
         <Link
           to={self ? MY_MENUPLY_MONTH_IN_FOOD_PATH : `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food`}
           style={{ ...styles.row, textDecoration: "none" }}
@@ -433,9 +474,60 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
       {self ? (
         <PeerPlansSection title="Your Social Calendar" previewPlans={selfPlans || []} note={plansNote} />
       ) : (
-        <PeerPlansSection peerId={peerId} name={name} />
+        <PeerPlansSection peerId={peerId} name={name} onPlans={setPeerPlans} />
       )}
     </>
+  );
+}
+
+/** "Still in the kitchen": a diner who hasn't set up a profile (app EmptyProfileCard). */
+function EmptyProfileCard({ name, self }) {
+  const first = name.split(" ")[0];
+  const [notice, setNotice] = useState("");
+  async function nudge() {
+    const text = `Hey ${first}, I’d love to see what you like to eat. Add a few Favs to your Menuply profile: https://menuply.com/feed/profile`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setNotice("Note copied. Paste it in a text to " + first + ".");
+    } catch {
+      // Share sheet closed.
+    }
+  }
+  return (
+    <section style={styles.empty} data-testid="empty-profile">
+      <div style={styles.emptyIcons}>
+        <AppIcon name="bowl" size={26} color={C.accent} />
+        <AppIcon name="fork" size={26} color={C.accent} />
+        <AppIcon name="salad" size={26} color={C.accent} />
+      </div>
+      <h2 style={{ ...styles.heading, color: C.accent }}>Still in the kitchen</h2>
+      <p style={styles.about}>
+        {self
+          ? "Your Connects see this until you add a Fav, a clip or a few words about you."
+          : `${first} hasn’t plated a profile yet. Clips, Favs and plans will show up here.`}
+      </p>
+      <div style={styles.emptyPills}>
+        {self ? (
+          <Link to="/account" style={{ ...styles.pill, marginTop: 0 }} data-testid="empty-profile-edit">
+            Edit profile
+          </Link>
+        ) : (
+          <>
+            <Link to="/account/invite-to-eat" style={{ ...styles.pill, marginTop: 0 }} data-testid="empty-profile-invite">
+              Invite to eat
+            </Link>
+            <button type="button" style={styles.pillQuiet} onClick={() => void nudge()} data-testid="empty-profile-nudge">
+              {`Nudge ${first}`}
+            </button>
+          </>
+        )}
+      </div>
+      {notice ? <p style={styles.notice}>{notice}</p> : null}
+    </section>
   );
 }
 
@@ -469,9 +561,9 @@ function connectViewNote(visibility, hidden) {
 export function SelfConnectView({ profile, displayName, avatarUrl }) {
   const [eating, setEating] = useState(null);
   const [wishes, setWishes] = useState(null);
-  const [clips, setClips] = useState([]);
-  const [favs, setFavs] = useState([]);
-  const [plans, setPlans] = useState([]);
+  const [clips, setClips] = useState(null);
+  const [favs, setFavs] = useState(null);
+  const [plans, setPlans] = useState(null);
   const [plansNote, setPlansNote] = useState(null);
   const [now, setNow] = useState(0);
 
@@ -498,10 +590,10 @@ export function SelfConnectView({ profile, displayName, avatarUrl }) {
       .catch(() => alive && setWishes([]));
     listConsumerProfileMedia()
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
-      .catch(() => undefined);
+      .catch(() => alive && setClips([]));
     getFollowedRestaurants()
       .then((r) => alive && setFavs(Array.isArray(r?.restaurants) ? r.restaurants : []))
-      .catch(() => undefined);
+      .catch(() => alive && setFavs([]));
     Promise.all([listMySocialPlans("upcoming"), getSocialCalendarSettings().catch(() => null)])
       .then(([cal, settings]) => {
         if (!alive) return;
@@ -510,7 +602,7 @@ export function SelfConnectView({ profile, displayName, avatarUrl }) {
         setPlans(shown.plans);
         setPlansNote(connectViewNote(visibility, shown.hidden));
       })
-      .catch(() => undefined);
+      .catch(() => alive && setPlans([]));
     return () => {
       alive = false;
     };
@@ -639,6 +731,31 @@ const styles = {
     fontSize: 14,
     fontWeight: 700,
     textDecoration: "none",
+  },
+  empty: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    background: C.accentSoft,
+    border: `1px dashed ${C.accent}`,
+    borderRadius: 16,
+    padding: 24,
+    textAlign: "center",
+  },
+  emptyIcons: { display: "flex", gap: 12 },
+  emptyPills: { display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 4 },
+  pillQuiet: {
+    display: "inline-block",
+    background: C.background,
+    color: C.text,
+    border: `1px solid ${C.border}`,
+    borderRadius: 999,
+    padding: "8px 16px",
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
   safety: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" },
   quiet: {

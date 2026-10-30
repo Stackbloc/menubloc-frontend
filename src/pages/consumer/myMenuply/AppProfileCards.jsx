@@ -12,6 +12,7 @@ import {
   getConsumerProfile,
   getFollowedRestaurants,
   getLikedMenuItems,
+  getMonthInFood,
   getPreferences,
   listConsumerProfileMedia,
   listWantToEat,
@@ -435,10 +436,15 @@ export function AppMyActivity() {
   const [wishList, setWishList] = useState([]);
   const [clips, setClips] = useState(null);
   const [mealLogging, setMealLogging] = useState(false);
+  const [monthHas, setMonthHas] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let alive = true;
+    // No link to an empty month (Andre 2026-10-30).
+    getMonthInFood()
+      .then((r) => alive && setMonthHas(Number(r?.items_count || 0) + Number(r?.food_activity_count || 0) > 0))
+      .catch(() => undefined);
     listConsumerProfileMedia()
       .then((m) => alive && setClips(listOf(m, "items").length))
       .catch(() => undefined);
@@ -567,10 +573,103 @@ export function AppMyActivity() {
           <p style={st.muted}>Tap +Wish List on dishes you want to try.</p>
         )}
       </Box>
-      <Link to={MY_MENUPLY_MONTH_IN_FOOD_PATH} style={styles.linkRow} data-testid="my-month-in-food">
-        <span>My month in food</span>
-        <span style={{ color: C.muted }}>›</span>
-      </Link>
+      {monthHas ? (
+        <Link to={MY_MENUPLY_MONTH_IN_FOOD_PATH} style={styles.linkRow} data-testid="my-month-in-food">
+          <span>My month in food</span>
+          <span style={{ color: C.muted }}>›</span>
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+const STARTER_CLOSED_KEY = "menuply:profile-starter-closed";
+const FAVS_GOAL = 3;
+
+/**
+ * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): a photo, 3 Fav dishes, a first clip.
+ * Until one is done, Connects see "Still in the kitchen". Goes away when all three are done, or closed.
+ */
+export function AppProfileStarterCard({ avatarUrl }) {
+  const [closed, setClosed] = useState(() => {
+    try {
+      return window.localStorage.getItem(STARTER_CLOSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [favs, setFavs] = useState(null);
+  const [clips, setClips] = useState(null);
+
+  useEffect(() => {
+    if (closed) return undefined;
+    let alive = true;
+    getLikedMenuItems()
+      .then((d) => alive && setFavs(listOf(d, "likes").length))
+      .catch(() => alive && setFavs(0));
+    listConsumerProfileMedia()
+      .then((m) => alive && setClips(listOf(m, "items").length))
+      .catch(() => alive && setClips(0));
+    return () => {
+      alive = false;
+    };
+  }, [closed]);
+
+  if (closed || favs == null || clips == null) return null;
+  const steps = [
+    { key: "photo", icon: "camera", label: "Add a photo", done: Boolean(avatarUrl), hint: "Tap the circle above" },
+    { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: favs >= FAVS_GOAL, hint: favs ? `${favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
+    { key: "clip", icon: "camera", label: "Post your first clip", done: clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
+  ];
+  const done = steps.filter((x) => x.done).length;
+  if (done === steps.length) return null;
+  const close = () => {
+    setClosed(true);
+    try {
+      window.localStorage.setItem(STARTER_CLOSED_KEY, "1");
+    } catch {
+      // Private mode: closed for this visit only.
+    }
+  };
+
+  return (
+    <div style={{ ...st.card, borderColor: C.accent }} data-testid="profile-starter">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ flex: 1, display: "grid", gap: 2 }}>
+          <h2 style={st.heading}>Set up your profile</h2>
+          <p style={{ ...st.muted, fontSize: 13 }}>{`${done} of ${steps.length} done`}</p>
+        </div>
+        <button type="button" aria-label="Close" onClick={close} style={styles.starterClose} data-testid="profile-starter-close">
+          ✕
+        </button>
+      </div>
+      <div style={styles.starterTrack}>
+        <div style={{ ...styles.starterFill, width: `${Math.max(6, Math.round((done / steps.length) * 100))}%` }} />
+      </div>
+      {steps.map((x) => {
+        const body = (
+          <>
+            <span style={{ ...styles.starterDot, ...(x.done ? styles.starterDotDone : null) }}>
+              <AppIcon name={x.done ? "check" : x.icon} size={14} color={x.done ? C.onAccent : C.accent} />
+            </span>
+            <span style={{ flex: 1, display: "grid", gap: 2 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: x.done ? C.muted : C.text, textDecoration: x.done ? "line-through" : "none" }}>{x.label}</span>
+              {!x.done && x.hint ? <span style={{ fontSize: 13, color: C.muted }}>{x.hint}</span> : null}
+            </span>
+            {!x.done && x.to ? <span style={{ fontWeight: 700, color: C.accent }}>›</span> : null}
+          </>
+        );
+        return !x.done && x.to ? (
+          <Link key={x.key} to={x.to} style={styles.starterRow} data-testid={`profile-starter-${x.key}`}>
+            {body}
+          </Link>
+        ) : (
+          <div key={x.key} style={styles.starterRow} data-testid={`profile-starter-${x.key}`}>
+            {body}
+          </div>
+        );
+      })}
+      <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p>
     </div>
   );
 }
@@ -805,6 +904,12 @@ export function AppProfileGuest() {
 }
 
 const styles = {
+  starterClose: { border: "none", background: "transparent", padding: 4, fontSize: 16, color: C.muted, cursor: "pointer", fontFamily: "inherit" },
+  starterTrack: { height: 6, borderRadius: 3, background: C.accentSoft, overflow: "hidden" },
+  starterFill: { height: 6, borderRadius: 3, background: C.accent },
+  starterRow: { display: "flex", alignItems: "center", gap: 12, padding: "4px 0", textDecoration: "none", color: C.text },
+  starterDot: { width: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", background: C.accentSoft, flexShrink: 0 },
+  starterDotDone: { background: C.accent },
   check: { display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 15, color: C.text, cursor: "pointer" },
   gear: { position: "absolute", top: 8, right: 8, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: C.text },
   pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
