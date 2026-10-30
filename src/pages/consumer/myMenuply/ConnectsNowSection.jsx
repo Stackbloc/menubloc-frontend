@@ -8,6 +8,8 @@
  *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
  *     Join · Ask to Join · Requested ✓ · Going ✓ (SocialPlanActionButton)
  * GET /api/consumer/social-plans/connects. Owner view only; quiet if it can't load.
+ * Andre 2026-10-30: lives at the top of the Connects page (`onPage`: no heading or All Connects link,
+ * the list is right below), reached from the Connects pill on Profile.
  */
 
 import { useEffect, useState } from "react";
@@ -40,7 +42,7 @@ function planWhen(p) {
   return `${day} · ${new Date(2000, 0, 1, h, m).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
 
-export default function ConnectsNowSection() {
+export default function ConnectsNowSection({ onPage = false }) {
   const [data, setData] = useState(null);
   const [now, setNow] = useState(0);
   const [answered, setAnswered] = useState(() => new Set());
@@ -88,7 +90,7 @@ export default function ConnectsNowSection() {
   return (
     <section style={s.section} data-testid="connects-now">
       <div style={styles.card}>
-        <h2 style={styles.heading}>Connects</h2>
+        {onPage ? null : <h2 style={styles.heading}>Connects</h2>}
 
         <Group title="Pending connect requests" testId="connects-pending-requests">
           {connectRequests.length ? null : (
@@ -209,9 +211,11 @@ export default function ConnectsNowSection() {
         ) : null}
 
         <div style={styles.footer}>
-          <Link to="/account/connections" style={styles.all}>
-            All Connects{data.connection_count ? ` · ${data.connection_count}` : ""} ›
-          </Link>
+          {onPage ? null : (
+            <Link to="/feed/connects" style={styles.all}>
+              All Connects{data.connection_count ? ` · ${data.connection_count}` : ""} ›
+            </Link>
+          )}
           {/* Where diners meet new people (Andre 2026-10-30): visible, not behind All Connects. */}
           <Link to="/account/find-diners" style={styles.find} data-testid="profile-find-diners">
             Find Connects

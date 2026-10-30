@@ -557,8 +557,8 @@ function connectViewNote(visibility, hidden) {
   return note;
 }
 
-/** Your own profile as your Connects see it (Profile → Connect View). Signed-in only. */
-export function SelfConnectView({ profile, displayName, avatarUrl }) {
+/** Your own profile as your Connects see it (Profile → View profile; `header` = that switch). Signed-in only. */
+export function SelfConnectView({ profile, displayName, avatarUrl, header = null }) {
   const [eating, setEating] = useState(null);
   const [wishes, setWishes] = useState(null);
   const [clips, setClips] = useState(null);
@@ -611,6 +611,7 @@ export function SelfConnectView({ profile, displayName, avatarUrl }) {
   const peer = { ...(profile || {}), display_name: displayName, avatar_url: avatarUrl || profile?.avatar_url || null };
   return (
     <div style={{ ...styles.page, minHeight: 0, padding: 0 }} data-testid="self-connect-view">
+      {header ? <div style={{ ...styles.head, padding: 16 }}>{header}</div> : null}
       <p style={{ ...styles.muted, textAlign: "center" }}>This is how your Connects see you.</p>
       <ConnectScreenBody peer={peer} name={displayName || "You"} eating={eating} wishes={wishes} clips={clips} favs={favs} now={now} self selfPlans={plans} plansNote={plansNote} />
     </div>

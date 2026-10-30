@@ -10,6 +10,7 @@ import {
   AppMyActivity,
   AppProfileGuest,
   AppSettings,
+  AppProfileControls,
   AppProfileStack,
   AppProfileStarterCard,
   AppVibeCard,
@@ -2424,9 +2425,9 @@ export default function MyMenuplyPage() {
               notice={identityNotice}
               error={identityError}
               onAvatarFile={onAvatarFile}
-              onConnectView={toggleProfileViewMode}
+              onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()}
             />
-            <AppProfileStarterCard avatarUrl={avatarUrl} />
+            <AppProfileStarterCard avatarUrl={avatarUrl} occupation={profile?.diner_occupation || null} about={profile?.diner_about || null} />
             <MonthReportNudge />
             {discoverLevel === "hidden" ? null : (
               <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
@@ -2441,7 +2442,6 @@ export default function MyMenuplyPage() {
               </AppVibeCard>
             )}
             <SocialCalendarCard />
-            <ConnectsNowSection />
             <QuickInviteCard />
             <AppMyActivity />
           </AppProfileStack>
@@ -2459,7 +2459,12 @@ export default function MyMenuplyPage() {
         {isAuthenticated && !loading && subView === "clips" ? <MyClipsView /> : null}
 
         {isAuthenticated && !loading && previewAsConnect ? (
-          <SelfConnectView profile={profile} displayName={displayName} avatarUrl={avatarUrl} />
+          <SelfConnectView
+            profile={profile}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            header={<AppProfileControls viewing onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()} />}
+          />
         ) : null}
 
         {isAuthenticated && !loading && !appLayout && !previewAsConnect && !subView ? (
