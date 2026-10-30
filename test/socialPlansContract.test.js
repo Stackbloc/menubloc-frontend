@@ -153,3 +153,13 @@ test("a Connect's profile follows the app's Connect screen (Andre 2026-10-30)", 
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
   assert.match(section, /No pending connect requests\./);
 });
+
+test("Connect View = the app's Connect screen with your own data (Andre 2026-10-30)", () => {
+  const page = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.match(page, /previewAsConnect \? \(\n\s+<SelfConnectView /);
+  assert.match(page, /!appLayout && !previewAsConnect \?/);
+  const screen = read("src/pages/consumer/ConnectProfilePage.jsx");
+  assert.match(screen, /export function SelfConnectView/);
+  assert.match(screen, /This is how your Connects see you\./);
+  assert.match(screen, /<ConnectScreenBody peer=\{peer\} name=\{displayName \|\| "You"\}/);
+});

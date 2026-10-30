@@ -96,6 +96,7 @@ import DinerSocialPresetsPanel, {
 } from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import ConnectsNowSection from "./myMenuply/ConnectsNowSection.jsx";
+import { SelfConnectView } from "./ConnectProfilePage.jsx";
 import SocialCalendarCard from "./myMenuply/SocialCalendarCard.jsx";
 import QuickInviteCard from "./myMenuply/QuickInviteCard.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
@@ -2363,8 +2364,9 @@ export default function MyMenuplyPage() {
     );
   }
 
-  // The app's Profile (Andre 2026-10-29: the app wins). The older hub stays for "view as a Connect"
-  // and for links that open one of its compose sheets (?compose= / ?focus= / ?mmt=).
+  // The app's Profile (Andre 2026-10-29: the app wins). "View as a Connect" is the app's Connect
+  // screen with your data (SelfConnectView, Andre 2026-10-30). The older hub stays only for links
+  // that open one of its compose sheets (?compose= / ?focus= / ?mmt=).
   const appLayout =
     !previewAsConnect && !["compose", "focus", "mmt"].some((key) => String(searchParams.get(key) || "").trim());
 
@@ -2449,7 +2451,11 @@ export default function MyMenuplyPage() {
           </AppProfileStack>
         ) : null}
 
-        {isAuthenticated && !loading && !appLayout ? (
+        {isAuthenticated && !loading && previewAsConnect ? (
+          <SelfConnectView profile={profile} displayName={displayName} avatarUrl={avatarUrl} />
+        ) : null}
+
+        {isAuthenticated && !loading && !appLayout && !previewAsConnect ? (
           <>
             {profile?.profile_completion?.needs_primary_location && !previewAsConnect ? (
               <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />

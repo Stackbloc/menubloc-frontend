@@ -4,6 +4,8 @@
  * and their Wish List. A dish opens its restaurant's menu. End connection / Block / Report sit at the
  * bottom, tucked away. Shown inside the Feed shell, so the header and tabs match the Profile.
  * Route: /account/connections/:peerId (?hub=1 keeps the older diner-hub page).
+ * SelfConnectView is the same screen with your own data: Profile → Connect View (Andre 2026-10-30:
+ * "use the app's profile screen only … simplicity rules").
  */
 
 import { useEffect, useState } from "react";
@@ -17,10 +19,13 @@ import {
   blockDiner,
   listConnections,
   listConnectionsEating,
+  listMyFoodActivity,
   listPeerWantToEat,
+  listWantToEat,
   removeConnection,
   reportDinerAbuse,
 } from "../../lib/consumerApi.js";
+import { getCurrentVibeEntry } from "../../lib/currentVibeDisplay.js";
 import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
 import ConsumerConnectionPeerPage from "./ConsumerConnectionPeerPage.jsx";
 
@@ -54,7 +59,7 @@ function peerName(p) {
 
 function liveVibe(p) {
   const value = String(p?.current_vibe || "").trim();
-  const label = String(p?.current_vibe_meta?.label || "").trim();
+  const label = String(p?.current_vibe_meta?.label || getCurrentVibeEntry(value)?.label || "").trim();
   if (!value || !label || QUIET_VIBES.has(value)) return null;
   return { label, expiresAt: p?.current_vibe_meta?.expires_at || null };
 }
@@ -131,10 +136,6 @@ function ConnectProfile() {
 
   const peer = connection?.peer || null;
   const name = peer ? peerName(peer) : "Connect";
-  const first = name.split(" ")[0];
-  const vibe = peer ? liveVibe(peer) : null;
-  const left = vibe ? timeLeft(vibe.expiresAt, now) : null;
-  const school = peer?.edu_verified === true ? peer.edu_verification_badge || null : null;
 
   async function endConnection() {
     if (!connection?.id || !window.confirm(`End your connection with ${name}?`)) return;
@@ -196,54 +197,7 @@ function ConnectProfile() {
           <p style={styles.muted}>Loading…</p>
         ) : (
           <>
-            <section style={styles.head}>
-              <DinerAvatar avatarUrl={peer.avatar_url} avatarMotionUrl={peer.avatar_motion_url} displayName={name} size={88} />
-              <h1 style={styles.title}>{name}</h1>
-              {school ? <p style={styles.muted}>{school}</p> : null}
-              <p style={styles.vibe} data-testid="connect-profile-vibe">
-                {vibe ? `${vibe.label}${left ? ` · ${left} left` : ""}` : "No vibe set right now"}
-              </p>
-              {peer.diner_about ? <p style={styles.about}>{peer.diner_about}</p> : null}
-              {/* A live vibe is a reason to eat together now (Andre 2026-10-28). */}
-              {vibe && left ? (
-                <Link to="/account/invite-to-eat" style={styles.pill} data-testid="connect-profile-invite">
-                  {`Invite ${first} to eat`}
-                </Link>
-              ) : null}
-            </section>
-
-            <PeerPlansSection peerId={peerId} name={name} />
-
-            <section style={styles.section} data-testid="connect-profile-eating">
-              <h2 style={styles.heading}>Eating lately</h2>
-              {eating == null ? <p style={styles.muted}>Loading…</p> : null}
-              {eating?.length === 0 ? <p style={styles.muted}>Nothing in the last few days.</p> : null}
-              {(eating || []).map((e) => (
-                <DishRow
-                  key={e.id}
-                  food={e.food_name || "Food"}
-                  line={[e.restaurant_name, ago(e.created_at, now)].filter(Boolean).join(" · ")}
-                  comment={e.comment && e.comment !== e.food_name ? e.comment : null}
-                  to={e.restaurant_id ? restaurantMenuPathFromRow(e) : null}
-                  testId={`connect-eating-${e.id}`}
-                />
-              ))}
-            </section>
-
-            <section style={styles.section} data-testid="connect-profile-wishlist">
-              <h2 style={styles.heading}>Wish List</h2>
-              {wishes == null ? <p style={styles.muted}>Loading…</p> : null}
-              {wishes?.length === 0 ? <p style={styles.muted}>Nothing on it yet.</p> : null}
-              {(wishes || []).map((w) => (
-                <DishRow
-                  key={w.id}
-                  food={w.item_name || w.food_name || "Food"}
-                  line={w.restaurant_name || ""}
-                  to={w.restaurant_id ? restaurantMenuPathFromRow(w) : null}
-                  testId={`connect-wish-${w.id}`}
-                />
-              ))}
-            </section>
+            <ConnectScreenBody peer={peer} name={name} eating={eating} wishes={wishes} now={now} peerId={peerId} />
 
             {notice ? <p style={styles.notice}>{notice}</p> : null}
             <div style={styles.safety} data-testid="connect-profile-safety">
@@ -284,6 +238,107 @@ function ConnectProfile() {
         )}
       </div>
     </FeedShellPage>
+  );
+}
+
+/** The app's Connect screen body: header, plans, Eating lately, Wish List. `self` = Connect View. */
+export function ConnectScreenBody({ peer, name, eating, wishes, now, peerId = null, self = false }) {
+  const first = name.split(" ")[0];
+  const vibe = liveVibe(peer);
+  const left = vibe ? timeLeft(vibe.expiresAt, now) : null;
+  const school = peer?.edu_verified === true ? peer.edu_verification_badge || null : null;
+  return (
+    <>
+      <section style={styles.head}>
+        <DinerAvatar avatarUrl={peer.avatar_url} avatarMotionUrl={peer.avatar_motion_url} displayName={name} size={88} />
+        <h1 style={styles.title}>{name}</h1>
+        {school ? <p style={styles.muted}>{school}</p> : null}
+        <p style={styles.vibe} data-testid="connect-profile-vibe">
+          {vibe ? `${vibe.label}${left ? ` · ${left} left` : ""}` : "No vibe set right now"}
+        </p>
+        {peer.diner_about ? <p style={styles.about}>{peer.diner_about}</p> : null}
+        {/* A live vibe is a reason to eat together now (Andre 2026-10-28). */}
+        {vibe && left && !self ? (
+          <Link to="/account/invite-to-eat" style={styles.pill} data-testid="connect-profile-invite">
+            {`Invite ${first} to eat`}
+          </Link>
+        ) : null}
+      </section>
+
+      {self ? null : <PeerPlansSection peerId={peerId} name={name} />}
+
+      <section style={styles.section} data-testid="connect-profile-eating">
+        <h2 style={styles.heading}>Eating lately</h2>
+        {eating == null ? <p style={styles.muted}>Loading…</p> : null}
+        {eating?.length === 0 ? <p style={styles.muted}>Nothing in the last few days.</p> : null}
+        {(eating || []).map((e) => (
+          <DishRow
+            key={e.id}
+            food={e.food_name || "Food"}
+            line={[e.restaurant_name, ago(e.created_at, now)].filter(Boolean).join(" · ")}
+            comment={e.comment && e.comment !== e.food_name ? e.comment : null}
+            to={e.restaurant_id ? restaurantMenuPathFromRow(e) : null}
+            testId={`connect-eating-${e.id}`}
+          />
+        ))}
+      </section>
+
+      <section style={styles.section} data-testid="connect-profile-wishlist">
+        <h2 style={styles.heading}>Wish List</h2>
+        {wishes == null ? <p style={styles.muted}>Loading…</p> : null}
+        {wishes?.length === 0 ? <p style={styles.muted}>Nothing on it yet.</p> : null}
+        {(wishes || []).map((w) => (
+          <DishRow
+            key={w.id}
+            food={w.item_name || w.food_name || "Food"}
+            line={w.restaurant_name || ""}
+            to={w.restaurant_id ? restaurantMenuPathFromRow(w) : null}
+            testId={`connect-wish-${w.id}`}
+          />
+        ))}
+      </section>
+    </>
+  );
+}
+
+/** Your own profile as your Connects see it (Profile → Connect View). Signed-in only. */
+export function SelfConnectView({ profile, displayName, avatarUrl }) {
+  const [eating, setEating] = useState(null);
+  const [wishes, setWishes] = useState(null);
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    // What Connects see: posts shared with Connects or everyone from the last 14 days
+    // (backend connectionsFoodLifeService LOOKBACK_DAYS).
+    listMyFoodActivity(30)
+      .then((r) => {
+        if (!alive) return;
+        const t = Date.now();
+        setNow(t);
+        const recent = (r?.activities || []).filter(
+          (a) =>
+            a.status !== "removed" &&
+            a.visibility !== "private" &&
+            t - new Date(a.created_at).getTime() <= 14 * 24 * 3600 * 1000
+        );
+        setEating(recent.slice(0, 12).map((a) => ({ ...a, food_name: a.item_name || a.comment || "Food" })));
+      })
+      .catch(() => alive && setEating([]));
+    listWantToEat()
+      .then((r) => alive && setWishes(Array.isArray(r?.items) ? r.items : []))
+      .catch(() => alive && setWishes([]));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const peer = { ...(profile || {}), display_name: displayName, avatar_url: avatarUrl || profile?.avatar_url || null };
+  return (
+    <div style={{ ...styles.page, minHeight: 0, padding: 0 }} data-testid="self-connect-view">
+      <p style={{ ...styles.muted, textAlign: "center" }}>This is how your Connects see you.</p>
+      <ConnectScreenBody peer={peer} name={displayName || "You"} eating={eating} wishes={wishes} now={now} self />
+    </div>
   );
 }
 
