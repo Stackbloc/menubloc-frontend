@@ -299,10 +299,9 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
   const ctaHref = sponsoredAd?.destination_url || null;
   const ctaLabel = sponsoredAd ? sponsoredAd.cta_text || sponsoredAd.headline || "Learn more" : null;
   const ctaAttrs = sponsoredAd ? adEngagementAttrs(sponsoredAd, delivery) : {};
-  const clusterLabel = cluster?.name || "this area";
   const eyebrow = sponsoredAd
     ? sponsoredAd.advertiser_name || queue[0]?.restaurant_name || "Sponsored"
-    : `Clips in ${clusterLabel}`;
+    : "Sponsored Clips";
 
   const cta = ctaHref ? (
     ctaHref.startsWith("/") && !ctaHref.startsWith("//") ? (
@@ -366,7 +365,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
         data-testid="cluster-video-hero"
         data-mode={sponsoredAd ? "sponsored" : "featured"}
         data-state={playing ? "playing" : "strip"}
-        aria-label={sponsoredAd ? "Sponsored clip" : `Clips in ${clusterLabel}`}
+        aria-label={sponsoredAd ? "Sponsored clip" : "Sponsored Clips"}
         style={styles.root}
       >
         {!playing ? (
@@ -560,12 +559,12 @@ function ReelThumb({ clip, index, active, large = false, onSelect }) {
 }
 
 /** Secondary surface under a paid image ad: thumbnails that open the floating player. */
-function ClusterVideoReelRow({ cluster, clips }) {
+function ClusterVideoReelRow({ clips }) {
   const { openVideo } = useClusterVideos();
   return (
-    <section aria-label={`Clips in ${cluster?.name || "this area"}`} data-testid="cluster-video-reel-row" style={styles.rowRoot}>
+    <section aria-label="Sponsored Clips" data-testid="cluster-video-reel-row" style={styles.rowRoot}>
       <span style={styles.rowTitle}>
-        <PlayGlyph size={10} /> Clips in {cluster?.name || "this area"}
+        <PlayGlyph size={10} /> Sponsored Clips
       </span>
       <div style={styles.reel} role="list">
         {clips.map((c, i) => (
