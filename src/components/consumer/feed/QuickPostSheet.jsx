@@ -191,11 +191,12 @@ export default function QuickPostSheet({
   const needsPlace = recommend && !place;
   const canPost = Boolean(file) && !busy && Boolean(food) && !needsPlace;
   // Say what's missing next to a greyed-out Post Clip, so diners aren't left guessing (Andre 2026-10-29).
+  // Louder than plain text: amber callout + amber ring on the clip tile (Andre 2026-10-29: "too easy to not notice").
   const missing =
     busy || needsPlace
       ? null
       : !file && (food || place || atHome)
-        ? "Tap Record or Upload media to post."
+        ? "Add a clip first: tap Record or Upload media above."
         : file && !food
           ? "Add what you're eating to post."
           : null;
@@ -255,7 +256,7 @@ export default function QuickPostSheet({
         </div>
         <div style={styles.body}>
           {/* Clip tile: Record in the middle, Upload media in the corner. */}
-          <div style={styles.tile} data-testid="quick-post-tile">
+          <div style={{ ...styles.tile, ...(missing && !file ? styles.tileNeeded : null) }} data-testid="quick-post-tile">
             {previewUrl ? (
               <video src={previewUrl} style={styles.preview} autoPlay muted loop playsInline data-testid="quick-post-preview" />
             ) : (
@@ -469,8 +470,8 @@ export default function QuickPostSheet({
           {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
           <div style={styles.postRow}>
             {missing ? (
-              <p style={{ ...styles.missing, flex: 1 }} data-testid="quick-post-missing">
-                {missing}
+              <p style={{ ...styles.missing, flex: 1 }} role="alert" data-testid="quick-post-missing">
+                ⚠️ {missing}
               </p>
             ) : (
               <p style={{ ...styles.muted, flex: 1 }}>Public post to Feed</p>
@@ -554,7 +555,8 @@ const styles = {
   chip: { alignSelf: "flex-start", appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   chipOn: { background: GREEN, borderColor: GREEN, color: "#fff" },
   muted: { margin: 0, fontSize: 12, color: "#64748b" },
-  missing: { margin: 0, fontSize: 13, fontWeight: 600, color: "#0f172a" },
+  missing: { margin: 0, padding: "8px 12px", borderRadius: 10, background: "#fef3c7", border: "1.5px solid #f59e0b", fontSize: 14, fontWeight: 700, color: "#92400e" },
+  tileNeeded: { boxShadow: "0 0 0 3px #f59e0b" },
   error: { margin: 0, fontSize: 13, color: "#b42318", fontWeight: 600 },
   postRow: { display: "flex", alignItems: "center", gap: 12 },
   postBtn: { appearance: "none", border: "none", background: GREEN, color: "#fff", borderRadius: 999, padding: "10px 20px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
