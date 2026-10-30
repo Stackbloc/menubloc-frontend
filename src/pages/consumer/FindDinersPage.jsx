@@ -1,5 +1,5 @@
 /**
- * Find Diners — food-social people search with connection actions.
+ * Find Connects — people search with connection actions, the same as the app (Andre 2026-10-30).
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -15,43 +15,7 @@ import {
   searchDiners,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
-import { buildDinerPersonalContextLines } from "../../lib/dinerPersonalContext.js";
-import {
-  formatDinerDiscoverySummary,
-  formatDinerIdentityBits,
-} from "../../lib/dinerDiscoverySummary.js";
-import { iconForFoodInterest } from "../../lib/foodInterestIcons.js";
-
-function ContextChips({ diner }) {
-  const chips = [];
-  if (diner.mutual_connection_count > 0) {
-    chips.push(`${diner.mutual_connection_count} mutual`);
-  }
-  if (diner.same_city) chips.push("Same city");
-  if (diner.same_neighborhood && diner.neighborhood) chips.push(diner.neighborhood);
-  if (diner.same_school && diner.edu_verification_badge) chips.push(diner.edu_verification_badge);
-  if (diner.shared_cluster_count > 0) chips.push(`${diner.shared_cluster_count} shared places`);
-  if (!chips.length) return null;
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-      {chips.map((chip) => (
-        <span
-          key={chip}
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#166534",
-            background: "#ecfdf5",
-            borderRadius: 999,
-            padding: "3px 8px",
-          }}
-        >
-          {chip}
-        </span>
-      ))}
-    </div>
-  );
-}
+import DinerAvatar from "../../components/social/DinerAvatar.jsx";
 
 function ConnectionAction({ diner, busy, onAction }) {
   const status = diner.connection_status;
@@ -61,7 +25,7 @@ function ConnectionAction({ diner, busy, onAction }) {
         to={`/account/connections/${encodeURIComponent(String(diner.id))}`}
         style={styles.secondaryBtn}
       >
-        View connection
+        View
       </Link>
     );
   }
@@ -160,11 +124,7 @@ export default function FindDinersPage() {
     <div style={styles.page}>
       <StickyPageHeader title="Find Connects" backTo="/feed/profile" />
       <main style={styles.main}>
-        <p style={styles.lead}>
-          Search by name, phone, email, hometown, or current city (neighborhood and school also work).
-          Every active Menuply member is discoverable to signed-in diners. Use Connect to send a connection
-          request.
-        </p>
+        <p style={styles.lead}>Search by name, email, phone, hometown or city.</p>
 
         <form
           onSubmit={(e) => {
@@ -177,7 +137,7 @@ export default function FindDinersPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, phone, email, hometown, or city"
+            placeholder="Name, email, phone or city"
             style={styles.searchInput}
             aria-label="Search diners"
           />
@@ -197,48 +157,19 @@ export default function FindDinersPage() {
 
         <ul style={styles.list}>
           {results.map((diner) => {
-            const personalContextLines = buildDinerPersonalContextLines(diner);
-            const identityBits = formatDinerIdentityBits(diner);
-            const topFav = Array.isArray(diner.favorite_foods) ? diner.favorite_foods[0] : null;
-            const wantSummary =
-              topFav &&
-              formatDinerDiscoverySummary({
-                ...diner,
-                kind: "want",
-                food_interest_key: topFav.key,
-                icon: topFav.icon || iconForFoodInterest(topFav.key),
-                food_name: topFav.label,
-              });
             const profileHref = `/account/diners/${encodeURIComponent(String(diner.id))}?from=find-diners`;
             return (
             <li key={diner.id} style={styles.card} data-testid="find-diners-result">
               <Link to={profileHref} style={styles.cardLink} data-testid="find-diners-name-link">
-                <div style={styles.cardTop}>
-                  {diner.avatar_url ? (
-                    <img src={diner.avatar_url} alt="" style={styles.avatar} />
-                  ) : (
-                    <div style={styles.avatarFallback}>
-                      {(diner.display_name || "?").slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={styles.nameLink}>
-                      {wantSummary || identityBits || formatDinerPeerLabel(diner)}
-                    </div>
-                    {personalContextLines.map((line) => (
-                      <div key={line} style={styles.personalContext}>
-                        {line}
-                      </div>
-                    ))}
-                    {diner.location_label ? (
-                      <div style={styles.location}>📍 {diner.location_label}</div>
-                    ) : null}
-                    {diner.diner_about ? (
-                      <div style={styles.about}>{diner.diner_about}</div>
-                    ) : null}
-                    <ContextChips diner={diner} />
-                  </div>
-                </div>
+                <DinerAvatar avatarUrl={diner.avatar_url} avatarMotionUrl={diner.avatar_motion_url} displayName={diner.display_name} size={44} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={styles.nameLink}>{formatDinerPeerLabel(diner)}</span>
+                  {diner.location_label || diner.mutual_connection_count > 0 ? (
+                    <span style={styles.location}>
+                      {[diner.location_label, diner.mutual_connection_count > 0 ? `${diner.mutual_connection_count} mutual` : null].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
+                </span>
               </Link>
               <ConnectionAction
                 diner={diner}
@@ -256,74 +187,18 @@ export default function FindDinersPage() {
 }
 
 const styles = {
-  page: { minHeight: "100vh", background: "#f8fafc", paddingBottom: 88 },
-  main: { maxWidth: 720, margin: "0 auto", padding: "12px 16px 24px" },
-  lead: { margin: "0 0 14px", fontSize: 14, color: "#475569", lineHeight: 1.55 },
+  page: { minHeight: "100vh", background: "#f5f7f4", paddingBottom: 88 },
+  main: { maxWidth: 560, margin: "0 auto", padding: "12px 16px 24px" },
+  lead: { margin: "0 0 12px", fontSize: 13, color: "#5c665f" },
   searchRow: { display: "flex", gap: 8, marginBottom: 16 },
-  searchInput: {
-    flex: 1,
-    padding: "11px 12px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    fontSize: 15,
-  },
-  primaryBtn: {
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: "none",
-    background: "linear-gradient(135deg, #16a34a, #15803d)",
-    color: "#fff",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  secondaryBtn: {
-    display: "inline-block",
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: "1px solid #cbd5e1",
-    background: "#fff",
-    color: "#0f172a",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-    textDecoration: "none",
-    textAlign: "center",
-  },
-  error: { color: "#b91c1c", fontSize: 14, margin: "0 0 12px" },
-  empty: { color: "#64748b", fontSize: 14 },
-  list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 12 },
-  card: {
-    background: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: 14,
-    padding: 14,
-    display: "grid",
-    gap: 12,
-  },
-  cardLink: { textDecoration: "none", color: "inherit", display: "block" },
-  cardTop: { display: "flex", gap: 12, alignItems: "flex-start" },
-  avatar: { width: 52, height: 52, borderRadius: "50%", objectFit: "cover" },
-  avatarFallback: {
-    width: 52,
-    height: 52,
-    borderRadius: "50%",
-    background: "#dcfce7",
-    color: "#166534",
-    display: "grid",
-    placeItems: "center",
-    fontWeight: 800,
-    fontSize: 20,
-  },
-  name: { fontWeight: 800, color: "#0f172a", fontSize: 16 },
-  nameLink: {
-    fontWeight: 800,
-    color: "#166534",
-    fontSize: 16,
-    textDecoration: "none",
-    display: "block",
-  },
-  location: { fontSize: 13, color: "#475569", marginTop: 2 },
-  personalContext: { fontSize: 13, color: "#475569", marginTop: 2, fontStyle: "italic" },
-  about: { fontSize: 13, color: "#64748b", marginTop: 6, lineHeight: 1.45 },
+  searchInput: { flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 10, border: "1px solid #e1e6e1", fontSize: 15 },
+  primaryBtn: { padding: "8px 16px", borderRadius: 999, border: "none", background: "#0f7a24", color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" },
+  secondaryBtn: { display: "inline-block", padding: "8px 12px", borderRadius: 999, border: "1px solid #e1e6e1", background: "#fff", color: "#111613", fontWeight: 600, cursor: "pointer", fontSize: 13, textDecoration: "none", whiteSpace: "nowrap" },
+  error: { color: "#b42318", fontSize: 14, margin: "0 0 12px" },
+  empty: { color: "#5c665f", fontSize: 14 },
+  list: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 },
+  card: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#fff", border: "1px solid #e1e6e1", borderRadius: 12, padding: 12 },
+  cardLink: { display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 180, color: "inherit", textDecoration: "none" },
+  nameLink: { display: "block", fontSize: 15, fontWeight: 600, color: "#111613" },
+  location: { display: "block", fontSize: 13, color: "#5c665f" },
 };

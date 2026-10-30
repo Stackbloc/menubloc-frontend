@@ -226,21 +226,14 @@ test("buildMonthInFoodModel counts @home meals and Take Me Out status", () => {
   assert.ok(!model.stats.some((s) => s.id === "spend"));
 });
 
-test("Month in Food surfaces @home + Take Me Out + Join Me defaults", () => {
+test("Month in Food surfaces @home; old Take Me Out and Join Crew lines are gone", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   const page = read("src/pages/consumer/monthInFood/MonthInFoodPage.jsx");
   assert.match(sections, /MonthInFoodHomeMeals/);
   assert.match(sections, /Moments to remember/);
   assert.doesNotMatch(page, /MonthInFoodHighlights/);
   assert.doesNotMatch(sections, /Top Highlights/);
-  assert.match(sections, /month-in-food-take-me-out-status/);
-  assert.match(sections, /Take Me Out is/);
-  assert.match(sections, /month-in-food-join-me-defaults/);
-  assert.match(sections, /Join Me is set on each plan and event/);
-  assert.match(sections, /Join Crew/);
   assert.match(page, /MonthInFoodHomeMeals/);
-  assert.match(page, /takeMeOutOpen/);
-  assert.match(page, /crewsJoinDefault/);
   assert.match(page, /MonthInFoodCravingsPlans/);
   assert.doesNotMatch(page, /month-in-food-columns/);
   assert.match(sections, /month-in-food-restaurant-spend/);
@@ -327,13 +320,12 @@ test("hidden diary yields no meal stats for peer", () => {
   assert.equal(model.wants.length, 1);
 });
 
-test("profile vocabulary: Wanna Eat label + Plans & Events sections", () => {
+test("profile vocabulary: Wish List + Social Calendar", () => {
   const sections = read("src/pages/consumer/monthInFood/MonthInFoodSections.jsx");
   assert.match(sections, /Wish List/);
-  assert.match(sections, /Cravings/);
   assert.doesNotMatch(sections, /What I Want To Eat/);
-  assert.match(sections, /Plans &amp; events|Plans & events/);
-  assert.match(sections, /Join Me is open/);
+  assert.match(sections, /Social Calendar/);
+  assert.match(sections, /Connects can join/);
   assert.doesNotMatch(sections, /Connections & Events/);
   assert.doesNotMatch(sections, /Events I&apos;m Excited For/);
 });

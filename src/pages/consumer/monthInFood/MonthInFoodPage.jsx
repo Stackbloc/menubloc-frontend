@@ -10,7 +10,8 @@ import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
 import { buildConsumerPathShareData } from "../../../components/share/shareUtils.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
-import { getMonthInFood, getMonthInFoodLink, getPeerMonthInFood } from "../../../lib/consumerApi.js";
+import { getMonthInFood, getMonthInFoodLink, getPeerMonthInFood, getPublicMonthInFood } from "../../../lib/consumerApi.js";
+import { shareMonthInFoodImage } from "../../../lib/monthInFoodShareImage.js";
 import { subscribeMonthInFoodStale } from "../../../lib/monthInFoodFreshness.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
@@ -198,6 +199,20 @@ export default function MonthInFoodPage() {
             {/* Meal logging is opt-in (Andre 2026-10-30), so no prompt to log. */}
             {model.showEmptyHint ? <p style={{ ...s.muted, marginTop: 8 }}>Nothing yet this month.</p> : null}
 
+            {model.isSelf && sharePath ? (
+              <button
+                type="button"
+                data-testid="month-in-food-share-image"
+                style={{ alignSelf: "flex-start", margin: "0 0 12px", border: "none", background: "var(--mif-forest, #16302A)", color: "#fff", borderRadius: 999, padding: "10px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                onClick={() =>
+                  getPublicMonthInFood(sharePath.split("/m/")[1])
+                    .then(shareMonthInFoodImage)
+                    .catch(() => undefined)
+                }
+              >
+                Share as a picture
+              </button>
+            ) : null}
             <MonthInFoodFooter sharePath={sharePath} isSelf={model.isSelf} />
           </>
         ) : null}

@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getPublicMonthInFood } from "../../../lib/consumerApi.js";
+import { shareMonthInFoodImage } from "../../../lib/monthInFoodShareImage.js";
 
 const C = { cream: "#F7F2E7", paper: "#FFFDF8", forest: "#16302A", amber: "#DE9E33", ink: "#231F19", soft: "#5B5548", line: "#DDD3BE" };
 const SERIF = "Fraunces, Georgia, 'Times New Roman', serif";
@@ -23,6 +24,7 @@ export default function MonthInFoodPublicPage() {
   const { token } = useParams();
   const [report, setReport] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [imageNote, setImageNote] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -33,6 +35,16 @@ export default function MonthInFoodPublicPage() {
       alive = false;
     };
   }, [token]);
+
+  async function shareImage() {
+    setImageNote("");
+    try {
+      const how = await shareMonthInFoodImage(report);
+      if (how === "saved") setImageNote("Picture saved.");
+    } catch (err) {
+      if (err?.name !== "AbortError") setImageNote("Couldn't make the picture. Try again.");
+    }
+  }
 
   return (
     <main style={styles.page} data-testid="month-in-food-public">
@@ -72,6 +84,12 @@ export default function MonthInFoodPublicPage() {
                 ))}
               </section>
             ) : null}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <button type="button" onClick={shareImage} style={styles.share} data-testid="month-in-food-share-image">
+                Share as a picture
+              </button>
+              {imageNote ? <span style={styles.soft}>{imageNote}</span> : null}
+            </div>
             <footer style={styles.footer}>
               <p style={styles.brand}>Menuply</p>
               <p style={{ margin: "4px 0 14px" }}>Great food. Good people. Better together.</p>
@@ -100,6 +118,7 @@ const styles = {
   row: { margin: 0, padding: "8px 0", borderTop: `1px solid ${C.line}`, fontSize: 15, fontWeight: 600 },
   rowLink: { display: "flex", flexDirection: "column", gap: 2, padding: "8px 0", borderTop: `1px solid ${C.line}`, color: C.ink, textDecoration: "none", fontSize: 15 },
   soft: { margin: 0, fontSize: 13, color: C.soft },
+  share: { border: "none", background: C.forest, color: "#fff", borderRadius: 999, padding: "10px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   footer: { background: C.forest, color: "#fff", borderRadius: 16, padding: 20 },
   brand: { margin: 0, fontFamily: SERIF, fontStyle: "italic", fontSize: 26, fontWeight: 600, color: C.amber },
   cta: { display: "inline-block", background: "#fff", color: C.forest, borderRadius: 999, padding: "10px 16px", fontSize: 14, fontWeight: 700, textDecoration: "none" },

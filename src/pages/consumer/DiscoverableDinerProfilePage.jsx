@@ -17,13 +17,10 @@ import {
   removeConnection,
   reportDinerAbuse,
   requestConnection,
-  resolveConsumerMediaUrl,
 } from "../../lib/consumerApi.js";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
-import { ageFromDob } from "../../lib/dinerDateOfBirth.js";
-import { labelWithFoodIcon } from "../../lib/foodInterestIcons.js";
 import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
-import DinerActivitySelectionLayer from "./myMenuply/DinerActivitySelectionLayer.jsx";
+import DinerAvatar from "../../components/social/DinerAvatar.jsx";
 import { catchMeProfileLine } from "../../lib/dinerCatchMeDisplay.js";
 
 const ABUSE_REASONS = [
@@ -164,8 +161,7 @@ export default function DiscoverableDinerProfilePage() {
     diner?.edu_verification_badge ||
     diner?.edu_institution_short ||
     null;
-  const ageYears =
-    diner?.age_years ?? ageFromDob(diner?.date_of_birth) ?? null;
+  const tagline = [diner?.diner_occupation, school, diner?.location_label].filter(Boolean).join(" · ");
 
   return (
     <div style={styles.page} data-testid="discoverable-diner-profile">
@@ -177,58 +173,43 @@ export default function DiscoverableDinerProfilePage() {
 
         {!loading && diner ? (
           <>
-            <div style={styles.hero}>
-              {diner.avatar_url ? (
-                <img
-                  src={resolveConsumerMediaUrl(diner.avatar_url) || diner.avatar_url}
-                  alt=""
-                  style={styles.avatar}
-                />
-              ) : (
-                <div style={styles.avatarFallback}>{(name || "?").slice(0, 1).toUpperCase()}</div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={styles.name}>{name}</h1>
-                {school ? <p style={styles.meta}>{school}</p> : null}
-                {diner.location_label ? (
-                  <p style={styles.meta}>📍 {diner.location_label}</p>
-                ) : null}
-                {catchMeProfileLine(diner.catch_me) ? (
-                  <p style={styles.meta} data-testid="discoverable-catch-me">
-                    ✈️ {catchMeProfileLine(diner.catch_me)}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            {diner.diner_about ? <p style={styles.about}>{diner.diner_about}</p> : null}
+            {/* The app's Connect screen, minus what stays private until you connect (Andre 2026-10-30). */}
+            <section style={styles.head}>
+              <DinerAvatar avatarUrl={diner.avatar_url} avatarMotionUrl={diner.avatar_motion_url} displayName={name} size={88} />
+              <h1 style={styles.name}>{name}</h1>
+              {tagline ? <p style={styles.meta}>{tagline}</p> : null}
+              {catchMeProfileLine(diner.catch_me) ? (
+                <p style={styles.meta} data-testid="discoverable-catch-me">
+                  ✈️ {catchMeProfileLine(diner.catch_me)}
+                </p>
+              ) : null}
+              {diner.diner_about ? <p style={styles.about}>{diner.diner_about}</p> : null}
+            </section>
 
             {favorites.length ? (
-              <div style={styles.favRow} data-testid="discoverable-favorite-foods">
-                {favorites.map((f) => (
-                  <span key={f.key} style={styles.favChip}>
-                    {labelWithFoodIcon(f.key, f.label)}
-                  </span>
-                ))}
-              </div>
+              <section style={styles.section} data-testid="discoverable-favorite-foods">
+                <h2 style={styles.heading}>Favs</h2>
+                <div style={styles.favRow}>
+                  {favorites.map((f) => (
+                    <span key={f.key} style={styles.favChip}>
+                      {f.label}
+                    </span>
+                  ))}
+                </div>
+              </section>
             ) : null}
 
-            <DinerActivitySelectionLayer
-              displayName={name}
-              avatarUrl={diner.avatar_url || null}
-              ageYears={ageYears}
-              locationLabel={diner.location_label}
-              schoolAffiliation={school}
-              wants={activityWants}
-              showConnect={Boolean(actions?.connect)}
-              onConnect={() => runAction("connect")}
-              connectBusy={busy}
-            />
-
-            <p style={styles.lead}>
-              You can see public eating signals and request a connection. Planned activities and the
-              full My Menuply hub stay private until you connect.
-            </p>
+            {activityWants.length ? (
+              <section style={styles.section} data-testid="discoverable-wish-list">
+                <h2 style={styles.heading}>Wish List</h2>
+                {activityWants.slice(0, 4).map((w) => (
+                  <div key={w.id} style={styles.row}>
+                    <strong style={{ fontSize: 15 }}>{w.item_name || w.food_name || "Food"}</strong>
+                    {w.restaurant_name ? <span style={styles.meta}>{w.restaurant_name}</span> : null}
+                  </div>
+                ))}
+              </section>
+            ) : null}
 
             <div style={styles.actions} data-testid="discoverable-actions">
               {actions?.accept ? (
@@ -323,6 +304,10 @@ export default function DiscoverableDinerProfilePage() {
 }
 
 const styles = {
+  head: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", marginBottom: 16 },
+  section: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 },
+  heading: { margin: 0, fontSize: 18, lineHeight: "24px", fontWeight: 700, color: "#111613" },
+  row: { display: "flex", flexDirection: "column", gap: 2, background: "#fff", border: "1px solid #e1e6e1", borderRadius: 12, padding: 12, color: "#111613" },
   page: { minHeight: "100vh", background: "#f8fafc", paddingBottom: 88 },
   main: { maxWidth: 720, margin: "0 auto", padding: "12px 16px 24px" },
   hero: { display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 12 },

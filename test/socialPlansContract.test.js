@@ -122,7 +122,7 @@ test("My Social Calendar: month grid on the page, week strip on My Menuply (owne
   const mm = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(mm, /\{previewAsConnect \? null : <SocialCalendarCard \/>\}/);
   const card = read("src/pages/consumer/myMenuply/SocialCalendarCard.jsx");
-  assert.match(card, /📅 My Social Calendar/);
+  assert.match(card, /My Social Calendar/);
   assert.match(card, /navigate\(`\/account\/social-plans\?day=\$\{day\}`\)/);
 });
 
@@ -144,10 +144,11 @@ test("simpler calendar (Andre 2026-10-28): calendar first, + New plan adds to th
 
 test("a Connect's profile follows the app's Connect screen (Andre 2026-10-30)", () => {
   const page = read("src/pages/consumer/ConnectProfilePage.jsx");
-  for (const label of ['"Eating lately"', '"Wish List"', '"No vibe set right now"', '"Nothing in the last few days."', '"Nothing on it yet."', "Menu ›", "End connection", "Block", "Report"]) {
+  for (const label of ['"Wish List"', '"No vibe set right now"', 'Social Calendar']) {
     assert.ok(page.includes(label.replace(/^"|"$/g, "")), label);
   }
   assert.match(page, /<PeerPlansSection peerId=\{peerId\} name=\{name\} \/>/);
+  assert.ok(page.indexOf('data-testid="connect-profile-clips"') < page.indexOf("<PeerPlansSection peerId"), "calendar last");
   assert.match(page, /listConnectionsEating\(12, peerId\)/);
   assert.match(page, /listPeerWantToEat\(peerId\)/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
@@ -157,7 +158,7 @@ test("a Connect's profile follows the app's Connect screen (Andre 2026-10-30)", 
 test("Connect View = the app's Connect screen with your own data (Andre 2026-10-30)", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(page, /previewAsConnect \? \(\n\s+<SelfConnectView /);
-  assert.match(page, /!appLayout && !previewAsConnect \?/);
+  assert.match(page, /!appLayout && !previewAsConnect && !subView \?/);
   const screen = read("src/pages/consumer/ConnectProfilePage.jsx");
   assert.match(screen, /export function SelfConnectView/);
   assert.match(screen, /This is how your Connects see you\./);

@@ -94,6 +94,7 @@ import DinerSocialPresetsPanel, {
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import ConnectsNowSection from "./myMenuply/ConnectsNowSection.jsx";
 import { MyClipsView, SelfConnectView } from "./ConnectProfilePage.jsx";
+import MonthReportNudge from "./monthInFood/MonthReportNudge.jsx";
 import SocialCalendarCard from "./myMenuply/SocialCalendarCard.jsx";
 import QuickInviteCard from "./myMenuply/QuickInviteCard.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
@@ -2424,6 +2425,7 @@ export default function MyMenuplyPage() {
               onAvatarFile={onAvatarFile}
               onConnectView={toggleProfileViewMode}
             />
+            <MonthReportNudge />
             {discoverLevel === "hidden" ? null : (
               <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
                 <CurrentVibeProfileSection

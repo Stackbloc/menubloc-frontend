@@ -44,9 +44,9 @@ test("people type the menu item: dishes from any restaurant in the city; Restaur
   assert.doesNotMatch(sheet, /Where\? \(optional\)/);
 });
 
-test("Quick Invite sits on My Profile, above My Social Calendar", () => {
+test("Quick Invite sits on My Profile, below My Social Calendar", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.ok(page.indexOf("<QuickInviteCard />") < page.indexOf("<SocialCalendarCard />"));
+  assert.ok(page.indexOf("<SocialCalendarCard />") < page.indexOf("<QuickInviteCard />"));
   const card = read("src/pages/consumer/myMenuply/QuickInviteCard.jsx");
   assert.match(card, /Quick Invite/);
   assert.match(card, /seed_code: code, quick_invite: "1"/);

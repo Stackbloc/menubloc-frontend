@@ -33,8 +33,7 @@ test("Feed rail keeps the original 64px column; Menu Browser is a labeled rail b
   assert.match(rail, /width: 64,/);
   assert.match(rail, /testId="feed-rail-menu"/);
   for (const hint of [
-    "Add this item to your Wish List",
-    "Add this restaurant to your Wish List",
+    "WISH_LIST_ADD",
     "Add this restaurant to your Favorites",
     "Fav this dish",
     "Invite a Connect to eat this",
