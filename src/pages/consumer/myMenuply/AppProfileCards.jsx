@@ -1,9 +1,9 @@
 /**
  * Diner Profile cards, the same as the app's Profile tab (menuply-mobile app/(tabs)/profile.tsx and
  * src/components/account/*; the app wins where the two differ, Andre 2026-10-29). Signed-in order:
- * photo + name, Edit profile / Share My Profile pills, Sign out · How discoverable are you? · Your vibe
- * · Connects · Quick Invite · My Social Calendar · My activity · Dietary needs · Basket + Location ·
- * links. Signed out: what an account unlocks and Sign in.
+ * photo + who you are, Edit profile / Share / Connect View pills · Your vibe · My Social Calendar ·
+ * Connects · Quick Invite · My activity. Settings (gear): discoverability, dietary needs, location,
+ * email, links, Sign out. Signed out: what an account unlocks and Sign in.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import {
   getFollowedRestaurants,
   getLikedMenuItems,
   getPreferences,
+  listConsumerProfileMedia,
   listWantToEat,
   unfollowRestaurant,
   unlikeMenuItem,
@@ -25,6 +26,7 @@ import { useHomeBrowseFeed } from "../../../hooks/useHomeBrowseFeed.js";
 import HomeNextLocationSelector from "../../../components/homeNext/HomeNextLocationSelector.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
+import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 
 // App tokens (menuply-mobile src/theme/tokens.ts).
 const C = {
@@ -106,13 +108,18 @@ function Box({ title, count, testId, children, after = null }) {
   );
 }
 
-/** Photo, name, email, location; Edit profile / Share My Profile pills; Sign out. */
-export function AppIdentityCard({ displayName, avatarUrl, email, locationLabel, busy, notice, error, onAvatarFile, onSignOut }) {
+/** Photo, name, what you do, location, About; Edit profile / Share / Connect View pills; gear. */
+export function AppIdentityCard({ displayName, avatarUrl, occupation, about, locationLabel, busy, notice, error, onAvatarFile, onConnectView }) {
   const fileRef = useRef(null);
-  const [signOutFailed, setSignOutFailed] = useState(false);
   const initial = String(displayName || "?").trim().charAt(0).toUpperCase() || "?";
   return (
-    <div style={st.card} data-testid="profile-signed-in">
+    <div style={{ ...st.card, position: "relative" }} data-testid="profile-signed-in">
+      <Link to={`${MY_MENUPLY_PROFILE_PATH}?view=settings`} aria-label="Settings" style={styles.gear} data-testid="profile-settings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
+        </svg>
+      </Link>
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
@@ -140,21 +147,53 @@ export function AppIdentityCard({ displayName, avatarUrl, email, locationLabel, 
       {notice ? <p style={{ ...st.muted, color: C.accent }}>{notice}</p> : null}
       {error ? <p style={st.error}>{error}</p> : null}
       <h2 style={st.heading}>{displayName}</h2>
-      {email ? <p style={st.muted}>{email}</p> : null}
-      {locationLabel ? <p style={st.body}>{locationLabel}</p> : null}
-      {signOutFailed ? <p style={st.error}>Couldn&apos;t reach Menuply to sign out. Try again.</p> : null}
+      {occupation ? <p style={st.muted}>{occupation}</p> : null}
+      {locationLabel ? <p style={st.muted}>{locationLabel}</p> : null}
+      {about ? <p style={st.body}>{about}</p> : null}
       {/* Small pills side by side, not full-width bars (Andre 2026-10-29). */}
       <div style={styles.pillRow}>
         <Link to="/account" style={styles.pill} data-testid="profile-edit">
           Edit profile
         </Link>
         <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
-          Share My Profile
+          Share
         </Link>
+        <button type="button" style={styles.pillQuiet} onClick={onConnectView} data-testid="profile-connect-view">
+          Connect View
+        </button>
       </div>
+    </div>
+  );
+}
+
+/** Settings (Andre 2026-10-30): everything tucked away from Profile, behind the gear. */
+export function AppSettings({ onDiscoverChange, onSignOut }) {
+  const [signOutFailed, setSignOutFailed] = useState(false);
+  return (
+    <AppProfileStack testId="app-settings">
+      <Link to={MY_MENUPLY_PROFILE_PATH} style={st.link} data-testid="settings-back">
+        ‹ Profile
+      </Link>
+      <h1 style={st.heading}>Settings</h1>
+      <AppDiscoverabilityCard onChange={onDiscoverChange} />
+      <AppDietaryNeeds />
+      <AppBasketLocationCard />
+      <div style={st.card}>
+        <Link to="/account" style={styles.linkRow} data-testid="settings-change-email">
+          <span>Change email</span>
+          <span style={{ color: C.muted }}>›</span>
+        </Link>
+        {LINKS.map(([label, to]) => (
+          <Link key={to} to={to} style={styles.linkRow}>
+            <span>{label}</span>
+            <span style={{ color: C.muted }}>›</span>
+          </Link>
+        ))}
+      </div>
+      {signOutFailed ? <p style={st.error}>Couldn&apos;t reach Menuply to sign out. Try again.</p> : null}
       <button
         type="button"
-        style={st.link}
+        style={{ ...st.link, alignSelf: "center", color: C.danger, fontSize: 16 }}
         onClick={async () => {
           try {
             await onSignOut?.();
@@ -166,7 +205,7 @@ export function AppIdentityCard({ displayName, avatarUrl, email, locationLabel, 
       >
         Sign out
       </button>
-    </div>
+    </AppProfileStack>
   );
 }
 
@@ -301,12 +340,29 @@ export function AppDiscoverabilityCard({ onChange }) {
   );
 }
 
-/** "Your vibe" card around the website's vibe picker (same 7 vibes and durations as the app). */
-export function AppVibeCard({ children }) {
+/** "Your vibe": one line with Change, so Profile stays short; Change opens the website's vibe picker. */
+export function AppVibeCard({ label, children }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div style={st.card} data-testid="vibe-card">
-      <h2 style={st.heading}>Your vibe</h2>
-      {children}
+    <div style={{ ...st.card, background: C.accentSoft, border: "none" }} data-testid="vibe-card">
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: 0, fontSize: 12, lineHeight: "16px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: C.accent }}>Your vibe</h2>
+          <p style={{ ...st.body, fontWeight: 600, fontSize: 15 }} data-testid="vibe-current">
+            {label}
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          style={{ ...styles.pillQuiet, borderColor: C.accent, color: C.accent, background: C.background }}
+          data-testid="vibe-change"
+        >
+          {open ? "Done" : "Change"}
+        </button>
+      </div>
+      {open ? children : null}
     </div>
   );
 }
@@ -335,10 +391,14 @@ export function AppMyActivity() {
   const [favRestaurants, setFavRestaurants] = useState([]);
   const [favDishes, setFavDishes] = useState([]);
   const [wishList, setWishList] = useState([]);
+  const [clips, setClips] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let alive = true;
+    listConsumerProfileMedia()
+      .then((m) => alive && setClips(listOf(m, "items").length))
+      .catch(() => undefined);
     Promise.allSettled([getFollowedRestaurants(), getLikedMenuItems(), listWantToEat()]).then(([r, d, w]) => {
       if (!alive) return;
       if (r.status === "fulfilled") {
@@ -386,6 +446,14 @@ export function AppMyActivity() {
           {error}
         </p>
       ) : null}
+      <Link to={`${MY_MENUPLY_PROFILE_PATH}?view=clips`} style={styles.linkRow} data-testid="my-clips">
+        <span>My clips</span>
+        <span style={{ color: C.muted }}>{clips != null ? clips : "›"}</span>
+      </Link>
+      <Link to="/account/what-i-ate" style={styles.linkRow} data-testid="my-what-i-ate">
+        <span>What I ate</span>
+        <span style={{ color: C.muted }}>›</span>
+      </Link>
       <Box title="Favs · restaurants" count={favRestaurants.length} testId="my-box-fav-restaurants">
         {favRestaurants.length ? (
           favRestaurants.map((r) => (
@@ -451,6 +519,10 @@ export function AppMyActivity() {
           <p style={st.muted}>Tap +Wish List on dishes you want to try.</p>
         )}
       </Box>
+      <Link to={MY_MENUPLY_MONTH_IN_FOOD_PATH} style={styles.linkRow} data-testid="my-month-in-food">
+        <span>My month in food</span>
+        <span style={{ color: C.muted }}>›</span>
+      </Link>
     </div>
   );
 }
@@ -685,6 +757,7 @@ export function AppProfileGuest() {
 }
 
 const styles = {
+  gear: { position: "absolute", top: 8, right: 8, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: C.text },
   pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
   pill: {
     display: "inline-flex",

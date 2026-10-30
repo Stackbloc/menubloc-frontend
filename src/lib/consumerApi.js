@@ -679,6 +679,9 @@ export const searchDiners = (query, cityId = null) => {
   return get(`/api/consumer/diners/search?${q}`);
 };
 export const getFollowedRestaurants = ()    => get("/api/consumer/followed-restaurants");
+/** A Connect's restaurant Favs (accepted Connects only). */
+export const listPeerFollowedRestaurants = (userId) =>
+  get(`/api/consumer/followed-restaurants/users/${encodeURIComponent(String(userId))}`);
 
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");

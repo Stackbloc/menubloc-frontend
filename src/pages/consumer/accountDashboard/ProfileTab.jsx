@@ -488,7 +488,7 @@ export default function ProfileTab({
       <SummaryEditSection
         title="Make my profile discoverable by"
         summary={discoverabilityLabel(discoverability)}
-        description="Audience preference for activity surfaces (for example dining intent). Find Diners already lets signed-in members search by name, phone, email, hometown, or city. (A future .edu-only audience may be added later.)"
+        description="Audience preference for activity surfaces (for example dining intent). Find Connects already lets signed-in members search by name, phone, email, hometown, or city. (A future .edu-only audience may be added later.)"
         editing={editingDiscoverability}
         onEdit={() => setEditingDiscoverability(true)}
         onDone={async () => {

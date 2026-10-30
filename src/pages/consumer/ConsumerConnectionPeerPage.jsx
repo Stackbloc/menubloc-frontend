@@ -239,7 +239,7 @@ export default function ConsumerConnectionPeerPage() {
 
   async function endConnection() {
     if (!connection?.id) return;
-    const ok = window.confirm("End this connection? You can still find each other in Find Diners.");
+    const ok = window.confirm("End this connection? You can still find each other in Find Connects.");
     if (!ok) return;
     setSafetyBusy(true);
     setError("");
@@ -256,7 +256,7 @@ export default function ConsumerConnectionPeerPage() {
   async function hardBlock() {
     if (!peerId) return;
     const ok = window.confirm(
-      "Block this diner? Hard block hides both of you in Find Diners and rejects Connect both ways."
+      "Block this diner? Hard block hides both of you in Find Connects and rejects Connect both ways."
     );
     if (!ok) return;
     setSafetyBusy(true);

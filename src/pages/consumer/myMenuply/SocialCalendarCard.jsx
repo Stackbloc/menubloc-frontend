@@ -12,7 +12,7 @@ import { WeekStrip } from "./PlanCalendar.jsx";
 import PlanTag from "./PlanTag.jsx";
 import * as s from "./myMenuplyStyles.js";
 
-const SHOWN = 3;
+const SHOWN = 2;
 
 function when(p, today) {
   if (p.time_open || !p.date) return "Pick a day & time ›";
@@ -40,10 +40,10 @@ export default function SocialCalendarCard() {
       <div style={styles.card}>
         <div style={styles.head}>
           <strong style={{ fontSize: 18, color: "#0f172a" }}>
-            📅 My Social Calendar{data.plans.length ? ` · ${data.plans.length}` : ""}
+            My Social Calendar{data.plans.length ? ` · ${data.plans.length}` : ""}
           </strong>
           <Link to="/account/social-plans" style={styles.link} data-testid="my-social-calendar-open">
-            Open calendar ›
+            Open ›
           </Link>
         </div>
         <WeekStrip plans={data.plans} today={today} onSelect={(day) => navigate(`/account/social-plans?day=${day}`)} />

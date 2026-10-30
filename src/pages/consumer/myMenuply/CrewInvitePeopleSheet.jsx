@@ -71,7 +71,7 @@ export default function CrewInvitePeopleSheet({
           </p>
           {inviteable.length === 0 ? (
             <p style={styles.empty} data-testid="crew-invite-no-connections">
-              No Connections available to invite yet. Use Find Diners or your Diner QR to connect first.
+              No Connections available to invite yet. Use Find Connects or your Diner QR to connect first.
             </p>
           ) : (
             <ul style={styles.list}>

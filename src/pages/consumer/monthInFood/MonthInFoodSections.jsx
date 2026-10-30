@@ -397,17 +397,23 @@ export function MonthInFoodMoments({ moments = [], overflow = 0 }) {
   );
 }
 
+/** "Thu, Nov 19" from 2026-11-19. */
+function friendlyDate(ymd) {
+  if (!ymd) return "Soon";
+  const d = new Date(`${String(ymd).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return "Soon";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 export function MonthInFoodCravingsPlans({
   wants = [],
-  takeMeOutOpen = false,
   isSelf = false,
   plans = [],
   events = [],
-  crewsJoinDefault = false,
 }) {
   const spots = wants.slice(0, 2);
   const showCravings = spots.length > 0 || isSelf;
-  const showPlans = plans.length > 0 || events.length > 0 || (isSelf && crewsJoinDefault);
+  const showPlans = plans.length > 0 || events.length > 0;
   if (!showCravings && !showPlans) return null;
 
   return (
@@ -423,16 +429,7 @@ export function MonthInFoodCravingsPlans({
     >
       {showCravings ? (
         <div style={s.card} data-testid="month-in-food-wants">
-          <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginBottom: 4 }}>Cravings</div>
           <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>Wish List</h3>
-          {isSelf ? (
-            <p
-              style={{ margin: "8px 0 0", fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}
-              data-testid="month-in-food-take-me-out-status"
-            >
-              Take Me Out is {takeMeOutOpen ? "On" : "Off"}
-            </p>
-          ) : null}
           <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0 }}>
             {spots.map((w) => (
               <li key={w.key} style={{ padding: "8px 0", borderTop: "1px solid var(--mif-hairline, #DDD3BE)" }}>
@@ -450,17 +447,7 @@ export function MonthInFoodCravingsPlans({
 
       {showPlans ? (
         <div style={s.card} data-testid="month-in-food-plans-events">
-          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>Plans &amp; events</h3>
-          {isSelf ? (
-            <p
-              style={{ margin: "8px 0 0", fontSize: 12, color: "var(--mif-ink-soft, #5B5548)" }}
-              data-testid="month-in-food-join-me-defaults"
-            >
-              {crewsJoinDefault
-                ? "Join Crew default: On · Join Me is set on each plan and event"
-                : "Join Me is set on each plan and event"}
-            </p>
-          ) : null}
+          <h3 style={{ ...s.sectionTitle, fontSize: 18, margin: 0 }}>Social Calendar</h3>
           <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0 }}>
             {plans.slice(0, 2).map((plan) => (
               <li key={`p-${plan.id}`} style={{ padding: "10px 0", borderTop: "1px solid var(--mif-hairline, #DDD3BE)" }}>
@@ -472,12 +459,12 @@ export function MonthInFoodCravingsPlans({
                     fontWeight: 600,
                   }}
                 >
-                  {plan.plan_date || "Soon"}
+                  {friendlyDate(plan.plan_date)}
                 </div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{plan.title || plan.restaurant_name || "Plan"}</div>
-                <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>
-                  {plan.joinable ? "Join Me is open" : "Just me"}
-                </div>
+                {plan.joinable ? (
+                  <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>Connects can join</div>
+                ) : null}
               </li>
             ))}
             {events.slice(0, 2).map((ev) => (
@@ -493,12 +480,12 @@ export function MonthInFoodCravingsPlans({
                     fontWeight: 600,
                   }}
                 >
-                  {ev.event_date || "Soon"}
+                  {friendlyDate(ev.event_date)}
                 </div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{ev.title}</div>
                 {ev.kind === "diner_social" && ev.join_me_open ? (
                   <div style={{ fontSize: 12, color: "var(--mif-ink-soft, #5B5548)", marginTop: 2 }}>
-                    Join Me is open
+                    Connects can join
                   </div>
                 ) : null}
               </li>

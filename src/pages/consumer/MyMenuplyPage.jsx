@@ -6,13 +6,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import {
-  AppBasketLocationCard,
-  AppDietaryNeeds,
-  AppDiscoverabilityCard,
   AppIdentityCard,
   AppMyActivity,
   AppProfileGuest,
-  AppProfileLinks,
+  AppSettings,
   AppProfileStack,
   AppVibeCard,
 } from "./myMenuply/AppProfileCards.jsx";
@@ -96,7 +93,7 @@ import DinerSocialPresetsPanel, {
 } from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
 import ConnectsNowSection from "./myMenuply/ConnectsNowSection.jsx";
-import { SelfConnectView } from "./ConnectProfilePage.jsx";
+import { MyClipsView, SelfConnectView } from "./ConnectProfilePage.jsx";
 import SocialCalendarCard from "./myMenuply/SocialCalendarCard.jsx";
 import QuickInviteCard from "./myMenuply/QuickInviteCard.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
@@ -2367,8 +2364,9 @@ export default function MyMenuplyPage() {
   // The app's Profile (Andre 2026-10-29: the app wins). "View as a Connect" is the app's Connect
   // screen with your data (SelfConnectView, Andre 2026-10-30). The older hub stays only for links
   // that open one of its compose sheets (?compose= / ?focus= / ?mmt=).
+  const subView = ["settings", "clips"].includes(searchParams.get("view")) ? searchParams.get("view") : null;
   const appLayout =
-    !previewAsConnect && !["compose", "focus", "mmt"].some((key) => String(searchParams.get(key) || "").trim());
+    !subView && !previewAsConnect && !["compose", "focus", "mmt"].some((key) => String(searchParams.get(key) || "").trim());
 
   return (
     <>
@@ -2417,20 +2415,17 @@ export default function MyMenuplyPage() {
             <AppIdentityCard
               displayName={displayName}
               avatarUrl={avatarUrl}
-              email={consumer?.email || profile?.email || ""}
+              occupation={profile?.diner_occupation || null}
+              about={profile?.diner_about || null}
               locationLabel={profile?.primary_location?.public_label || null}
               busy={identityBusy}
               notice={identityNotice}
               error={identityError}
               onAvatarFile={onAvatarFile}
-              onSignOut={async () => {
-                await logout();
-                navigate("/feed");
-              }}
+              onConnectView={toggleProfileViewMode}
             />
-            <AppDiscoverabilityCard onChange={setDiscoverLevel} />
             {discoverLevel === "hidden" ? null : (
-              <AppVibeCard>
+              <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
                 <CurrentVibeProfileSection
                   value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
                   values={profile?.current_vibe_meta?.current_vibes || null}
@@ -2441,21 +2436,29 @@ export default function MyMenuplyPage() {
                 />
               </AppVibeCard>
             )}
+            <SocialCalendarCard />
             <ConnectsNowSection />
             <QuickInviteCard />
-            <SocialCalendarCard />
             <AppMyActivity />
-            <AppDietaryNeeds />
-            <AppBasketLocationCard />
-            <AppProfileLinks />
           </AppProfileStack>
         ) : null}
+
+        {isAuthenticated && !loading && subView === "settings" ? (
+          <AppSettings
+            onDiscoverChange={setDiscoverLevel}
+            onSignOut={async () => {
+              await logout();
+              navigate("/feed");
+            }}
+          />
+        ) : null}
+        {isAuthenticated && !loading && subView === "clips" ? <MyClipsView /> : null}
 
         {isAuthenticated && !loading && previewAsConnect ? (
           <SelfConnectView profile={profile} displayName={displayName} avatarUrl={avatarUrl} />
         ) : null}
 
-        {isAuthenticated && !loading && !appLayout && !previewAsConnect ? (
+        {isAuthenticated && !loading && !appLayout && !previewAsConnect && !subView ? (
           <>
             {profile?.profile_completion?.needs_primary_location && !previewAsConnect ? (
               <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />

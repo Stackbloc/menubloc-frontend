@@ -27,10 +27,7 @@ export default function QuickInviteCard() {
         <div style={styles.list}>
           {QUICK_INVITE_PHRASES.map((q) => (
             <Link key={q.code} to={quickInvitePath(q.code)} style={styles.row} data-testid={`quick-invite-${q.code.toLowerCase()}`}>
-              <span>{q.phrase}</span>
-              <span aria-hidden style={{ color: "#94a3b8" }}>
-                ›
-              </span>
+              {q.phrase}
             </Link>
           ))}
         </div>
@@ -42,6 +39,6 @@ export default function QuickInviteCard() {
 const styles = {
   card: { background: "#fff", border: "1px solid #d1fae5", borderRadius: 16, padding: 14, display: "grid", gap: 10 },
   lead: { margin: 0, fontSize: 13, color: "#64748b" },
-  list: { display: "grid", gap: 8 },
-  row: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 12, color: "#0f172a", fontWeight: 700, fontSize: 15, textDecoration: "none" },
+  list: { display: "flex", flexWrap: "wrap", gap: 8 },
+  row: { padding: "8px 12px", border: "1px solid #e1e6e1", borderRadius: 999, background: "#f5f7f4", color: "#111613", fontWeight: 600, fontSize: 13, textDecoration: "none" },
 };

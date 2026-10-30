@@ -158,7 +158,7 @@ export default function FindDinersPage() {
 
   return (
     <div style={styles.page}>
-      <StickyPageHeader title="Find Diners" backTo="/account?tab=social" />
+      <StickyPageHeader title="Find Connects" backTo="/feed/profile" />
       <main style={styles.main}>
         <p style={styles.lead}>
           Search by name, phone, email, hometown, or current city (neighborhood and school also work).

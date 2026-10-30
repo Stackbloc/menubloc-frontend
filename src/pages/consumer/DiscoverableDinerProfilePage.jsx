@@ -117,7 +117,7 @@ export default function DiscoverableDinerProfilePage() {
         setNotice(action === "end_connection" ? "Connection ended." : "Request canceled.");
       } else if (action === "block") {
         const ok = window.confirm(
-          "Block this diner? They will not appear in Find Diners for you (and you won’t appear for them), and Connect will be blocked both ways."
+          "Block this diner? They will not appear in Find Connects for you (and you won’t appear for them), and Connect will be blocked both ways."
         );
         if (!ok) return;
         await blockDiner(diner.id);

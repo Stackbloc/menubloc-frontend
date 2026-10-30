@@ -208,9 +208,15 @@ export default function ConnectsNowSection() {
           </p>
         ) : null}
 
-        <Link to="/account/connections" style={styles.all}>
-          All Connects{data.connection_count ? ` · ${data.connection_count}` : ""} ›
-        </Link>
+        <div style={styles.footer}>
+          <Link to="/account/connections" style={styles.all}>
+            All Connects{data.connection_count ? ` · ${data.connection_count}` : ""} ›
+          </Link>
+          {/* Where diners meet new people (Andre 2026-10-30): visible, not behind All Connects. */}
+          <Link to="/account/find-diners" style={styles.find} data-testid="profile-find-diners">
+            Find Connects
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -299,5 +305,7 @@ const styles = {
     textDecoration: "none",
     flexShrink: 0,
   },
+  footer: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  find: { background: "#0f7a24", color: "#fff", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" },
   all: { fontSize: 13, fontWeight: 700, color: s.GREEN_BRIGHT, textDecoration: "none" },
 };

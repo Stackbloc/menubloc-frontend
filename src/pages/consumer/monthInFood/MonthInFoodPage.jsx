@@ -44,8 +44,10 @@ function currentYmLa() {
 export default function MonthInFoodPage() {
   const { peerId: peerIdParam } = useParams();
   const peerId = peerIdParam ? Number(peerIdParam) : null;
-  const isPeer = Number.isFinite(peerId) && peerId > 0;
-  const { isAuthenticated, loading: authLoading } = useConsumer();
+  const { consumer, isAuthenticated, loading: authLoading } = useConsumer();
+  const myId = Number(consumer?.id) || null;
+  // My own shared link opens as my report.
+  const isPeer = Number.isFinite(peerId) && peerId > 0 && peerId !== myId;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,8 +134,10 @@ export default function MonthInFoodPage() {
     setSearchParams(params, { replace: true });
   }
 
-  const sharePath = isPeer
-    ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
+  // The person's id is in the link, so a Connect opens this diner's report, not their own.
+  const shareOwnerId = isPeer ? peerId : myId;
+  const sharePath = shareOwnerId
+    ? `/account/connections/${encodeURIComponent(String(shareOwnerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
     : `${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${encodeURIComponent(ym)}`;
 
   const shareData = useMemo(
@@ -178,11 +182,9 @@ export default function MonthInFoodPage() {
             <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />
             <MonthInFoodCravingsPlans
               wants={model.wants}
-              takeMeOutOpen={model.takeMeOutOpen}
               isSelf={model.isSelf}
               plans={model.plans}
               events={model.events}
-              crewsJoinDefault={model.crewsJoinDefault}
             />
 
             {model.showEmptyHint ? (

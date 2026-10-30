@@ -201,8 +201,10 @@ export function PlanPanel({ plan, onSaved, onPickTime }) {
   );
 }
 
-export function PeerPlansSection({ peerId, name }) {
-  const [plans, setPlans] = useState([]);
+export function PeerPlansSection({ peerId, name, title = null, previewPlans = null, note = null }) {
+  const [loaded, setLoaded] = useState([]);
+  const plans = previewPlans || loaded;
+  const setPlans = setLoaded;
 
   useEffect(() => {
     if (!peerId) return;
@@ -211,10 +213,10 @@ export function PeerPlansSection({ peerId, name }) {
       .catch(() => setPlans([]));
   }, [peerId]);
 
-  if (!plans.length) return null;
+  if (!plans.length && !note) return null;
   return (
     <section style={styles.card} data-testid="peer-social-plans">
-      <strong style={styles.heading}>{`${String(name || "Their").split(" ")[0]}’s plans`}</strong>
+      <strong style={styles.heading}>{title || `${name || "Their"}’s Social Calendar`}</strong>
       {plans.map((p) => (
         <div key={p.key} style={styles.row} data-testid={`peer-plan-${p.key}`}>
           <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 1 }}>
@@ -229,9 +231,18 @@ export function PeerPlansSection({ peerId, name }) {
                 .join(" · ")}
             </span>
           </div>
-          <SocialPlanActionButton plan={p} testId={`peer-plan-${p.key}-action`} />
+          {previewPlans ? (
+            <span style={styles.previewAction}>{p.action === "join" ? "Join" : "Can I come?"}</span>
+          ) : (
+            <SocialPlanActionButton plan={p} testId={`peer-plan-${p.key}-action`} />
+          )}
         </div>
       ))}
+      {note ? (
+        <span style={styles.muted} data-testid="peer-plans-note">
+          {note}
+        </span>
+      ) : null}
     </section>
   );
 }
@@ -245,6 +256,7 @@ function formatWhen(p) {
 }
 
 const styles = {
+  previewAction: { background: "#0f7a24", color: "#fff", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" },
   card: { border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff", display: "grid", gap: 8, marginTop: 12 },
   heading: { fontSize: 15, color: "#0f172a" },
   chips: { display: "flex", flexWrap: "wrap", gap: 6 },

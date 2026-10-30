@@ -34,7 +34,7 @@ const CORE_LINKS = [
   },
   {
     to: "/account/find-diners",
-    title: "Find diners",
+    title: "Find Connects",
     blurb: "Discover people through food",
     testId: "feed-me-find-diners",
   },
