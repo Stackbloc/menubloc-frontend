@@ -174,8 +174,7 @@ test("Profile: Edit / View profile switch, Connects pill → Connects page, Shar
   assert.match(cards, /<Link to="\/feed\/connects"[^>]*data-testid="profile-connects-pill"/);
   assert.match(cards, /Share My Profile/);
   assert.doesNotMatch(cards, /Connect View\n/);
-  assert.match(cards, /title: "Tell people a bit more"/);
-  assert.match(cards, /NEXT_STAGE_AFTER = 2 \* DAY/);
+  assert.match(cards, /const SNOOZE = 7 \* 24 \* 3600 \* 1000/);
   const profile = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.doesNotMatch(profile, /<SocialCalendarCard \/>\n\s+<ConnectsNowSection \/>/);
   const page = read("src/pages/consumer/feed/FeedConnectsPage.jsx");

@@ -113,7 +113,7 @@ test("What I'm Eating / Wanna Eat use compact Add + sheet compose", () => {
   assert.match(hub, /setEditingAteMeal\(meal\)/);
   assert.match(page, /profileView\.previewAsConnect|previewAsConnect/);
   assert.match(page, /useOutletContext/);
-  assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
+  assert.match(read("src/pages/consumer/myMenuply/AppProfileCards.jsx"), /<CompactSwitch left="Edit profile" right="View profile"/); // glasses toggle replaced (Andre 2026-10-30)
   assert.match(hub, /isConnectPreview=\{isConnectPreview\}/);
   assert.doesNotMatch(page, /ActivityTextComposer|postScanActivityText/);
   assert.equal(

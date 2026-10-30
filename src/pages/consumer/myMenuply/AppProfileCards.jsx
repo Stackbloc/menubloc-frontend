@@ -617,12 +617,8 @@ export function AppMyActivity() {
 }
 
 const STARTER_KEY = "menuply:profile-starter";
-const DAY = 24 * 3600 * 1000;
-// Ask a little at a time (Andre 2026-10-30): the next set waits a couple of days after the last one.
-const NEXT_STAGE_AFTER = 2 * DAY;
-const SNOOZE = 7 * DAY;
+const SNOOZE = 7 * 24 * 3600 * 1000;
 const FAVS_GOAL = 3;
-const WISH_GOAL = 3;
 
 function readStarter() {
   try {
@@ -641,14 +637,13 @@ function writeStarter(v) {
 }
 
 /**
- * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): sign-up asks for very little, and
- * this card asks for the rest over time, a few things at once.
- *   1. A photo, 3 Fav dishes, a first clip. Until one is done, Connects see "Still in the kitchen".
- *   2. What you do, a line about you, a Fav restaurant.
- *   3. A first Connect, 3 dishes on your Wish List.
- * The next set shows a couple of days after the last one is done. ✕ hides the card for a week.
+ * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): sign-up asks only for name, email and
+ * password; this card asks for the rest. Today: a photo, 3 Fav dishes, a first clip (until one is done,
+ * Connects see "Still in the kitchen"). It is meant to come back from time to time: add a step to the
+ * list and everyone who hasn't done it sees the card again. It hides while every step is done; ✕
+ * hides it for a week.
  */
-export function AppProfileStarterCard({ avatarUrl, occupation, about }) {
+export function AppProfileStarterCard({ avatarUrl }) {
   const [saved, setSaved] = useState(readStarter);
   const [facts, setFacts] = useState(null);
   const [now, setNow] = useState(0);
@@ -656,71 +651,27 @@ export function AppProfileStarterCard({ avatarUrl, occupation, about }) {
   useEffect(() => {
     let alive = true;
     const count = (p, key) => p.then((r) => listOf(r, key).length).catch(() => 0);
-    Promise.all([
-      count(getLikedMenuItems(), "likes"),
-      count(listConsumerProfileMedia(), "items"),
-      count(getFollowedRestaurants(), "restaurants"),
-      count(listWantToEat(), "items"),
-      listConnections()
-        .then((l) => (l?.accepted || []).length)
-        .catch(() => 0),
-    ]).then(([favs, clips, favRestaurants, wishes, connects]) => {
+    Promise.all([count(getLikedMenuItems(), "likes"), count(listConsumerProfileMedia(), "items")]).then(([favs, clips]) => {
       if (!alive) return;
       setNow(Date.now());
-      setFacts({ favs, clips, favRestaurants, wishes, connects });
+      setFacts({ favs, clips });
     });
     return () => {
       alive = false;
     };
   }, []);
 
-  const stages = facts
-    ? [
-        {
-          title: "Set up your profile",
-          steps: [
-            { key: "photo", icon: "camera", label: "Add a photo", done: Boolean(avatarUrl), hint: "Tap the circle above" },
-            { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: facts.favs >= FAVS_GOAL, hint: facts.favs ? `${facts.favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
-            { key: "clip", icon: "camera", label: "Post your first clip", done: facts.clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
-          ],
-        },
-        {
-          title: "Tell people a bit more",
-          steps: [
-            { key: "occupation", icon: "profile", label: "Say what you do", done: Boolean(occupation), hint: "Student, chef, nurse…", to: "/account" },
-            { key: "about", icon: "comment", label: "Add a line about you", done: Boolean(about), to: "/account" },
-            { key: "favRestaurant", icon: "fav", label: "Fav a restaurant", done: facts.favRestaurants > 0, to: "/feed/search" },
-          ],
-        },
-        {
-          title: "Bring your people",
-          steps: [
-            { key: "connect", icon: "invite", label: "Make your first Connect", done: facts.connects > 0, to: "/account/find-diners" },
-            { key: "wish", icon: "wishList", label: `Add ${WISH_GOAL} dishes to your Wish List`, done: facts.wishes >= WISH_GOAL, hint: facts.wishes ? `${facts.wishes} of ${WISH_GOAL}` : null, to: "/feed/search" },
-          ],
-        },
-      ]
-    : [];
-  // When each set was finished (now, if just finished), so the next one can wait. Saved below.
-  const doneAt = { ...(saved.stageDoneAt || {}) };
-  stages.forEach((stg, i) => {
-    if (now && stg.steps.every((x) => x.done) && !doneAt[i]) doneAt[i] = now;
-  });
-  const doneKey = JSON.stringify(doneAt);
-  useEffect(() => {
-    if (doneKey !== JSON.stringify(saved.stageDoneAt || {})) writeStarter({ ...saved, stageDoneAt: JSON.parse(doneKey) });
-  }, [saved, doneKey]);
-
-  const at = stages.findIndex((stg) => stg.steps.some((x) => !x.done));
-  if (!facts || at < 0) return null;
+  if (!facts) return null;
   if (saved.snoozedUntil && saved.snoozedUntil > now) return null;
-  const finishedBefore = at > 0 ? doneAt[at - 1] : undefined;
-  if (at > 0 && (!finishedBefore || now - finishedBefore < NEXT_STAGE_AFTER)) return null;
-  const stage = stages[at];
-  const steps = stage.steps;
+  const steps = [
+    { key: "photo", icon: "camera", label: "Add a photo", done: Boolean(avatarUrl), hint: "Tap the circle above" },
+    { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: facts.favs >= FAVS_GOAL, hint: facts.favs ? `${facts.favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
+    { key: "clip", icon: "camera", label: "Post your first clip", done: facts.clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
+  ];
   const done = steps.filter((x) => x.done).length;
+  if (done === steps.length) return null;
   const close = () => {
-    const next = { ...saved, stageDoneAt: doneAt, snoozedUntil: now + SNOOZE };
+    const next = { ...saved, snoozedUntil: now + SNOOZE };
     setSaved(next);
     writeStarter(next);
   };
@@ -729,7 +680,7 @@ export function AppProfileStarterCard({ avatarUrl, occupation, about }) {
     <div style={{ ...st.card, borderColor: C.accent }} data-testid="profile-starter">
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1, display: "grid", gap: 2 }}>
-          <h2 style={st.heading}>{stage.title}</h2>
+          <h2 style={st.heading}>Set up your profile</h2>
           <p style={{ ...st.muted, fontSize: 13 }}>{`${done} of ${steps.length} done`}</p>
         </div>
         <button type="button" aria-label="Close" onClick={close} style={styles.starterClose} data-testid="profile-starter-close">
@@ -762,7 +713,7 @@ export function AppProfileStarterCard({ avatarUrl, occupation, about }) {
           </div>
         );
       })}
-      {at === 0 ? <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p> : null}
+      {avatarUrl || facts.favs || facts.clips ? null : <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p>}
     </div>
   );
 }
