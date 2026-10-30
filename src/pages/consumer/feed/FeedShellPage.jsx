@@ -25,10 +25,6 @@ import {
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
-function isOwnFeedProfilePath(pathname) {
-  return /^\/feed\/profile\/?$/.test(String(pathname || ""));
-}
-
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +49,6 @@ export default function FeedShellPage({ children = null }) {
   const [previewAsConnect, setPreviewAsConnect] = useState(() => readConnectViewFromWindow());
   const previewAsConnectRef = useRef(previewAsConnect);
   previewAsConnectRef.current = previewAsConnect;
-  const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
 
   function closeShellOverlays(except = null) {
     if (except !== "create") setCreateSheetOpen(false);
@@ -237,11 +232,6 @@ export default function FeedShellPage({ children = null }) {
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
           showShopBasket={false}
-          profileViewToggle={
-            showProfileViewToggle
-              ? { previewAsConnect, onToggle: toggleProfileView }
-              : null
-          }
         />
       )}
 

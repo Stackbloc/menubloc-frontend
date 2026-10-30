@@ -56,14 +56,7 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.match(rails, /wantSuggestions\.length > 0 && hubFocus !== "dishes" && !readOnly/);
   assert.match(rails, /showFoodStoryCta && !readOnly/);
 
-  const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
-  assert.match(viewToggle, /profile-view-mode-toggle/);
-  assert.match(viewToggle, /Edit View/);
-  assert.match(viewToggle, /Connect View/);
-  assert.match(viewToggle, /profile-view-mode-label/);
-  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
+  assert.match(read("src/pages/consumer/myMenuply/AppProfileCards.jsx"), /<CompactSwitch left="Edit profile" right="View profile"/); // glasses toggle replaced (Andre 2026-10-30)
   assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /toggleProfileView/);
-  assert.match(read("src/components/consumer/feed/FeedMobileHeader.jsx"), /ProfileViewModeToggle/);
-  assert.match(page, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
   assert.match(page, /toggleProfileViewMode/);
 });

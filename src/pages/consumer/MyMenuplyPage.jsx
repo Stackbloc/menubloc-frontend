@@ -10,12 +10,12 @@ import {
   AppMyActivity,
   AppProfileGuest,
   AppSettings,
+  AppProfileControls,
   AppProfileStack,
   AppProfileStarterCard,
   AppVibeCard,
 } from "./myMenuply/AppProfileCards.jsx";
 import CurrentVibeProfileSection from "./myMenuply/CurrentVibeProfileSection.jsx";
-import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
@@ -2397,14 +2397,7 @@ export default function MyMenuplyPage() {
               }}
               data-testid="feed-profile-settings-row"
             >
-              {/* Desktop: glasses toggle lives here (next to settings). Mobile uses FeedMobileHeader. */}
-              {isDesktopFeed ? (
-                <ProfileViewModeToggle
-                  previewAsConnect={previewAsConnect}
-                  onToggle={toggleProfileViewMode}
-                  variant="light"
-                />
-              ) : null}
+              {/* Edit / View profile is the switch on the Profile itself now (Andre 2026-10-30), not a glasses toggle here. */}
               {appLayout ? null : <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />}
             </div>
         ) : null}
@@ -2424,7 +2417,7 @@ export default function MyMenuplyPage() {
               notice={identityNotice}
               error={identityError}
               onAvatarFile={onAvatarFile}
-              onConnectView={toggleProfileViewMode}
+              onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()}
             />
             <AppProfileStarterCard avatarUrl={avatarUrl} />
             <MonthReportNudge />
@@ -2441,7 +2434,6 @@ export default function MyMenuplyPage() {
               </AppVibeCard>
             )}
             <SocialCalendarCard />
-            <ConnectsNowSection />
             <QuickInviteCard />
             <AppMyActivity />
           </AppProfileStack>
@@ -2459,7 +2451,12 @@ export default function MyMenuplyPage() {
         {isAuthenticated && !loading && subView === "clips" ? <MyClipsView /> : null}
 
         {isAuthenticated && !loading && previewAsConnect ? (
-          <SelfConnectView profile={profile} displayName={displayName} avatarUrl={avatarUrl} />
+          <SelfConnectView
+            profile={profile}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            header={<AppProfileControls viewing onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()} />}
+          />
         ) : null}
 
         {isAuthenticated && !loading && !appLayout && !previewAsConnect && !subView ? (

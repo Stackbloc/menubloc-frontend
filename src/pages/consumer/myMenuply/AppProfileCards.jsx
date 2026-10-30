@@ -13,6 +13,7 @@ import {
   getFollowedRestaurants,
   getLikedMenuItems,
   getMonthInFood,
+  listConnections,
   getPreferences,
   listConsumerProfileMedia,
   listWantToEat,
@@ -26,6 +27,7 @@ import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { useHomeBrowseFeed } from "../../../hooks/useHomeBrowseFeed.js";
 import HomeNextLocationSelector from "../../../components/homeNext/HomeNextLocationSelector.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
+import CompactSwitch from "../../../components/CompactSwitch.jsx";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 
@@ -109,8 +111,45 @@ function Box({ title, count, testId, children, after = null }) {
   );
 }
 
-/** Photo, name, what you do, location, About; Edit profile / Share / Connect View pills; gear. */
-export function AppIdentityCard({ displayName, avatarUrl, occupation, about, locationLabel, busy, notice, error, onAvatarFile, onConnectView }) {
+/**
+ * Top of Profile (app ProfileControls, Andre 2026-10-30): "Edit profile ●— View profile" (View = how
+ * your Connects see you), then Connects (its own page, with a count of new requests) and Share My
+ * Profile ("Share" alone left people asking what they were sharing).
+ */
+export function AppProfileControls({ viewing, onViewing }) {
+  const [requests, setRequests] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    listConnections()
+      .then((l) => alive && setRequests((l?.pending_incoming || []).length))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return (
+    <div style={styles.controls} data-testid="profile-controls">
+      <CompactSwitch left="Edit profile" right="View profile" value={viewing} onChange={onViewing} testId="profile-mode" />
+      {/* Compact pills, not full-width bars (Andre 2026-10-29). */}
+      <div style={{ ...styles.pillRow, justifyContent: "center" }}>
+        <Link to="/feed/connects" style={styles.pillQuiet} data-testid="profile-connects-pill">
+          Connects
+          {requests ? (
+            <span style={styles.badge} aria-label={`${requests} new ${requests === 1 ? "request" : "requests"}`}>
+              {requests}
+            </span>
+          ) : null}
+        </Link>
+        <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
+          Share My Profile
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Photo, name, what you do, location, About; Edit name, photo and About; the Profile controls; gear. */
+export function AppIdentityCard({ displayName, avatarUrl, occupation, about, locationLabel, busy, notice, error, onAvatarFile, onViewing }) {
   const fileRef = useRef(null);
   const initial = String(displayName || "?").trim().charAt(0).toUpperCase() || "?";
   return (
@@ -151,17 +190,11 @@ export function AppIdentityCard({ displayName, avatarUrl, occupation, about, loc
       {occupation ? <p style={st.muted}>{occupation}</p> : null}
       {locationLabel ? <p style={st.muted}>{locationLabel}</p> : null}
       {about ? <p style={st.body}>{about}</p> : null}
-      {/* Small pills side by side, not full-width bars (Andre 2026-10-29). */}
-      <div style={styles.pillRow}>
-        <Link to="/account" style={styles.pill} data-testid="profile-edit">
-          Edit profile
-        </Link>
-        <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
-          Share
-        </Link>
-        <button type="button" style={styles.pillQuiet} onClick={onConnectView} data-testid="profile-connect-view">
-          Connect View
-        </button>
+      <Link to="/account" style={st.link} data-testid="profile-edit">
+        Edit name, photo and About ›
+      </Link>
+      <div style={styles.controlsDivider}>
+        <AppProfileControls viewing={false} onViewing={onViewing} />
       </div>
     </div>
   );
@@ -583,53 +616,64 @@ export function AppMyActivity() {
   );
 }
 
-const STARTER_CLOSED_KEY = "menuply:profile-starter-closed";
+const STARTER_KEY = "menuply:profile-starter";
+const SNOOZE = 7 * 24 * 3600 * 1000;
 const FAVS_GOAL = 3;
 
+function readStarter() {
+  try {
+    return JSON.parse(window.localStorage.getItem(STARTER_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStarter(v) {
+  try {
+    window.localStorage.setItem(STARTER_KEY, JSON.stringify(v));
+  } catch {
+    // Private mode: remembered for this visit only.
+  }
+}
+
 /**
- * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): a photo, 3 Fav dishes, a first clip.
- * Until one is done, Connects see "Still in the kitchen". Goes away when all three are done, or closed.
+ * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): sign-up asks only for name, email and
+ * password; this card asks for the rest. Today: a photo, 3 Fav dishes, a first clip (until one is done,
+ * Connects see "Still in the kitchen"). It is meant to come back from time to time: add a step to the
+ * list and everyone who hasn't done it sees the card again. It hides while every step is done; ✕
+ * hides it for a week.
  */
 export function AppProfileStarterCard({ avatarUrl }) {
-  const [closed, setClosed] = useState(() => {
-    try {
-      return window.localStorage.getItem(STARTER_CLOSED_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const [favs, setFavs] = useState(null);
-  const [clips, setClips] = useState(null);
+  const [saved, setSaved] = useState(readStarter);
+  const [facts, setFacts] = useState(null);
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
-    if (closed) return undefined;
     let alive = true;
-    getLikedMenuItems()
-      .then((d) => alive && setFavs(listOf(d, "likes").length))
-      .catch(() => alive && setFavs(0));
-    listConsumerProfileMedia()
-      .then((m) => alive && setClips(listOf(m, "items").length))
-      .catch(() => alive && setClips(0));
+    const count = (p, key) => p.then((r) => listOf(r, key).length).catch(() => 0);
+    Promise.all([count(getLikedMenuItems(), "likes"), count(listConsumerProfileMedia(), "items")]).then(([favs, clips]) => {
+      if (!alive) return;
+      setNow(Date.now());
+      setFacts({ favs, clips });
+    });
     return () => {
       alive = false;
     };
-  }, [closed]);
+  }, []);
 
-  if (closed || favs == null || clips == null) return null;
+  if (!facts) return null;
+  if (saved.snoozedUntil && saved.snoozedUntil > now) return null;
   const steps = [
     { key: "photo", icon: "camera", label: "Add a photo", done: Boolean(avatarUrl), hint: "Tap the circle above" },
-    { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: favs >= FAVS_GOAL, hint: favs ? `${favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
-    { key: "clip", icon: "camera", label: "Post your first clip", done: clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
+    { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: facts.favs >= FAVS_GOAL, hint: facts.favs ? `${facts.favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
+    { key: "clip", icon: "camera", label: "Post your first clip", done: facts.clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
   ];
   const done = steps.filter((x) => x.done).length;
   if (done === steps.length) return null;
   const close = () => {
-    setClosed(true);
-    try {
-      window.localStorage.setItem(STARTER_CLOSED_KEY, "1");
-    } catch {
-      // Private mode: closed for this visit only.
-    }
+    const next = { ...saved, snoozedUntil: now + SNOOZE };
+    setSaved(next);
+    writeStarter(next);
   };
 
   return (
@@ -669,7 +713,7 @@ export function AppProfileStarterCard({ avatarUrl }) {
           </div>
         );
       })}
-      <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p>
+      {avatarUrl || facts.favs || facts.clips ? null : <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p>}
     </div>
   );
 }
@@ -913,6 +957,23 @@ const styles = {
   check: { display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 15, color: C.text, cursor: "pointer" },
   gear: { position: "absolute", top: 8, right: 8, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: C.text },
   pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  controls: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
+  controlsDivider: { borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4 },
+  badge: {
+    marginLeft: 6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    padding: "0 4px",
+    boxSizing: "border-box",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: C.accent,
+    color: C.onAccent,
+    fontSize: 11,
+    fontWeight: 700,
+  },
   pill: {
     display: "inline-flex",
     alignItems: "center",

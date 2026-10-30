@@ -58,7 +58,6 @@ import ConsumerEduVerify from "./pages/consumer/ConsumerEduVerify.jsx";
 import ConsumerVerifyEmail from "./pages/consumer/ConsumerVerifyEmail.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
-import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
 import FindDinersPage from "./pages/consumer/FindDinersPage.jsx";
 import DiscoverableDinerProfilePage from "./pages/consumer/DiscoverableDinerProfilePage.jsx";
 import SocialEventJoinPage from "./pages/SocialEventJoinPage.jsx";
@@ -1039,7 +1038,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/connections/:peerId/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/account/connections/:peerId/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionPeerWhatIAtePage />} />
         <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectProfilePage />} />
-        <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
+        {/* The app's Connects page now (Andre 2026-10-30, app wins). */}
+        <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/feed/connects" replace />} />
         <Route path="/account/diners/:userId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiscoverableDinerProfilePage />} />
         <Route path="/account/find-diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FindDinersPage />} />
         <Route path="/join-event/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialEventJoinPage />} />

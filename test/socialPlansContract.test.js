@@ -165,12 +165,27 @@ test("empty profile: Still in the kitchen, Set up your profile, no link to an em
   assert.match(cards, /export function AppProfileStarterCard/);
   assert.match(cards, /\{monthHas \? \(\n\s+<Link to=\{MY_MENUPLY_MONTH_IN_FOOD_PATH\}/);
   const profile = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(profile, /<AppProfileStarterCard avatarUrl=\{avatarUrl\} \/>/);
+  assert.match(profile, /<AppProfileStarterCard avatarUrl=\{avatarUrl\}/);
+});
+
+test("Profile: Edit / View profile switch, Connects pill → Connects page, Share My Profile (Andre 2026-10-30)", () => {
+  const cards = read("src/pages/consumer/myMenuply/AppProfileCards.jsx");
+  assert.match(cards, /<CompactSwitch left="Edit profile" right="View profile"/);
+  assert.match(cards, /<Link to="\/feed\/connects"[^>]*data-testid="profile-connects-pill"/);
+  assert.match(cards, /Share My Profile/);
+  assert.doesNotMatch(cards, /Connect View\n/);
+  assert.match(cards, /const SNOOZE = 7 \* 24 \* 3600 \* 1000/);
+  const profile = read("src/pages/consumer/MyMenuplyPage.jsx");
+  assert.doesNotMatch(profile, /<SocialCalendarCard \/>\n\s+<ConnectsNowSection \/>/);
+  const page = read("src/pages/consumer/feed/FeedConnectsPage.jsx");
+  assert.match(page, /<ConnectsNowSection onPage \/>/);
+  assert.match(page, /Your Connects · \{accepted\.length\}/);
+  assert.match(read("src/App.jsx"), /path="\/account\/connections" element=\{crmHost \? <HostRouteRedirect to="\/crm" \/> : <Navigate to="\/feed\/connects" replace \/>\}/);
 });
 
 test("Connect View = the app's Connect screen with your own data (Andre 2026-10-30)", () => {
   const page = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(page, /previewAsConnect \? \(\n\s+<SelfConnectView /);
+  assert.match(page, /previewAsConnect \? \(\n\s+<SelfConnectView\n/);
   assert.match(page, /!appLayout && !previewAsConnect && !subView \?/);
   const screen = read("src/pages/consumer/ConnectProfilePage.jsx");
   assert.match(screen, /export function SelfConnectView/);
