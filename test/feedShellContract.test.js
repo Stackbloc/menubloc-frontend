@@ -402,10 +402,10 @@ test("Feed as home: / redirects to /feed; FeedPrimaryNav paths unchanged", () =>
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
-  assert.match(feedLinks, /to: "\/waiter"/);
-  assert.match(feedLinks, /label: "Waiter"/);
-  assert.match(feedLinks, /label: "Share My QR"/);
-  assert.match(feedLinks, /openShareQr:\s*true/);
+  // App's tabs (Andre 2026-10-29): Home · Post · Deals · Search · Profile; no Waiter tab.
+  assert.doesNotMatch(feedLinks, /to: "\/waiter"/);
+  assert.doesNotMatch(feedLinks, /label: "Share My QR"/);
+  assert.match(feedLinks, /label: "Post"|FEED_LEFT_TABS = \[FEED_HOME_TAB\]/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
   assert.doesNotMatch(feedLinks, /openFeedMenuBrowser/);
   assert.match(feedLinks, /to: "\/feed\/deals"/);

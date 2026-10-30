@@ -21,37 +21,27 @@ export const FEED_HOME_TAB = {
   to: "/feed",
   end: true,
   label: "Home",
-  /** Mobile bottom bar shows the house icon instead of the word (matches Search & Shop's bar). */
-  mobileIcon: "🏠",
+  /** Mobile bottom bar: the app's icon over the label (AppIcon name). */
+  icon: "home",
   testId: "feed-nav-home",
   alsoActiveOn: ["/"],
 };
 
 /**
- * authOnly tabs are introduced after sign-up: new visitors only see features that explain
- * themselves (a guest has no QR, and Waiter is unfamiliar) — Andre, 2026-10-11.
+ * Same tabs as the app (Andre 2026-10-24/29, the app wins): Home · Post (X) · Deals · Search · Profile.
+ * Every tab has an icon and a label. The basket is the cart button beside ☰ (FeedMobileHeader), shown
+ * whenever it has items; the desktop rail keeps its own Basket button.
  */
-export const FEED_LEFT_TABS = [
-  FEED_HOME_TAB,
-  { to: "/waiter", end: false, label: "Waiter", testId: "feed-nav-waiter", authOnly: true },
-  {
-    to: "/feed",
-    end: true,
-    label: "Share My QR",
-    testId: "feed-nav-share-qr",
-    /** Opens diner QR share sheet (FeedShareMyMenuplySheet). */
-    openShareQr: true,
-    authOnly: true,
-  },
-];
+export const FEED_LEFT_TABS = [FEED_HOME_TAB];
 
 export const FEED_RIGHT_TABS = [
-  { to: "/feed/deals", end: false, label: "Deals", testId: "feed-nav-deals" },
-  { to: "/feed/search", end: true, label: "Search & Shop", testId: "feed-nav-shop", resetSearch: true },
-  /** Opens the existing order cart. Desktop rail renders it as its Basket button (same slot). */
-  { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true },
-  { to: "/feed/profile", end: false, label: "Profile", testId: "feed-nav-profile" },
+  { to: "/feed/deals", end: false, label: "Deals", icon: "deals", testId: "feed-nav-deals" },
+  { to: "/feed/search", end: true, label: "Search", icon: "search", testId: "feed-nav-shop", resetSearch: true },
+  { to: "/feed/profile", end: false, label: "Profile", icon: "profile", testId: "feed-nav-profile" },
 ];
+
+/** Desktop rail only: opens the order cart (the mobile bar has no Basket tab). */
+export const FEED_RAIL_BASKET_TAB = { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true };
 
 /** Drop authOnly tabs for signed-out visitors (and mobileOnly tabs on the desktop rail). */
 export function visibleFeedTabs(tabs, { isAuthenticated = false, desktop = false } = {}) {
@@ -63,8 +53,8 @@ export function visibleFeedTabs(tabs, { isAuthenticated = false, desktop = false
 /** All primary tabs in display order (desktop rail). */
 export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 
-/** Desktop rail: Home first, then Share, then remaining tabs. */
-export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS];
+/** Desktop rail: Home first, then Deals, Search, Basket, Profile. */
+export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS.slice(0, 2), FEED_RAIL_BASKET_TAB, ...FEED_RIGHT_TABS.slice(2)];
 
 /** Menu capture return — Yellow Browse owns bookmarked/recent menus. */
 export const FEED_MENU_CAPTURE_PATH = `/menu-capture?next=${encodeURIComponent(MENU_BROWSER_PATH)}`;

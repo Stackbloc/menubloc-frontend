@@ -65,7 +65,7 @@ import {
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import MenuInfoButton from "../components/menu/MenuInfoButton.jsx";
-import { MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
+import { MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import MenuRestaurantContextualVideo from "../components/menu/MenuRestaurantContextualVideo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
@@ -1504,6 +1504,8 @@ export default function PublicMenuPage() {
     pageType: "public_menu",
     shareTarget: "menu",
   };
+  const shareHeaderValue = { shareData, analyticsContext: shareAnalyticsContext };
+
   const cartRestaurant = {
     restaurantId: currentRestaurantId,
     restaurantName,
@@ -2030,7 +2032,8 @@ export default function PublicMenuPage() {
           </div>
         ) : null}
 
-        <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
+        <MenuHeaderShareContext.Provider value={shareHeaderValue}>
+          <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
         {applyMenuAppearance && appearanceTokens ? (
           <div
             style={{
@@ -2054,6 +2057,7 @@ export default function PublicMenuPage() {
           </MenuRowActionsContext.Provider>
         )}
         </MenuHeaderTrailingActionContext.Provider>
+          </MenuHeaderShareContext.Provider>
       </div>
 
       {/* Orderable dish → order sheet (photo, quantity, choices, Add to order $X); otherwise info sheet. */}

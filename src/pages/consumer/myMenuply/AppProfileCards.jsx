@@ -1,0 +1,840 @@
+/**
+ * Diner Profile cards, the same as the app's Profile tab (menuply-mobile app/(tabs)/profile.tsx and
+ * src/components/account/*; the app wins where the two differ, Andre 2026-10-29). Signed-in order:
+ * photo + name, Edit profile / Share My Profile pills, Sign out · How discoverable are you? · Your vibe
+ * · Connects · Quick Invite · My Social Calendar · My activity · Dietary needs · Basket + Location ·
+ * links. Signed out: what an account unlocks and Sign in.
+ */
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  deleteWantToEat,
+  getConsumerProfile,
+  getFollowedRestaurants,
+  getLikedMenuItems,
+  getPreferences,
+  listWantToEat,
+  unfollowRestaurant,
+  unlikeMenuItem,
+  updateConsumerProfile,
+  updatePreferences,
+  updateSearchVibeAudience,
+} from "../../../lib/consumerApi.js";
+import { useOrderCart } from "../../../context/OrderCartContext.jsx";
+import { useHomeBrowseFeed } from "../../../hooks/useHomeBrowseFeed.js";
+import HomeNextLocationSelector from "../../../components/homeNext/HomeNextLocationSelector.jsx";
+import AppIcon from "../../../components/icons/AppIcon.jsx";
+import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
+
+// App tokens (menuply-mobile src/theme/tokens.ts).
+const C = {
+  accent: "#0f7a24",
+  accentSoft: "#e8f5e3",
+  onAccent: "#ffffff",
+  text: "#111613",
+  muted: "#5c665f",
+  border: "#e1e6e1",
+  surface: "#f5f7f4",
+  background: "#ffffff",
+  danger: "#b42318",
+};
+
+const appProfileStyles = {
+  page: { background: C.surface, color: C.text, display: "flex", flexDirection: "column", gap: 16 },
+  card: {
+    background: C.background,
+    borderRadius: 12,
+    border: `1px solid ${C.border}`,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    boxSizing: "border-box",
+  },
+  heading: { margin: 0, fontSize: 18, lineHeight: "24px", fontWeight: 700, color: C.text },
+  body: { margin: 0, fontSize: 16, lineHeight: "22px", color: C.text },
+  muted: { margin: 0, fontSize: 15, lineHeight: "21px", color: C.muted },
+  link: {
+    alignSelf: "flex-start",
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    fontSize: 14,
+    fontWeight: 700,
+    color: C.accent,
+    cursor: "pointer",
+    textDecoration: "none",
+    fontFamily: "inherit",
+  },
+  error: { margin: 0, fontSize: 15, color: C.danger },
+};
+const st = appProfileStyles;
+
+/** The Profile column: cards on the app's light surface, 16 px apart. */
+export function AppProfileStack({ children, testId = "app-profile" }) {
+  return (
+    <div style={st.page} data-testid={testId}>
+      {children}
+    </div>
+  );
+}
+
+function errText(err, fallback) {
+  return (err && err.message) || fallback;
+}
+
+/** A box that opens and closes when its header is tapped (app MyActivity Box / DietaryNeeds). */
+function Box({ title, count, testId, children, after = null }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ ...styles.box, ...(open ? styles.boxOpen : null) }} data-testid={testId}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={`${title}, ${count}`}
+        onClick={() => setOpen((v) => !v)}
+        style={styles.boxHead}
+        data-testid={`${testId}-toggle`}
+      >
+        <span style={styles.boxTitle}>{title}</span>
+        <span style={styles.count}>{count}</span>
+        <AppIcon name="chevronDown" size={16} color={C.muted} strokeWidth={2.4} style={open ? { transform: "rotate(180deg)" } : null} />
+      </button>
+      {after}
+      {open ? <div style={styles.boxBody}>{children}</div> : null}
+    </div>
+  );
+}
+
+/** Photo, name, email, location; Edit profile / Share My Profile pills; Sign out. */
+export function AppIdentityCard({ displayName, avatarUrl, email, locationLabel, busy, notice, error, onAvatarFile, onSignOut }) {
+  const fileRef = useRef(null);
+  const [signOutFailed, setSignOutFailed] = useState(false);
+  const initial = String(displayName || "?").trim().charAt(0).toUpperCase() || "?";
+  return (
+    <div style={st.card} data-testid="profile-signed-in">
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={busy}
+        aria-label="Change profile photo"
+        style={styles.avatarBtn}
+        data-testid="profile-photo"
+      >
+        {avatarUrl ? <img src={avatarUrl} alt="" style={styles.avatarImg} /> : <span style={styles.avatarInitial}>{initial}</span>}
+        <span style={styles.avatarBadge} aria-hidden="true">
+          <AppIcon name="camera" size={14} color="#fff" />
+        </span>
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/*"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onAvatarFile?.(file);
+        }}
+      />
+      {notice ? <p style={{ ...st.muted, color: C.accent }}>{notice}</p> : null}
+      {error ? <p style={st.error}>{error}</p> : null}
+      <h2 style={st.heading}>{displayName}</h2>
+      {email ? <p style={st.muted}>{email}</p> : null}
+      {locationLabel ? <p style={st.body}>{locationLabel}</p> : null}
+      {signOutFailed ? <p style={st.error}>Couldn&apos;t reach Menuply to sign out. Try again.</p> : null}
+      {/* Small pills side by side, not full-width bars (Andre 2026-10-29). */}
+      <div style={styles.pillRow}>
+        <Link to="/account" style={styles.pill} data-testid="profile-edit">
+          Edit profile
+        </Link>
+        <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
+          Share My Profile
+        </Link>
+      </div>
+      <button
+        type="button"
+        style={st.link}
+        onClick={async () => {
+          try {
+            await onSignOut?.();
+          } catch {
+            setSignOutFailed(true);
+          }
+        }}
+        data-testid="profile-sign-out"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
+const LEVELS = [
+  { value: "hidden", label: "Hidden", hint: "Nobody can find you, and you won’t see or discover anyone either. Your Connects stay connected." },
+  { value: "connects", label: "My Connects", hint: "Your Connects see your vibe in food search. (Default)" },
+  { value: "connects_of_connects", label: "Connects of Connects", hint: "Also their Connects (they see your first name only)." },
+  { value: "everyone", label: "Everyone", hint: "Anyone on Menuply searching food in your city sees your first name, photo and vibe." },
+];
+
+const EVERYONE_WARNING =
+  "Everyone on Menuply near you will see your first name, photo and vibe in food search while your vibe is on. Don’t share your home address or plans you wouldn’t want strangers to know. You can switch back anytime.";
+
+function discoverLevelOf(profile) {
+  if (profile?.discoverability === "nobody") return "hidden";
+  if (profile?.search_vibe_audience === "everyone") return "everyone";
+  return profile?.search_vibe_audience === "connects_of_connects" ? "connects_of_connects" : "connects";
+}
+
+/**
+ * How discoverable are you? Hidden · My Connects (default) · Connects of Connects · Everyone, with a
+ * safety warning before Everyone. Closed to start, showing the current level.
+ */
+export function AppDiscoverabilityCard({ onChange }) {
+  const [open, setOpen] = useState(false);
+  const [level, setLevel] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmEveryone, setConfirmEveryone] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    getConsumerProfile()
+      .then((data) => {
+        if (!alive) return;
+        const l = discoverLevelOf(data?.profile || {});
+        setLevel(l);
+        onChange?.(l);
+      })
+      .catch((err) => alive && setError(errText(err, "Couldn’t load this setting.")));
+    return () => {
+      alive = false;
+    };
+    // Load once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function choose(next) {
+    if (!level || next === level) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (next === "hidden") {
+        await updateConsumerProfile({ discoverability: "nobody" });
+      } else {
+        if (level === "hidden") await updateConsumerProfile({ discoverability: "anyone" });
+        await updateSearchVibeAudience(next);
+      }
+      setLevel(next);
+      onChange?.(next);
+    } catch (err) {
+      setError(errText(err, "Couldn’t save. Try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const current = LEVELS.find((l) => l.value === level);
+  return (
+    <div style={st.card} data-testid="discoverability-card">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={styles.boxHead} data-testid="discoverability-toggle">
+        <span style={{ ...st.heading, flex: 1, textAlign: "left" }}>How discoverable are you?</span>
+        {busy ? <span style={st.muted}>…</span> : null}
+        {!open && current ? (
+          <span style={styles.current} data-testid="discover-current">
+            {current.label}
+          </span>
+        ) : null}
+        <AppIcon name="chevronDown" size={16} color={C.muted} strokeWidth={2.4} style={open ? { transform: "rotate(180deg)" } : null} />
+      </button>
+      {open && level
+        ? LEVELS.map((l) => {
+            const on = level === l.value;
+            return (
+              <button
+                key={l.value}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                disabled={busy}
+                onClick={() => (l.value === "everyone" && !on ? setConfirmEveryone(true) : void choose(l.value))}
+                style={{ ...styles.option, ...(on ? styles.optionOn : null) }}
+                data-testid={`discover-${l.value}`}
+              >
+                <span style={{ ...styles.radio, ...(on ? styles.radioOn : null) }}>{on ? <span style={styles.radioDot} /> : null}</span>
+                <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, textAlign: "left" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{l.label}</span>
+                  <span style={{ fontSize: 13, lineHeight: "18px", color: C.muted }}>{l.hint}</span>
+                </span>
+              </button>
+            );
+          })
+        : null}
+      {error ? (
+        <p style={st.error} role="alert" data-testid="discover-error">
+          {error}
+        </p>
+      ) : null}
+      {confirmEveryone ? (
+        <div style={styles.warn} role="alertdialog" aria-label="Be seen by everyone?" data-testid="discover-everyone-warning">
+          <h3 style={st.heading}>Be seen by everyone?</h3>
+          <p style={st.body}>{EVERYONE_WARNING}</p>
+          <div style={styles.pillRow}>
+            <button
+              type="button"
+              style={styles.pill}
+              onClick={() => {
+                setConfirmEveryone(false);
+                void choose("everyone");
+              }}
+              data-testid="discover-everyone-confirm"
+            >
+              Yes, show me to everyone
+            </button>
+            <button type="button" style={styles.pillQuiet} onClick={() => setConfirmEveryone(false)}>
+              Keep it smaller
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** "Your vibe" card around the website's vibe picker (same 7 vibes and durations as the app). */
+export function AppVibeCard({ children }) {
+  return (
+    <div style={st.card} data-testid="vibe-card">
+      <h2 style={st.heading}>Your vibe</h2>
+      {children}
+    </div>
+  );
+}
+
+const listOf = (body, key) => (Array.isArray(body?.[key]) ? body[key] : []);
+const idOf = (v) => (v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
+const restaurantHref = (id) => (id != null ? `/restaurants/${id}` : null);
+
+function ActivityRow({ title, subtitle, href, icon, removeLabel, onRemove, testId }) {
+  const navigate = useNavigate();
+  return (
+    <div style={styles.row} data-testid={testId}>
+      <button type="button" style={styles.rowMain} onClick={() => href && navigate(href)} disabled={!href}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{title}</span>
+        {subtitle ? <span style={{ fontSize: 13, color: C.muted }}>{subtitle}</span> : null}
+      </button>
+      <button type="button" aria-label={removeLabel} onClick={onRemove} style={styles.rowIcon}>
+        <AppIcon name={icon} size={20} color={C.accent} filled />
+      </button>
+    </div>
+  );
+}
+
+/** My activity: Favs (restaurants and dishes) and the Wish List; each list opens when tapped. */
+export function AppMyActivity() {
+  const [favRestaurants, setFavRestaurants] = useState([]);
+  const [favDishes, setFavDishes] = useState([]);
+  const [wishList, setWishList] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    Promise.allSettled([getFollowedRestaurants(), getLikedMenuItems(), listWantToEat()]).then(([r, d, w]) => {
+      if (!alive) return;
+      if (r.status === "fulfilled") {
+        setFavRestaurants(
+          listOf(r.value, "restaurants")
+            .map((x) => ({ restaurantId: idOf(x.restaurant_id ?? x.id), name: x.restaurant_name || x.name || "Restaurant" }))
+            .filter((x) => x.restaurantId)
+        );
+      }
+      if (d.status === "fulfilled") {
+        setFavDishes(
+          listOf(d.value, "likes")
+            .map((x) => ({ dishId: idOf(x.menu_item_id), name: x.item_name || "Dish", restaurantId: idOf(x.restaurant_id), restaurantName: x.restaurant_name || null }))
+            .filter((x) => x.dishId)
+        );
+      }
+      if (w.status === "fulfilled") {
+        setWishList(
+          listOf(w.value, "items")
+            .map((x) => ({ wishId: String(x.id ?? ""), name: x.food_name || x.item_name || "Dish", restaurantId: idOf(x.restaurant_id), restaurantName: x.restaurant_name || null }))
+            .filter((x) => x.wishId)
+        );
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function remove(run, undo) {
+    setError("");
+    try {
+      await run();
+    } catch (err) {
+      undo();
+      setError(errText(err, "Couldn’t update. Try again."));
+    }
+  }
+
+  return (
+    <div style={st.card} data-testid="my-activity">
+      <h2 style={st.heading}>My activity</h2>
+      {error ? (
+        <p style={st.error} role="alert">
+          {error}
+        </p>
+      ) : null}
+      <Box title="Favs · restaurants" count={favRestaurants.length} testId="my-box-fav-restaurants">
+        {favRestaurants.length ? (
+          favRestaurants.map((r) => (
+            <ActivityRow
+              key={`r-${r.restaurantId}`}
+              title={r.name}
+              href={restaurantHref(r.restaurantId)}
+              icon="fav"
+              removeLabel={`Remove ${r.name} from Favs`}
+              onRemove={() => {
+                const prev = favRestaurants;
+                setFavRestaurants(prev.filter((x) => x.restaurantId !== r.restaurantId));
+                void remove(() => unfollowRestaurant(r.restaurantId), () => setFavRestaurants(prev));
+              }}
+              testId={`my-fav-restaurant-${r.restaurantId}`}
+            />
+          ))
+        ) : (
+          <p style={st.muted}>Tap the heart on a restaurant to Fav it.</p>
+        )}
+      </Box>
+      <Box title="Favs · dishes" count={favDishes.length} testId="my-box-fav-dishes">
+        {favDishes.length ? (
+          favDishes.map((d) => (
+            <ActivityRow
+              key={`d-${d.dishId}`}
+              title={d.name}
+              subtitle={d.restaurantName}
+              href={restaurantHref(d.restaurantId)}
+              icon="fav"
+              removeLabel={`Remove ${d.name} from Favs`}
+              onRemove={() => {
+                const prev = favDishes;
+                setFavDishes(prev.filter((x) => x.dishId !== d.dishId));
+                void remove(() => unlikeMenuItem(d.dishId), () => setFavDishes(prev));
+              }}
+              testId={`my-fav-dish-${d.dishId}`}
+            />
+          ))
+        ) : (
+          <p style={st.muted}>Tap the heart on a dish or clip to Fav it.</p>
+        )}
+      </Box>
+      <Box title="Wish List" count={wishList.length} testId="my-box-wish-list">
+        {wishList.length ? (
+          wishList.map((w) => (
+            <ActivityRow
+              key={`w-${w.wishId}`}
+              title={w.name}
+              subtitle={w.restaurantName}
+              href={restaurantHref(w.restaurantId)}
+              icon="wishList"
+              removeLabel={`Remove ${w.name} from your Wish List`}
+              onRemove={() => {
+                const prev = wishList;
+                setWishList(prev.filter((x) => x.wishId !== w.wishId));
+                void remove(() => deleteWantToEat(w.wishId), () => setWishList(prev));
+              }}
+              testId={`my-wish-${w.wishId}`}
+            />
+          ))
+        ) : (
+          <p style={st.muted}>Tap +Wish List on dishes you want to try.</p>
+        )}
+      </Box>
+    </div>
+  );
+}
+
+// Same keys and order as the backend (routes/consumer/profile.js VALID_*_KEYS).
+const DIETS = [
+  ["vegetarian", "Vegetarian"],
+  ["vegan", "Vegan"],
+  ["gluten_free", "Gluten-free"],
+  ["dairy_free", "Dairy-free"],
+  ["low_carb", "Low carb"],
+  ["high_protein", "High protein"],
+  ["low_sodium", "Low sodium"],
+  ["diabetic_friendly", "Diabetic-friendly"],
+  ["nut_free", "Nut-free"],
+  ["halal", "Halal"],
+  ["kosher", "Kosher"],
+  ["paleo", "Paleo"],
+  ["keto", "Keto"],
+];
+const ALLERGENS = [
+  ["peanuts", "Peanuts"],
+  ["tree_nuts", "Tree nuts"],
+  ["dairy", "Dairy"],
+  ["gluten", "Gluten"],
+  ["shellfish", "Shellfish"],
+  ["soy", "Soy"],
+  ["eggs", "Eggs"],
+  ["fish", "Fish"],
+  ["sesame", "Sesame"],
+  ["wheat", "Wheat"],
+  ["mustard", "Mustard"],
+  ["celery", "Celery"],
+  ["lupin", "Lupin"],
+  ["molluscs", "Molluscs"],
+];
+
+const DIETARY_DISCLAIMER =
+  "Menuply can’t guarantee that dish diet and allergen info is accurate or complete. Always confirm with the restaurant before you order.";
+
+function parseNeeds(body) {
+  const on = (rows, key) => (Array.isArray(rows) ? rows : []).filter((r) => r.is_enabled === true).map((r) => String(r[key] ?? "")).filter(Boolean);
+  return { diets: on(body?.dietary_preferences, "preference_key"), allergens: on(body?.allergen_preferences, "allergen_key") };
+}
+const same = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+/** Dietary needs: "I eat" (diets) and "Keep out" (allergens); one Save sends the whole set. */
+export function AppDietaryNeeds() {
+  const [saved, setSaved] = useState(null);
+  const [draft, setDraft] = useState({ diets: [], allergens: [] });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    getPreferences()
+      .then((b) => {
+        if (!alive) return;
+        const n = parseNeeds(b);
+        setSaved(n);
+        setDraft(n);
+      })
+      .catch(() => alive && setSaved({ diets: [], allergens: [] }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const count = (saved?.diets.length ?? 0) + (saved?.allergens.length ?? 0);
+  const changed = saved != null && (!same(saved.diets, draft.diets) || !same(saved.allergens, draft.allergens));
+  const toggle = (group, key) => {
+    setMessage(null);
+    setDraft((d) => ({ ...d, [group]: d[group].includes(key) ? d[group].filter((k) => k !== key) : [...d[group], key] }));
+  };
+
+  async function save() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const b = await updatePreferences({
+        dietary_preferences: DIETS.map(([key]) => ({ key, is_enabled: draft.diets.includes(key) })),
+        allergen_preferences: ALLERGENS.map(([key]) => ({ key, is_enabled: draft.allergens.includes(key) })),
+      });
+      const n = b && Array.isArray(b.dietary_preferences) ? parseNeeds(b) : draft;
+      setSaved(n);
+      setDraft(n);
+      setMessage({ text: "Saved. Search uses these now.", error: false });
+    } catch (err) {
+      setMessage({ text: errText(err, "Couldn’t save. Try again."), error: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const chips = (group, list) => (
+    <div style={styles.chips}>
+      {list.map(([key, label]) => {
+        const on = draft[group].includes(key);
+        return (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => toggle(group, key)}
+            style={{ ...styles.chip, ...(on ? (group === "allergens" ? styles.chipAllergen : styles.chipOn) : null) }}
+            data-testid={`diet-${group}-${key}`}
+          >
+            {on ? <AppIcon name="check" size={14} color="#fff" strokeWidth={2.6} /> : null}
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <Box
+      title="Dietary needs"
+      count={count}
+      testId="dietary-needs"
+      after={
+        <p style={styles.disclaimer} data-testid="dietary-disclaimer">
+          {DIETARY_DISCLAIMER}
+        </p>
+      }
+    >
+      {!saved ? <p style={st.muted}>Loading…</p> : null}
+      <p style={styles.label}>I eat</p>
+      {chips("diets", DIETS)}
+      <p style={styles.label}>Keep out (allergens)</p>
+      {chips("allergens", ALLERGENS)}
+      <p style={{ ...st.muted, fontSize: 13 }}>Search hides dishes listed with these allergens. Many dishes have no allergen info yet.</p>
+      {message ? (
+        <p style={message.error ? st.error : { ...st.muted, color: C.accent }} role={message.error ? "alert" : undefined} data-testid="dietary-message">
+          {message.text}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        disabled={!changed || busy}
+        onClick={save}
+        style={{ ...styles.pill, alignSelf: "flex-start", opacity: !changed || busy ? 0.5 : 1 }}
+        data-testid="dietary-save"
+      >
+        {busy ? "Saving…" : "Save"}
+      </button>
+    </Box>
+  );
+}
+
+/** Basket and Location, as on the app's Profile. */
+export function AppBasketLocationCard() {
+  const { itemCount, subtotalCents, restaurant, openCart } = useOrderCart();
+  const { autoLocation, appliedLocation, setAppliedLocation, locating } = useHomeBrowseFeed();
+  const restaurantName = restaurant?.restaurantName || restaurant?.restaurant_name || null;
+  return (
+    <div style={st.card}>
+      <h2 style={st.heading}>Basket</h2>
+      {itemCount ? (
+        <button type="button" style={{ ...st.link, fontSize: 16, fontWeight: 400, color: C.text }} onClick={openCart} data-testid="profile-basket">
+          {itemCount} {itemCount === 1 ? "item" : "items"}
+          {restaurantName ? ` from ${restaurantName}` : ""}
+          {subtotalCents ? ` · $${(subtotalCents / 100).toFixed(2)}` : ""}
+        </button>
+      ) : (
+        <p style={st.muted} data-testid="profile-basket">
+          Your basket is empty. Tap a dish on any menu to add it.
+        </p>
+      )}
+      <h2 style={st.heading}>Location</h2>
+      <div style={{ paddingLeft: 12 }} data-testid="profile-location">
+        <HomeNextLocationSelector
+          autoLocation={autoLocation}
+          appliedLocation={appliedLocation}
+          onApplyLocation={setAppliedLocation}
+          locating={locating}
+        />
+      </div>
+    </div>
+  );
+}
+
+const LINKS = [
+  ["About Menuply", "/about"],
+  ["Contact us", "/contact"],
+  ["Privacy", "/privacy"],
+  ["Terms", "/terms"],
+];
+
+export function AppProfileLinks() {
+  return (
+    <div style={st.card}>
+      {LINKS.map(([label, to]) => (
+        <Link key={to} to={to} style={styles.linkRow}>
+          <span>{label}</span>
+          <span style={{ color: C.muted }}>›</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+const SIGNED_IN = ["Save dishes to your Wish List", "Fav restaurants and dishes", "Invite friends to eat", "Post video comments on dishes"];
+
+/** Signed out: logo, what an account unlocks, Sign in, then Basket + Location and links. */
+export function AppProfileGuest() {
+  const navigate = useNavigate();
+  return (
+    <div style={st.page} data-testid="feed-guest-profile">
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "8px 0" }}>
+        <img src="/menuply-app-icon.png" alt="" style={{ width: 72, height: 72, borderRadius: 16, objectFit: "cover", border: "1px solid #e1e6e1" }} />
+        <h1 style={{ ...st.heading, fontSize: 24, lineHeight: "30px" }}>Menuply</h1>
+      </div>
+      <div style={st.card} data-testid="profile-sign-in">
+        <h2 style={st.heading}>Sign in</h2>
+        {SIGNED_IN.map((line) => (
+          <p key={line} style={st.body}>
+            • {line}
+          </p>
+        ))}
+        <button type="button" style={{ ...styles.pill, alignSelf: "flex-start", marginTop: 4 }} onClick={() => navigate(FEED_SHELL_PROFILE_LOGIN_PATH)} data-testid="profile-open-sign-in">
+          Sign in
+        </button>
+        <Link to={FEED_SHELL_PROFILE_SIGNUP_PATH} style={st.link} data-testid="profile-open-sign-up">
+          New to Menuply? Create an account
+        </Link>
+      </div>
+      <AppBasketLocationCard />
+      <AppProfileLinks />
+    </div>
+  );
+}
+
+const styles = {
+  pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  pill: {
+    display: "inline-flex",
+    alignItems: "center",
+    border: "none",
+    background: C.accent,
+    color: C.onAccent,
+    borderRadius: 999,
+    padding: "8px 16px",
+    fontSize: 14,
+    fontWeight: 700,
+    textDecoration: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  pillQuiet: {
+    display: "inline-flex",
+    alignItems: "center",
+    border: `1px solid ${C.border}`,
+    background: "transparent",
+    color: C.text,
+    borderRadius: 999,
+    padding: "8px 16px",
+    fontSize: 14,
+    fontWeight: 700,
+    textDecoration: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  avatarBtn: {
+    position: "relative",
+    width: 88,
+    height: 88,
+    borderRadius: 999,
+    border: `1px solid ${C.border}`,
+    background: C.accentSoft,
+    padding: 0,
+    cursor: "pointer",
+    overflow: "visible",
+  },
+  avatarImg: { width: "100%", height: "100%", borderRadius: 999, objectFit: "cover", display: "block" },
+  avatarInitial: { fontSize: 34, fontWeight: 800, color: C.accent },
+  avatarBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    background: C.accent,
+    border: "2px solid #fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  box: { border: `1px solid ${C.border}`, borderRadius: 12, background: C.background, overflow: "hidden" },
+  boxOpen: { borderColor: C.accent },
+  boxHead: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    border: "none",
+    background: "transparent",
+    padding: "12px 14px",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+  },
+  boxTitle: { flex: 1, fontSize: 16, fontWeight: 700, color: C.text },
+  boxBody: { padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 8 },
+  count: {
+    minWidth: 24,
+    padding: "2px 8px",
+    borderRadius: 999,
+    background: C.surface,
+    color: C.muted,
+    fontSize: 13,
+    fontWeight: 700,
+    textAlign: "center",
+  },
+  current: { fontSize: 14, fontWeight: 700, color: C.accent },
+  option: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    width: "100%",
+    border: `1px solid ${C.border}`,
+    borderRadius: 12,
+    background: C.background,
+    padding: 12,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  optionOn: { borderColor: C.accent, background: C.accentSoft },
+  radio: {
+    width: 18,
+    height: 18,
+    marginTop: 2,
+    borderRadius: 999,
+    border: `1.5px solid ${C.muted}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  radioOn: { borderColor: C.accent },
+  radioDot: { width: 9, height: 9, borderRadius: 999, background: C.accent },
+  warn: { border: `1px solid ${C.border}`, borderRadius: 12, background: "#fffbeb", padding: 14, display: "flex", flexDirection: "column", gap: 8 },
+  row: { display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 8 },
+  rowMain: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+  },
+  rowIcon: { border: "none", background: "transparent", padding: 6, cursor: "pointer" },
+  disclaimer: { margin: 0, padding: "0 14px 12px", fontSize: 12, lineHeight: "17px", color: C.muted },
+  label: { margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: C.muted },
+  chips: { display: "flex", flexWrap: "wrap", gap: 8 },
+  chip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 34,
+    padding: "0 12px",
+    borderRadius: 999,
+    border: `1.5px solid ${C.border}`,
+    background: C.background,
+    color: C.text,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  chipOn: { background: C.accent, borderColor: C.accent, color: "#fff" },
+  chipAllergen: { background: C.danger, borderColor: C.danger, color: "#fff" },
+  linkRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "4px 0",
+    fontSize: 16,
+    color: C.text,
+    textDecoration: "none",
+  },
+};

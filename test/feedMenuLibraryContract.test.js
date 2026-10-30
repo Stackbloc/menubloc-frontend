@@ -200,11 +200,11 @@ test("sample stack provides real starter menus when library is empty", () => {
   assert.ok(deck.every((row) => row.tier === "sample" && row.restaurant_id && row.slug));
 });
 
-test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept for deep links", () => {
+test("Feed nav is the app's tabs; Menu Browser on video rail; legacy /feed/menus kept for deep links", () => {
   const navLinks = read("src/lib/feedShellLinks.js");
-  assert.match(navLinks, /feed-nav-share-qr/);
-  assert.match(navLinks, /label: "Share My QR"/);
-  assert.match(navLinks, /openShareQr:\s*true/);
+  // App wins (Andre 2026-10-29): Home · Post · Deals · Search · Profile, no Share My QR tab.
+  assert.doesNotMatch(navLinks, /feed-nav-share-qr/);
+  assert.match(navLinks, /label: "Search", icon: "search"/);
   assert.doesNotMatch(navLinks, /feed-nav-menus/);
   assert.doesNotMatch(navLinks, /openFeedMenuBrowser/);
   assert.doesNotMatch(navLinks, /My Menu Stack/);
@@ -212,8 +212,9 @@ test("Feed nav Share My QR; Menu Browser on video rail; legacy /feed/menus kept 
   assert.match(navLinks, /MENU_BROWSER_PATH/);
 
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
-  // Andre, 2026-10-20: the clip's "Order this" / "See menu" button replaces the Menu Browser icon.
-  assert.match(rail, /isDishVideo \? "Order this" : "See menu"/);
+  // App wins (2026-10-29): round "Menu Browser" button with a yellow ring, like menuply-mobile FeedClip.
+  assert.match(rail, /label="Menu Browser"/);
+  assert.match(rail, /#FACC15/);
   assert.match(rail, /feed-rail-menu/);
 
   const app = read("src/App.jsx");

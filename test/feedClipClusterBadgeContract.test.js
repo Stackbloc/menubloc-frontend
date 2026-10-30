@@ -28,10 +28,10 @@ test("badge label says Cluster once and links to the cluster", async () => {
   assert.match(badge, /<Link\s+to=\{cluster\.href\}/);
 });
 
-test("Feed rail keeps the original 64px column; Order pill hangs below; hover hints explain each icon", () => {
+test("Feed rail keeps the original 64px column; Menu Browser is a labeled rail button; hover hints explain each icon", () => {
   const rail = read("src/components/consumer/feed/FeedVideoActionRail.jsx");
   assert.match(rail, /width: 64,/);
-  assert.match(rail, /top: "calc\(100% \+ 10px\)"/);
+  assert.match(rail, /testId="feed-rail-menu"/);
   for (const hint of [
     "Add this item to your Wish List",
     "Add this restaurant to your Wish List",

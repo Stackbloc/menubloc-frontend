@@ -41,7 +41,7 @@ import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import MenuTapToOrderHint from "./MenuTapToOrderHint.jsx";
 import MenuOrderBar from "./MenuOrderBar.jsx";
 import MenuHeaderBookmarkAction from "./MenuHeaderBookmarkAction.jsx";
-import { MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
+import { MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
 import {
   FEED_ORDER_UNKNOWN_LOCATION_MESSAGE,
   withFeedOrderMarketGate,
@@ -527,6 +527,7 @@ export default function CatalogMenuRenderer({
     pageType: "menu_catalog",
     shareTarget: "menu",
   };
+  const shareHeaderValue = { shareData, analyticsContext: shareAnalyticsContext };
 
   const cartRestaurant = {
     restaurantId: currentRestaurantId,
@@ -969,6 +970,7 @@ export default function CatalogMenuRenderer({
           paddingBottom: 24 + Math.max(0, Number(bottomClearance) || 0),
           color: effectiveShellTextColor,
         }}>
+          <MenuHeaderShareContext.Provider value={shareHeaderValue}>
           <MenuHeaderTrailingActionContext.Provider value={headerBookmarkAction}>
           <MenuRowActionsContext.Provider value={menuBrowserRowActions}>
           {templateContext ? (
@@ -992,6 +994,7 @@ export default function CatalogMenuRenderer({
           ) : null}
           </MenuRowActionsContext.Provider>
           </MenuHeaderTrailingActionContext.Provider>
+          </MenuHeaderShareContext.Provider>
           <MenuOrderBar
             // No empty-state bar: the chip already says how to order (Andre: overkill).
             showEmpty={false}
