@@ -852,6 +852,15 @@ export const getMonthInFood = (ym) =>
     cache: "no-store",
     headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
   });
+/** The public link for my report, or a Connect's (peer_id). */
+export const getMonthInFoodLink = (ym, peerId = null) => {
+  const q = new URLSearchParams();
+  if (ym) q.set("ym", String(ym));
+  if (peerId) q.set("peer_id", String(peerId));
+  return get(`/api/consumer/month-in-food/link?${q}`);
+};
+/** A shared report, no sign-in. */
+export const getPublicMonthInFood = (token) => get(`/public/month-in-food/${encodeURIComponent(String(token))}`);
 export const getPeerMonthInFood = (peerId, ym) =>
   get(
     `/api/consumer/connections/${encodeURIComponent(String(peerId))}/month-in-food${

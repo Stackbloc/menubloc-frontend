@@ -14,7 +14,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import FeedShellPage from "./feed/FeedShellPage.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
 import DinerAvatar from "../../components/social/DinerAvatar.jsx";
-import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
+import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import {
   blockDiner,
@@ -416,6 +416,17 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips = [], favs
             />
           ))}
         </section>
+      ) : null}
+
+      {peer.month_report_on_profile !== false ? (
+        <Link
+          to={self ? MY_MENUPLY_MONTH_IN_FOOD_PATH : `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food`}
+          style={{ ...styles.row, textDecoration: "none" }}
+          data-testid="connect-month-report"
+        >
+          <span style={{ ...styles.rowText, ...styles.food }}>{self ? "My month in food" : `${first}'s month in food`}</span>
+          <span style={styles.link}>›</span>
+        </Link>
       ) : null}
 
       {/* Last on purpose (Andre 2026-10-30): the calendar matters most, but people need a reason to care first. */}

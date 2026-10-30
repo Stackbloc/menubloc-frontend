@@ -166,6 +166,47 @@ export function AppIdentityCard({ displayName, avatarUrl, occupation, about, loc
   );
 }
 
+/** Report on my profile (on unless I turn it off) and meal logging (opt-in), Andre 2026-10-30. */
+function AppReportSettings() {
+  const [prefs, setPrefs] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    getConsumerProfile()
+      .then((r) => alive && setPrefs((r?.profile || r)?.diner_social_defaults || {}))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!prefs) return null;
+  const save = (key, value) => {
+    setPrefs((p) => ({ ...p, [key]: value }));
+    updateConsumerProfile({ diner_social_defaults: { [key]: value } }).catch(() => setPrefs((p) => ({ ...p, [key]: !value })));
+  };
+  return (
+    <div style={st.card} data-testid="settings-report">
+      <label style={styles.check}>
+        <input
+          type="checkbox"
+          checked={prefs.month_report_on_profile !== false}
+          onChange={(e) => save("month_report_on_profile", e.target.checked)}
+          data-testid="settings-month-report"
+        />
+        <span>Show my monthly report on my profile</span>
+      </label>
+      <label style={styles.check}>
+        <input
+          type="checkbox"
+          checked={prefs.meal_logging_enabled === true}
+          onChange={(e) => save("meal_logging_enabled", e.target.checked)}
+          data-testid="settings-meal-logging"
+        />
+        <span>Log my meals</span>
+      </label>
+    </div>
+  );
+}
+
 /** Settings (Andre 2026-10-30): everything tucked away from Profile, behind the gear. */
 export function AppSettings({ onDiscoverChange, onSignOut }) {
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -177,6 +218,7 @@ export function AppSettings({ onDiscoverChange, onSignOut }) {
       <h1 style={st.heading}>Settings</h1>
       <AppDiscoverabilityCard onChange={onDiscoverChange} />
       <AppDietaryNeeds />
+      <AppReportSettings />
       <AppBasketLocationCard />
       <div style={st.card}>
         <Link to="/account" style={styles.linkRow} data-testid="settings-change-email">
@@ -392,12 +434,16 @@ export function AppMyActivity() {
   const [favDishes, setFavDishes] = useState([]);
   const [wishList, setWishList] = useState([]);
   const [clips, setClips] = useState(null);
+  const [mealLogging, setMealLogging] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let alive = true;
     listConsumerProfileMedia()
       .then((m) => alive && setClips(listOf(m, "items").length))
+      .catch(() => undefined);
+    getConsumerProfile()
+      .then((r) => alive && setMealLogging((r?.profile || r)?.diner_social_defaults?.meal_logging_enabled === true))
       .catch(() => undefined);
     Promise.allSettled([getFollowedRestaurants(), getLikedMenuItems(), listWantToEat()]).then(([r, d, w]) => {
       if (!alive) return;
@@ -450,10 +496,12 @@ export function AppMyActivity() {
         <span>My clips</span>
         <span style={{ color: C.muted }}>{clips != null ? clips : "›"}</span>
       </Link>
-      <Link to="/account/what-i-ate" style={styles.linkRow} data-testid="my-what-i-ate">
-        <span>What I ate</span>
-        <span style={{ color: C.muted }}>›</span>
-      </Link>
+      {mealLogging ? (
+        <Link to="/account/what-i-ate" style={styles.linkRow} data-testid="my-what-i-ate">
+          <span>What I ate</span>
+          <span style={{ color: C.muted }}>›</span>
+        </Link>
+      ) : null}
       <Box title="Favs · restaurants" count={favRestaurants.length} testId="my-box-fav-restaurants">
         {favRestaurants.length ? (
           favRestaurants.map((r) => (
@@ -757,6 +805,7 @@ export function AppProfileGuest() {
 }
 
 const styles = {
+  check: { display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 15, color: C.text, cursor: "pointer" },
   gear: { position: "absolute", top: 8, right: 8, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: C.text },
   pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
   pill: {

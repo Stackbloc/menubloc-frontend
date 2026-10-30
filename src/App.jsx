@@ -86,6 +86,7 @@ import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAteP
 import HomemadeDishDetailPage from "./pages/HomemadeDishDetailPage.jsx";
 import HomemadeDishComposePage from "./pages/consumer/homemade/HomemadeDishComposePage.jsx";
 import MonthInFoodPage from "./pages/consumer/monthInFood/MonthInFoodPage.jsx";
+import MonthInFoodPublicPage from "./pages/consumer/monthInFood/MonthInFoodPublicPage.jsx";
 import MyHighlightsPage from "./pages/consumer/myMenuply/MyHighlightsPage.jsx";
 import ConnectionsPlanningPage from "./pages/consumer/ConnectionsPlanningPage.jsx";
 import ActivityPage from "./pages/ActivityPage.jsx";
@@ -1024,6 +1025,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/verify-email" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerVerifyEmail />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyProfileRedirect />} />
+        <Route path="/m/:token" element={<MonthInFoodPublicPage />} />
         <Route path="/my-menuply/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/my-menuply/highlights" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyHighlightsPage />} />
         <Route path="/my-menuply/homemade/create" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomemadeDishComposePage />} />
