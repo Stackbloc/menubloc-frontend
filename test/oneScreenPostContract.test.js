@@ -17,7 +17,7 @@ const sheet = read("src/components/consumer/feed/QuickPostSheet.jsx");
 test("quick post: clip first, caption, chips; no form rows or warning banners", () => {
   assert.match(sheet, /Upload media/);
   assert.doesNotMatch(sheet, /Choose a clip|How is it|Happy hour|I made this|@home|quick-post-invite|quick-post-missing|Add a clip first|Restaurant \(optional\)/);
-  for (const id of ["quick-post-record", "quick-post-upload", "quick-post-food", "quick-post-food-check", "quick-post-where-open", "quick-post-where", "quick-post-at-home", "quick-post-tag-recommend", "quick-post-submit", "quick-post-tile-photo", "quick-post-change-clip"]) {
+  for (const id of ["quick-post-record", "quick-post-upload", "quick-post-food", "quick-post-food-check", "quick-post-where-open", "quick-post-where", "quick-post-at-home", "quick-post-tag-recommend", "quick-post-submit", "quick-post-tile-photo", "quick-post-change-clip", "quick-post-cancel"]) {
     assert.match(sheet, new RegExp(`data-testid="${id}"`), id);
   }
   // Nothing but Record / Upload media until there's a clip.
@@ -28,6 +28,9 @@ test("quick post: clip first, caption, chips; no form rows or warning banners", 
   assert.match(sheet, /chipTyped: \{ color: GREEN/);
   // Typing on a phone: small clip, sheet at the top, so the keyboard can't cover the box.
   assert.match(sheet, /const typing = foodFocused \|\| placeFocused/);
+  // Cancel throws the draft away (Andre 2026-10-30), on the button, Escape and a tap outside.
+  assert.match(sheet, /function cancel\(\) \{[\s\S]*?setFile\(null\);[\s\S]*?onClose\?\.\(\);/);
+  assert.equal((sheet.match(/\bcancel\(\);|onClick=\{cancel\}/g) || []).length, 3);
   assert.match(sheet, /🏠 Home/);
   assert.match(sheet, />\s*\{busy \? `Posting…\$\{uploadPercent != null \? ` \$\{uploadPercent\}%` : ""\}` : "Post"\}/);
 });

@@ -71,10 +71,32 @@ export default function QuickPostSheet({
 
   useEffect(() => () => previewUrl && URL.revokeObjectURL(previewUrl), [previewUrl]);
 
+  /**
+   * Cancel = throw the draft away and close (Andre 2026-10-30: "there needs to be a way to cancel the
+   * post"). Only on an explicit cancel: the sheet is also hidden, not cancelled, during the guest consent step.
+   */
+  function cancel() {
+    if (busy) return;
+    setFile(null);
+    setFileError("");
+    setFoodText("");
+    setFoodPick(null);
+    setFoodTypes([]);
+    setDishHits([]);
+    setCityDishes([]);
+    setPlaceOpen(false);
+    setPlaceText("");
+    setHits([]);
+    setPlace(null);
+    setAtHome(false);
+    setRecommend(false);
+    onClose?.();
+  }
+
   useEffect(() => {
     if (!open) return undefined;
     function onKey(event) {
-      if (event.key === "Escape" && !busy) onClose?.();
+      if (event.key === "Escape" && !busy) cancel();
     }
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -313,7 +335,7 @@ export default function QuickPostSheet({
       style={{ ...styles.backdrop, ...(typing ? styles.backdropTyping : null) }}
       data-testid="quick-post-sheet"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && !busy) onClose?.();
+        if (e.target === e.currentTarget && !busy) cancel();
       }}
     >
       <div role="dialog" aria-modal="true" aria-labelledby="quick-post-title" style={styles.sheet}>
@@ -322,8 +344,8 @@ export default function QuickPostSheet({
           <h2 style={styles.title} id="quick-post-title">
             Post
           </h2>
-          <button type="button" style={styles.textBtn} onClick={() => !busy && onClose?.()} aria-label="Close">
-            Close
+          <button type="button" style={styles.cancelBtn} onClick={cancel} disabled={busy} aria-label="Cancel post" data-testid="quick-post-cancel">
+            Cancel
           </button>
         </div>
         {clipInputs}
@@ -591,9 +613,9 @@ const styles = {
     boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
   },
   head: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 4px" },
-  headSpacer: { width: 52 },
+  headSpacer: { width: 72 },
   title: { margin: 0, fontSize: 18, fontWeight: 800 },
-  textBtn: { appearance: "none", border: "none", background: "transparent", color: "#475569", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 6 },
+  cancelBtn: { appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "5px 12px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   body: { display: "flex", flexDirection: "column", gap: 10, padding: "8px 14px 16px" },
   startGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
   startTile: { position: "relative", height: 200, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "#e8f5e3", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", color: "#111" },
