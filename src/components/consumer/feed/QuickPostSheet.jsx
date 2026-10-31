@@ -1,6 +1,8 @@
 /**
  * Post = a quick post, not a form (Andre 2026-10-30: "it still feels like a form instead of a quick post").
- * 1. Record or Upload media: nothing else shows until there's a clip.
+ * 1. Menuply logo, "Share a clip", an optional "What's your clip about?" (A restaurant · A dish · Home cooking),
+ *    then Record or Upload media and one tip line (Andre 2026-10-30: use the white space to teach and to learn
+ *    what the post is about). A restaurant clip needs no food: the restaurant box comes first.
  * 2. The clip fills the sheet with one caption line, "What food is your clip about?" (Andre 2026-10-30: any food
  *    clip, not only eating: cooking, drinks, a friend's dish), with example foods under it while it's
  *    empty. What you type counts
@@ -14,6 +16,7 @@
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyMediaPicker from "../../social/MenuplyMediaPicker.jsx";
 import { inlineCameraSupported, preferInlineCamera } from "../../../lib/consumerCameraCapture.js";
 import { normalizeNativeVideoFile } from "../../../lib/nativeVideoCapture.js";
@@ -25,6 +28,13 @@ import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.
 const TYPEAHEAD_MS = 220;
 const MAX_FOOD_CHIPS = 6;
 const GREEN = "#0f7a24";
+
+/** What the clip is about, picked before the clip; optional, so Record still takes one tap. */
+const ABOUT = [
+  { key: "restaurant", icon: "📍", label: "A restaurant" },
+  { key: "dish", icon: "🍜", label: "A dish" },
+  { key: "home", icon: "🏠", label: "Home cooking" },
+];
 
 function cleanTyped(value) {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, 160);
@@ -68,6 +78,7 @@ export default function QuickPostSheet({
   const [place, setPlace] = useState(null);
   const [atHome, setAtHome] = useState(false);
   const [recommend, setRecommend] = useState(false);
+  const [about, setAbout] = useState(null);
   const inlineCamera = useMemo(() => inlineCameraSupported() && preferInlineCamera(), []);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
 
@@ -92,6 +103,7 @@ export default function QuickPostSheet({
     setPlace(null);
     setAtHome(false);
     setRecommend(false);
+    setAbout(null);
     onClose?.();
   }
 
@@ -109,10 +121,22 @@ export default function QuickPostSheet({
     };
   }, [open, busy, onClose]);
 
-  // With a clip in hand, go straight to the caption.
+  // With a clip in hand, go straight to the caption (a restaurant clip: straight to the restaurant box).
   useEffect(() => {
-    if (file) foodRef.current?.focus();
+    if (!file) return;
+    if (about === "restaurant" && !place) setPlaceOpen(true);
+    else foodRef.current?.focus();
   }, [file]);
+
+  function pickAbout(key) {
+    const next = about === key ? null : key;
+    setAbout(next);
+    setAtHome(next === "home");
+    if (next === "home") {
+      setPlace(null);
+      setRecommend(false);
+    }
+  }
 
   useEffect(() => {
     if (placeOpen) placeRef.current?.focus();
@@ -226,6 +250,8 @@ export default function QuickPostSheet({
     setPlace(next);
     setAtHome(false);
     setPlaceOpen(false);
+    // The restaurant box unmounts without a blur, so the clip would stay small.
+    setPlaceFocused(false);
     setPlaceText("");
     setHits([]);
     setDishHits([]);
@@ -250,16 +276,19 @@ export default function QuickPostSheet({
   }
 
   const food = resolveFood();
-  const canPost = Boolean(file) && !busy && Boolean(food);
+  // A restaurant clip can post with only the restaurant (Andre 2026-10-30: a clip can be about a place, not a dish).
+  const placeOnly = !food && about === "restaurant" && Boolean(place);
+  const canPost = Boolean(file) && !busy && (Boolean(food) || placeOnly);
 
   async function submit() {
     if (busy) return;
-    if (!food) {
-      foodRef.current?.focus();
+    if (!food && !placeOnly) {
+      if (about === "restaurant") setPlaceOpen(true);
+      else foodRef.current?.focus();
       return;
     }
     if (!file) return;
-    const dish = food.kind === "dish" ? food.dish : null;
+    const dish = food?.kind === "dish" ? food.dish : null;
     await onSubmit?.({
       category: "ate",
       file,
@@ -270,13 +299,16 @@ export default function QuickPostSheet({
       restaurant: place,
       dish,
       isRecommend: Boolean(recommend && place),
-      items: [
-        {
-          food_name: foodLabel(food),
-          menu_item_id: dish?.menu_item_id || null,
-          restaurant_id: place?.restaurant_id || null,
-        },
-      ],
+      // No food on a restaurant clip: postFeedAteVideo names the item after the restaurant.
+      items: food
+        ? [
+            {
+              food_name: foodLabel(food),
+              menu_item_id: dish?.menu_item_id || null,
+              restaurant_id: place?.restaurant_id || null,
+            },
+          ]
+        : null,
     });
   }
 
@@ -296,6 +328,69 @@ export default function QuickPostSheet({
   const placeTyping = !place && placeText.trim().length >= 2;
   // Typing on a phone: small clip, sheet at the top, so the keyboard can't cover the box or chips.
   const typing = foodFocused || placeFocused;
+
+  const placePicker = placeOpen && !place ? (
+    <div>
+      <div style={styles.placeBox}>
+        <span aria-hidden>📍</span>
+        <input
+          ref={placeRef}
+          type="text"
+          value={placeText}
+          onChange={(e) => setPlaceText(e.target.value.slice(0, 120))}
+          onFocus={(e) => {
+            setPlaceFocused(true);
+            const el = e.currentTarget;
+            setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 250);
+          }}
+          onBlur={() => setPlaceFocused(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              acceptPlaceText();
+            }
+          }}
+          placeholder="Which restaurant?"
+          autoComplete="off"
+          enterKeyHint="done"
+          disabled={busy}
+          style={styles.placeInput}
+          aria-label="Restaurant"
+          data-testid="quick-post-where"
+        />
+        <button type="button" style={styles.clear} onClick={() => setPlaceOpen(false)} aria-label="Cancel restaurant">
+          ✕
+        </button>
+      </div>
+      {placeTyping ? (
+        <div style={styles.chips}>
+          {hits.map((h) => (
+            <button
+              key={h.restaurant_id}
+              type="button"
+              style={styles.chip}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => choosePlace(asRestaurantPlace(h))}
+              data-testid={`quick-post-place-${h.restaurant_id}`}
+            >
+              {restaurantLabel(h)}
+            </button>
+          ))}
+          {hits.some((h) => same(restaurantLabel(h), placeText.trim())) ? null : (
+            <button
+              type="button"
+              style={{ ...styles.chip, ...styles.chipNew }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => choosePlace(unlistedRestaurantPlace(placeText))}
+              data-testid="quick-post-place-use-typed"
+            >
+              + “{placeText.trim()}” <span style={styles.chipSub}>· new, we'll add it</span>
+            </button>
+          )}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
 
   const clipInputs = (
     <>
@@ -340,12 +435,12 @@ export default function QuickPostSheet({
         if (e.target === e.currentTarget && !busy) cancel();
       }}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby="quick-post-title" style={styles.sheet}>
+      <div role="dialog" aria-modal="true" aria-label="Share a clip" style={styles.sheet}>
         <div style={styles.head}>
           <span style={styles.headSpacer} aria-hidden />
-          <h2 style={styles.title} id="quick-post-title">
-            Post
-          </h2>
+          <span data-testid="quick-post-logo">
+            <BrandLogo height={26} radius={0} matchPageBackground={false} clickable={false} />
+          </span>
           <button type="button" style={styles.cancelBtn} onClick={cancel} disabled={busy} aria-label="Cancel post" data-testid="quick-post-cancel">
             Cancel
           </button>
@@ -353,8 +448,29 @@ export default function QuickPostSheet({
         {clipInputs}
 
         {!file ? (
-          // Step 1: only Record and Upload media.
+          // Step 1: what the clip is about (optional), then Record or Upload media.
           <div style={styles.body}>
+            <div style={styles.aboutBox}>
+              <h2 style={styles.aboutTitle}>Share a clip</h2>
+              <p style={styles.aboutAsk}>What's your clip about?</p>
+              <div style={styles.aboutGrid}>
+                {ABOUT.map((a) => (
+                  <button
+                    key={a.key}
+                    type="button"
+                    aria-pressed={about === a.key}
+                    style={{ ...styles.aboutTile, ...(about === a.key ? styles.aboutTileOn : null) }}
+                    onClick={() => pickAbout(a.key)}
+                    data-testid={`quick-post-about-${a.key}`}
+                  >
+                    <span style={styles.aboutIcon} aria-hidden>
+                      {a.icon}
+                    </span>
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={styles.startGrid}>
               {inlineCamera ? (
                 <MenuplyMediaPicker
@@ -384,6 +500,9 @@ export default function QuickPostSheet({
                 <span style={styles.startText}>Upload media</span>
               </label>
             </div>
+            <p style={styles.tip} data-testid="quick-post-tip">
+              💡 Up to 10 minutes. Show the food up close, in good light.
+            </p>
             {fileError ? <p style={styles.error}>{fileError}</p> : null}
           </div>
         ) : (
@@ -402,6 +521,7 @@ export default function QuickPostSheet({
               </button>
             </div>
 
+            {about === "restaurant" ? placePicker : null}
             <div style={styles.caption}>
               <input
                 ref={foodRef}
@@ -420,7 +540,7 @@ export default function QuickPostSheet({
                     e.currentTarget.blur();
                   }
                 }}
-                placeholder="What food is your clip about?"
+                placeholder={about === "restaurant" ? "Any food in it? (optional)" : "What food is your clip about?"}
                 autoComplete="off"
                 enterKeyHint="done"
                 disabled={busy}
@@ -434,7 +554,7 @@ export default function QuickPostSheet({
                 </span>
               ) : null}
             </div>
-            {typedFood ? null : (
+            {typedFood || about === "restaurant" ? null : (
               <p style={styles.examples} data-testid="quick-post-food-examples">
                 Like tacos, a matcha latte, homemade lasagna
               </p>
@@ -461,68 +581,7 @@ export default function QuickPostSheet({
               </div>
             ) : null}
 
-            {placeOpen && !place ? (
-              <div>
-                <div style={styles.placeBox}>
-                  <span aria-hidden>📍</span>
-                  <input
-                    ref={placeRef}
-                    type="text"
-                    value={placeText}
-                    onChange={(e) => setPlaceText(e.target.value.slice(0, 120))}
-                    onFocus={(e) => {
-                      setPlaceFocused(true);
-                      const el = e.currentTarget;
-                      setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 250);
-                    }}
-                    onBlur={() => setPlaceFocused(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        acceptPlaceText();
-                      }
-                    }}
-                    placeholder="Which restaurant?"
-                    autoComplete="off"
-                    enterKeyHint="done"
-                    disabled={busy}
-                    style={styles.placeInput}
-                    aria-label="Restaurant"
-                    data-testid="quick-post-where"
-                  />
-                  <button type="button" style={styles.clear} onClick={() => setPlaceOpen(false)} aria-label="Cancel restaurant">
-                    ✕
-                  </button>
-                </div>
-                {placeTyping ? (
-                  <div style={styles.chips}>
-                    {hits.map((h) => (
-                      <button
-                        key={h.restaurant_id}
-                        type="button"
-                        style={styles.chip}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => choosePlace(asRestaurantPlace(h))}
-                        data-testid={`quick-post-place-${h.restaurant_id}`}
-                      >
-                        {restaurantLabel(h)}
-                      </button>
-                    ))}
-                    {hits.some((h) => same(restaurantLabel(h), placeText.trim())) ? null : (
-                      <button
-                        type="button"
-                        style={{ ...styles.chip, ...styles.chipNew }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => choosePlace(unlistedRestaurantPlace(placeText))}
-                        data-testid="quick-post-place-use-typed"
-                      >
-                        + “{placeText.trim()}” <span style={styles.chipSub}>· new, we'll add it</span>
-                      </button>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+            {about === "restaurant" ? null : placePicker}
 
             <div style={styles.bottom}>
               <div style={styles.tagRow}>
@@ -621,11 +680,18 @@ const styles = {
   },
   head: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 4px" },
   headSpacer: { width: 72 },
-  title: { margin: 0, fontSize: 18, fontWeight: 800 },
+  aboutBox: { background: "#e8f5e3", borderRadius: 14, padding: "12px 12px 12px" },
+  aboutTitle: { margin: 0, fontSize: 18, fontWeight: 800, color: "#0b3d14" },
+  aboutAsk: { margin: "2px 0 10px", fontSize: 14, color: GREEN, fontWeight: 600 },
+  aboutGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 },
+  aboutTile: { appearance: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 12, padding: "12px 4px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.2 },
+  aboutTileOn: { borderColor: GREEN, boxShadow: `inset 0 0 0 1px ${GREEN}`, color: GREEN },
+  aboutIcon: { fontSize: 22, lineHeight: 1 },
+  tip: { margin: 0, fontSize: 13, color: "#64748b", textAlign: "center" },
   cancelBtn: { appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "5px 12px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   body: { display: "flex", flexDirection: "column", gap: 10, padding: "8px 14px 16px" },
   startGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-  startTile: { position: "relative", height: 200, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "#e8f5e3", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", color: "#111" },
+  startTile: { position: "relative", height: 150, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "#e8f5e3", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", color: "#111" },
   uploadTile: { background: "#fff", border: "1px solid #dfe5dc" },
   uploadIcon: { fontSize: 28, lineHeight: 1 },
   startText: { fontSize: 17, fontWeight: 800 },

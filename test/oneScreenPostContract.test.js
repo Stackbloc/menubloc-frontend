@@ -1,6 +1,6 @@
 /**
- * Post = a quick post, not a form (Andre 2026-10-30), same as the app's Post tab: Record or Upload
- * media first; then the clip, one "What are you eating?" caption (typed text counts, ✓ when enough,
+ * Post = a quick post, not a form (Andre 2026-10-30), same as the app's Post tab: logo, an optional
+ * "What's your clip about?", Record or Upload media first; then the clip, one "What are you eating?" caption (typed text counts, ✓ when enough,
  * chips suggest), 📍 Restaurant · 🏠 Home chips, ⭐ Recommend once a restaurant is set, Post.
  * No warning banners. Quick Invite is on My Profile.
  */
@@ -20,9 +20,14 @@ test("quick post: clip first, caption, chips; no form rows or warning banners", 
   for (const id of ["quick-post-record", "quick-post-upload", "quick-post-food", "quick-post-food-check", "quick-post-where-open", "quick-post-where", "quick-post-at-home", "quick-post-tag-recommend", "quick-post-submit", "quick-post-tile-photo", "quick-post-change-clip", "quick-post-cancel"]) {
     assert.match(sheet, new RegExp(`data-testid="${id}"`), id);
   }
-  // Nothing but Record / Upload media until there's a clip.
-  assert.match(sheet, /\{!file \? \(\s*\/\/ Step 1: only Record and Upload media\./);
-  assert.match(sheet, /placeholder="What food is your clip about\?"/);
+  // Before the clip: the Menuply logo, "What's your clip about?" (optional), Record / Upload media, one tip.
+  assert.match(sheet, /\{!file \? \(\s*\/\/ Step 1: what the clip is about \(optional\), then Record or Upload media\./);
+  assert.match(sheet, /<BrandLogo /);
+  assert.match(sheet, /What's your clip about\?/);
+  for (const key of ["restaurant", "dish", "home"]) assert.match(sheet, new RegExp(`key: "${key}"`));
+  assert.match(sheet, /data-testid=\{`quick-post-about-\$\{a\.key\}`\}/);
+  assert.match(sheet, /Up to 10 minutes\. Show the food up close, in good light\./);
+  assert.match(sheet, /: "What food is your clip about\?"\}/);
   // Any food clip, not only eating: examples under the empty box (Andre 2026-10-30).
   assert.match(sheet, /Like tacos, a matcha latte, homemade lasagna/);
   assert.doesNotMatch(sheet, /What (food )?are you eating/);
@@ -40,8 +45,11 @@ test("quick post: clip first, caption, chips; no form rows or warning banners", 
 
 test("what you type counts: exact suggestion, else the typed name; Post with no food jumps to the caption", () => {
   assert.match(sheet, /return \{ kind: "typed", name: typedFood \}/);
-  assert.match(sheet, /const canPost = Boolean\(file\) && !busy && Boolean\(food\)/);
-  assert.match(sheet, /if \(!food\) \{\s*foodRef\.current\?\.focus\(\);/);
+  assert.match(sheet, /const canPost = Boolean\(file\) && !busy && \(Boolean\(food\) \|\| placeOnly\)/);
+  assert.match(sheet, /if \(!food && !placeOnly\) \{\s*if \(about === "restaurant"\) setPlaceOpen\(true\);\s*else foodRef\.current\?\.focus\(\);/);
+  // A restaurant clip posts with only the restaurant (Andre 2026-10-30); the item is named after it.
+  assert.match(sheet, /const placeOnly = !food && about === "restaurant" && Boolean\(place\)/);
+  assert.match(read("src/lib/feedVideoCompose.js"), /String\(restaurant\?\.restaurant_name \|\| ""\)\.trim\(\) \|\|/);
   assert.match(sheet, /isRecommend: Boolean\(recommend && place\)/);
 });
 
