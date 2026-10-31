@@ -20,15 +20,17 @@ test("menu page hides the header address only for Classic/Fine and provides the 
   assert.match(page, /<MenuHeaderTrailingActionContext\.Provider value=\{menuInfoAction\}>/);
 });
 
-test("ⓘ sheet carries address, directions, phone and the Menuply profile — never the restaurant's website (Andre 2026-10-24)", () => {
+test("ⓘ is About this menu: review date or not-claimed note + report email naming the menu (Andre 2026-10-31)", () => {
   const btn = read("src/components/menu/MenuInfoButton.jsx");
-  for (const s of ["MenuAddressLines", "Get directions", "tel:", "Restaurant profile", "profileHref", 'aria-label="Restaurant info"']) {
+  for (const s of ['aria-label="About this menu"', "menuTrustText", "menuReportMailto", "submit a report", "isUnclaimedProfile"]) {
     assert.ok(btn.includes(s), s);
   }
-  assert.ok(!btn.includes(">\n                      Website"), "no restaurant website link");
+  // Directions, phone and the profile live on the profile now (the restaurant name links there).
+  for (const s of ["Get directions", "tel:", "Restaurant profile"]) assert.ok(!btn.includes(s), s);
   assert.doesNotMatch(btn, /website_url|websiteHref/);
   const page = read("src/pages/PublicMenuPage.jsx");
-  assert.match(page, /profileHref=\{restaurantProfileHref \|\| null\}/);
+  assert.match(page, /reviewedAt=\{data\?\.menu_last_verified_at \|\| null\}/);
+  assert.match(page, /menuUrl=\{shareData\?\.url \|\| null\}/);
 });
 
 test("Classic and Fine render the trailing slot in the header icon row", () => {
