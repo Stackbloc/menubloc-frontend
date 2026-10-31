@@ -691,13 +691,18 @@ export function useIntelligenceData(fetcher, params) {
 }
 
 const inputStyle = { padding: "10px 12px", borderRadius: 12, border: "1px solid #d7c5b8", background: "#fff" };
-const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap" };
+const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap", verticalAlign: "bottom" };
+// Long labels ("Attributed profile views") wrap onto extra lines instead of running into the next
+// column; headers sit on the bottom line so the numbers stay aligned under them.
 const thMetricStyle = {
   textAlign: "right",
   padding: "0 0 12px 12px",
   fontSize: 12,
+  lineHeight: 1.3,
   color: "#667085",
-  whiteSpace: "nowrap",
+  whiteSpace: "normal",
+  overflowWrap: "break-word",
+  verticalAlign: "bottom",
   width: 88,
   minWidth: 72,
 };
