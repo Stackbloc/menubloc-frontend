@@ -5,7 +5,7 @@
  * Connects · Quick Invite · My activity. Settings (gear): discoverability, dietary needs, location,
  * email, links, Sign out. Signed out: what an account unlocks and Sign in.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   deleteWantToEat,
@@ -28,6 +28,9 @@ import { useHomeBrowseFeed } from "../../../hooks/useHomeBrowseFeed.js";
 import HomeNextLocationSelector from "../../../components/homeNext/HomeNextLocationSelector.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
 import CompactSwitch from "../../../components/CompactSwitch.jsx";
+import ShareModal from "../../../components/share/ShareModal.jsx";
+import { buildMenuplyFriendInviteShareData } from "../../../lib/menuplyAccountInvite.js";
+import { SETUP_MARKS_EVENT, markSetup, readSetupMarks } from "../../../lib/profileSetupMarks.js";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
 
@@ -187,6 +190,7 @@ export function AppIdentityCard({ displayName, avatarUrl, occupation, about, loc
       {notice ? <p style={{ ...st.muted, color: C.accent }}>{notice}</p> : null}
       {error ? <p style={st.error}>{error}</p> : null}
       <h2 style={st.heading}>{displayName}</h2>
+      <FoundingFoodieBadge />
       {occupation ? <p style={st.muted}>{occupation}</p> : null}
       {locationLabel ? <p style={st.muted}>{locationLabel}</p> : null}
       {about ? <p style={st.body}>{about}</p> : null}
@@ -639,14 +643,19 @@ function writeStarter(v) {
 /**
  * Set up your profile (app ProfileStarterCard, Andre 2026-10-30): sign-up asks only for name, email and
  * password; this card asks for the rest. Today: a photo, 3 Fav dishes, a first clip (until one is done,
- * Connects see "Still in the kitchen"). It is meant to come back from time to time: add a step to the
- * list and everyone who hasn't done it sees the card again. It hides while every step is done; ✕
- * hides it for a week.
+ * Connects see "Still in the kitchen"), 4 invite friends to connect, 5 invite a friend out (or check
+ * today's deals). Onboarding is fast and ends with a reward: when all five are done, "You're all set!"
+ * and the Founding Foodie badge. It is meant to come back from time to time: add a step to the list and
+ * everyone who hasn't done it sees the card again. It hides while every step is done; ✕ hides it for a
+ * week.
  */
 export function AppProfileStarterCard({ avatarUrl }) {
   const [saved, setSaved] = useState(readStarter);
+  const [marks, setMarks] = useState(readSetupMarks);
   const [facts, setFacts] = useState(null);
   const [now, setNow] = useState(0);
+  const [sharing, setSharing] = useState(false);
+  const friendShare = useMemo(() => buildMenuplyFriendInviteShareData(), []);
 
   useEffect(() => {
     let alive = true;
@@ -662,14 +671,59 @@ export function AppProfileStarterCard({ avatarUrl }) {
   }, []);
 
   if (!facts) return null;
-  if (saved.snoozedUntil && saved.snoozedUntil > now) return null;
   const steps = [
     { key: "photo", icon: "camera", label: "Add a photo", done: Boolean(avatarUrl), hint: "Tap the circle above" },
     { key: "favs", icon: "fav", label: `Fav ${FAVS_GOAL} dishes you love`, done: facts.favs >= FAVS_GOAL, hint: facts.favs ? `${facts.favs} of ${FAVS_GOAL}` : null, to: "/feed/search" },
     { key: "clip", icon: "camera", label: "Post your first clip", done: facts.clips > 0, to: `${MY_MENUPLY_PROFILE_PATH}?view=clips` },
+    {
+      key: "friends",
+      icon: "invite",
+      label: "Invite friends to connect",
+      done: Boolean(marks.friends),
+      onClick: () => {
+        setSharing(true);
+        setMarks(markSetup("friends"));
+      },
+    },
+    {
+      key: "out",
+      icon: "invite",
+      label: "Invite a friend out",
+      done: Boolean(marks.out),
+      to: "/account/invite-to-eat",
+      alt: { label: "or check today’s deals", to: "/feed/deals" },
+    },
   ];
   const done = steps.filter((x) => x.done).length;
-  if (done === steps.length) return null;
+  const shareModal = sharing ? (
+    <ShareModal open onClose={() => setSharing(false)} modalTitle="Invite friends to Menuply" shareData={friendShare} analyticsContext={{ pageType: "profile_setup_invite_friends" }} />
+  ) : null;
+  if (done === steps.length) {
+    if (marks.rewarded) return shareModal;
+    const finish = () => setMarks(markSetup("rewarded"));
+    return (
+      <>
+        {shareModal}
+        <div style={styles.rewardBackdrop} role="dialog" aria-modal="true" aria-label="You’re all set" data-testid="profile-setup-reward">
+          <div style={styles.rewardCard}>
+            <div style={{ fontSize: 44 }}>🎉</div>
+            <h2 style={{ ...st.heading, fontSize: 22 }}>You’re all set!</h2>
+            <div style={{ ...styles.rewardBadge, justifySelf: "center" }}>🏅 Founding Foodie</div>
+            <p style={{ ...st.muted, textAlign: "center" }}>You’re one of Menuply’s first diners. Your badge is on your profile now.</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <Link to="/feed/deals" onClick={finish} style={styles.rewardPrimary} data-testid="profile-setup-reward-deals">
+                See today’s deals
+              </Link>
+              <button type="button" onClick={finish} style={styles.rewardSecondary} data-testid="profile-setup-reward-done">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+  if (saved.snoozedUntil && saved.snoozedUntil > now) return shareModal;
   const close = () => {
     const next = { ...saved, snoozedUntil: now + SNOOZE };
     setSaved(next);
@@ -700,13 +754,29 @@ export function AppProfileStarterCard({ avatarUrl }) {
               <span style={{ fontSize: 16, fontWeight: 700, color: x.done ? C.muted : C.text, textDecoration: x.done ? "line-through" : "none" }}>{x.label}</span>
               {!x.done && x.hint ? <span style={{ fontSize: 13, color: C.muted }}>{x.hint}</span> : null}
             </span>
-            {!x.done && x.to ? <span style={{ fontWeight: 700, color: C.accent }}>›</span> : null}
+            {!x.done && (x.to || x.onClick) ? <span style={{ fontWeight: 700, color: C.accent }}>›</span> : null}
           </>
         );
+        const alt =
+          !x.done && x.alt ? (
+            <Link to={x.alt.to} style={styles.starterAlt} data-testid={`profile-starter-${x.key}-alt`}>
+              {x.alt.label}
+            </Link>
+          ) : null;
+        if (!x.done && x.onClick) {
+          return (
+            <button key={x.key} type="button" onClick={x.onClick} style={{ ...styles.starterRow, ...styles.starterButton }} data-testid={`profile-starter-${x.key}`}>
+              {body}
+            </button>
+          );
+        }
         return !x.done && x.to ? (
-          <Link key={x.key} to={x.to} style={styles.starterRow} data-testid={`profile-starter-${x.key}`}>
-            {body}
-          </Link>
+          <div key={x.key}>
+            <Link to={x.to} style={styles.starterRow} data-testid={`profile-starter-${x.key}`}>
+              {body}
+            </Link>
+            {alt}
+          </div>
         ) : (
           <div key={x.key} style={styles.starterRow} data-testid={`profile-starter-${x.key}`}>
             {body}
@@ -714,7 +784,24 @@ export function AppProfileStarterCard({ avatarUrl }) {
         );
       })}
       {avatarUrl || facts.favs || facts.clips ? null : <p style={{ ...st.muted, fontSize: 13 }}>Connects see “Still in the kitchen” until you add something.</p>}
+      {shareModal}
     </div>
+  );
+}
+
+/** The Set up your profile reward (app FoundingFoodieBadge): shows under your name once all steps are done. */
+export function FoundingFoodieBadge() {
+  const [marks, setMarks] = useState(readSetupMarks);
+  useEffect(() => {
+    const sync = () => setMarks(readSetupMarks());
+    window.addEventListener(SETUP_MARKS_EVENT, sync);
+    return () => window.removeEventListener(SETUP_MARKS_EVENT, sync);
+  }, []);
+  if (!marks.rewarded) return null;
+  return (
+    <span style={styles.rewardBadge} data-testid="profile-founding-foodie">
+      🏅 Founding Foodie
+    </span>
   );
 }
 
@@ -951,6 +1038,13 @@ const styles = {
   starterClose: { border: "none", background: "transparent", padding: 4, fontSize: 16, color: C.muted, cursor: "pointer", fontFamily: "inherit" },
   starterTrack: { height: 6, borderRadius: 3, background: C.accentSoft, overflow: "hidden" },
   starterFill: { height: 6, borderRadius: 3, background: C.accent },
+  starterButton: { width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
+  starterAlt: { display: "inline-block", marginLeft: 38, fontSize: 13, fontWeight: 700, color: C.accent, textDecoration: "none" },
+  rewardBackdrop: { position: "fixed", inset: 0, zIndex: 2000, background: "rgba(17,22,19,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 },
+  rewardCard: { background: "#fff", borderRadius: 20, padding: "24px 20px", maxWidth: 340, width: "100%", display: "grid", gap: 10, justifyItems: "center", textAlign: "center" },
+  rewardBadge: { display: "inline-block", alignSelf: "start", justifySelf: "start", padding: "4px 12px", borderRadius: 999, background: C.accentSoft, color: C.accent, fontWeight: 800, fontSize: 14 },
+  rewardPrimary: { padding: "10px 16px", borderRadius: 999, background: C.accent, color: C.onAccent, fontWeight: 700, textDecoration: "none" },
+  rewardSecondary: { padding: "10px 16px", borderRadius: 999, border: `1px solid ${C.accent}`, background: "transparent", color: C.accent, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   starterRow: { display: "flex", alignItems: "center", gap: 12, padding: "4px 0", textDecoration: "none", color: C.text },
   starterDot: { width: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", background: C.accentSoft, flexShrink: 0 },
   starterDotDone: { background: C.accent },
