@@ -1,9 +1,11 @@
 /**
  * Post = a quick post, not a form (Andre 2026-10-30: "it still feels like a form instead of a quick post").
  * 1. Record or Upload media: nothing else shows until there's a clip.
- * 2. The clip fills the sheet with one caption line, "What are you eating?". What you type counts
- *    (✓ shows when it's enough); suggestions are tap-to-fill chips (Common Knowledge food types, the
- *    picked restaurant's dishes, dishes in your city). Enter accepts.
+ * 2. The clip fills the sheet with one caption line, "What food are you eating?". What you type counts
+ *    (✓ shows when it's enough) and is the first chip, in green; the other chips are suggestions
+ *    (Common Knowledge food types, the picked restaurant's dishes, dishes in your city). Enter accepts.
+ *    While you type, the clip shrinks and the sheet moves to the top so the phone keyboard never covers
+ *    the box or its chips (Andre 2026-10-30).
  * 3. Small chips: 📍 Restaurant (type-ahead; a new place is added for review) · 🏠 Home; ⭐ Recommend
  *    once a restaurant is set. Post. No warning banners: tapping Post with no food jumps to the caption.
  * Same as the app's Post tab.
@@ -54,6 +56,7 @@ export default function QuickPostSheet({
   const [foodText, setFoodText] = useState("");
   const [foodPick, setFoodPick] = useState(null);
   const [foodFocused, setFoodFocused] = useState(false);
+  const [placeFocused, setPlaceFocused] = useState(false);
   const [foodTypes, setFoodTypes] = useState([]);
   const [dishHits, setDishHits] = useState([]);
   const [cityDishes, setCityDishes] = useState([]);
@@ -254,17 +257,21 @@ export default function QuickPostSheet({
   }
 
   // Suggestions only while you're typing the caption, so they don't linger once you move on.
+  // What you typed comes first, in green, so you can always pick it (Andre 2026-10-30: "lobster").
   const foodChips =
     foodFocused && !foodPick && typedFood.length >= 2
       ? [
+          { key: "typed", label: typedFood, typed: true, testId: "quick-post-food-typed", onPick: () => food && pickFood(food) },
           ...menuDishes.map((h) => ({ key: `dish-${h.menu_item_id}`, label: dishLabel(h), testId: `quick-post-dish-${h.menu_item_id}`, onPick: () => pickFood({ kind: "dish", dish: asDishPlace(h) }) })),
           ...foodTypes.map((t, i) => ({ key: `type-${i}-${t.name}`, label: t.name, testId: `quick-post-food-type-${i}`, onPick: () => pickFood({ kind: "type", type: t }) })),
           ...nearbyDishes.map((h) => ({ key: `near-${h.menu_item_id}`, label: dishLabel(h), sub: h.restaurant_name, testId: `quick-post-city-dish-${h.menu_item_id}`, onPick: () => pickCityDish(h) })),
         ]
-          .filter((c) => !same(c.label, typedFood) || c.sub)
-          .slice(0, MAX_FOOD_CHIPS)
+          .filter((c) => c.typed || !same(c.label, typedFood) || c.sub)
+          .slice(0, MAX_FOOD_CHIPS + 1)
       : [];
   const placeTyping = !place && placeText.trim().length >= 2;
+  // Typing on a phone: small clip, sheet at the top, so the keyboard can't cover the box or chips.
+  const typing = foodFocused || placeFocused;
 
   const clipInputs = (
     <>
@@ -303,7 +310,7 @@ export default function QuickPostSheet({
   return createPortal(
     <div
       role="presentation"
-      style={styles.backdrop}
+      style={{ ...styles.backdrop, ...(typing ? styles.backdropTyping : null) }}
       data-testid="quick-post-sheet"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !busy) onClose?.();
@@ -358,7 +365,7 @@ export default function QuickPostSheet({
         ) : (
           // Step 2: the clip, one caption line, a few chips, Post.
           <div style={styles.body}>
-            <div style={styles.clip}>
+            <div style={{ ...styles.clip, ...(typing ? styles.clipTyping : null) }}>
               <video src={previewUrl} style={styles.preview} autoPlay muted loop playsInline data-testid="quick-post-preview" />
               <button
                 type="button"
@@ -389,12 +396,12 @@ export default function QuickPostSheet({
                     e.currentTarget.blur();
                   }
                 }}
-                placeholder="What are you eating?"
+                placeholder="What food are you eating?"
                 autoComplete="off"
                 enterKeyHint="done"
                 disabled={busy}
                 style={styles.captionInput}
-                aria-label="What are you eating?"
+                aria-label="What food are you eating?"
                 data-testid="quick-post-food"
               />
               {food ? (
@@ -409,10 +416,13 @@ export default function QuickPostSheet({
                   <button
                     key={c.key}
                     type="button"
-                    style={styles.chip}
+                    style={{ ...styles.chip, ...(c.typed ? styles.chipTyped : null) }}
                     // Keep the caption focused so the tap lands before the chips hide.
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={c.onPick}
+                    onClick={() => {
+                      c.onPick();
+                      foodRef.current?.blur();
+                    }}
                     data-testid={c.testId}
                   >
                     {c.label}
@@ -431,6 +441,12 @@ export default function QuickPostSheet({
                     type="text"
                     value={placeText}
                     onChange={(e) => setPlaceText(e.target.value.slice(0, 120))}
+                    onFocus={(e) => {
+                      setPlaceFocused(true);
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 250);
+                    }}
+                    onBlur={() => setPlaceFocused(false)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -456,6 +472,7 @@ export default function QuickPostSheet({
                         key={h.restaurant_id}
                         type="button"
                         style={styles.chip}
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => choosePlace(asRestaurantPlace(h))}
                         data-testid={`quick-post-place-${h.restaurant_id}`}
                       >
@@ -466,6 +483,7 @@ export default function QuickPostSheet({
                       <button
                         type="button"
                         style={{ ...styles.chip, ...styles.chipNew }}
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => choosePlace(unlistedRestaurantPlace(placeText))}
                         data-testid="quick-post-place-use-typed"
                       >
@@ -585,6 +603,8 @@ const styles = {
   recordCard: { position: "relative", display: "inline-flex", alignItems: "center", gap: 8, background: glass, borderRadius: 999, padding: "10px 18px" },
   recordDot: { width: 14, height: 14, borderRadius: 7, background: "#b42318", display: "inline-block" },
   clip: { position: "relative", height: "min(46vh, 380px)", minHeight: 220, borderRadius: 14, overflow: "hidden", background: "#111" },
+  clipTyping: { height: 110, minHeight: 110 },
+  backdropTyping: { alignItems: "flex-start", paddingTop: 12 },
   preview: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
   changeClip: { position: "absolute", left: 8, top: 8, appearance: "none", border: "none", background: glass, borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", color: "#111" },
   caption: { display: "flex", alignItems: "center", gap: 8, borderBottom: "2px solid #dfe5dc", padding: "2px 2px" },
@@ -594,6 +614,7 @@ const styles = {
   chip: { appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "6px 12px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
   chipNew: { borderStyle: "dashed" },
   chipSub: { color: "#64748b", fontWeight: 500 },
+  chipTyped: { color: GREEN, borderColor: GREEN, fontWeight: 800 },
   placeBox: { display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #dfe5dc", borderRadius: 999, padding: "0 6px 0 12px" },
   placeInput: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 16, padding: "9px 0", fontFamily: "inherit", color: "#111" },
   clear: { appearance: "none", border: "none", background: "transparent", color: "#64748b", fontSize: 15, cursor: "pointer", padding: 6 },

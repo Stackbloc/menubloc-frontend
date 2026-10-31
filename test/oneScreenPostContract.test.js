@@ -22,7 +22,12 @@ test("quick post: clip first, caption, chips; no form rows or warning banners", 
   }
   // Nothing but Record / Upload media until there's a clip.
   assert.match(sheet, /\{!file \? \(\s*\/\/ Step 1: only Record and Upload media\./);
-  assert.match(sheet, /placeholder="What are you eating\?"/);
+  assert.match(sheet, /placeholder="What food are you eating\?"/);
+  // What you typed is always the first chip, in green (Andre 2026-10-30: "lobster").
+  assert.match(sheet, /\{ key: "typed", label: typedFood, typed: true, testId: "quick-post-food-typed"/);
+  assert.match(sheet, /chipTyped: \{ color: GREEN/);
+  // Typing on a phone: small clip, sheet at the top, so the keyboard can't cover the box.
+  assert.match(sheet, /const typing = foodFocused \|\| placeFocused/);
   assert.match(sheet, /🏠 Home/);
   assert.match(sheet, />\s*\{busy \? `Posting…\$\{uploadPercent != null \? ` \$\{uploadPercent\}%` : ""\}` : "Post"\}/);
 });
