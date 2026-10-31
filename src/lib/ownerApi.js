@@ -618,6 +618,22 @@ export const previewPhotoBotImport = (restaurantId, body) =>
 export const applyPhotoBotImport = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/apply`, body);
 
+/** Read-only: match uploaded photo file names to CK menu items. body = { filenames: [...] }. */
+export const previewPhotoBotUpload = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/upload-preview`, body);
+
+/** Import uploaded files: files = File[], selections = [{ image_id: <file name>, menu_item_id }]. */
+export function applyPhotoBotUpload(restaurantId, files, selections) {
+  const fd = new FormData();
+  for (const file of files) fd.append("photos", file, file.name);
+  fd.append("selections", JSON.stringify(selections));
+  return postFormData(
+    `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/upload-apply`,
+    fd,
+    { timeoutMs: OWNER_MENU_UPLOAD_TIMEOUT_MS }
+  );
+}
+
 // ─── Bots (Nutribot + Language Bot schedules, runs, history) ──────────────────
 
 /** Status of every automatic bot: schedule, next run, active run, last run. */
