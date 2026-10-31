@@ -9,7 +9,11 @@ import {
   MetricCard,
   SimpleTable,
 } from "./intelligenceShared.jsx";
-import { getOwnerEngagementCluster, getOwnerEngagementOverview } from "../../../lib/ownerApi.js";
+import {
+  downloadOwnerRestaurantReportPdf,
+  getOwnerEngagementCluster,
+  getOwnerEngagementOverview,
+} from "../../../lib/ownerApi.js";
 
 const EVENT_OPTIONS = [
   "page_view", "menu_item_click", "menu_category_select", "restaurant_click", "outbound_click",
@@ -191,7 +195,7 @@ export default function IntelligenceEngagement() {
         />
       </IntelligenceSection>
 
-      {filters.cluster_id ? <ClusterReport state={clusterReport} /> : null}
+      {filters.cluster_id ? <ClusterReport state={clusterReport} from={params.from} to={params.to} /> : null}
 
       <IntelligenceSection title="Deals" subtitle="Impressions, detail views, and clicks are separate events. Redemptions are not measured.">
         <SimpleTable
@@ -244,7 +248,51 @@ function PlacementTable({ rows }) {
   );
 }
 
-function ClusterReport({ state }) {
+function reportFileName(name, from, to) {
+  const slug = String(name || "restaurant").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  return `menuply-report-${slug || "restaurant"}-${from}-to-${to}.pdf`;
+}
+
+/** Click a restaurant row → its report PDF (Andre 2026-10-31: shared with the restaurant owner). */
+function useRestaurantReportDownload(from, to) {
+  const [status, setStatus] = useState(null);
+  async function download(row) {
+    const id = row?.restaurant_id;
+    if (!id || status?.busy) return;
+    const name = row.restaurant_name || `Restaurant ${id}`;
+    setStatus({ busy: true, text: `Preparing ${name} report…` });
+    try {
+      const blob = await downloadOwnerRestaurantReportPdf(id, { from, to });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = reportFileName(name, from, to);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      setStatus({ busy: false, text: `Downloaded ${name} report.` });
+    } catch (err) {
+      setStatus({ busy: false, error: true, text: `Couldn't make the ${name} report: ${err.message}` });
+    }
+  }
+  return { status, download };
+}
+
+const reportPillStyle = {
+  display: "inline-block",
+  marginLeft: 8,
+  padding: "2px 8px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  color: OWNER_COLORS.accent,
+  background: OWNER_COLORS.accentSoft,
+  whiteSpace: "nowrap",
+};
+
+function ClusterReport({ state, from, to }) {
+  const report = useRestaurantReportDownload(from, to);
   if (state.loading) return <LoadingState label="Loading cluster report…" />;
   if (state.error) return <ErrorBanner message={state.error} />;
   const rep = state.data?.report;
@@ -265,11 +313,24 @@ function ClusterReport({ state }) {
         <MetricCard label="Cluster page shares" value={o.cluster_page_shares} subtitle={`${rep.social?.diner_comments?.in_period ?? 0} diner comments`} />
       </div>
       <div style={{ display: "grid", gap: 18 }}>
+        <div style={{ fontSize: 13, color: report.status?.error ? "#b42318" : OWNER_COLORS.muted }} role="status">
+          {report.status?.text || "Click a restaurant to download its report (PDF) to send to the owner."}
+        </div>
         <SimpleTable
           rows={rep.by_restaurant}
           wrapKeys={["restaurant_name"]}
+          onRowClick={report.download}
           columns={[
-            ["Restaurant", "restaurant_name"],
+            [
+              "Restaurant",
+              "restaurant_name",
+              (r) => (
+                <span>
+                  {r.restaurant_name || `Restaurant ${r.restaurant_id}`}
+                  <span style={reportPillStyle}>Report PDF</span>
+                </span>
+              ),
+            ],
             ["Impressions", "impressions"],
             ["Clicks", "clicks"],
             ["CTR", "ctr_pct", (r) => pct(r.ctr_pct)],
