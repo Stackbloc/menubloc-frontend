@@ -97,7 +97,8 @@ const styles = {
     minWidth: MENU_ROW_ICON_SIZE,
     padding: 0,
     borderRadius: "50%",
-    border: "1px solid rgba(55,65,81,0.22)",
+    // Red ring so the ⓘ stands out on every menu look (Andre 2026-10-30).
+    border: "2px solid #dc2626",
     background: "rgba(255,255,255,0.96)",
     color: "#0f172a",
     boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
