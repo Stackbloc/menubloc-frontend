@@ -1767,13 +1767,13 @@ export default function PublicMenuPage() {
   const compactMenuHeader = ["v1", "v16", "v17"].includes(menuPresentationStyle);
   const menuInfoAction = compactMenuHeader ? (
     <MenuInfoButton
+      restaurantId={currentRestaurantId || null}
       restaurantName={restaurantName}
-      addressLine1={addressLine1}
-      addressLine2={addressLine2}
-      addressLine={addressLine}
-      directionsHref={directionsHref}
-      phone={data?.phone || null}
-      profileHref={restaurantProfileHref || null}
+      city={data?.city || null}
+      state={data?.state || null}
+      menuUrl={shareData?.url || null}
+      reviewedAt={data?.menu_last_verified_at || null}
+      franchiseStore={Number(data?.chain_id) > 0 && data?.is_canonical_parent !== true}
     />
   ) : null;
 

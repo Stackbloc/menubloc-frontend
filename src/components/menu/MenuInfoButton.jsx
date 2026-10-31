@@ -1,41 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
-import MenuAddressLines from "../menu-templates/MenuAddressLines.jsx";
 import { MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
+import { apiGet } from "../../lib/api.js";
+import { isUnclaimedProfile, menuReportMailto, menuTrustText } from "../../lib/menuTrust.js";
 
 /**
- * Compact menu header ⓘ (W4, Andre 2026-10-23): the restaurant's address, directions, phone and
- * a link to its Menuply profile live in this sheet instead of under the name. Never the restaurant's
- * own website (Andre 2026-10-24). Rendered at the end of the header icon
- * row through MenuHeaderTrailingActionContext.
+ * Menu header ⓘ = About this menu (Andre 2026-10-31): how fresh the menu is (owner review date,
+ * or "not claimed or verified") and "submit a report", an email to menus@menuply.com that names
+ * the menu. Directions and the profile live on the profile (the restaurant name links there).
+ * Rendered at the end of the header icon row through MenuHeaderTrailingActionContext.
  */
-function formatPhone(raw) {
-  const digits = String(raw || "").replace(/\D/g, "");
-  const ten = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-  if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
-  return String(raw || "").trim();
-}
-
-export default function MenuInfoButton({
-  restaurantName,
-  addressLine1,
-  addressLine2,
-  addressLine,
-  directionsHref,
-  phone,
-  profileHref,
-}) {
+export default function MenuInfoButton({ restaurantId, restaurantName, city, state, menuUrl, reviewedAt, franchiseStore = false }) {
   const [open, setOpen] = useState(false);
-  const phoneLabel = formatPhone(phone);
-  const hasAddress = Boolean(String(addressLine1 || addressLine2 || addressLine || "").trim());
+  // Claim status isn't in the menu payload: read the profile once the box opens.
+  const [claim, setClaim] = useState(null);
+  useEffect(() => {
+    if (!open || !restaurantId || claim?.restaurantId === restaurantId) return undefined;
+    let cancelled = false;
+    apiGet(`/public/restaurants/${encodeURIComponent(restaurantId)}`)
+      .then((body) => {
+        if (!cancelled) setClaim({ restaurantId, unclaimed: isUnclaimedProfile(body?.restaurant) });
+      })
+      .catch(() => {
+        // Unknown claim status: the box shows the disclaimer only.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, restaurantId, claim?.restaurantId]);
+  const unclaimed = claim?.restaurantId === restaurantId ? claim.unclaimed : false;
+  const reportHref = menuReportMailto({ restaurantId, name: restaurantName, city, state, menuUrl, reviewedAt });
 
   return (
     <>
       <button
         type="button"
-        aria-label="Restaurant info"
-        title="Restaurant info"
+        aria-label="About this menu"
+        title="About this menu"
         data-testid="menu-info-button"
         onClick={(e) => {
           e.stopPropagation();
@@ -47,34 +48,20 @@ export default function MenuInfoButton({
       </button>
       {open
         ? createPortal(
-            <div role="dialog" aria-modal="true" aria-label="Restaurant info" style={styles.backdrop} onClick={() => setOpen(false)}>
+            <div role="dialog" aria-modal="true" aria-label="About this menu" style={styles.backdrop} onClick={() => setOpen(false)}>
               <div style={styles.sheet} onClick={(e) => e.stopPropagation()} data-testid="menu-info-sheet">
                 <div style={styles.grip} />
-                <div style={styles.title}>{restaurantName}</div>
-                {hasAddress ? (
-                  <div style={styles.row}>
-                    <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} addressLine={addressLine} />
-                    {directionsHref ? (
-                      <a href={directionsHref} target="_blank" rel="noreferrer" style={styles.link}>
-                        Get directions
-                      </a>
-                    ) : null}
-                  </div>
-                ) : null}
-                {phoneLabel ? (
-                  <div style={styles.row}>
-                    <a href={`tel:${String(phone).replace(/[^\d+]/g, "")}`} style={styles.link}>
-                      {phoneLabel}
-                    </a>
-                  </div>
-                ) : null}
-                {profileHref ? (
-                  <div style={styles.row}>
-                    <Link to={profileHref} style={styles.link} data-testid="menu-info-profile" onClick={() => setOpen(false)}>
-                      Restaurant profile
-                    </Link>
-                  </div>
-                ) : null}
+                <div style={styles.title}>About this menu</div>
+                <p style={styles.body} data-testid="menu-info-trust">
+                  {menuTrustText({ reviewedAt, unclaimed, franchiseStore })}
+                </p>
+                <p style={styles.body}>
+                  If you have any concerns about the menu content, please{" "}
+                  <a href={reportHref} style={styles.link} data-testid="menu-info-report">
+                    submit a report
+                  </a>
+                  .
+                </p>
                 <button type="button" style={styles.close} onClick={() => setOpen(false)}>
                   Close
                 </button>
@@ -126,15 +113,8 @@ const styles = {
   },
   grip: { width: 40, height: 4, borderRadius: 2, background: "var(--mp-border, #e1e6e1)", margin: "0 auto 14px" },
   title: { fontSize: 17, fontWeight: 700, marginBottom: 12 },
-  row: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    padding: "10px 0",
-    borderTop: "1px solid var(--mp-border, #e1e6e1)",
-    fontSize: 15,
-  },
-  link: { color: "var(--mp-accent, #0f7a24)", fontWeight: 600, textDecoration: "none" },
+  body: { margin: "0 0 10px", fontSize: 15, lineHeight: 1.5 },
+  link: { color: "var(--mp-accent, #0f7a24)", fontWeight: 700, textDecoration: "underline" },
   close: {
     marginTop: 14,
     width: "100%",
