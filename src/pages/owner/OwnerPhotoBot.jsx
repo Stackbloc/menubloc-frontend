@@ -1,20 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  applyPhotoBotHelper,
   applyPhotoBotImport,
   applyPhotoBotUpload,
+  previewPhotoBotHelper,
   previewPhotoBotImport,
   previewPhotoBotUpload,
   searchMenuConsoleRestaurants,
 } from "../../lib/ownerApi.js";
+import { buildPhotoBotBookmarklet, HELPER_ITEMS_MESSAGE, HELPER_READY_MESSAGE } from "../../lib/photoBotHelper.js";
 
 /**
  * Photo Bot — copy dish photos from a restaurant's online ordering site
  * (Square Online, ChowNow, Clover, Chowbus POS) or from photo files the
- * restaurant sent (Toast, Popmenu, anyone) into Menu Manager dish photos.
- *   1. Pick the restaurant + paste the ordering page URL, or upload photos
- *      named after their dishes
+ * restaurant sent into Menu Manager dish photos. Toast and Popmenu pages are
+ * read in the operator's own browser by the Photo Bot bookmark.
+ *   1. Pick the restaurant + paste the ordering page URL, use the bookmark,
+ *      or upload photos named after their dishes
  *   2. Review suggested matches (change or skip any) — nothing is written yet
  *   3. Import the checked photos
  */
@@ -73,8 +77,17 @@ function thumbUrl(url) {
 
 const SOURCE_MODES = [
   { id: "link", label: "Paste a link" },
+  { id: "browser", label: "Toast or Popmenu" },
   { id: "upload", label: "Upload photos" },
 ];
+
+function pageHost(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "the page";
+  }
+}
 
 // Uploaded photos are sent in small batches (server takes up to 20 per request).
 const UPLOAD_BATCH_SIZE = 10;
@@ -97,7 +110,11 @@ export default function OwnerPhotoBot() {
   const [searchResults, setSearchResults] = useState(null);
   const [restaurant, setRestaurant] = useState(null);
   const [sourceUrl, setSourceUrl] = useState("");
-  const [mode, setMode] = useState("link");
+  const [mode, setMode] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("helper") ? "browser" : "link"
+  );
+  const [helperList, setHelperList] = useState(null); // { page_url, page_title, items } from the bookmark
+  const bookmarkRef = useRef(null);
   const [files, setFiles] = useState([]); // File[] picked for upload
 
   const [busy, setBusy] = useState("");
@@ -113,6 +130,42 @@ export default function OwnerPhotoBot() {
     return urls;
   }, [files]);
   useEffect(() => () => Object.values(fileUrls).forEach((u) => URL.revokeObjectURL(u)), [fileUrls]);
+
+  // React won't render javascript: links, so the bookmark's href is set directly.
+  useEffect(() => {
+    bookmarkRef.current?.setAttribute("href", buildPhotoBotBookmarklet(window.location.origin));
+  });
+
+  // Opened by the bookmark: say "ready" until its list arrives.
+  useEffect(() => {
+    if (!window.opener) return undefined;
+    let received = false;
+    function onMessage(e) {
+      const data = e.data;
+      if (!data || data.type !== HELPER_ITEMS_MESSAGE || !Array.isArray(data.items)) return;
+      received = true;
+      setHelperList({
+        page_url: String(data.page_url || ""),
+        page_title: String(data.page_title || ""),
+        items: data.items.slice(0, 500).map((it) => ({ name: String(it?.name || ""), image_url: String(it?.image_url || "") })),
+      });
+      setMode("browser");
+      setPreview(null);
+      setResult(null);
+    }
+    window.addEventListener("message", onMessage);
+    const ping = () => {
+      if (!received && window.opener) window.opener.postMessage({ type: HELPER_READY_MESSAGE }, "*");
+    };
+    ping();
+    const timer = setInterval(ping, 1000);
+    const stop = setTimeout(() => clearInterval(timer), 3 * 60 * 1000);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      clearInterval(timer);
+      clearTimeout(stop);
+    };
+  }, []);
 
   async function run(kind, fn) {
     setBusy(kind);
@@ -185,6 +238,14 @@ export default function OwnerPhotoBot() {
     });
   }
 
+  function handleHelperPreview() {
+    if (!restaurant || !helperList?.items?.length) return;
+    run("preview", async () => {
+      setResult(null);
+      showPreview(await previewPhotoBotHelper(restaurant.id, { page_url: helperList.page_url, items: helperList.items }));
+    });
+  }
+
   function handlePreview(e) {
     e?.preventDefault();
     if (!restaurant || !sourceUrl.trim()) return;
@@ -252,7 +313,12 @@ export default function OwnerPhotoBot() {
   function handleImport() {
     if (!selections.length) return;
     run("apply", async () => {
-      const data = mode === "upload" ? await importUploads() : await applyPhotoBotImport(restaurant.id, { url: sourceUrl.trim(), selections });
+      const data =
+        mode === "upload"
+          ? await importUploads()
+          : mode === "browser"
+            ? await applyPhotoBotHelper(restaurant.id, { page_url: helperList.page_url, items: helperList.items, selections })
+            : await applyPhotoBotImport(restaurant.id, { url: sourceUrl.trim(), selections });
       setResult(data);
       const imported = new Set(
         (data.results || [])
@@ -292,7 +358,7 @@ export default function OwnerPhotoBot() {
         <PageCard style={{ padding: 20 }}>
           <SectionTitle
             title="Restaurant and photo source"
-            subtitle="Copies dish photos from the restaurant's own ordering page into Menu Manager. Works with Square Online, ChowNow, Clover and Chowbus POS, or paste the restaurant's website and Photo Bot follows its Order link. For Toast, Popmenu or any other site, upload the photos the restaurant sends you. Marketplaces like DoorDash and Uber Eats are never used."
+            subtitle="Copies dish photos from the restaurant's own ordering page into Menu Manager. Works with Square Online, ChowNow, Clover and Chowbus POS, or paste the restaurant's website and Photo Bot follows its Order link. For Toast and Popmenu, use the Photo Bot bookmark; for anything else, upload the photos the restaurant sends you. Marketplaces like DoorDash and Uber Eats are never used."
           />
 
           {restaurant ? (
@@ -377,7 +443,46 @@ export default function OwnerPhotoBot() {
             ))}
           </div>
 
-          {mode === "upload" ? (
+          {mode === "browser" ? (
+            <div>
+              {helperList ? (
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 260px" }}>
+                    <div style={{ fontWeight: 700 }}>
+                      {helperList.items.length} dish photo{helperList.items.length === 1 ? "" : "s"} from {pageHost(helperList.page_url)}
+                    </div>
+                    <div style={mutedStyle}>{helperList.page_title || helperList.page_url}</div>
+                  </div>
+                  <button
+                    type="button"
+                    style={primaryButtonStyle({ busy: busy === "preview", disabled: !restaurant || !helperList.items.length })}
+                    disabled={!restaurant || !helperList.items.length || Boolean(busy)}
+                    onClick={handleHelperPreview}
+                  >
+                    {busy === "preview" ? "Finding matches…" : restaurant ? "Find matches" : "Pick the restaurant first"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                    <a
+                      ref={bookmarkRef}
+                      onClick={(e) => e.preventDefault()}
+                      title="Drag me to your bookmarks bar"
+                      style={{ ...secondaryButtonStyle, display: "inline-block", textDecoration: "none", color: OWNER_COLORS.ink, cursor: "grab" }}
+                    >
+                      Menuply Photo Bot
+                    </a>
+                    <span style={mutedStyle}>Drag this button to your bookmarks bar (one time).</span>
+                  </div>
+                  <div style={mutedStyle}>
+                    Then open the restaurant's Toast ordering page or Popmenu menu page and click the bookmark. Photo Bot opens with the
+                    dish photos it found. Only use photos the restaurant owns or has permission to use.
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : mode === "upload" ? (
             <div>
               <label
                 htmlFor="photo-bot-files"
@@ -466,7 +571,7 @@ export default function OwnerPhotoBot() {
           <PageCard style={{ padding: 20 }}>
             <SectionTitle
               title="Review matches"
-              subtitle={`${preview.restaurant?.restaurant_name}: ${photoRows.length} photos ${mode === "upload" ? "uploaded" : `on ${preview.source?.label || "the site"}`}, ${preview.counts?.menu_items ?? 0} items in Menu Manager${
+              subtitle={`${preview.restaurant?.restaurant_name}: ${photoRows.length} photos ${mode === "upload" ? "uploaded" : `from ${preview.source?.label || "the site"}`}, ${preview.counts?.menu_items ?? 0} items in Menu Manager${
                 alreadyImportedCount ? `, ${alreadyImportedCount} already imported` : ""
               }. Nothing is saved until you import.`}
             />
