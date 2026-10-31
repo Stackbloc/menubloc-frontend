@@ -622,6 +622,14 @@ export const applyPhotoBotImport = (restaurantId, body) =>
 export const previewPhotoBotUpload = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/upload-preview`, body);
 
+/** Read-only: match the Photo Bot bookmark's list. body = { page_url, items: [{ name, image_url }] }. */
+export const previewPhotoBotHelper = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/helper-preview`, body);
+
+/** Import approved pairs from the bookmark's list: body = { page_url, items, selections }. */
+export const applyPhotoBotHelper = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/helper-apply`, body);
+
 /** Import uploaded files: files = File[], selections = [{ image_id: <file name>, menu_item_id }]. */
 export function applyPhotoBotUpload(restaurantId, files, selections) {
   const fd = new FormData();
