@@ -165,6 +165,8 @@ export default function SeeWhosEatingFullscreen({
   // swipes still move on; auto-advance resumes after checkout clears the basket.
   const { itemCount: basketItemCount = 0 } = useOrderCart();
   const holdForOrder = menuBrowserOpen && basketItemCount > 0;
+  // Item id whose sponsored play limit already moved the Feed on (fires once per clip).
+  const sponsoredCapRef = useRef(null);
   const browseTrail = useMemo(() => {
     if (!browseSession) return [];
     return buildBrowseMenuTrail(
@@ -631,6 +633,18 @@ export default function SeeWhosEatingFullscreen({
   const screenName = item ? liveFeedPosterDisplayName(item) : "";
   const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
   const sponsoredBadge = item ? liveFeedSponsoredBadge(item) : null;
+  const sponsoredMaxSeconds = sponsoredBadge ? Number(item?.max_play_seconds) || null : null;
+  const onClipFinished =
+    isFeedHome && activeItems.length > 1
+      ? () => {
+          if (menuBrowserOpen) {
+            playNextRestaurantClip();
+            return;
+          }
+          if (holdForOrder) return;
+          goNext();
+        }
+      : undefined;
   /** Feed home never ends — wrap + reshuffle; modal reel still stops at the last clip. */
   const atEnd = isFeedHome ? false : index >= activeItems.length - 1;
   const atStart = index <= 0;
@@ -824,15 +838,16 @@ export default function SeeWhosEatingFullscreen({
         onPointerUp={onVideoPointerUp}
         onTouchStart={onPipTouchStart}
         onTouchEnd={onPipTouchEnd}
-        onEnded={
-          isFeedHome && activeItems.length > 1
-            ? () => {
-                if (menuBrowserOpen) {
-                  playNextRestaurantClip();
-                  return;
+        onEnded={onClipFinished}
+        onTimeUpdate={
+          onClipFinished && sponsoredMaxSeconds
+            ? (e) => {
+                // Sponsored clips play at most max_play_seconds (30 s), then the Feed moves on.
+                if (sponsoredCapRef.current === item.id) return;
+                if (e.currentTarget.currentTime >= sponsoredMaxSeconds) {
+                  sponsoredCapRef.current = item.id;
+                  onClipFinished();
                 }
-                if (holdForOrder) return;
-                goNext();
               }
             : undefined
         }
