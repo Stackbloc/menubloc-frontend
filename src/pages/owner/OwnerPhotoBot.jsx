@@ -9,7 +9,7 @@ import {
 
 /**
  * Photo Bot — copy dish photos from a restaurant's online ordering site
- * (Square Online today) into Menu Manager dish photos.
+ * (Square Online, ChowNow, Clover, Chowbus POS) into Menu Manager dish photos.
  *   1. Pick the restaurant + paste the ordering page URL
  *   2. Review suggested matches (change or skip any) — nothing is written yet
  *   3. Import the checked photos
@@ -217,7 +217,7 @@ export default function OwnerPhotoBot() {
         <PageCard style={{ padding: 20 }}>
           <SectionTitle
             title="Restaurant and photo source"
-            subtitle="Copies dish photos from the restaurant's online ordering page into Menu Manager. Square Online pages are supported today."
+            subtitle="Copies dish photos from the restaurant's own ordering page into Menu Manager. Works with Square Online, ChowNow, Clover and Chowbus POS, or paste the restaurant's website and Photo Bot follows its Order link. Marketplaces like DoorDash and Uber Eats are never used."
           />
 
           {restaurant ? (
