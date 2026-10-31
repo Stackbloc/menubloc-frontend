@@ -210,6 +210,20 @@ export const getOwnerEngagementOverview = (params = {}) =>
   get(`/api/owner/analytics/engagement/overview${engagementQuery(params)}`);
 export const getOwnerEngagementCluster = (clusterId, params = {}) =>
   get(`/api/owner/analytics/engagement/clusters/${encodeURIComponent(String(clusterId))}${engagementQuery(params)}`);
+/** Restaurant report PDF to share with the restaurant. Params: from, to. Resolves to a Blob. */
+export async function downloadOwnerRestaurantReportPdf(restaurantId, params = {}) {
+  const res = await fetch(
+    `${API}/api/owner/analytics/engagement/restaurants/${encodeURIComponent(String(restaurantId))}/report.pdf${engagementQuery(params)}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+}
 
 function intelligenceQueryString(params = {}) {
   const qs = new URLSearchParams();
