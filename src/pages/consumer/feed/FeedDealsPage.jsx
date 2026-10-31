@@ -17,6 +17,7 @@ import {
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
+import { markSetup } from "../../../lib/profileSetupMarks.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 const MEAL_FILTERS = [{ id: "all", label: "All" }, ...DEAL_MEAL_PERIODS];
@@ -41,6 +42,10 @@ export default function FeedDealsPage() {
   // Meal time SORTS, never hides: every deal video always loads; the chosen meal's deals
   // play first. Desktop has no chips (bottom caption shows meal times) → plain random.
   const effectiveMealFilter = isDesktop ? "all" : mealFilter;
+  // Set up your profile, step 5: "or check today's deals".
+  useEffect(() => {
+    markSetup("out");
+  }, []);
   const items = useMemo(
     () => orderDealVideosForMeal(allItems, effectiveMealFilter),
     [allItems, effectiveMealFilter]
