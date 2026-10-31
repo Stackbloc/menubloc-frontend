@@ -28,6 +28,7 @@ import {
   isLiveFeedRestaurantCreator,
   isLiveFeedGuestCreator,
   isLiveFeedVenueItem,
+  liveFeedSponsoredBadge,
 } from "../../../lib/liveFeedCategory.js";
 import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
 import FeedVideoWatchLink from "../../../components/consumer/feed/FeedVideoWatchLink.jsx";
@@ -554,7 +555,7 @@ export default function SeeWhosEatingFullscreen({
     e?.stopPropagation?.();
     const path = liveFeedCreatorProfilePath(item);
     if (!path) return;
-    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item)) {
+    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item) || sponsoredBadge) {
       onClose?.();
       navigate(path);
       return;
@@ -570,7 +571,7 @@ export default function SeeWhosEatingFullscreen({
   async function onScreenNameClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item)) {
+    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item) || sponsoredBadge) {
       openPosterProfile(e);
       return;
     }
@@ -629,6 +630,7 @@ export default function SeeWhosEatingFullscreen({
   const isVenue = isLiveFeedVenueItem(item);
   const screenName = item ? liveFeedPosterDisplayName(item) : "";
   const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
+  const sponsoredBadge = item ? liveFeedSponsoredBadge(item) : null;
   /** Feed home never ends — wrap + reshuffle; modal reel still stops at the last clip. */
   const atEnd = isFeedHome ? false : index >= activeItems.length - 1;
   const atStart = index <= 0;
@@ -962,7 +964,11 @@ export default function SeeWhosEatingFullscreen({
         >
           {screenName}
         </button>
-        {showRestaurantBadge ? (
+        {sponsoredBadge ? (
+          <span style={styles.restaurantBadge} data-testid="see-whos-eating-sponsored-badge">
+            {sponsoredBadge}
+          </span>
+        ) : showRestaurantBadge ? (
           <span style={styles.restaurantBadge} data-testid="see-whos-eating-restaurant-badge">
             Restaurant
           </span>

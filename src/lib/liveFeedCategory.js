@@ -65,9 +65,21 @@ export function liveFeedRestaurantProfilePath(item = {}) {
   );
 }
 
+/** Paid sponsored clip mixed into the Feed (kind "sponsored", Andre 2026-10-31). */
+export function isLiveFeedSponsored(item) {
+  return String(item?.kind || "").toLowerCase() === "sponsored" || item?.poster_type === "sponsor";
+}
+
+/** "Sponsored" or "Sponsored · Deal · 20% off". */
+export function liveFeedSponsoredBadge(item) {
+  if (!isLiveFeedSponsored(item)) return null;
+  return String(item?.sponsored?.badge || "").trim() || "Sponsored";
+}
+
 export function liveFeedCreatorProfilePath(item) {
   if (!item) return null;
   if (isLiveFeedPlatformCreator(item)) return null;
+  if (isLiveFeedSponsored(item)) return item?.restaurant_id != null ? liveFeedRestaurantProfilePath(item) : null;
   if (isLiveFeedVenueItem(item)) return venueLiveFeedPath(item.venue);
   if (item?.creator_type === "restaurant" || item?.poster_type === "restaurant") {
     return liveFeedRestaurantProfilePath(item);
@@ -87,7 +99,7 @@ export function isLiveFeedPlatformCreator(item) {
 }
 
 export function isLiveFeedGuestCreator(item) {
-  if (isLiveFeedPlatformCreator(item)) return false;
+  if (isLiveFeedPlatformCreator(item) || isLiveFeedSponsored(item)) return false;
   return (
     item?.creator_type === "guest" ||
     (!isLiveFeedVenueItem(item) &&
@@ -106,6 +118,9 @@ export function venueLiveFeedPath(venue) {
 }
 
 export function liveFeedPosterLabel(item) {
+  if (isLiveFeedSponsored(item)) {
+    return item?.sponsored?.advertiser_name || item?.restaurant_name || "Sponsored";
+  }
   if (String(item?.kind || "").toLowerCase() === "event" || item?.poster_type === "venue") {
     return item?.venue?.name || "Venue";
   }
@@ -123,7 +138,12 @@ export function liveFeedPosterLabel(item) {
 
 export function liveFeedPosterDisplayName(item) {
   const label = liveFeedPosterLabel(item);
-  if (isLiveFeedVenueItem(item) || isLiveFeedGuestCreator(item) || isLiveFeedPlatformCreator(item)) {
+  if (
+    isLiveFeedVenueItem(item) ||
+    isLiveFeedGuestCreator(item) ||
+    isLiveFeedPlatformCreator(item) ||
+    isLiveFeedSponsored(item)
+  ) {
     return label;
   }
   return `@${label}`;
