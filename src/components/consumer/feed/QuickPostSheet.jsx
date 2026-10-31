@@ -1,7 +1,9 @@
 /**
  * Post = a quick post, not a form (Andre 2026-10-30: "it still feels like a form instead of a quick post").
  * 1. Record or Upload media: nothing else shows until there's a clip.
- * 2. The clip fills the sheet with one caption line, "What food are you eating?". What you type counts
+ * 2. The clip fills the sheet with one caption line, "What food is your clip about?" (Andre 2026-10-30: any food
+ *    clip, not only eating: cooking, drinks, a friend's dish), with example foods under it while it's
+ *    empty. What you type counts
  *    (✓ shows when it's enough) and is the first chip, in green; the other chips are suggestions
  *    (Common Knowledge food types, the picked restaurant's dishes, dishes in your city). Enter accepts.
  *    While you type, the clip shrinks and the sheet moves to the top so the phone keyboard never covers
@@ -418,12 +420,12 @@ export default function QuickPostSheet({
                     e.currentTarget.blur();
                   }
                 }}
-                placeholder="What food are you eating?"
+                placeholder="What food is your clip about?"
                 autoComplete="off"
                 enterKeyHint="done"
                 disabled={busy}
                 style={styles.captionInput}
-                aria-label="What food are you eating?"
+                aria-label="What food is your clip about?"
                 data-testid="quick-post-food"
               />
               {food ? (
@@ -432,6 +434,11 @@ export default function QuickPostSheet({
                 </span>
               ) : null}
             </div>
+            {typedFood ? null : (
+              <p style={styles.examples} data-testid="quick-post-food-examples">
+                Like tacos, a matcha latte, homemade lasagna
+              </p>
+            )}
             {foodChips.length ? (
               <div style={styles.chips} data-testid="quick-post-food-chips">
                 {foodChips.map((c) => (
@@ -636,6 +643,7 @@ const styles = {
   chip: { appearance: "none", border: "1px solid #dfe5dc", background: "#fff", color: "#111", borderRadius: 999, padding: "6px 12px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
   chipNew: { borderStyle: "dashed" },
   chipSub: { color: "#64748b", fontWeight: 500 },
+  examples: { margin: "-4px 0 0", fontSize: 13, color: "#64748b" },
   chipTyped: { color: GREEN, borderColor: GREEN, fontWeight: 800 },
   placeBox: { display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #dfe5dc", borderRadius: 999, padding: "0 6px 0 12px" },
   placeInput: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 16, padding: "9px 0", fontFamily: "inherit", color: "#111" },

@@ -22,7 +22,10 @@ test("quick post: clip first, caption, chips; no form rows or warning banners", 
   }
   // Nothing but Record / Upload media until there's a clip.
   assert.match(sheet, /\{!file \? \(\s*\/\/ Step 1: only Record and Upload media\./);
-  assert.match(sheet, /placeholder="What food are you eating\?"/);
+  assert.match(sheet, /placeholder="What food is your clip about\?"/);
+  // Any food clip, not only eating: examples under the empty box (Andre 2026-10-30).
+  assert.match(sheet, /Like tacos, a matcha latte, homemade lasagna/);
+  assert.doesNotMatch(sheet, /What (food )?are you eating/);
   // What you typed is always the first chip, in green (Andre 2026-10-30: "lobster").
   assert.match(sheet, /\{ key: "typed", label: typedFood, typed: true, testId: "quick-post-food-typed"/);
   assert.match(sheet, /chipTyped: \{ color: GREEN/);
