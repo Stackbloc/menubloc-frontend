@@ -558,7 +558,8 @@ const styles = {
     zIndex: 1310,
     background: "rgba(0,0,0,0.55)",
     display: "flex",
-    alignItems: "flex-end",
+    // Centered on the screen, not a bottom sheet (Andre 2026-10-30), above the bottom nav.
+    alignItems: "center",
     justifyContent: "center",
     padding: "16px 12px calc(var(--feed-primary-nav-h, 72px) + 12px)",
   },
