@@ -59,12 +59,13 @@ function RunProgress({ places, status }) {
   const counted = places.filter((p) => !PLACE_UNCOUNTED.has(p.status));
   const done = counted.filter((p) => !PLACE_PENDING.has(p.status)).length;
   const finished = status === "completed";
+  const live = status === "running" || status === "queued";
   const pct = finished ? 100 : counted.length ? Math.round((done / counted.length) * 100) : 0;
   const label = finished
     ? `All ${counted.length} places checked`
     : counted.length
       ? `${done} of ${counted.length} places checked`
-      : "Finding places on the map…";
+      : live ? "Finding places on the map…" : "No places found yet";
   return (
     <div style={{ marginBottom: 12 }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Run progress">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -364,7 +365,8 @@ function RunDetail({ objectiveId, onListChanged }) {
         {live ? <span style={mutedStyle}>· updates every few seconds</span> : null}
       </div>
       {o.status !== "cancelled" ? <RunProgress places={places} status={o.status} /> : null}
-      {o.error_message && o.status !== "completed" ? <div style={{ ...mutedStyle, marginBottom: 12 }}>Last stop: {o.error_message}</div> : null}
+      {o.error_message && o.status === "failed" ? <div style={{ ...errorStyle, marginTop: 0, marginBottom: 12 }}>Stopped: {o.error_message}</div> : null}
+      {o.error_message && !["completed", "failed"].includes(o.status) ? <div style={{ ...mutedStyle, marginBottom: 12 }}>Last stop: {o.error_message}</div> : null}
       {error ? <div style={errorStyle}>{error}</div> : null}
       {review.length ? (
         <div style={{ ...mutedStyle, marginBottom: 8 }}>
