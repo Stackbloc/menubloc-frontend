@@ -760,6 +760,8 @@ export const objectiveAgentAction = (id, action) => post(`/api/owner/agent/objec
 export const prepareAgentPlace = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/prepare`, {});
 export const publishAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/publish`, { note });
 export const rejectAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/reject`, { note });
+export const createAgentPlaceProfile = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/create-profile`, {});
+export const publishAllAgentRun = (id) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/publish-all`, {});
 
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
