@@ -6,8 +6,9 @@
  *   Needs your answer — "Ask to Join" on my plans → Yes / Not this time (Phase B)
  *   Who's Available (was Right now, Andre 2026-10-31) — Connects in colored groups Lunch · Dinner ·
  *     Hungry · Coffee · Join Me (same as the app); live Join Me → Join; live vibe → Invite (Invite to Eat)
- *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
- *     Join · Ask to Join · Requested ✓ · Going ✓ (SocialPlanActionButton)
+ *   Social Plans (was Coming up, Andre 2026-11-01) — Connects' plans I can see, Wish List / Fav
+ *     matches first → Join · Ask to Join · Requested ✓ · Going ✓ (SocialPlanActionButton). Click a
+ *     plan → everyone going, organizer first (same as the app).
  * GET /api/consumer/social-plans/connects. Owner view only; quiet if it can't load.
  * Andre 2026-10-30: lives at the top of the Connects page (`onPage`: no heading or All Connects link,
  * the list is right below), reached from the Connects pill on Profile.
@@ -72,6 +73,8 @@ export default function ConnectsNowSection({ onPage = false }) {
   const [data, setData] = useState(null);
   const [now, setNow] = useState(0);
   const [answered, setAnswered] = useState(() => new Set());
+  // The plan whose people are showing (one at a time).
+  const [openKey, setOpenKey] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -204,9 +207,18 @@ export default function ConnectsNowSection({ onPage = false }) {
         ) : null}
 
         {comingUp.length ? (
-          <Group title="Coming up" testId="connects-coming-up">
+          <Group title="Social Plans" testId="connects-coming-up">
             {comingUp.slice(0, SHOWN).map((p) => (
-              <div key={p.key} style={styles.row} data-testid={`connects-plan-${p.key}`}>
+              <div key={p.key} style={styles.planWrap}>
+              <div style={styles.row} data-testid={`connects-plan-${p.key}`}>
+                <button
+                  type="button"
+                  style={styles.planOpen}
+                  aria-expanded={openKey === p.key}
+                  aria-label={`${p.title}, see who's going`}
+                  onClick={() => setOpenKey((k) => (k === p.key ? null : p.key))}
+                  data-testid={`connects-plan-${p.key}-open`}
+                >
                 <div style={styles.text}>
                   <span style={styles.when}>
                     <PlanTag plan={p} />
@@ -226,7 +238,10 @@ export default function ConnectsNowSection({ onPage = false }) {
                       .join(" · ")}
                   </span>
                 </div>
+                </button>
                 <SocialPlanActionButton plan={p} testId={`connects-plan-${p.key}-action`} />
+              </div>
+              {openKey === p.key ? <PlanPeople plan={p} /> : null}
               </div>
             ))}
           </Group>
@@ -251,6 +266,40 @@ export default function ConnectsNowSection({ onPage = false }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Who's going (Andre 2026-11-01): organizer first; a Connect opens their page, anyone else theirs. */
+function PlanPeople({ plan: p }) {
+  const people = Array.isArray(p.attendees) ? p.attendees : null;
+  const guests = Number(p.guest_count) || 0;
+  const going = people ? people.length + guests : p.going_count;
+  return (
+    <div style={styles.people} data-testid={`connects-plan-${p.key}-people`}>
+      <span style={styles.groupTitle}>{going != null ? `${going} going` : "Going"}</span>
+      {(people || []).map((a, i) => {
+        const href = a.is_you || a.id == null ? null : a.is_connect ? `/account/connections/${a.id}` : `/diners/${a.id}`;
+        const body = (
+          <>
+            <Avatar peer={a} />
+            <span style={styles.text}>
+              <strong style={styles.name}>{a.name || "A diner"}</strong>
+              <span style={s.muted}>{a.role === "organizer" ? "Organizer" : a.is_connect ? "Going · your Connect" : "Going"}</span>
+            </span>
+          </>
+        );
+        return href ? (
+          <Link key={`${a.id}-${i}`} to={href} style={{ ...styles.row, color: "inherit", textDecoration: "none" }}>
+            {body}
+          </Link>
+        ) : (
+          <div key={`${a.id ?? "hidden"}-${i}`} style={styles.row}>
+            {body}
+          </div>
+        );
+      })}
+      {guests ? <span style={s.muted}>{`+ ${guests} ${guests === 1 ? "guest" : "guests"}`}</span> : null}
+    </div>
   );
 }
 
@@ -317,6 +366,9 @@ const styles = {
   availableDot: { width: 8, height: 8, borderRadius: 4 },
   availableCount: { fontSize: 12, opacity: 0.8 },
   row: { display: "flex", alignItems: "center", gap: 10 },
+  planWrap: { display: "grid", gap: 6 },
+  planOpen: { flex: 1, minWidth: 0, display: "flex", padding: 0, border: "none", background: "transparent", textAlign: "left", cursor: "pointer", font: "inherit" },
+  people: { display: "grid", gap: 6, padding: "8px 10px", borderRadius: 12, background: "#f0fdf4" },
   avatar: { width: 36, height: 36, borderRadius: 18, objectFit: "cover", flexShrink: 0 },
   initial: {
     display: "inline-flex",

@@ -60,7 +60,7 @@ test("Phase C: My Menuply Connects section — owner only, GET only, every row h
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /export const getConnectsNow = \(\) => get\("\/api\/consumer\/social-plans\/connects"\);/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
-  for (const label of ['"Pending connect requests"', '"Needs your answer"', '"Who\'s Available"', '"Coming up"', 'Accept', 'Decline', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
+  for (const label of ['"Pending connect requests"', '"Needs your answer"', '"Who\'s Available"', '"Social Plans"', 'Accept', 'Decline', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
     assert.ok(section.includes(label), label);
   }
   // Connect requests are answered on the Profile itself (Andre 2026-10-30), not by a link away.
@@ -199,4 +199,13 @@ test("Who's Available groups Connects by vibe with colors, same order as the app
     assert.ok(src.includes(g), g);
   }
   assert.doesNotMatch(src, /"Right now"/);
+});
+
+test("Social Plans: click a plan → everyone going, organizer first (Andre 2026-11-01)", () => {
+  const src = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
+  assert.match(src, /title="Social Plans"/);
+  assert.doesNotMatch(src, /title="Coming up"/);
+  assert.match(src, /function PlanPeople/);
+  assert.match(src, /a\.is_connect \? `\/account\/connections\/\$\{a\.id\}` : `\/diners\/\$\{a\.id\}`/);
+  assert.match(src, /guest_count/);
 });
