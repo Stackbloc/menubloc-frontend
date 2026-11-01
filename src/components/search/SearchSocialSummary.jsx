@@ -70,6 +70,8 @@ export default function SearchSocialSummary({ summary }) {
               const ctaLabel = String(row.cta_label || "").trim();
               const ctaHref = String(row.cta_href || "").trim();
               const showCta = Boolean(ctaLabel && ctaHref) && !row.second_degree && !row.everyone;
+              // Available but not your Connect yet: Connect, so the row has something to do (Andre 2026-11-01).
+              const showConnect = !showCta && href && row.current_vibe && (row.second_degree || row.everyone);
               return (
                 <div key={row.activity_id || `${row.kind}:${row.consumer_user_id}`} style={styles.row} data-testid="search-social-row">
                   <PersonTag {...(href ? { to: href } : {})} style={styles.person}>
@@ -94,6 +96,10 @@ export default function SearchSocialSummary({ summary }) {
                     <a href={ctaHref} style={styles.cta} data-testid="search-social-cta">
                       {ctaLabel}
                     </a>
+                  ) : showConnect ? (
+                    <Link to={href} style={styles.cta} data-testid="search-social-connect">
+                      Connect
+                    </Link>
                   ) : null}
                   {place && toPlace ? (
                     <Link to={toPlace} style={styles.placeLink}>
