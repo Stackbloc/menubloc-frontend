@@ -179,7 +179,7 @@ test("Profile: Edit / View profile switch, Connects pill → Connects page, Shar
   assert.doesNotMatch(profile, /<SocialCalendarCard \/>\n\s+<ConnectsNowSection \/>/);
   const page = read("src/pages/consumer/feed/FeedConnectsPage.jsx");
   assert.match(page, /<ConnectsNowSection onPage \/>/);
-  assert.match(page, /Your Connects · \{accepted\.length\}/);
+  assert.match(page, /Connect Summary · \{accepted\.length\}/);
   assert.match(read("src/App.jsx"), /path="\/account\/connections" element=\{crmHost \? <HostRouteRedirect to="\/crm" \/> : <Navigate to="\/feed\/connects" replace \/>\}/);
 });
 

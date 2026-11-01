@@ -114,13 +114,16 @@ export default function ConnectsNowSection({ onPage = false }) {
     (r) => r.type !== "vibe" || !r.vibe?.expires_at || timeLeft(r.vibe.expires_at, now)
   );
   const comingUp = data.coming_up || [];
-  const nothing = !connectRequests.length && !asks.length && !rightNow.length && !comingUp.length;
+  const nothing = (onPage || !connectRequests.length) && !asks.length && !rightNow.length && !comingUp.length;
 
   return (
     <section style={s.section} data-testid="connects-now">
       <div style={styles.card}>
         {onPage ? null : <h2 style={styles.heading}>Connects</h2>}
 
+        {/* On the Connects page, pending requests + Find Connects are their own box under Connect
+            Summary (Andre 2026-11-01: the Connects you have matter more than pending ones). */}
+        {onPage ? null : (
         <Group title="Pending connect requests" testId="connects-pending-requests">
           {connectRequests.length ? null : (
             <p style={s.muted} data-testid="connects-pending-none">
@@ -153,6 +156,7 @@ export default function ConnectsNowSection({ onPage = false }) {
             </div>
           ))}
         </Group>
+        )}
 
         {asks.length ? (
           <Group title="Needs your answer" testId="connects-needs-answer">
@@ -260,9 +264,11 @@ export default function ConnectsNowSection({ onPage = false }) {
             </Link>
           )}
           {/* Where diners meet new people (Andre 2026-10-30): visible, not behind All Connects. */}
-          <Link to="/account/find-diners" style={styles.find} data-testid="profile-find-diners">
-            Find Connects
-          </Link>
+          {onPage ? null : (
+            <Link to="/account/find-diners" style={styles.find} data-testid="profile-find-diners">
+              Find Connects
+            </Link>
+          )}
         </div>
       </div>
     </section>
