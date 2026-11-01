@@ -73,7 +73,7 @@ export default function SearchResultSocialActivity({ items }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {row.line}
+                {row.kind === "catch_me" ? `✈️ ${row.line}` : row.line}
               </span>
             </PersonTag>
             {showCta ? (

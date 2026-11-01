@@ -37,6 +37,14 @@ describe("SearchSocialSummary", () => {
     expect(ctas).toEqual(["/account/invite-to-eat?restaurant_id=1", "/account/invite-to-eat?restaurant_id=1&menu_item_id=11"]);
   });
 
+  it("a Connect's trip (Catch Me) reads with a plane and invites through Quick Invite", () => {
+    const line = "Your Connect, Joe J., is in town. Want to invite Joe J. to catch up?";
+    const href = "/account/invite-to-eat?seed_code=LDL&quick_invite=1&invite_kind=private&invitee_name=Joe+J.";
+    view({ available_count: 1, available: [{ activity_id: "catch_me:81", kind: "catch_me", consumer_user_id: 81, display_name: "Joe J.", line, cta_label: "Invite", cta_href: href }], want: [], love: [] });
+    expect(screen.getByText(`✈️ ${line}`)).toBeTruthy();
+    expect(screen.getByTestId("search-social-cta").getAttribute("href")).toBe(href);
+  });
+
   it("nothing → renders nothing; count falls back to unique people", () => {
     const { container } = view({ available: [], want: [], love: [] });
     expect(container.textContent).toBe("");

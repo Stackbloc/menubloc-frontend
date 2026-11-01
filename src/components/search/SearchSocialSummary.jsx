@@ -85,7 +85,8 @@ export default function SearchSocialSummary({ summary }) {
                     <span style={styles.text}>
                       <span style={styles.line}>
                         {dot ? <span style={{ ...styles.dot, background: dot }} aria-hidden /> : null}
-                        {row.line}
+                        {/* A Connect's Catch Me trip in this city (Andre 2026-11-01). */}
+                        {row.kind === "catch_me" ? `✈️ ${row.line}` : row.line}
                       </span>
                       {place ? (
                         toPlace ? null : <span style={styles.place}>{place}</span>
