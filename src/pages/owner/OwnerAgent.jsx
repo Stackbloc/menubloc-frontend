@@ -14,12 +14,14 @@ import {
   thStyle,
 } from "./OwnerFranchiseBot.jsx";
 import {
+  createAgentPlaceProfile,
   getAgentObjective,
   listAgentObjectives,
   objectiveAgentAction,
   prepareAgentPlace,
   proposeAgentCluster,
   publishAgentPlace,
+  publishAllAgentRun,
   rejectAgentPlace,
   startAgentObjective,
 } from "../../lib/ownerApi.js";
@@ -247,7 +249,26 @@ function PlaceActions({ place, onChanged }) {
   }
 
   if (place.status !== "review") {
-    return place.status === "approved" && place.matched_restaurant_id ? (
+    if (place.can_create_profile) {
+      return (
+        <div style={{ display: "grid", gap: 6 }}>
+          <button
+            type="button"
+            style={smallButton}
+            disabled={Boolean(busy)}
+            onClick={() => {
+              if (window.confirm(`Create a claimable Menuply profile for ${place.name}? It has no menu yet; the restaurant can claim it and add one.`)) {
+                run("profile", () => createAgentPlaceProfile(place.id));
+              }
+            }}
+          >
+            {busy === "profile" ? "Creating…" : "Create profile"}
+          </button>
+          {error ? <div style={{ ...errorStyle, marginTop: 0 }}>{error}</div> : null}
+        </div>
+      );
+    }
+    return ["approved", "ready"].includes(place.status) && place.matched_restaurant_id ? (
       <span style={mutedStyle}>Restaurant #{place.matched_restaurant_id}</span>
     ) : null;
   }
@@ -305,7 +326,7 @@ function RunDetail({ objectiveId, onListChanged }) {
       const out = await load();
       if (!alive) return;
       const status = out?.objective?.status;
-      if (status === "running" || status === "queued") timer.current = setTimeout(tick, 5000);
+      if (status === "running" || status === "queued" || out?.objective?.publishing_now) timer.current = setTimeout(tick, 5000);
     };
     tick();
     return () => {
@@ -313,6 +334,31 @@ function RunDetail({ objectiveId, onListChanged }) {
       clearTimeout(timer.current);
     };
   }, [load]);
+
+  async function publishAll() {
+    const drafts = review.length;
+    const profiles = places.filter((p) => p.can_create_profile).length;
+    const parts = [
+      drafts ? `publish ${drafts} menu${drafts === 1 ? "" : "s"} through Menubot` : null,
+      profiles ? `create ${profiles} claimable profile${profiles === 1 ? "" : "s"} for places with no menu yet` : null,
+    ].filter(Boolean);
+    if (!window.confirm(`Publish all: ${parts.join(" and ")}? Places already on Menuply are skipped, and any change too big for one click stays here for you.`)) return;
+    setBusy("publish_all");
+    try {
+      await publishAllAgentRun(objectiveId);
+      clearTimeout(timer.current);
+      await load();
+      const poll = async () => {
+        const out = await load();
+        if (out?.objective?.publishing_now) timer.current = setTimeout(poll, 5000);
+      };
+      timer.current = setTimeout(poll, 2000);
+    } catch (err) {
+      setError(err?.message || "Didn't work");
+    } finally {
+      setBusy("");
+    }
+  }
 
   async function act(action) {
     setBusy(action);
@@ -334,6 +380,7 @@ function RunDetail({ objectiveId, onListChanged }) {
   const live = o.status === "running" || o.status === "queued";
   const places = data.places || [];
   const review = places.filter((p) => p.status === "review");
+  const profileable = places.filter((p) => p.can_create_profile).length;
 
   return (
     <PageCard style={{ padding: 20 }}>
@@ -361,8 +408,18 @@ function RunDetail({ objectiveId, onListChanged }) {
             Cancel
           </button>
         ) : null}
+        {!live && (review.length || profileable) ? (
+          <button
+            type="button"
+            style={{ ...smallButton, background: OWNER_COLORS.accent, color: "#fff", border: "none" }}
+            disabled={Boolean(busy) || o.publishing_now}
+            onClick={publishAll}
+          >
+            {o.publishing_now || busy === "publish_all" ? "Publishing…" : "Publish all"}
+          </button>
+        ) : null}
         <RunSummary report={o.seed?.report} />
-        {live ? <span style={mutedStyle}>· updates every few seconds</span> : null}
+        {live || o.publishing_now ? <span style={mutedStyle}>· updates every few seconds</span> : null}
       </div>
       {o.status !== "cancelled" ? <RunProgress places={places} status={o.status} /> : null}
       {o.error_message && o.status === "failed" ? <div style={{ ...errorStyle, marginTop: 0, marginBottom: 12 }}>Stopped: {o.error_message}</div> : null}
@@ -370,7 +427,7 @@ function RunDetail({ objectiveId, onListChanged }) {
       {error ? <div style={errorStyle}>{error}</div> : null}
       {review.length ? (
         <div style={{ ...mutedStyle, marginBottom: 8 }}>
-          {review.length} draft{review.length === 1 ? "" : "s"} waiting for you. Send each to Menubot to check the preview, then Publish.
+          {review.length} draft{review.length === 1 ? "" : "s"} waiting for you. Send each to Menubot to check the preview, then Publish, or use Publish all.
         </div>
       ) : null}
       {places.length ? (
