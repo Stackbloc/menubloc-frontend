@@ -3,9 +3,12 @@
  */
 import { apiGet, apiPost } from "./api.js";
 import { getOrCreateEatInviteGuestKey } from "./eatInviteGuestIdentity.js";
+import { markSetup } from "./profileSetupMarks.js";
 
 export async function createEatInvitation(body) {
-  return apiPost("/public/eat-invitations", body);
+  const out = await apiPost("/public/eat-invitations", body);
+  markSetup("out");
+  return out;
 }
 
 export async function fetchPublicEatInvitation(token, { guestKey } = {}) {
