@@ -46,10 +46,16 @@ const VIBE_COLORS = {
   coffee: "#92400E",
   join_me: "#16A34A",
 };
-const OTHER_VIBE = "#16A34A";
+// Only these say "come eat with me" (same as Who's Available); Me time, Eating at home… sit with
+// No activities planned, their vibe shown in gray.
+const ACTIVE_VIBES = new Set(["open_for_lunch", "open_for_dinner", "hungry", "coffee"]);
 
 function vibeColor(p) {
-  return VIBE_COLORS[String(p?.current_vibe || "").trim()] || OTHER_VIBE;
+  return VIBE_COLORS[String(p?.current_vibe || "").trim()] || C.accent;
+}
+
+function activeLine(p, now) {
+  return ACTIVE_VIBES.has(String(p?.current_vibe || "").trim()) ? vibeLine(p, now) : null;
 }
 
 function vibeLine(p, now) {
@@ -90,15 +96,16 @@ export default function FeedConnectsPage() {
 
   // Whoever has something on first (Andre 2026-11-01), then by name.
   const accepted = [...(lists?.accepted || [])].sort(
-    (a, b) => Number(Boolean(vibeLine(b.peer, now))) - Number(Boolean(vibeLine(a.peer, now))) || peerName(a.peer).localeCompare(peerName(b.peer))
+    (a, b) => Number(Boolean(activeLine(b.peer, now))) - Number(Boolean(activeLine(a.peer, now))) || peerName(a.peer).localeCompare(peerName(b.peer))
   );
   // Who has something on, in their colors; then everyone else under "No activities planned".
-  const active = accepted.filter((c) => vibeLine(c.peer, now));
-  const idle = accepted.filter((c) => !vibeLine(c.peer, now));
+  const active = accepted.filter((c) => activeLine(c.peer, now));
+  const idle = accepted.filter((c) => !activeLine(c.peer, now));
   const availableCount = active.length;
   const personRow = (c) => {
-    const line = vibeLine(c.peer, now);
+    const line = activeLine(c.peer, now);
     const color = line ? vibeColor(c.peer) : null;
+    const quiet = line ? null : vibeLine(c.peer, now);
     const href = `/account/connections/${encodeURIComponent(String(c.peer?.id))}`;
     const foods = (c.peer?.favorite_foods || []).map((f) => f?.label).filter(Boolean).slice(0, 2);
     return (
@@ -117,6 +124,10 @@ export default function FeedConnectsPage() {
               <span style={{ ...styles.chip, color, background: `${color}1F` }} data-testid={`connect-${c.peer?.id}-line`}>
                 <span style={{ ...styles.dot, background: color }} aria-hidden />
                 {line}
+              </span>
+            ) : quiet ? (
+              <span style={styles.muted} data-testid={`connect-${c.peer?.id}-line`}>
+                {quiet}
               </span>
             ) : null}
             {foods.length ? <span style={styles.muted}>{`Loves ${foods.join(" · ")}`}</span> : null}
