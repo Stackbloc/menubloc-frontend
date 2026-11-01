@@ -1,7 +1,7 @@
 /**
  * Connects, the app's Connects page (menuply-mobile src/app/connects/index.tsx; Andre 2026-10-30: its
  * own page, from the Connects pill on Profile). On top, what you can do with your Connects now
- * (ConnectsNowSection: requests to accept, asks to join, Right now, Coming up, Find Connects). Below,
+ * (ConnectsNowSection: requests to accept, asks to join, Who's Available, Coming up, Find Connects). Below,
  * everyone you're connected with and their vibe; tap one for their profile.
  * Route: /feed/connects (/account/connections redirects here).
  */

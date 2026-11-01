@@ -4,7 +4,8 @@
  *   Pending connect requests — Accept / Decline right here; always shown, with a line when there are
  *     none, so diners know where requests land (Andre 2026-10-30)
  *   Needs your answer — "Ask to Join" on my plans → Yes / Not this time (Phase B)
- *   Right now — live Join Me → Join; live vibe → Invite (Invite to Eat)
+ *   Who's Available (was Right now, Andre 2026-10-31) — Connects in colored groups Lunch · Dinner ·
+ *     Hungry · Coffee · Join Me (same as the app); live Join Me → Join; live vibe → Invite (Invite to Eat)
  *   Coming up — Connects' plans I can see, Wish List / Fav matches first →
  *     Join · Ask to Join · Requested ✓ · Going ✓ (SocialPlanActionButton)
  * GET /api/consumer/social-plans/connects. Owner view only; quiet if it can't load.
@@ -20,6 +21,31 @@ import PlanTag from "./PlanTag.jsx";
 import * as s from "./myMenuplyStyles.js";
 
 const SHOWN = 4;
+
+// Who's Available groups, in order (same keys and colors as the app). Two vibes = two groups.
+const AVAILABLE_GROUPS = [
+  { key: "open_for_lunch", label: "Lunch", color: "#D97706" },
+  { key: "open_for_dinner", label: "Dinner", color: "#4F46E5" },
+  { key: "hungry", label: "Hungry", color: "#DC2626" },
+  { key: "coffee", label: "Coffee", color: "#92400E" },
+  { key: "join_me", label: "Join Me", color: "#16A34A" },
+];
+const OTHER_GROUP = { key: "other", label: "Available", color: "#16A34A" };
+
+export function groupAvailable(rows) {
+  const by = new Map();
+  const add = (k, r) => by.set(k, [...(by.get(k) || []), r]);
+  for (const r of rows || []) {
+    if (r.type === "join_me") add("join_me", r);
+    else {
+      const values = Array.isArray(r.vibe?.values) ? r.vibe.values : [r.vibe?.value];
+      const known = values.filter((v) => AVAILABLE_GROUPS.some((g) => g.key === v));
+      if (known.length) known.forEach((v) => add(v, r));
+      else add("other", r);
+    }
+  }
+  return [...AVAILABLE_GROUPS, OTHER_GROUP].filter((g) => by.has(g.key)).map((g) => ({ group: g, rows: by.get(g.key) }));
+}
 
 function timeLeft(expiresAt, now) {
   if (!expiresAt) return null;
@@ -148,30 +174,32 @@ export default function ConnectsNowSection({ onPage = false }) {
         ) : null}
 
         {rightNow.length ? (
-          <Group title="Right now" testId="connects-right-now">
-            {rightNow.slice(0, SHOWN).map((r) =>
-              r.type === "join_me" ? (
-                <Row
-                  key={r.key}
-                  peer={r.peer}
-                  line={`On Join Me${r.place?.name ? ` · ${r.place.name}` : ""}`}
-                  to={r.href}
-                  button="Join"
-                  testId={r.key}
-                />
-              ) : (
-                <Row
-                  key={r.key}
-                  peer={r.peer}
-                  line={[r.vibe?.label, timeLeft(r.vibe?.expires_at, now) ? `${timeLeft(r.vibe.expires_at, now)} left` : null]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  to="/account/invite-to-eat"
-                  button="Invite"
-                  testId={r.key}
-                />
-              )
-            )}
+          <Group title="Who's Available" testId="connects-available">
+            {groupAvailable(rightNow).map(({ group, rows }) => (
+              <div key={group.key} style={styles.availableGroup} data-testid={`connects-available-${group.key}`}>
+                <span style={{ ...styles.availableChip, color: group.color, background: `${group.color}1F` }}>
+                  <span style={{ ...styles.availableDot, background: group.color }} aria-hidden />
+                  {group.label}
+                  <span style={styles.availableCount}>{rows.length}</span>
+                </span>
+                {rows.map((r) => {
+                  const left = r.type === "vibe" ? timeLeft(r.vibe?.expires_at, now) : null;
+                  return r.type === "join_me" ? (
+                    <Row key={r.key} peer={r.peer} line={r.place?.name || r.title} to={r.href} button="Join" testId={`${group.key}-${r.key}`} />
+                  ) : (
+                    <Row
+                      key={r.key}
+                      peer={r.peer}
+                      // Under its colored group the group names the vibe; the line is the time left.
+                      line={group.key === "other" ? [r.vibe?.label, left ? `${left} left` : null].filter(Boolean).join(" · ") : left ? `${left} left` : "Today"}
+                      to="/account/invite-to-eat"
+                      button="Invite"
+                      testId={`${group.key}-${r.key}`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
           </Group>
         ) : null}
 
@@ -274,6 +302,20 @@ const styles = {
   heading: { margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" },
   group: { display: "grid", gap: 6 },
   groupTitle: { fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.4 },
+  availableGroup: { display: "grid", gap: 4 },
+  availableChip: {
+    justifySelf: "start",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    padding: "3px 10px",
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: 700,
+  },
+  availableDot: { width: 8, height: 8, borderRadius: 4 },
+  availableCount: { fontSize: 12, opacity: 0.8 },
   row: { display: "flex", alignItems: "center", gap: 10 },
   avatar: { width: 36, height: 36, borderRadius: 18, objectFit: "cover", flexShrink: 0 },
   initial: {

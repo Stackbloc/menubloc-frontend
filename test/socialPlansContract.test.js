@@ -60,7 +60,7 @@ test("Phase C: My Menuply Connects section — owner only, GET only, every row h
   const api = read("src/lib/consumerApi.js");
   assert.match(api, /export const getConnectsNow = \(\) => get\("\/api\/consumer\/social-plans\/connects"\);/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
-  for (const label of ['"Pending connect requests"', '"Needs your answer"', '"Right now"', '"Coming up"', 'Accept', 'Decline', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
+  for (const label of ['"Pending connect requests"', '"Needs your answer"', '"Who\'s Available"', '"Coming up"', 'Accept', 'Decline', 'button="Join"', 'button="Invite"', '"On your Wish List"']) {
     assert.ok(section.includes(label), label);
   }
   // Connect requests are answered on the Profile itself (Andre 2026-10-30), not by a link away.
@@ -191,4 +191,12 @@ test("Connect View = the app's Connect screen with your own data (Andre 2026-10-
   assert.match(screen, /export function SelfConnectView/);
   assert.match(screen, /This is how your Connects see you\./);
   assert.match(screen, /<ConnectScreenBody peer=\{peer\} name=\{displayName \|\| "You"\}/);
+});
+
+test("Who's Available groups Connects by vibe with colors, same order as the app (Andre 2026-10-31)", () => {
+  const src = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");
+  for (const g of ['"open_for_lunch", label: "Lunch"', '"open_for_dinner", label: "Dinner"', '"hungry", label: "Hungry"', '"coffee", label: "Coffee"', '"join_me", label: "Join Me"']) {
+    assert.ok(src.includes(g), g);
+  }
+  assert.doesNotMatch(src, /"Right now"/);
 });
