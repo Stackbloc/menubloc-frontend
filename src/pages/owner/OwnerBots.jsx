@@ -42,6 +42,12 @@ const ON_DEMAND_BOTS = [
     path: "/owner/bots/location-bot",
     blurb: "Paste a chain's locations (e.g. Google Maps results); it updates phone, address, map pin and 24-hour hours on the stores we have, and adds missing ones.",
   },
+  {
+    key: "agent",
+    name: "Agent",
+    path: "/owner/bots/agent",
+    blurb: "Pick a spot and a radius; it finds the restaurants there and drafts their menus. You publish each one through Menubot.",
+  },
 ];
 
 const mutedStyle = { color: OWNER_COLORS.muted, fontSize: 13 };

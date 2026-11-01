@@ -747,6 +747,20 @@ export const startLocationBotPreview = (body) => post("/api/owner/location-bot/p
 /** Starts a background apply job: { chain_id, rows } */
 export const startLocationBotApply = (body) => post("/api/owner/location-bot/apply", body);
 
+// ─── Agent (place + radius → find restaurants → draft menus → publish via Menubot) ───
+
+/** { place, radius_m, name? } → { status: 'proposed', proposal } or { status: 'needs_info', question } */
+export const proposeAgentCluster = (body) => post("/api/owner/agent/propose", body);
+/** Starts a run from a proposal: { name, center_lat, center_lng, radius_m, city, state, objective_text } */
+export const startAgentObjective = (proposal) => post("/api/owner/agent/objectives", proposal);
+export const listAgentObjectives = () => get("/api/owner/agent/objectives");
+export const getAgentObjective = (id) => get(`/api/owner/agent/objectives/${encodeURIComponent(id)}`);
+/** action: pause | resume | cancel */
+export const objectiveAgentAction = (id, action) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/${action}`, {});
+export const prepareAgentPlace = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/prepare`, {});
+export const publishAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/publish`, { note });
+export const rejectAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/reject`, { note });
+
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
 const menuConsoleRestaurantPath = (restaurantId) =>
