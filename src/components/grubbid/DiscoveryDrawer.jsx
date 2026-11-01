@@ -170,7 +170,7 @@ export default function DiscoveryDrawer({
   onAllergenToggle = null,
 }) {
   const { isAuthenticated: loggedIn, consumer, profile } = useConsumer();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
@@ -329,22 +329,6 @@ export default function DiscoveryDrawer({
               </div>
             </>
           )}
-
-          <Section label={t("drawer.language", "Language")} />
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            style={{
-              marginTop: 8, height: 36, borderRadius: 10,
-              border: "1px solid #e4e7ec", background: "#fff",
-              color: "#101828", fontSize: 14, fontWeight: 700,
-              padding: "0 10px", cursor: "pointer", width: "100%",
-            }}
-          >
-            <option value="en">{t("language.english", "English")}</option>
-            <option value="es">{t("language.spanish", "Español")}</option>
-            <option value="zh">{t("language.chinese", "中文")}</option>
-          </select>
 
           <Section label="Support" />
           <button type="button" onClick={() => setSupportOpen(true)} style={{

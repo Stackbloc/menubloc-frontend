@@ -14,7 +14,8 @@ import {
  * Owner → Bots: one place for every bot.
  *   On-demand: Menubot (find + import menus), Photo Bot (import dish photos),
  *              Franchise Bot (add a chain's stores from a pasted list)
- *   Scheduled: Nutribot (nutrition), Language Bot (translations)
+ *   Scheduled: Nutribot (nutrition), Hours Bot, Address Bot
+ *   (Language Bot removed 2026-11-01 — translation is off)
  */
 
 const ON_DEMAND_BOTS = [

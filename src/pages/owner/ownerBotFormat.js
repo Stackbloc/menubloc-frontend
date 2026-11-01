@@ -1,5 +1,5 @@
 /**
- * Shared display helpers for Owner → Bots (directory + Nutribot / Language Bot pages).
+ * Shared display helpers for Owner → Bots (directory + scheduled bot pages).
  */
 
 export const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -10,12 +10,6 @@ export const SCHEDULED_BOTS = {
     name: "Nutribot",
     path: "/owner/bots/nutribot",
     blurb: "Adds nutrition estimates to menu items that don't have them yet.",
-  },
-  language_bot: {
-    key: "language_bot",
-    name: "Language Bot",
-    path: "/owner/bots/language-bot",
-    blurb: "Translates new and changed restaurants, menus and deals into Spanish and Chinese.",
   },
   hours_bot: {
     key: "hours_bot",
