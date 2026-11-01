@@ -119,9 +119,10 @@ function Box({ title, count, testId, children, after = null }) {
  * your Connects see you), then Connects (its own page, with a count of new requests) and Share My
  * Profile ("Share" alone left people asking what they were sharing).
  */
-export function AppProfileControls({ viewing, onViewing }) {
+export function AppProfileControls({ viewing, onViewing, connectsPill = true }) {
   const [requests, setRequests] = useState(0);
   useEffect(() => {
+    if (!connectsPill) return undefined;
     let alive = true;
     listConnections()
       .then((l) => alive && setRequests((l?.pending_incoming || []).length))
@@ -129,20 +130,23 @@ export function AppProfileControls({ viewing, onViewing }) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [connectsPill]);
   return (
     <div style={styles.controls} data-testid="profile-controls">
       <CompactSwitch left="Edit profile" right="View profile" value={viewing} onChange={onViewing} testId="profile-mode" />
       {/* Compact pills, not full-width bars (Andre 2026-10-29). */}
       <div style={{ ...styles.pillRow, justifyContent: "center" }}>
-        <Link to="/feed/connects" style={styles.pillQuiet} data-testid="profile-connects-pill">
-          Connects
-          {requests ? (
-            <span style={styles.badge} aria-label={`${requests} new ${requests === 1 ? "request" : "requests"}`}>
-              {requests}
-            </span>
-          ) : null}
-        </Link>
+        {/* On your own Profile, Connects is its own box under this card (Andre 2026-11-01). */}
+        {connectsPill ? (
+          <Link to="/feed/connects" style={styles.pillQuiet} data-testid="profile-connects-pill">
+            Connects
+            {requests ? (
+              <span style={styles.badge} aria-label={`${requests} new ${requests === 1 ? "request" : "requests"}`}>
+                {requests}
+              </span>
+            ) : null}
+          </Link>
+        ) : null}
         <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
           Share My Profile
         </Link>
@@ -198,7 +202,7 @@ export function AppIdentityCard({ displayName, avatarUrl, occupation, about, loc
         Edit name, photo and About ›
       </Link>
       <div style={styles.controlsDivider}>
-        <AppProfileControls viewing={false} onViewing={onViewing} />
+        <AppProfileControls viewing={false} onViewing={onViewing} connectsPill={false} />
       </div>
     </div>
   );

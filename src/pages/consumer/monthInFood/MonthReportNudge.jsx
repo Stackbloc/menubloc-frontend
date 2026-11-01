@@ -1,5 +1,5 @@
 /**
- * "Your October in food is ready": the first week of a month, when last month has something in it
+ * "Your monthly food report is ready" (was "Your October in food is ready", too vague: Andre 2026-11-01): the first week of a month, when last month has something in it
  * (Andre 2026-10-30). Closing it hides it until next month.
  */
 
@@ -42,7 +42,7 @@ export default function MonthReportNudge() {
   };
   return (
     <div style={styles.card} data-testid="month-report-nudge">
-      <strong style={{ flex: 1, fontSize: 15 }}>{`Your ${month.name} in food is ready`}</strong>
+      <strong style={{ flex: 1, fontSize: 15 }}>{"Your monthly food report is ready"}</strong>
       <Link to={`${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${month.ym}`} style={styles.pill} data-testid="month-report-nudge-open">
         See it
       </Link>

@@ -270,7 +270,7 @@ export default function ConnectsNowSection({ onPage = false }) {
 }
 
 /** Who's going (Andre 2026-11-01): organizer first; a Connect opens their page, anyone else theirs. */
-function PlanPeople({ plan: p }) {
+export function PlanPeople({ plan: p }) {
   const people = Array.isArray(p.attendees) ? p.attendees : null;
   const guests = Number(p.guest_count) || 0;
   const going = people ? people.length + guests : p.going_count;
