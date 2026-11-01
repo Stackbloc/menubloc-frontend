@@ -39,6 +39,9 @@ const RADII = [
   { label: "½ mile", m: 804 },
   { label: "1 mile", m: 1609 },
 ];
+// The server accepts 50–5000 m, so "Other" takes miles between these.
+const OTHER_MIN_MI = 0.05;
+const OTHER_MAX_MI = 3.1;
 
 const RUN_TONES = { running: "blue", queued: "blue", paused: "amber", needs_info: "amber", completed: "green", failed: "red", cancelled: "grey" };
 const RUN_LABELS = { running: "Running", queued: "Starting", paused: "Paused", needs_info: "Needs info", completed: "Done", failed: "Stopped", cancelled: "Cancelled", awaiting_approval: "Waiting for you" };
@@ -47,6 +50,33 @@ const PLACE_TONES = { review: "blue", ready: "green", approved: "green", needs_i
 const PLACE_LABELS = { review: "Draft ready", ready: "On Menuply", approved: "Published", needs_info: "Needs info", failed: "Couldn't finish", rejected: "Rejected", duplicate: "Duplicate", not_restaurant: "Not a restaurant", discovered: "Waiting", researching: "Reading…" };
 
 const smallButton = { ...secondaryButtonStyle, padding: "5px 12px", fontSize: 13 };
+
+// Places still waiting or being read; duplicates and non-restaurants don't count toward the total.
+const PLACE_PENDING = new Set(["discovered", "researching"]);
+const PLACE_UNCOUNTED = new Set(["duplicate", "not_restaurant"]);
+
+function RunProgress({ places, status }) {
+  const counted = places.filter((p) => !PLACE_UNCOUNTED.has(p.status));
+  const done = counted.filter((p) => !PLACE_PENDING.has(p.status)).length;
+  const finished = status === "completed";
+  const pct = finished ? 100 : counted.length ? Math.round((done / counted.length) * 100) : 0;
+  const label = finished
+    ? `All ${counted.length} places checked`
+    : counted.length
+      ? `${done} of ${counted.length} places checked`
+      : "Finding places on the map…";
+  return (
+    <div style={{ marginBottom: 12 }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Run progress">
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={mutedStyle}>{label}</span>
+        <span style={{ ...mutedStyle, fontWeight: 600, color: OWNER_COLORS.ink }}>{pct}%</span>
+      </div>
+      <div style={{ height: 8, borderRadius: 999, background: OWNER_COLORS.line, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: OWNER_COLORS.accent, transition: "width 0.4s ease" }} />
+      </div>
+    </div>
+  );
+}
 
 function RunSummary({ report }) {
   if (!report) return <span style={mutedStyle}>—</span>;
@@ -60,7 +90,12 @@ function RunSummary({ report }) {
 function WhereStep({ onStarted }) {
   const [place, setPlace] = useState("");
   const [radius, setRadius] = useState(804);
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherMiles, setOtherMiles] = useState("");
   const [name, setName] = useState("");
+  const otherValue = Number(otherMiles);
+  const otherValid = otherMiles.trim() !== "" && otherValue >= OTHER_MIN_MI && otherValue <= OTHER_MAX_MI;
+  const radiusReady = !otherOpen || otherValid;
   const [proposal, setProposal] = useState(null);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
@@ -119,16 +154,48 @@ function WhereStep({ onStarted }) {
               <button
                 key={r.m}
                 type="button"
-                onClick={() => setRadius(r.m)}
-                style={{ ...smallButton, borderColor: radius === r.m ? OWNER_COLORS.accent : OWNER_COLORS.line, color: radius === r.m ? OWNER_COLORS.accent : OWNER_COLORS.ink }}
+                onClick={() => { setOtherOpen(false); setRadius(r.m); }}
+                style={{ ...smallButton, borderColor: !otherOpen && radius === r.m ? OWNER_COLORS.accent : OWNER_COLORS.line, color: !otherOpen && radius === r.m ? OWNER_COLORS.accent : OWNER_COLORS.ink }}
               >
                 {r.label}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setOtherOpen(true)}
+              style={{ ...smallButton, borderColor: otherOpen ? OWNER_COLORS.accent : OWNER_COLORS.line, color: otherOpen ? OWNER_COLORS.accent : OWNER_COLORS.ink }}
+            >
+              Other
+            </button>
           </div>
+          {otherOpen && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+              <input
+                aria-label="Distance in miles"
+                type="number"
+                inputMode="decimal"
+                min={OTHER_MIN_MI}
+                max={OTHER_MAX_MI}
+                step="0.1"
+                autoFocus
+                style={{ ...inputStyle, width: 90 }}
+                value={otherMiles}
+                onChange={(e) => {
+                  setOtherMiles(e.target.value);
+                  const mi = Number(e.target.value);
+                  if (mi >= OTHER_MIN_MI && mi <= OTHER_MAX_MI) setRadius(Math.round(mi * 1609.34));
+                }}
+                placeholder="1.5"
+              />
+              <span style={mutedStyle}>miles (up to {OTHER_MAX_MI})</span>
+            </div>
+          )}
+          {otherOpen && otherMiles.trim() !== "" && !otherValid && (
+            <div style={{ ...mutedStyle, color: "#b42318", marginTop: 4 }}>Pick a distance between {OTHER_MIN_MI} and {OTHER_MAX_MI} miles.</div>
+          )}
         </div>
         <div>
-          <button type="submit" style={primaryButtonStyle({ busy, disabled: !place.trim() })} disabled={busy || !place.trim()}>
+          <button type="submit" style={primaryButtonStyle({ busy, disabled: !place.trim() || !radiusReady })} disabled={busy || !place.trim() || !radiusReady}>
             {busy && !proposal ? "Looking…" : "Find on map"}
           </button>
         </div>
@@ -296,6 +363,7 @@ function RunDetail({ objectiveId, onListChanged }) {
         <RunSummary report={o.seed?.report} />
         {live ? <span style={mutedStyle}>· updates every few seconds</span> : null}
       </div>
+      {o.status !== "cancelled" ? <RunProgress places={places} status={o.status} /> : null}
       {o.error_message && o.status !== "completed" ? <div style={{ ...mutedStyle, marginBottom: 12 }}>Last stop: {o.error_message}</div> : null}
       {error ? <div style={errorStyle}>{error}</div> : null}
       {review.length ? (
