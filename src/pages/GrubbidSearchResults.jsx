@@ -23,6 +23,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
+import SearchSocialSummary, { socialSummaryPeopleCount } from "../components/search/SearchSocialSummary.jsx";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -94,9 +95,11 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
-function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange }) {
+function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange, showViewChoice = true, socialCount = 0 }) {
   const dishLabel = `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`;
   const restaurantLabel = `${restaurantCount} ${restaurantCount === 1 ? "Restaurant" : "Restaurants"}`;
+  // Without a Dishes / Restaurants choice, the first option is the results as they are.
+  const firstLabel = showViewChoice || dishCount > 0 ? dishLabel : restaurantLabel;
 
   const optionStyle = (selected) => ({
     display: "inline-flex",
@@ -131,18 +134,33 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
           onChange={() => onModeChange("dishes")}
           style={radioStyle}
         />
-        {dishLabel}
+        {firstLabel}
       </label>
-      <label style={optionStyle(mode === "restaurants")}>
-        <input
-          type="radio"
-          name="search-result-mode"
-          checked={mode === "restaurants"}
-          onChange={() => onModeChange("restaurants")}
-          style={radioStyle}
-        />
-        {restaurantLabel}
-      </label>
+      {showViewChoice ? (
+        <label style={optionStyle(mode === "restaurants")}>
+          <input
+            type="radio"
+            name="search-result-mode"
+            checked={mode === "restaurants"}
+            onChange={() => onModeChange("restaurants")}
+            style={radioStyle}
+          />
+          {restaurantLabel}
+        </label>
+      ) : null}
+      {/* Social (Andre 2026-11-01): every social result for this search, same as the app. */}
+      {socialCount > 0 ? (
+        <label style={optionStyle(mode === "social")} data-testid="search-view-social">
+          <input
+            type="radio"
+            name="search-result-mode"
+            checked={mode === "social"}
+            onChange={() => onModeChange("social")}
+            style={radioStyle}
+          />
+          {`Social · ${socialCount}`}
+        </label>
+      ) : null}
     </div>
   );
 }
@@ -2195,6 +2213,7 @@ export default function GrubbidSearchResults({
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
   const [queryMeta, setQueryMeta] = useState(null);
   const [searchMeta, setSearchMeta] = useState(null);
+  const [socialSummary, setSocialSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
@@ -2588,6 +2607,7 @@ export default function GrubbidSearchResults({
       setRows(built.rows);
       setQueryMeta(built.queryMeta);
       setSearchMeta(built.searchMeta);
+      setSocialSummary(null);
       setSearchTotalCount(built.totalCount);
       setSearchOffset(built.totalCount);
       setSearchHasMore(false);
@@ -2603,6 +2623,7 @@ export default function GrubbidSearchResults({
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
+        setSocialSummary(null);
         setContextualSections(null);
         setSearchEvents([]);
         return;
@@ -2735,6 +2756,8 @@ export default function GrubbidSearchResults({
         setRestaurantMetaMap(rMeta);
         setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
+        // Load more pages carry their own summary; keep the first page's (it names the top results).
+        if (pageOffset === 0) setSocialSummary(json?.social_summary && typeof json.social_summary === "object" ? json.social_summary : null);
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
@@ -2773,6 +2796,7 @@ export default function GrubbidSearchResults({
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
+        setSocialSummary(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -2878,6 +2902,9 @@ export default function GrubbidSearchResults({
     }),
     [searchMeta, dishResultCount, restaurantResultCount]
   );
+  const socialCount = socialSummaryPeopleCount(socialSummary);
+  const showSocialView = searchViewMode === "social" && socialCount > 0;
+  const showModeRadios = showResultModeSelector || socialCount > 0;
   const preferRestaurantView = showResultModeSelector && searchViewMode === "restaurants";
   const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
   const restaurantBrowseRows = useMemo(() => {
@@ -3354,25 +3381,29 @@ export default function GrubbidSearchResults({
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: showResultModeSelector ? "space-between" : "flex-end",
+            justifyContent: showModeRadios ? "space-between" : "flex-end",
             gap: 12,
             flexWrap: "wrap",
             marginBottom: 12,
           }}
         >
-          {showResultModeSelector ? (
+          {showModeRadios ? (
             <SearchResultModeSelector
               dishCount={dishResultCount}
               restaurantCount={restaurantResultCount}
-              mode={searchViewMode}
+              mode={showSocialView ? "social" : searchViewMode === "social" ? "dishes" : searchViewMode}
               onModeChange={setSearchViewMode}
+              showViewChoice={showResultModeSelector}
+              socialCount={socialCount}
             />
           ) : null}
           <SearchResultsShareControl copied={shareCopied} onShare={handleShareResults} />
         </div>
       )}
 
-      {!loading && !err && preferRestaurantView && restaurantBrowseRows.length > 0 && (
+      {!loading && !err && showSocialView ? <SearchSocialSummary summary={socialSummary} /> : null}
+
+      {!loading && !err && !showSocialView && preferRestaurantView && restaurantBrowseRows.length > 0 && (
         <div style={styles.grid}>
           {restaurantBrowseRows.map((r) => (
             <SearchResultCard
@@ -3399,7 +3430,7 @@ export default function GrubbidSearchResults({
         </div>
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && !showSocialView && activeRestaurantGroupedRendering && !preferRestaurantView && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
@@ -3427,7 +3458,7 @@ export default function GrubbidSearchResults({
         </>
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && hasMenuMatches && (
+      {!loading && !err && !showSocialView && activeRestaurantGroupedRendering && !preferRestaurantView && hasMenuMatches && (
         <>
           {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
           <div style={styles.grid}>
@@ -3482,7 +3513,7 @@ export default function GrubbidSearchResults({
         </>
       )}
 
-      {!loading && !err && !activeRestaurantGroupedRendering && hasDishMatches && (
+      {!loading && !err && !showSocialView && !activeRestaurantGroupedRendering && hasDishMatches && (
         <>
           <div style={styles.grid}>
             {visibleDishRows.map((row) => {
@@ -3610,7 +3641,7 @@ export default function GrubbidSearchResults({
       ) : null}
 
       {/* Load More — search pagination */}
-      {!loading && !err && searchHasMore && (
+      {!loading && !err && !showSocialView && searchHasMore && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
           <button
             type="button"
