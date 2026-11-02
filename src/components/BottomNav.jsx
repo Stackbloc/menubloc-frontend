@@ -36,7 +36,7 @@ export default function BottomNav() {
       { id: "basket", label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
       {
         id: "my-menuply",
-        label: t("nav.myMenuply", "My Menuply"),
+        label: t("nav.myProfile", "My Profile"),
         icon: "👤",
         to: MY_MENUPLY_PROFILE_PATH,
       },

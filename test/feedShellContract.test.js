@@ -240,14 +240,14 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(shellPage, /\[location\.pathname\]/);
   assert.match(shellPage, /setCreateSheetOpen\(false\)/);
   assert.match(shellPage, /setShareMenuplyOpen\(false\)/);
-  assert.match(shellPage, /profileViewToggle/);
+  assert.doesNotMatch(shellPage, /profileViewToggle/);
   assert.match(shellPage, /toggleProfileView/);
   assert.match(shellPage, /navigate\(/);
   assert.doesNotMatch(shellPage, /ProfileViewChrome/);
   // Shell-owned Edit/Connect uses setSearchParams (replace) — do not trust location.search alone.
   assert.match(shellPage, /setSearchParams/);
   assert.match(shellPage, /buildProfileViewSearchParams/);
-  assert.match(mobileHeader, /ProfileViewModeToggle/);
+  assert.doesNotMatch(mobileHeader, /ProfileViewModeToggle/);
   assert.match(mobileHeader, /zIndex:\s*1300/);
   assert.match(mobileHeader, /clearStuckMediaChrome/);
   // Nav above ShareModal (1200) and stuck compose (~350–360); camera (13000) still clears on route change.
@@ -314,7 +314,7 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
     read("src/components/consumer/feed/FeedMorePanel.jsx"),
     /restoreDocumentScroll/
   );
-  assert.match(read("src/components/consumer/feed/ProfileViewModeToggle.jsx"), /profile-view-mode-toggle/);
+  assert.match(read("src/pages/consumer/myMenuply/AppProfileCards.jsx"), /<CompactSwitch left="Edit profile" right="View profile"/); // glasses toggle replaced (Andre 2026-10-30)
   assert.match(
     read("src/pages/consumer/myMenuply/pendingHighlightMedia.js"),
     /CLEAR_STUCK_MEDIA_CHROME_EVENT/
@@ -341,9 +341,8 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /feed-more-add-menu/);
 
   const myMenuply = read("src/pages/consumer/MyMenuplyPage.jsx");
-  assert.match(myMenuply, /ProfileViewModeToggle/);
+  assert.doesNotMatch(myMenuply, /ProfileViewModeToggle/);
   assert.match(myMenuply, /toggleProfileViewMode/);
-  assert.match(myMenuply, /isDesktopFeed \?[\s\S]*ProfileViewModeToggle/);
   assert.match(myMenuply, /clearStuckMediaChrome/);
   assert.match(myMenuply, /FeedGuestProfileLanding/);
   assert.doesNotMatch(myMenuply, /SeeWhosEatingSurface/);
@@ -402,10 +401,10 @@ test("Feed as home: / redirects to /feed; FeedPrimaryNav paths unchanged", () =>
 
   const feedLinks = read("src/lib/feedShellLinks.js");
   assert.match(feedLinks, /to: "\/feed"/);
-  assert.match(feedLinks, /to: "\/waiter"/);
-  assert.match(feedLinks, /label: "Waiter"/);
-  assert.match(feedLinks, /label: "Share My QR"/);
-  assert.match(feedLinks, /openShareQr:\s*true/);
+  // App's tabs (Andre 2026-10-29): Home · Post · Deals · Search · Profile; no Waiter tab.
+  assert.doesNotMatch(feedLinks, /to: "\/waiter"/);
+  assert.doesNotMatch(feedLinks, /label: "Share My QR"/);
+  assert.match(feedLinks, /label: "Post"|FEED_LEFT_TABS = \[FEED_HOME_TAB\]/);
   assert.doesNotMatch(feedLinks, /to: "\/feed\/menus"/);
   assert.doesNotMatch(feedLinks, /openFeedMenuBrowser/);
   assert.match(feedLinks, /to: "\/feed\/deals"/);

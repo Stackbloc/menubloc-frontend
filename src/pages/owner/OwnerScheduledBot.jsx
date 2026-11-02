@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import NutribotTemplatesPanel from "./NutribotTemplatesPanel.jsx";
 import {
   acceptAddressBotCandidate,
   getAddressBotRun,
@@ -41,7 +42,8 @@ import {
  *   - Run now
  *   - Schedule: paused / daily / weekly + time (Pacific)
  *   - Run history
- *   - Nutribot only: analyze one restaurant's whole menu right away
+ *   - Nutribot only: analyze one restaurant's whole menu right away; unprocessed items,
+ *     template assignment and dish templates (NutribotTemplatesPanel.jsx)
  *   - Hours Bot only: find one restaurant's hours now, run one market,
  *     recent per-restaurant results, coverage of restaurants with menus
  *   - Address Bot only: same per-restaurant / market tools, LA street-address
@@ -838,6 +840,8 @@ export default function OwnerScheduledBot({ botKey }) {
                 <RestaurantAnalyzer botKey="nutribot" onFinished={load} />
               </PageCard>
             ) : null}
+
+            {botKey === "nutribot" ? <NutribotTemplatesPanel /> : null}
 
             {botKey === "hours_bot" ? (
               <>

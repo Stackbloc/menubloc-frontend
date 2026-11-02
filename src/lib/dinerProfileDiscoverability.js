@@ -7,7 +7,7 @@ export const DISCOVERABILITY_UI_OPTIONS = Object.freeze([
   {
     value: "anyone",
     label: "Anyone",
-    hint: "Broadest audience for activity surfaces. Find Diners already lets signed-in members search by name, phone, email, hometown, or city.",
+    hint: "Broadest audience for activity surfaces. Find Connects already lets signed-in members search by name, phone, email, hometown, or city.",
   },
   {
     value: "area",

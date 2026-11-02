@@ -956,7 +956,7 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
                 <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginBottom: 14, lineHeight: 1.45 }}>
                   These fields publish to the public profile after you click{" "}
                   <strong style={{ color: OWNER_COLORS.ink }}>Save profile</strong> at the top (or the Save button
-                  below): About Us, Founded, Favorite Menu Items, and contact fields.{" "}
+                  below): About Us, Founded, House Favorites, and contact fields.{" "}
                   <strong style={{ color: OWNER_COLORS.ink }}>Profile Updates</strong> are separate news posts — they
                   use their own <strong style={{ color: OWNER_COLORS.ink }}>Add update</strong> button and need a
                   title. Banner and logo photos use the fields above. Entrance splash billboards and Windows panel
@@ -1068,7 +1068,7 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
                     />
                   </div>
                   <div>
-                    <Label>Favorite Menu Items (up to 3)</Label>
+                    <Label>House Favorites (up to 3)</Label>
                     <div
                       data-testid="owner-profile-manager-favorite-items"
                       style={{

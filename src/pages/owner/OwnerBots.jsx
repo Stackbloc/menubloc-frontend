@@ -14,7 +14,8 @@ import {
  * Owner → Bots: one place for every bot.
  *   On-demand: Menubot (find + import menus), Photo Bot (import dish photos),
  *              Franchise Bot (add a chain's stores from a pasted list)
- *   Scheduled: Nutribot (nutrition), Language Bot (translations)
+ *   Scheduled: Nutribot (nutrition), Hours Bot, Address Bot
+ *   (Language Bot removed 2026-11-01 — translation is off)
  */
 
 const ON_DEMAND_BOTS = [
@@ -35,6 +36,18 @@ const ON_DEMAND_BOTS = [
     name: "Franchise Bot",
     path: "/owner/bots/franchise-bot",
     blurb: "Paste a chain's store list; it fills in addresses from the official store locator and adds the stores with the chain menu.",
+  },
+  {
+    key: "location_bot",
+    name: "Location Bot",
+    path: "/owner/bots/location-bot",
+    blurb: "Paste a chain's locations (e.g. Google Maps results); it updates phone, address, map pin and 24-hour hours on the stores we have, and adds missing ones.",
+  },
+  {
+    key: "agent",
+    name: "Agent",
+    path: "/owner/bots/agent",
+    blurb: "Pick a spot and a radius; it finds the restaurants there and drafts their menus. You publish each one through Menubot.",
   },
 ];
 

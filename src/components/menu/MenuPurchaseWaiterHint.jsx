@@ -48,7 +48,7 @@ export default function MenuPurchaseWaiterHint({
       >
         {t(
           "publicMenu.purchaseHint",
-          "Order here · Tap a dish to add it to your basket · Hold to remove"
+          "Order here · Tap a dish to see it, pick options and add it"
         )}
       </p>
     </section>

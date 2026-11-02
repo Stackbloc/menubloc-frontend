@@ -45,11 +45,10 @@ test("activity headline helpers + scan row on peer layer", () => {
   assert.doesNotMatch(layer, /MenuplyMediaPicker|getUserMedia/);
 });
 
-test("Discoverable profile mounts activity-selection layer", () => {
+test("Discoverable profile follows the app's Connect screen", () => {
   const page = read("src/pages/consumer/DiscoverableDinerProfilePage.jsx");
-  assert.match(page, /DinerActivitySelectionLayer/);
   assert.match(page, /activityWants|activity\.wants/);
-  assert.match(page, /diner-activity-selection|DinerActivitySelectionLayer/);
+  assert.match(page, /discoverable-wish-list/);
   assert.doesNotMatch(page, /Basic profile only until you Connect/);
 });
 

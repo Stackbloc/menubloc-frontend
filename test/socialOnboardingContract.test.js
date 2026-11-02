@@ -30,6 +30,7 @@ test("social onboarding step order is guided introduction sequence", () => {
   assert.deepEqual(SOCIAL_ONBOARDING_STEPS, [
     "welcome",
     "dining_crew",
+    "invite_friends",
     "expand_crew",
     "food_camera",
     "student_edu",
@@ -69,6 +70,44 @@ test("welcome soft-migrates completed legacy progress", () => {
   assert.equal(state.status, "completed");
 });
 
+test("invite_friends soft-migrates for diners who already finished", () => {
+  const state = normalizeSocialOnboardingState({
+    status: "completed",
+    steps: {
+      welcome: "done",
+      dining_crew: "done",
+      expand_crew: "skipped",
+      food_camera: "done",
+      student_edu: "skipped",
+      people_eating: "done",
+      im_eating: "skipped",
+      waiter: "done",
+    },
+  });
+  assert.equal(state.steps.invite_friends, "done");
+  assert.equal(state.status, "completed");
+});
+
+test("invite_friends stays pending for diners mid-introduction", () => {
+  const state = normalizeSocialOnboardingState({
+    status: "in_progress",
+    steps: { welcome: "done", dining_crew: "done" },
+  });
+  assert.equal(nextPendingStep(state), "invite_friends");
+});
+
+test("invite friends step explains why and shares a note with the signup link", async () => {
+  const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
+  assert.match(page, /social-onboarding-invite-friends/);
+  assert.match(page, /Invite your friends and family/);
+  assert.match(page, /Menuply is better with your people/);
+  assert.match(page, /settle\("invite_friends", "skipped"\)/);
+  const { buildMenuplyFriendInviteShareData } = await import("../src/lib/menuplyAccountInvite.js");
+  const data = buildMenuplyFriendInviteShareData();
+  assert.ok(data.url.includes("/diner/signup"));
+  assert.ok(data.text.includes(data.url), "share note carries the link inside");
+});
+
 test("share food step frames photos and comments without forced camera jargon", () => {
   const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
   assert.match(page, /food_camera/);
@@ -91,6 +130,7 @@ test("skip-all settles to completed without errors", () => {
 test("partial progress leaves next pending step", () => {
   let state = markSocialOnboardingStep(emptySocialOnboardingState(), "welcome", "done");
   state = markSocialOnboardingStep(state, "dining_crew", "done");
+  state = markSocialOnboardingStep(state, "invite_friends", "done");
   state = markSocialOnboardingStep(state, "expand_crew", "skipped");
   assert.equal(nextPendingStep(state), "food_camera");
   assert.equal(isSocialOnboardingComplete(state), false);
@@ -153,7 +193,7 @@ test("App route and account entry points wired", () => {
   assert.match(profile, /\/account\/social-onboarding/);
 });
 
-test("backend social-onboarding route includes welcome step", () => {
+test("backend social-onboarding route includes welcome + invite_friends steps", () => {
   const beRoot = resolveBackendRoot(root);
   const route = fs.readFileSync(
     path.join(beRoot, "src/routes/consumer/socialOnboarding.js"),
@@ -164,7 +204,8 @@ test("backend social-onboarding route includes welcome step", () => {
   assert.match(route, /social_onboarding/);
   assert.match(route, /"welcome"/);
   assert.match(route, /food_camera/);
-  assert.match(route, /applyWelcomeSoftMigrate/);
+  assert.match(route, /"invite_friends"/);
+  assert.match(route, /applyLateStepSoftMigrate/);
   assert.match(index, /socialOnboarding/);
   const migration = fs.readFileSync(
     path.join(beRoot, "sql/migrations/20260814_0247_consumer_social_onboarding.sql"),

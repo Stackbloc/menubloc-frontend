@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import { getLabelValue } from "../i18n/labels.js";
 
 export const LANGUAGE_STORAGE_KEY = "grubbid_language";
-export const SUPPORTED_LANGUAGES = ["en", "es", "zh"];
+// Translation is off (Andre 2026-11-01): English only. Was ["en", "es", "zh"].
+// See docs/guardrails/2026-11-01_translation-off.md before turning it back on.
+export const SUPPORTED_LANGUAGES = ["en"];
 
 const LanguageContext = createContext(null);
 

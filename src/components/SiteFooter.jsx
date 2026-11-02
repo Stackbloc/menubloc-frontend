@@ -36,7 +36,7 @@ const groupTitleStyle = {
 
 export default function SiteFooter() {
   const location = useLocation();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   if (!isPublicPath(location.pathname)) return null;
   if (FOOTER_HIDDEN_PATHS.has(location.pathname)) return null;
@@ -114,50 +114,6 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            flexWrap: "nowrap",
-            marginLeft: "auto",
-            flex: "0 0 auto",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 900,
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              color: "#6B7280",
-            }}
-            aria-hidden="true"
-          >
-            🌐
-          </span>
-
-          <select
-            value={language}
-            onChange={(event) => setLanguage(event.target.value)}
-            aria-label={t("footer.language", "Language")}
-            style={{
-              height: 34,
-              borderRadius: 10,
-              border: "1px solid var(--gb-color-border)",
-              background: "var(--gb-color-surface-strong)",
-              color: "var(--gb-color-ink)",
-              padding: "0 10px",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            <option value="en">{t("language.english", "English")}</option>
-            <option value="es">{t("language.spanish", "Spanish")}</option>
-            <option value="zh">{t("language.chinese", "Chinese")}</option>
-          </select>
-        </div>
       </div>
     </footer>
   );

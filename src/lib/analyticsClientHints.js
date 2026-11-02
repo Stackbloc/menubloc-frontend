@@ -5,7 +5,7 @@
  */
 
 const LANGUAGE_STORAGE_KEY = "grubbid_language";
-const SUPPORTED_LANGUAGES = ["en", "es", "zh"];
+const SUPPORTED_LANGUAGES = ["en"]; // translation off 2026-11-01 (was en, es, zh)
 
 function readUiLanguage() {
   if (typeof window === "undefined") return "en";

@@ -119,7 +119,7 @@ export const EATING_COMPOSE_CATEGORIES = [
   },
   {
     id: "plan",
-    label: "My Eating Plans",
+    label: "Social Plans · Meals",
     placeholder: "Where are you going?",
     description: "Photo or clip, then schedule — Join Me stays on the plan form.",
   },

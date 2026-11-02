@@ -66,7 +66,8 @@ test("connect landing uses invitation copy and public projection only", () => {
   assert.match(page, /Create a diner account/);
   assert.match(page, /sendConnectionRequest/);
   assert.match(page, /formatDinerInviteName/);
-  assert.match(page, /Link with \$\{inviteName\}/);
+  assert.match(page, /Send \{inviteName\} a connect request\?/);
+  assert.match(page, /Not now/);
   assert.match(page, /resolveConsumerConnectErrorMessage/);
   assert.match(page, /refreshSession/);
   assert.match(page, /Meet Me Here/);
@@ -74,6 +75,14 @@ test("connect landing uses invitation copy and public projection only", () => {
   assert.doesNotMatch(page, /phone_number|current.?location|dining.?crew|conversation/i);
   assert.doesNotMatch(page, /A Menuply diner/);
   assert.doesNotMatch(page, /Scan complete\. Connect to interact/);
+});
+
+test("scanning asks before sending a connect request (Andre 2026-10-30)", () => {
+  const page = read("src/pages/consumer/DinerQrConnectPage.jsx");
+  // The only caller of sendConnectionRequest is the Send request button (handleConnect).
+  assert.doesNotMatch(page, /autoConnectAttempted/);
+  assert.equal((page.match(/sendConnectionRequest\(/g) || []).length, 1);
+  assert.match(page, /onClick=\{handleConnect\}/);
 });
 
 test("signup skips welcome when returning to diner QR connect invite", () => {

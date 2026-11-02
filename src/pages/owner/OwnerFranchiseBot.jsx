@@ -20,7 +20,7 @@ import {
  *   4. Install: stores, clusters, chain menu — each store on its own
  */
 
-const inputStyle = {
+export const inputStyle = {
   boxSizing: "border-box",
   border: `1px solid ${OWNER_COLORS.line}`,
   borderRadius: 10,
@@ -30,7 +30,7 @@ const inputStyle = {
   background: "#fff",
 };
 
-function primaryButtonStyle({ busy = false, disabled = false } = {}) {
+export function primaryButtonStyle({ busy = false, disabled = false } = {}) {
   return {
     border: "none",
     background: OWNER_COLORS.accent,
@@ -44,7 +44,7 @@ function primaryButtonStyle({ busy = false, disabled = false } = {}) {
   };
 }
 
-const secondaryButtonStyle = {
+export const secondaryButtonStyle = {
   border: `1px solid ${OWNER_COLORS.line}`,
   background: "#fff",
   borderRadius: 10,
@@ -53,11 +53,11 @@ const secondaryButtonStyle = {
   cursor: "pointer",
 };
 
-const labelStyle = { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: OWNER_COLORS.ink };
-const mutedStyle = { color: OWNER_COLORS.muted, fontSize: 13 };
-const errorStyle = { color: "#b42318", fontSize: 13, marginTop: 8 };
-const thStyle = { textAlign: "left", padding: "8px 10px", fontSize: 12, color: OWNER_COLORS.muted, borderBottom: `1px solid ${OWNER_COLORS.line}`, whiteSpace: "nowrap" };
-const tdStyle = { padding: "8px 10px", fontSize: 13, borderBottom: `1px solid ${OWNER_COLORS.line}`, verticalAlign: "top" };
+export const labelStyle = { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: OWNER_COLORS.ink };
+export const mutedStyle = { color: OWNER_COLORS.muted, fontSize: 13 };
+export const errorStyle = { color: "#b42318", fontSize: 13, marginTop: 8 };
+export const thStyle = { textAlign: "left", padding: "8px 10px", fontSize: 12, color: OWNER_COLORS.muted, borderBottom: `1px solid ${OWNER_COLORS.line}`, whiteSpace: "nowrap" };
+export const tdStyle = { padding: "8px 10px", fontSize: 13, borderBottom: `1px solid ${OWNER_COLORS.line}`, verticalAlign: "top" };
 
 const TONES = {
   green: { bg: "#e7f6ec", fg: "#146c2e" },
@@ -67,7 +67,7 @@ const TONES = {
   grey: { bg: "#f2f4f7", fg: "#475467" },
 };
 
-function Pill({ tone = "grey", children }) {
+export function Pill({ tone = "grey", children }) {
   const t = TONES[tone] || TONES.grey;
   return (
     <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: t.bg, color: t.fg, whiteSpace: "nowrap" }}>
@@ -83,7 +83,7 @@ function rowPill(row) {
 }
 
 /** Poll a background job every 2 s until it finishes. */
-function useJob() {
+export function useJob() {
   const [job, setJob] = useState(null);
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -106,7 +106,7 @@ function useJob() {
   return [job, follow, setJob];
 }
 
-function Step({ number, title, subtitle, children, done }) {
+export function Step({ number, title, subtitle, children, done }) {
   return (
     <PageCard style={{ padding: 20 }}>
       <SectionTitle
@@ -168,7 +168,7 @@ function NewBrandForm({ initialName, onCreated }) {
   );
 }
 
-function ChainPicker({ chain, onChange, disabled }) {
+export function ChainPicker({ chain, onChange, disabled }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
   const [error, setError] = useState("");

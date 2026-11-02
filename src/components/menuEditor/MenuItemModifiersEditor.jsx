@@ -3,6 +3,8 @@
  * Used by Menu Lab ItemForm, SharedMenuEditor, and Menu Worksheet row drawer.
  */
 import React, { useState } from "react";
+import ModifierGroupScopeControl from "./ModifierGroupScopeControl.jsx";
+import { isSharedScope } from "./modifierScopeModel.js";
 
 const INPUT = {
   border: "1.5px solid #dbe3eb",
@@ -51,6 +53,14 @@ function centsFromDollarsInput(value) {
   return Number.isFinite(n) ? Math.round(n * 100) : 0;
 }
 
+/** applies_to as stored: section / items scopes only; this-item-only is the default (omitted). */
+function storedScope(raw) {
+  const type = String(raw?.type || "").toLowerCase();
+  if (type === "section" && String(raw?.section || "").trim()) return { type: "section", section: String(raw.section).trim() };
+  if (type === "items") return { type: "items" };
+  return null;
+}
+
 /** Normalize API/editor groups into editable local shape. */
 export function toEditorGroups(groups) {
   const source = Array.isArray(groups) ? groups : [];
@@ -71,6 +81,8 @@ export function toEditorGroups(groups) {
     return {
       id: String(group.id || group.group_id || group.groupId || newId("group")),
       name: String(group.name || group.label || `Group ${gi + 1}`),
+      // Shared-group scope rides along so a save from any editor keeps it (modifierScopeModel.js).
+      ...(storedScope(group.applies_to) ? { applies_to: storedScope(group.applies_to) } : {}),
       required: Boolean(group.required || group.is_required || min > 0),
       min: Number.isFinite(min) ? min : 0,
       max: Number.isFinite(max) ? max : 1,
@@ -93,7 +105,7 @@ export function toEditorGroups(groups) {
 /** Serialize editor state for API. */
 export function fromEditorGroups(groups) {
   return (Array.isArray(groups) ? groups : [])
-    .filter((g) => g && String(g.name || "").trim())
+    .filter((g) => g && !g.remove && String(g.name || "").trim())
     .map((g) => {
       const options = (Array.isArray(g.options) ? g.options : [])
         .filter((o) => o && String(o.name || "").trim() && !o.disabled)
@@ -112,6 +124,7 @@ export function fromEditorGroups(groups) {
       if (!Number.isFinite(max)) max = required ? 1 : options.length;
       min = Math.max(0, Math.min(Math.floor(min), options.length));
       max = Math.max(min, Math.min(Math.floor(max), options.length));
+      const scope = storedScope(g.applies_to);
       return {
         id: g.id || newId("group"),
         name: String(g.name).trim(),
@@ -121,6 +134,7 @@ export function fromEditorGroups(groups) {
         min_selections: min,
         max_selections: max,
         options,
+        ...(scope ? { applies_to: scope } : {}),
       };
     })
     .filter(Boolean);
@@ -131,8 +145,10 @@ export function fromEditorGroups(groups) {
  * @param {object[]} props.value — editor groups (use toEditorGroups on load)
  * @param {(next: object[]) => void} props.onChange
  * @param {boolean} [props.compact]
+ * @param {{ itemId, itemSection, menuItems, sections }} [props.scope] — owner Menu Editor: show
+ *   "Applies to" (this item / every item in a section / selected items) on every group.
  */
-export default function MenuItemModifiersEditor({ value = [], onChange, compact = false }) {
+export default function MenuItemModifiersEditor({ value = [], onChange, compact = false, scope = null }) {
   const groups = Array.isArray(value) ? value : [];
 
   function setGroups(next) {
@@ -166,6 +182,7 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
         min: 0,
         max: 1,
         options: [{ id: newId("opt"), name: "", price_delta_cents: 0, disabled: false }],
+        ...(scope ? { applies_to: { type: "item" }, item_ids: [], origin: null, remove: null } : {}),
       },
     ]);
   }
@@ -227,6 +244,7 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
           <div style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>Modifiers</div>
           <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 2 }}>
             Add-ons (Extra cheese) or required Size (Small / Medium / Large) with extra prices.
+            {scope ? " Each group says where it applies: this item only, every item in a section, or items you pick." : ""}
           </div>
         </div>
         <button type="button" style={BTN("primary")} onClick={addGroup} data-testid="add-modifier-group">
@@ -240,7 +258,22 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
         </div>
       ) : null}
 
-      {groups.map((group, gi) => (
+      {groups.map((group, gi) => group.remove ? (
+        <div
+          key={group.id}
+          data-testid="modifier-group-removed"
+          style={{ background: "#fff7ed", border: "1px dashed #fdba74", borderRadius: 10, padding: 12, fontSize: 12, color: "#9a3412", display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}
+        >
+          <span>
+            “{group.name || "Group"}” will be {group.remove === "all"
+              ? `deleted from all ${(group.origin?.item_ids || []).length} items`
+              : "removed from this item"} when you save.
+          </span>
+          <button type="button" style={BTN("muted")} onClick={() => updateGroup(group.id, { remove: null })}>
+            Undo
+          </button>
+        </div>
+      ) : (
         <div
           key={group.id}
           data-testid="modifier-group-card"
@@ -254,6 +287,13 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
             gap: 10,
           }}
         >
+          {scope ? (
+            <ModifierGroupScopeControl
+              group={group}
+              scope={scope}
+              onChange={(patch) => updateGroup(group.id, patch)}
+            />
+          ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
             <div style={{ flex: 1, minWidth: 140 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
@@ -307,13 +347,24 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
             <button type="button" style={BTN("muted")} onClick={() => moveGroup(gi, 1)} disabled={gi === groups.length - 1}>
               ↓
             </button>
-            <button
-              type="button"
-              style={BTN("danger")}
-              onClick={() => setGroups(groups.filter((g) => g.id !== group.id))}
-            >
-              Delete group
-            </button>
+            {scope && isSharedScope(group.origin) ? (
+              <>
+                <button type="button" style={BTN("danger")} onClick={() => updateGroup(group.id, { remove: "item" })}>
+                  Remove from this item
+                </button>
+                <button type="button" style={BTN("danger")} onClick={() => updateGroup(group.id, { remove: "all" })}>
+                  Delete from all {(group.origin?.item_ids || []).length} items
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                style={BTN("danger")}
+                onClick={() => setGroups(groups.filter((g) => g.id !== group.id))}
+              >
+                Delete group
+              </button>
+            )}
           </div>
 
           <div style={{ fontSize: 11, fontWeight: 700, color: "#5b6675" }}>Options</div>
@@ -321,21 +372,21 @@ export default function MenuItemModifiersEditor({ value = [], onChange, compact 
             <div
               key={opt.id}
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 100px auto auto auto auto",
+                display: "flex",
+                flexWrap: "wrap",
                 gap: 8,
                 alignItems: "center",
                 opacity: opt.disabled ? 0.5 : 1,
               }}
             >
               <input
-                style={INPUT}
+                style={{ ...INPUT, flex: "1 1 160px", minWidth: 0 }}
                 value={opt.name}
                 placeholder="e.g. Extra cheese or Large"
                 onChange={(e) => updateOption(group.id, opt.id, { name: e.target.value })}
               />
               <input
-                style={INPUT}
+                style={{ ...INPUT, width: 90 }}
                 type="number"
                 step="0.01"
                 min="0"

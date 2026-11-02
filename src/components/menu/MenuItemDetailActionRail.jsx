@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
+import DishMoreActions from "./DishMoreActions.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import FoodCommentNavButton from "../FoodCommentNavButton.jsx";
 import MenuItemSaveToMyMenuplyIcon from "../consumer/MenuItemSaveToMyMenuplyIcon.jsx";
@@ -74,7 +75,7 @@ function ReturnToSearchButton({ onClick, label = "Return to results" }) {
 /**
  * Detail-page action icons — same ghost controls as public menu rows.
  * Order: View Full Menu (or return-to-search), Wish List, Like, Invite, Share (same four as menu
- * rows and the Feed rail), then Comment, Save; the video comment icon is always last.
+ * rows), then "…" with Share, Comment on this dish, Save and Comment with a video (Andre 2026-10-23).
  */
 export default function MenuItemDetailActionRail({
   menuItemId,
@@ -130,45 +131,70 @@ export default function MenuItemDetailActionRail({
           size="row"
         />
       ) : null}
-      {shareData ? (
-        <ShareButton
-          variant="dish"
-          iconOnly={true}
-          tone="ghost"
-          label="Share"
-          modalTitle={`Share ${itemName || "dish"}`}
-          shareData={shareData}
-          analyticsContext={shareAnalyticsContext}
-          stopPropagation={shareStopPropagation}
-        />
-      ) : null}
-      {menuItemId ? (
-        <FoodCommentNavButton
-          target="menu_item"
-          menuItemId={menuItemId}
-          restaurantId={restaurantId}
-          restaurantName={restaurantName}
-          menuItemName={itemName}
-          tone="ghost"
-          size="row"
-        />
-      ) : null}
-      {showSaveToMyMenuply && menuItemId ? (
-        <MenuItemSaveToMyMenuplyIcon
-          menuItemId={menuItemId}
-          foodName={itemName}
-          returnTo={saveReturnTo}
-        />
-      ) : null}
-      {menuItemId ? (
-        <DishVideoCommentButton
-          menuItemId={menuItemId}
-          menuItemName={itemName}
-          restaurantId={restaurantId}
-          tone="ghost"
-          size="row"
-        />
-      ) : null}
+      <DishMoreActions
+        dishName={itemName}
+        items={[
+          shareData
+            ? {
+                key: "share",
+                label: "Share",
+                node: (
+                  <ShareButton
+                    variant="dish"
+                    iconOnly={true}
+                    tone="ghost"
+                    label="Share"
+                    modalTitle={`Share ${itemName || "dish"}`}
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                    stopPropagation={shareStopPropagation}
+                  />
+                ),
+              }
+            : null,
+          menuItemId
+            ? {
+                key: "discussion",
+                label: "Comment on this dish",
+                node: (
+                  <FoodCommentNavButton
+                    target="menu_item"
+                    menuItemId={menuItemId}
+                    restaurantId={restaurantId}
+                    restaurantName={restaurantName}
+                    menuItemName={itemName}
+                    tone="ghost"
+                    size="row"
+                  />
+                ),
+              }
+            : null,
+          showSaveToMyMenuply && menuItemId
+            ? {
+                key: "save",
+                label: "Save to My Menuply",
+                node: (
+                  <MenuItemSaveToMyMenuplyIcon menuItemId={menuItemId} foodName={itemName} returnTo={saveReturnTo} />
+                ),
+              }
+            : null,
+          menuItemId
+            ? {
+                key: "video-comment",
+                label: "Comment with a video",
+                node: (
+                  <DishVideoCommentButton
+                    menuItemId={menuItemId}
+                    menuItemName={itemName}
+                    restaurantId={restaurantId}
+                    tone="ghost"
+                    size="row"
+                  />
+                ),
+              }
+            : null,
+        ]}
+      />
     </div>
   );
 }

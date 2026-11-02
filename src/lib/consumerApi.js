@@ -202,6 +202,13 @@ export const peekEduVerification = (token) =>
   get(`/api/consumer-auth/edu/verify?token=${encodeURIComponent(token)}`);
 export const confirmEduVerification = (token) =>
   post("/api/consumer-auth/edu/verify", { token });
+// Account email verification (2026-10-24). `pendingToken` = email_verification_token from a 202.
+export const requestEmailVerification = (pendingToken = null) =>
+  post("/api/consumer-auth/email/verify/request", pendingToken ? { email_verification_token: pendingToken } : {});
+export const peekEmailVerification = (token) =>
+  get(`/api/consumer-auth/email/verify?token=${encodeURIComponent(token)}`);
+export const confirmEmailVerification = (token) =>
+  post("/api/consumer-auth/email/verify", { token });
 
 // ── Connections (people — not restaurant Following) ───────────────────────
 export const listConnections = (status = null, peerId = null) => {
@@ -212,6 +219,9 @@ export const listConnections = (status = null, peerId = null) => {
   return get(qs ? `/api/consumer/connections?${qs}` : "/api/consumer/connections");
 };
 export const requestConnection = (body) => post("/api/consumer/connections", body);
+/** Quick Invite "In Menuply": notify these Connects about an invite I made (non-Connects are skipped). */
+export const sendEatInvitationInApp = (token, userIds) =>
+  post(`/api/consumer/eat-invitations/${encodeURIComponent(String(token))}/send`, { user_ids: userIds });
 export const acceptConnection = (id) =>
   post(`/api/consumer/connections/${encodeURIComponent(String(id))}/accept`, {});
 export const declineConnection = (id) =>
@@ -651,10 +661,14 @@ export const updatePrimaryLocation = (body) => put("/api/consumer/profile/primar
 export const updateCatchMe = (body) => put("/api/consumer/profile/catch-me", body);
 export const clearCatchMe = () => del("/api/consumer/profile/catch-me");
 export const getCurrentVibe = () => get("/api/consumer/profile/current-vibe");
+/** docs/16: { vibes: [...], until: "today" | "week" | {hours} | {days} }; older { currentVibe } still works. */
 export const updateCurrentVibe = (body) =>
-  put("/api/consumer/profile/current-vibe", {
-    currentVibe: body?.currentVibe ?? body?.current_vibe ?? body,
-  });
+  put(
+    "/api/consumer/profile/current-vibe",
+    Array.isArray(body?.vibes)
+      ? { vibes: body.vibes, until: body.until || "today" }
+      : { currentVibe: body?.currentVibe ?? body?.current_vibe ?? body }
+  );
 /** Who may see my vibe in search: "connects" | "connects_of_connects". */
 export const updateSearchVibeAudience = (audience) =>
   put("/api/consumer/profile/current-vibe", { search_vibe_audience: audience });
@@ -665,6 +679,9 @@ export const searchDiners = (query, cityId = null) => {
   return get(`/api/consumer/diners/search?${q}`);
 };
 export const getFollowedRestaurants = ()    => get("/api/consumer/followed-restaurants");
+/** A Connect's restaurant Favs (accepted Connects only). */
+export const listPeerFollowedRestaurants = (userId) =>
+  get(`/api/consumer/followed-restaurants/users/${encodeURIComponent(String(userId))}`);
 
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
@@ -727,6 +744,27 @@ export const submitOrderFeedback = (body) =>
 // ── Venue Event Groups + RSVP (Phase 5) ───────────────────────────────────
 export const listMyVenueEvents = () => get("/api/consumer/my/events");
 export const listMyVenueEventGroups = () => get("/api/consumer/my/event-groups");
+
+/** Social Plans (docs/15 Phase A): my meals, events, invites and venue RSVPs in one list. */
+export const listMySocialPlans = (scope = "upcoming") =>
+  get(`/api/consumer/social-plans?scope=${encodeURIComponent(scope)}`);
+/** Social Plans Phase C: My Menuply Connects section (requests, live vibes + Join Me, plans to join). */
+export const getConnectsNow = () => get("/api/consumer/social-plans/connects");
+/** Social Plans Phase B (docs/15): who can see my calendar, my plan's sharing, Ask to Join. */
+/** Add a meal or event from the calendar: { kind, date, time, restaurant_id, place_name, title, who: "invite" | "ask" }. */
+export const createSocialPlan = (body) => post("/api/consumer/social-plans", body);
+export const getSocialCalendarSettings = () => get("/api/consumer/social-plans/settings");
+export const saveSocialCalendarSettings = (body) => put("/api/consumer/social-plans/settings", body);
+const socialPlanPath = (source, ref) =>
+  `/api/consumer/social-plans/${encodeURIComponent(String(source))}/${encodeURIComponent(String(ref))}`;
+export const saveSocialPlanSharing = (source, ref, body) => patch(socialPlanPath(source, ref), body);
+export const askToJoinSocialPlan = (source, ref, message) =>
+  post(`${socialPlanPath(source, ref)}/join-requests`, message ? { message } : {});
+export const cancelSocialPlanAsk = (source, ref) => del(`${socialPlanPath(source, ref)}/join-requests/mine`);
+export const answerSocialPlanJoinRequest = (requestId, approve) =>
+  post(`/api/consumer/social-plans/join-requests/${encodeURIComponent(String(requestId))}/${approve ? "approve" : "decline"}`, {});
+export const getPeerSocialCalendar = (peerId) =>
+  get(`/api/consumer/social-plans/connections/${encodeURIComponent(String(peerId))}`);
 
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
@@ -814,6 +852,15 @@ export const getMonthInFood = (ym) =>
     cache: "no-store",
     headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
   });
+/** The public link for my report, or a Connect's (peer_id). */
+export const getMonthInFoodLink = (ym, peerId = null) => {
+  const q = new URLSearchParams();
+  if (ym) q.set("ym", String(ym));
+  if (peerId) q.set("peer_id", String(peerId));
+  return get(`/api/consumer/month-in-food/link?${q}`);
+};
+/** A shared report, no sign-in. */
+export const getPublicMonthInFood = (token) => get(`/public/month-in-food/${encodeURIComponent(String(token))}`);
 export const getPeerMonthInFood = (peerId, ym) =>
   get(
     `/api/consumer/connections/${encodeURIComponent(String(peerId))}/month-in-food${

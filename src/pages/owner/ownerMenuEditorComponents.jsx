@@ -19,9 +19,14 @@ import {
   deleteMenuConsoleMenu,
   putMenuConsoleItemModifierGroups,
   getMenuConsoleItemModifierGroups,
+  listMenuConsoleModifierGroups,
+  putMenuConsoleModifierGroupScope,
+  deleteMenuConsoleModifierGroup,
   listMenuConsoleItemPhotos,
   uploadMenuConsoleItemPhoto,
   deleteMenuConsoleItemPhoto,
+  getMenuConsoleMenuPhotos,
+  setMenuConsoleMenuPhotos,
 } from "../../lib/ownerApi.js";
 
 export const inputStyle = sharedInputStyle;
@@ -37,9 +42,14 @@ const ownerMenuApi = {
   deleteMenu: deleteMenuConsoleMenu,
   putModifierGroups: putMenuConsoleItemModifierGroups,
   getModifierGroups: getMenuConsoleItemModifierGroups,
+  listMenuModifierGroups: listMenuConsoleModifierGroups,
+  putModifierGroupScope: putMenuConsoleModifierGroupScope,
+  deleteModifierGroup: deleteMenuConsoleModifierGroup,
   listItemPhotos: listMenuConsoleItemPhotos,
   uploadItemPhoto: uploadMenuConsoleItemPhoto,
   deleteItemPhoto: deleteMenuConsoleItemPhoto,
+  getMenuPhotos: getMenuConsoleMenuPhotos,
+  setMenuPhotos: setMenuConsoleMenuPhotos,
 };
 
 export function MenuEditor(props) {

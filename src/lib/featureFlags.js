@@ -46,3 +46,11 @@ export function isFeedAsHomeEnabled() {
 export function isHallClipsRecordingEnabled() {
   return isTruthy(import.meta.env.VITE_ENABLE_HALL_CLIPS);
 }
+
+/**
+ * Cluster "Food by type" (tile counts + nutrition/diet chips, 2026-10-28). Ships dark; also needs
+ * the backend ENABLE_CLUSTER_FOOD_BY_TYPE. Enable with VITE_ENABLE_FOOD_BY_TYPE=1.
+ */
+export function isClusterFoodByTypeEnabled() {
+  return isTruthy(import.meta.env.VITE_ENABLE_FOOD_BY_TYPE);
+}

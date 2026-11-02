@@ -5,7 +5,8 @@ import { getAdvertisementByRegion, getAdvertisements } from "../../lib/advertise
 /**
  * Generic cluster ad slot.
  * Resolves ads by inventory_key or page_region — no venue-specific keys hardcoded.
- * Size variants: hero (premium wide), standard, small (lower-cost unit).
+ * Size variants: hero (premium wide), standard, small (lower-cost unit), slim, and result
+ * (a card the size of a search result row, for ads placed between results).
  */
 export default function ClusterAdSlot({
   clusterSlug,
@@ -15,6 +16,24 @@ export default function ClusterAdSlot({
   className,
   style,
 }) {
+  const { ad, inventoryType, delivery } = useClusterAd({ clusterSlug, inventoryKey, pageRegion });
+
+  return (
+    <ClusterAdCreative
+      ad={ad}
+      inventoryType={inventoryType}
+      delivery={delivery}
+      inventoryKey={inventoryKey}
+      pageRegion={pageRegion}
+      size={size}
+      className={className}
+      style={style}
+    />
+  );
+}
+
+/** Fetches the delivered ad for a slot once, so a list can repeat one creative in several spots. */
+export function useClusterAd({ clusterSlug, inventoryKey = null, pageRegion = null }) {
   const [ad, setAd] = useState(null);
   const [inventoryType, setInventoryType] = useState(null);
   const [delivery, setDelivery] = useState(null);
@@ -47,18 +66,7 @@ export default function ClusterAdSlot({
     return () => controller.abort();
   }, [clusterSlug, inventoryKey, pageRegion]);
 
-  return (
-    <ClusterAdCreative
-      ad={ad}
-      inventoryType={inventoryType}
-      delivery={delivery}
-      inventoryKey={inventoryKey}
-      pageRegion={pageRegion}
-      size={size}
-      className={className}
-      style={style}
-    />
-  );
+  return { ad, inventoryType, delivery };
 }
 
 /**
@@ -100,7 +108,7 @@ export function ClusterAdCreative({
     >
       <div style={{ position: "relative" }}>
         {media}
-        {resolvedSize === "slim" || resolvedSize === "small" ? (
+        {resolvedSize === "slim" || resolvedSize === "small" || resolvedSize === "result" ? (
           <div
             style={{
               position: "absolute",
@@ -185,6 +193,14 @@ function resolveMediaStyle(size) {
       objectPosition: "top center",
     };
   }
+  if (size === "result") {
+    return {
+      ...base,
+      height: RESULT_CARD_HEIGHT,
+      objectFit: "cover",
+      objectPosition: "center",
+    };
+  }
   if (size === "hero") {
     return {
       ...base,
@@ -196,7 +212,26 @@ function resolveMediaStyle(size) {
   return { ...base, height: "auto", objectFit: "contain", objectPosition: "center top" };
 }
 
+/** Matches a cluster search result card (SearchResultCard) so ads read as one more row. */
+const RESULT_CARD_HEIGHT = 186;
+
 function resolveFrameStyle(type, size, style = {}) {
+  if (size === "result") {
+    return {
+      margin: 0,
+      width: "100%",
+      height: RESULT_CARD_HEIGHT,
+      boxSizing: "border-box",
+      overflow: "hidden",
+      borderRadius: 24,
+      border: "1px solid #e5e7eb",
+      background: "#fff",
+      lineHeight: 0,
+      boxShadow: "0 8px 28px rgba(0, 0, 0, 0.18)",
+      ...style,
+    };
+  }
+
   if (size === "small") {
     return {
       margin: 0,

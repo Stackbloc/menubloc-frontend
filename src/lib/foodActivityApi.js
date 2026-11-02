@@ -179,9 +179,11 @@ export async function searchReportPlaces({
   limit = 8,
   city = null,
   state = null,
+  // Post (Andre 2026-10-29): a franchise is one option — its brand, no store location.
+  one_per_franchise = null,
 } = {}) {
   const data = await apiGet(
-    `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit, city, state })}`
+    `/public/food-activity/places${buildQuery({ type, q, restaurant_id, limit, city, state, one_per_franchise })}`
   );
   return { results: Array.isArray(data?.results) ? data.results : [] };
 }

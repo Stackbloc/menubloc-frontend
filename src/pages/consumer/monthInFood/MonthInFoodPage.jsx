@@ -10,7 +10,8 @@ import StickyPageHeader from "../../../components/StickyPageHeader.jsx";
 import BottomNav from "../../../components/BottomNav.jsx";
 import { buildConsumerPathShareData } from "../../../components/share/shareUtils.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
-import { getMonthInFood, getPeerMonthInFood } from "../../../lib/consumerApi.js";
+import { getMonthInFood, getMonthInFoodLink, getPeerMonthInFood, getPublicMonthInFood } from "../../../lib/consumerApi.js";
+import { shareMonthInFoodImage } from "../../../lib/monthInFoodShareImage.js";
 import { subscribeMonthInFoodStale } from "../../../lib/monthInFoodFreshness.js";
 import { buildMonthInFoodModel, shiftYm } from "./buildMonthInFoodModel.js";
 import {
@@ -26,7 +27,6 @@ import MonthInFoodFooter from "./MonthInFoodFooter.jsx";
 import {
   MY_MENUPLY_MONTH_IN_FOOD_PATH,
   MY_MENUPLY_PROFILE_PATH,
-  myMenuplyProfileHref,
 } from "../../../lib/myMenuplyRoutes.js";
 import * as s from "./monthInFoodStyles.js";
 
@@ -44,8 +44,10 @@ function currentYmLa() {
 export default function MonthInFoodPage() {
   const { peerId: peerIdParam } = useParams();
   const peerId = peerIdParam ? Number(peerIdParam) : null;
-  const isPeer = Number.isFinite(peerId) && peerId > 0;
-  const { isAuthenticated, loading: authLoading } = useConsumer();
+  const { consumer, isAuthenticated, loading: authLoading } = useConsumer();
+  const myId = Number(consumer?.id) || null;
+  // My own shared link opens as my report.
+  const isPeer = Number.isFinite(peerId) && peerId > 0 && peerId !== myId;
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,16 +134,27 @@ export default function MonthInFoodPage() {
     setSearchParams(params, { replace: true });
   }
 
-  const sharePath = isPeer
-    ? `/account/connections/${encodeURIComponent(String(peerId))}/month-in-food?ym=${encodeURIComponent(ym)}`
-    : `${MY_MENUPLY_MONTH_IN_FOOD_PATH}?ym=${encodeURIComponent(ym)}`;
+  // The public link, so anyone can open it, on Menuply or not (Andre 2026-10-30).
+  const [sharePath, setSharePath] = useState(null);
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let alive = true;
+    getMonthInFoodLink(ym, isPeer ? peerId : null)
+      .then((r) => alive && setSharePath(r?.path || null))
+      .catch(() => alive && setSharePath(null));
+    return () => {
+      alive = false;
+    };
+  }, [isAuthenticated, isPeer, peerId, ym]);
 
   const shareData = useMemo(
     () =>
-      buildConsumerPathShareData(sharePath, {
-        title: "My Month in Food on Menuply",
-        text: "Great food. Good people. Better together.",
-      }),
+      sharePath
+        ? buildConsumerPathShareData(sharePath, {
+            title: "My Month in Food on Menuply",
+            text: "Great food. Good people. Better together.",
+          })
+        : null,
     [sharePath]
   );
 
@@ -178,24 +191,28 @@ export default function MonthInFoodPage() {
             <MonthInFoodMoments moments={model.moments} overflow={model.momentsOverflow} />
             <MonthInFoodCravingsPlans
               wants={model.wants}
-              takeMeOutOpen={model.takeMeOutOpen}
               isSelf={model.isSelf}
               plans={model.plans}
               events={model.events}
-              crewsJoinDefault={model.crewsJoinDefault}
             />
 
-            {model.showEmptyHint ? (
-              <p style={{ ...s.muted, marginTop: 8 }}>
-                No meals logged this month yet.{" "}
-                {!isPeer ? (
-                  <Link to={myMenuplyProfileHref({ compose: "ate" })} style={s.viewAll}>
-                    Log what you ate
-                  </Link>
-                ) : null}
-              </p>
-            ) : null}
+            {/* Meal logging is opt-in (Andre 2026-10-30), so no prompt to log. */}
+            {model.showEmptyHint ? <p style={{ ...s.muted, marginTop: 8 }}>Nothing yet this month.</p> : null}
 
+            {model.isSelf && sharePath ? (
+              <button
+                type="button"
+                data-testid="month-in-food-share-image"
+                style={{ alignSelf: "flex-start", margin: "0 0 12px", border: "none", background: "var(--mif-forest, #16302A)", color: "#fff", borderRadius: 999, padding: "10px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                onClick={() =>
+                  getPublicMonthInFood(sharePath.split("/m/")[1])
+                    .then(shareMonthInFoodImage)
+                    .catch(() => undefined)
+                }
+              >
+                Share as a picture
+              </button>
+            ) : null}
             <MonthInFoodFooter sharePath={sharePath} isSelf={model.isSelf} />
           </>
         ) : null}

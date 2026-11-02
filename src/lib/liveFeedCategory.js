@@ -5,24 +5,25 @@ export const LIVE_FEED_CHANNELS = [
   { id: "all", label: "All Content" },
   { id: "ate", label: "I'm Eating" },
   { id: "want", label: "Wanna Eat" },
-  { id: "plan", label: "Eating Plans" },
+  { id: "plan", label: "Social Plans" },
   { id: "reviews", label: "Reviews" },
   { id: "cooking", label: "What's Cooking @home" },
-  { id: "event", label: "Events" },
 ];
 
 const CHANNEL_LABEL_BY_KIND = Object.fromEntries(
   LIVE_FEED_CHANNELS.filter((ch) => ch.id !== "all").map((ch) => [ch.id, ch.label])
 );
+// Social Plans (docs/15): events and eating plans are one channel; older event posts keep their kind.
+CHANNEL_LABEL_BY_KIND.event = CHANNEL_LABEL_BY_KIND.plan;
 
 /** Full captions in fullscreen reel (hub section titles). */
 export const LIVE_FEED_FULL_CATEGORY_LABELS = {
   ate: "What I'm Eating",
   want: "Wish List",
-  plan: "My Eating Plans",
+  plan: "Social Plans",
   reviews: "Reviews",
   cooking: "What's Cooking @home",
-  event: "Events",
+  event: "Social Plans",
 };
 
 export function liveFeedCategoryLabel(kind) {
@@ -64,9 +65,21 @@ export function liveFeedRestaurantProfilePath(item = {}) {
   );
 }
 
+/** Paid sponsored clip mixed into the Feed (kind "sponsored", Andre 2026-10-31). */
+export function isLiveFeedSponsored(item) {
+  return String(item?.kind || "").toLowerCase() === "sponsored" || item?.poster_type === "sponsor";
+}
+
+/** "Sponsored" or "Sponsored · Deal · 20% off". */
+export function liveFeedSponsoredBadge(item) {
+  if (!isLiveFeedSponsored(item)) return null;
+  return String(item?.sponsored?.badge || "").trim() || "Sponsored";
+}
+
 export function liveFeedCreatorProfilePath(item) {
   if (!item) return null;
   if (isLiveFeedPlatformCreator(item)) return null;
+  if (isLiveFeedSponsored(item)) return item?.restaurant_id != null ? liveFeedRestaurantProfilePath(item) : null;
   if (isLiveFeedVenueItem(item)) return venueLiveFeedPath(item.venue);
   if (item?.creator_type === "restaurant" || item?.poster_type === "restaurant") {
     return liveFeedRestaurantProfilePath(item);
@@ -86,7 +99,7 @@ export function isLiveFeedPlatformCreator(item) {
 }
 
 export function isLiveFeedGuestCreator(item) {
-  if (isLiveFeedPlatformCreator(item)) return false;
+  if (isLiveFeedPlatformCreator(item) || isLiveFeedSponsored(item)) return false;
   return (
     item?.creator_type === "guest" ||
     (!isLiveFeedVenueItem(item) &&
@@ -105,6 +118,9 @@ export function venueLiveFeedPath(venue) {
 }
 
 export function liveFeedPosterLabel(item) {
+  if (isLiveFeedSponsored(item)) {
+    return item?.sponsored?.advertiser_name || item?.restaurant_name || "Sponsored";
+  }
   if (String(item?.kind || "").toLowerCase() === "event" || item?.poster_type === "venue") {
     return item?.venue?.name || "Venue";
   }
@@ -122,7 +138,12 @@ export function liveFeedPosterLabel(item) {
 
 export function liveFeedPosterDisplayName(item) {
   const label = liveFeedPosterLabel(item);
-  if (isLiveFeedVenueItem(item) || isLiveFeedGuestCreator(item) || isLiveFeedPlatformCreator(item)) {
+  if (
+    isLiveFeedVenueItem(item) ||
+    isLiveFeedGuestCreator(item) ||
+    isLiveFeedPlatformCreator(item) ||
+    isLiveFeedSponsored(item)
+  ) {
     return label;
   }
   return `@${label}`;

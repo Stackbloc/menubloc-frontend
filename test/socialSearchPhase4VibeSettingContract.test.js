@@ -15,7 +15,7 @@ test("vibe picker has the Connects-of-Connects toggle, unchecked unless chosen",
   assert.match(src, /searchVibeAudience = "connects"/);
   assert.match(src, /checked=\{searchVibeAudience === "connects_of_connects"\}/);
   assert.match(src, /first name and initial only/);
-  assert.match(src, /Pick a food vibe like Hungry or Coffee/);
+  assert.match(src, /Pick what you&apos;re up for — several at once/);
   assert.doesNotMatch(src, /Default is Open for suggestions — Connects can see you in search/);
 });
 
@@ -28,17 +28,18 @@ test("profile page saves the audience through the current-vibe endpoint", () => 
   assert.equal((hero.match(/onSearchVibeAudienceChange=\{onSearchVibeAudienceChange\}/g) || []).length, 2);
 });
 
-test("default vibe is not search-surfaced in the FE mirror", () => {
+test("default vibe (Not sure today) is not search-surfaced in the FE mirror", () => {
   const src = read("src/lib/currentVibeDisplay.js");
-  assert.match(src, /value: "open_for_suggestions",\n    label: "Open for suggestions",\n    icon: "💬",\n    badgeTone: "inviting",\n    searchEligible: false,/);
+  assert.match(src, /value: "not_sure_today", label: "Not sure today", icon: null, badgeTone: "none", searchEligible: false, exclusive: true/);
 });
 
-test("vibe catalog 2026-10-06: Open for Coffee / Drinks / Company / Lunch; three removed; chips have hover", () => {
+test("vibe catalog docs/16: 7 vibes in Andre's order; others removed; chips have hover", () => {
   const src = read("src/lib/currentVibeDisplay.js");
-  assert.match(src, /value: "coffee", label: "Open for Coffee", icon: "☕"/);
-  assert.match(src, /value: "drinks", label: "Open for Drinks", icon: "🍹"/);
-  assert.match(src, /label: "Open for Company"/);
-  assert.match(src, /value: "open_for_lunch", label: "Open for Lunch"/);
+  const order = ["not_sure_today", "open_for_lunch", "coffee", "open_for_dinner", "hungry", "eating_at_home", "me_time"].map((v) => src.indexOf(`value: "${v}"`));
+  assert.ok(order.every((n) => n > 0));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.match(src, /label: "Me time \(not available\)"/);
+  assert.doesNotMatch(src, /value: "(drinks|craving|looking_for_company|im_good|open_for_suggestions)"/);
   assert.doesNotMatch(src, /going_out|cheap_eats|treat_myself/);
   const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
   assert.match(section, /title=\{opt\.label\}/);

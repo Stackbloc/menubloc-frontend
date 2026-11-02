@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import InviteToEatButton from "../InviteToEatButton.jsx";
 import WishListMenuItemButton from "../WishListMenuItemButton.jsx";
 import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
+import DishMoreActions from "../menu/DishMoreActions.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -259,6 +260,7 @@ export default function PublicMenuItemCard({
   const {
     hideDishShare,
     tapRowToAdd,
+    tapRowOpensSheet,
     onRemoveOne,
     isScrollTap,
     onOpenOptions,
@@ -412,6 +414,12 @@ export default function PublicMenuItemCard({
   function addItemToOrder(e) {
     e?.stopPropagation?.();
     if (!canAddToOrder) return;
+    // Restaurant menus (Andre, 2026-10-23): a tap opens the item sheet — photo, quantity, choices,
+    // "Add to order $X" — like Square Online, instead of adding silently.
+    if (tapRowOpensSheet) {
+      openSheet();
+      return;
+    }
     if (itemHasRequiredModifiers(it)) {
       // Menu Browser: go straight to the options picker (part of ordering), not the info sheet.
       if (tapRowToAdd && onOpenOptions) onOpenOptions(it, name, desc);
@@ -433,9 +441,30 @@ export default function PublicMenuItemCard({
     holdStartRef.current = null;
   }
   useEffect(() => clearHold, []);
+  // Press feedback: the row dips while a finger/mouse is down so the tap visibly registers.
+  const [pressed, setPressed] = useState(false);
+  const pressStartRef = useRef(null);
+  const pressHandlers = {
+    onPointerDown: (e) => {
+      if (e.button != null && e.button !== 0) return;
+      pressStartRef.current = { x: e.clientX, y: e.clientY };
+      setPressed(true);
+    },
+    onPointerMove: (e) => {
+      const start = pressStartRef.current;
+      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) {
+        pressStartRef.current = null;
+        setPressed(false);
+      }
+    },
+    onPointerUp: () => { pressStartRef.current = null; setPressed(false); },
+    onPointerLeave: () => { pressStartRef.current = null; setPressed(false); },
+    onPointerCancel: () => { pressStartRef.current = null; setPressed(false); },
+  };
   const holdHandlers = tapRowToAdd
     ? {
         onPointerDown: (e) => {
+          pressHandlers.onPointerDown(e);
           clearHold();
           if (!holdToRemove || (e.button != null && e.button !== 0)) return;
           holdStartRef.current = { x: e.clientX, y: e.clientY };
@@ -447,12 +476,13 @@ export default function PublicMenuItemCard({
           }, 550);
         },
         onPointerMove: (e) => {
+          pressHandlers.onPointerMove(e);
           const start = holdStartRef.current;
           if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) clearHold();
         },
-        onPointerUp: clearHold,
-        onPointerLeave: clearHold,
-        onPointerCancel: clearHold,
+        onPointerUp: (e) => { pressHandlers.onPointerUp(e); clearHold(); },
+        onPointerLeave: (e) => { pressHandlers.onPointerLeave(e); clearHold(); },
+        onPointerCancel: (e) => { pressHandlers.onPointerCancel(e); clearHold(); },
         onContextMenu: (e) => {
           if (holdToRemove) e.preventDefault();
         },
@@ -488,7 +518,9 @@ export default function PublicMenuItemCard({
         if (inCartCount > 0) setHoveredItemId(normalizedItemId);
       }}
       onMouseLeave={() => setHoveredItemId(null)}
+      {...pressHandlers}
       {...holdHandlers}
+      data-pressed={pressed ? "true" : undefined}
       onClick={() => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -542,7 +574,9 @@ export default function PublicMenuItemCard({
         cursor: "pointer",
         ...(tapRowToAdd ? { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" } : null),
         opacity: itemIsOrderable ? 1 : 0.78,
-        transition: "background 120ms ease, border-color 120ms ease",
+        transform: pressed ? "scale(0.985)" : undefined,
+        filter: pressed ? "brightness(0.94)" : undefined,
+        transition: "background 120ms ease, border-color 120ms ease, transform 90ms ease, filter 90ms ease",
         WebkitTapHighlightColor: "transparent",
       }}
     >
@@ -648,31 +682,48 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {dishShareData && !hideDishShare ? (
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="ghost"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: normalizedItemId,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
-                  ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
+                  <DishMoreActions
+                    dishName={name}
+                    items={[
+                      dishShareData && !hideDishShare
+                        ? {
+                            key: "share",
+                            label: "Share",
+                            node: (
+                              <ShareButton
+                                variant="dish"
+                                iconOnly={true}
+                                tone="ghost"
+                                shareData={dishShareData}
+                                analyticsContext={{
+                                  restaurantId: currentRestaurantId,
+                                  restaurantSlug: data?.slug || null,
+                                  menuItemId: normalizedItemId,
+                                  menuItemName: name,
+                                  pageType: "public_menu",
+                                  shareTarget: "dish",
+                                }}
+                              />
+                            ),
+                          }
+                        : null,
+                      canNavigate
+                        ? {
+                            key: "video-comment",
+                            label: "Comment with a video",
+                            node: (
+                              <DishVideoCommentButton
+                                menuItemId={normalizedItemId}
+                                menuItemName={name}
+                                restaurantId={currentRestaurantId}
+                                tone="ghost"
+                                size="row"
+                              />
+                            ),
+                          }
+                        : null,
+                    ]}
+                  />
                 </>
               }
             />
@@ -731,31 +782,48 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {dishShareData && !hideDishShare ? (
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="ghost"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: normalizedItemId,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
-                  ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
+                  <DishMoreActions
+                    dishName={name}
+                    items={[
+                      dishShareData && !hideDishShare
+                        ? {
+                            key: "share",
+                            label: "Share",
+                            node: (
+                              <ShareButton
+                                variant="dish"
+                                iconOnly={true}
+                                tone="ghost"
+                                shareData={dishShareData}
+                                analyticsContext={{
+                                  restaurantId: currentRestaurantId,
+                                  restaurantSlug: data?.slug || null,
+                                  menuItemId: normalizedItemId,
+                                  menuItemName: name,
+                                  pageType: "public_menu",
+                                  shareTarget: "dish",
+                                }}
+                              />
+                            ),
+                          }
+                        : null,
+                      canNavigate
+                        ? {
+                            key: "video-comment",
+                            label: "Comment with a video",
+                            node: (
+                              <DishVideoCommentButton
+                                menuItemId={normalizedItemId}
+                                menuItemName={name}
+                                restaurantId={currentRestaurantId}
+                                tone="ghost"
+                                size="row"
+                              />
+                            ),
+                          }
+                        : null,
+                    ]}
+                  />
                 </>
               }
             />
@@ -814,31 +882,48 @@ export default function PublicMenuItemCard({
                     tone="ghost"
                     size="row"
                   />
-                  {dishShareData && !hideDishShare ? (
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="ghost"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: normalizedItemId,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
-                  ) : null}
-                  {canNavigate ? (
-                    <DishVideoCommentButton
-                      menuItemId={normalizedItemId}
-                      menuItemName={name}
-                      restaurantId={currentRestaurantId}
-                      tone="ghost"
-                      size="row"
-                    />
-                  ) : null}
+                  <DishMoreActions
+                    dishName={name}
+                    items={[
+                      dishShareData && !hideDishShare
+                        ? {
+                            key: "share",
+                            label: "Share",
+                            node: (
+                              <ShareButton
+                                variant="dish"
+                                iconOnly={true}
+                                tone="ghost"
+                                shareData={dishShareData}
+                                analyticsContext={{
+                                  restaurantId: currentRestaurantId,
+                                  restaurantSlug: data?.slug || null,
+                                  menuItemId: normalizedItemId,
+                                  menuItemName: name,
+                                  pageType: "public_menu",
+                                  shareTarget: "dish",
+                                }}
+                              />
+                            ),
+                          }
+                        : null,
+                      canNavigate
+                        ? {
+                            key: "video-comment",
+                            label: "Comment with a video",
+                            node: (
+                              <DishVideoCommentButton
+                                menuItemId={normalizedItemId}
+                                menuItemName={name}
+                                restaurantId={currentRestaurantId}
+                                tone="ghost"
+                                size="row"
+                              />
+                            ),
+                          }
+                        : null,
+                    ]}
+                  />
                 </>
               }
             />

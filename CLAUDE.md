@@ -249,6 +249,14 @@ Reduce token waste, reduce regression frequency, prevent route drift, prevent ar
 
 ---
 
+## 🔴 TRANSLATION IS OFF (CONTRACT)
+
+**Established:** 2026-11-01 (Andre) · **Full rule:** `docs/guardrails/2026-11-01_translation-off.md` (same file in menubloc-backend-main)
+
+Menuply is English only: no language box, no translated content, no Language Bot. Backend switch `TRANSLATION_ENABLED` (unset = off) makes every request resolve to English, drops `language_bot` from the bots, and refuses translation jobs (410 `TRANSLATION_OFF`); the website's `SUPPORTED_LANGUAGES` is `["en"]`. Do not re-enable, re-add a language picker, or wire a translation provider unless Andre asks. Why: it ran on Hugging Face's metered free credit + MyMemory's free quota, both used up, and NLLB is non-commercial — none of which was explained up front. **Any new third-party service: say whether it's metered, who pays, the free limit, and what the license allows before calling it set up.**
+
+---
+
 ## 🚀 DEPLOYMENT — VERCEL
 
 **Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `menuply.com`)

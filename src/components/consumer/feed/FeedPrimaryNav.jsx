@@ -1,23 +1,26 @@
 /**
- * TikTok-style feed shell nav: Home · Waiter · Share My QR | [X] | Deals · Search · Profile.
- * Waiter and Share My QR are signed-in only (authOnly); guests see Home | [X] | Deals · Search · Profile.
- * Share My QR opens the diner QR share sheet. Menu Browser lives on the video rail/dock.
+ * Feed shell bottom bar, the app's tab bar (menuply-mobile app/(tabs)/_layout.tsx; app wins, Andre
+ * 2026-10-29): Home · Post (X) · Deals · Search · Profile. White bar with a top border; inactive tabs
+ * ink-muted; the active tab's icon sits in a 52×30 accent-soft pill, icon and label accent, label bold.
+ * Post keeps the two-tone X. The basket opens from the cart button beside ☰ (FeedMobileHeader).
  * Mobile bottom bar only — desktop uses FeedDesktopRail from the same tab config.
  *
  * Portaled to document.body so a playing Feed reel (or leftover compositing layer) cannot
- * sit above the tabs after Feed → Profile. Share My QR opens a sheet in-place; other tabs
- * navigate — both must receive the same hit-testing.
+ * sit above the tabs after Feed → Profile.
  */
-
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
 import { FEED_LEFT_TABS, FEED_RIGHT_TABS, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
-import { useOrderCart } from "../../../context/OrderCartContext.jsx";
+import AppIcon from "../../icons/AppIcon.jsx";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
-export const FEED_PRIMARY_NAV_HEIGHT = 56;
+export const FEED_PRIMARY_NAV_HEIGHT = 64;
+
+const ACCENT = "#0f7a24";
+const ACCENT_SOFT = "#e8f5e3";
+const INK_MUTED = "#5c665f";
 
 function tabIsActive(tab, pathname) {
   if (tab.alsoActiveOn?.includes(pathname)) return true;
@@ -30,16 +33,10 @@ function tabIsActive(tab, pathname) {
 function TabControl({ tab, onShareQr }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { itemCount, openCart } = useOrderCart();
-  const active = !tab.openCart && tabIsActive(tab, location.pathname);
-  const basketBadge = tab.openCart && itemCount > 0 ? (itemCount > 9 ? "9+" : String(itemCount)) : null;
+  const active = !tab.openShareQr && tabIsActive(tab, location.pathname);
 
   function go() {
     clearStuckMediaChrome();
-    if (tab.openCart) {
-      openCart();
-      return;
-    }
     if (tab.openShareQr) {
       onShareQr?.();
       return;
@@ -51,26 +48,15 @@ function TabControl({ tab, onShareQr }) {
     <button
       type="button"
       data-testid={tab.testId}
-      aria-label={
-        tab.openShareQr ? "Share My QR" : basketBadge ? `Basket with ${itemCount} items` : tab.label
-      }
-      aria-current={active && !tab.openShareQr ? "page" : undefined}
+      aria-label={tab.label}
+      aria-current={active ? "page" : undefined}
       onClick={go}
-      style={{
-        ...styles.tab,
-        ...styles.tabButton,
-        color: active && !tab.openShareQr ? "#5eead4" : "rgba(255,255,255,0.72)",
-        fontWeight: active && !tab.openShareQr ? 800 : 600,
-      }}
+      style={{ ...styles.tab, ...styles.tabButton }}
     >
-      {tab.mobileIcon ? (
-        <span aria-hidden="true" style={styles.tabIcon}>{tab.mobileIcon}</span>
-      ) : (
-        tab.label
-      )}
-      {basketBadge ? (
-        <span aria-hidden="true" style={styles.tabBadge}>{basketBadge}</span>
-      ) : null}
+      <span aria-hidden="true" style={{ ...styles.iconWrap, ...(active ? styles.iconWrapOn : null) }}>
+        <AppIcon name={tab.icon} size={24} color={active ? ACCENT : INK_MUTED} />
+      </span>
+      <span style={{ ...styles.label, ...(active ? styles.labelOn : null) }}>{tab.label}</span>
     </button>
   );
 }
@@ -101,16 +87,19 @@ export default function FeedPrimaryNav({
       <button
         type="button"
         data-testid="feed-nav-create-x"
-        aria-label="Open Multiplier/Post menu"
+        aria-label="Post"
         aria-haspopup="dialog"
         aria-expanded={createActive}
         onClick={() => {
           clearStuckMediaChrome();
           onCreateClick?.();
         }}
-        style={styles.createBtn}
+        style={{ ...styles.tab, ...styles.tabButton }}
       >
-        <MenuplyXMark size={26} active={createActive} />
+        <span aria-hidden="true" style={{ ...styles.iconWrap, ...(createActive ? styles.iconWrapOn : null) }}>
+          <MenuplyXMark size={24} active={createActive} />
+        </span>
+        <span style={{ ...styles.label, ...(createActive ? styles.labelOn : null) }}>Post</span>
       </button>
       </div>
       <div style={{ ...styles.side, flexGrow: Math.max(1, rightTabs.length) }}>
@@ -140,12 +129,11 @@ const styles = {
     display: "flex",
     alignItems: "stretch",
     justifyContent: "space-between",
-    gap: 2,
-    paddingLeft: 2,
-    paddingRight: 2,
-    background: "rgba(8, 12, 10, 0.94)",
-    borderTop: "1px solid rgba(255,255,255,0.12)",
-    backdropFilter: "blur(10px)",
+    paddingLeft: 8,
+    paddingRight: 8,
+    background: "#ffffff",
+    borderTop: "1px solid #e1e6e1",
+    boxSizing: "border-box",
   },
   side: {
     flex: "1 1 0",
@@ -156,17 +144,13 @@ const styles = {
   tab: {
     flex: 1,
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    textDecoration: "none",
-    fontSize: 10,
-    letterSpacing: "0.02em",
-    textTransform: "uppercase",
+    gap: 4,
     minHeight: FEED_PRIMARY_NAV_HEIGHT,
     touchAction: "manipulation",
-    textAlign: "center",
-    lineHeight: 1.1,
-    padding: "0 2px",
+    padding: "6px 0 4px",
   },
   tabButton: {
     border: "none",
@@ -174,54 +158,26 @@ const styles = {
     cursor: "pointer",
     appearance: "none",
     WebkitAppearance: "none",
-    color: "inherit",
     fontFamily: "inherit",
     width: "100%",
   },
-  /** X gets the same-width slot as a tab so all items spread evenly. */
-  tabBadge: {
-    marginLeft: 3,
-    minWidth: 15,
-    height: 15,
-    padding: "0 4px",
-    borderRadius: 999,
-    background: "#dc2626",
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: 800,
-    lineHeight: "15px",
-    textAlign: "center",
-    boxSizing: "border-box",
-  },
-  tabIcon: {
-    fontSize: 22,
-    lineHeight: 1,
-    // Lift to line up with the raised X button.
-    transform: "translateY(-5px)",
-  },
-  createSlot: {
-    flex: "1 1 0",
-    minWidth: 0,
+  iconWrap: {
+    width: 52,
+    height: 30,
+    borderRadius: 15,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
-  createBtn: {
-    flex: "0 0 auto",
-    alignSelf: "center",
-    width: 48,
-    height: 48,
-    marginTop: -8,
-    borderRadius: 14,
-    border: "2px solid rgba(94, 234, 212, 0.45)",
-    background: "rgba(16, 40, 32, 0.95)",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-    display: "inline-flex",
-    alignItems: "center",
+  iconWrapOn: { background: ACCENT_SOFT },
+  label: { fontSize: 12, lineHeight: "16px", fontWeight: 600, color: INK_MUTED, whiteSpace: "nowrap" },
+  labelOn: { fontWeight: 700, color: ACCENT },
+  /** Post gets the same-width slot as a tab so all items spread evenly. */
+  createSlot: {
+    flex: "1 1 0",
+    minWidth: 0,
+    display: "flex",
+    alignItems: "stretch",
     justifyContent: "center",
-    cursor: "pointer",
-    padding: 0,
-    appearance: "none",
-    WebkitAppearance: "none",
   },
 };

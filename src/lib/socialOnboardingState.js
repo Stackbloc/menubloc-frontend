@@ -6,6 +6,7 @@
 export const SOCIAL_ONBOARDING_STEPS = [
   "welcome",
   "dining_crew",
+  "invite_friends",
   "expand_crew",
   "food_camera",
   "student_edu",
@@ -30,16 +31,21 @@ export function emptySocialOnboardingState() {
 }
 
 /**
- * Soft-migrate pre-welcome progress so completed users are not forced back to Screen 1.
+ * Steps added after launch. Users who already finished (or settled every other step)
+ * get them marked done so they are not forced back into the introduction.
  */
-function applyWelcomeSoftMigrate(steps, rawStatus) {
-  if (steps.welcome !== "pending") return steps;
-  const later = SOCIAL_ONBOARDING_STEPS.filter((id) => id !== "welcome");
-  const laterSettled = later.every((id) => steps[id] === "done" || steps[id] === "skipped");
-  if (laterSettled || String(rawStatus || "").toLowerCase() === "completed") {
-    return { ...steps, welcome: "done" };
+const LATE_ADDED_STEPS = ["welcome", "invite_friends"];
+
+function applyLateStepSoftMigrate(steps, rawStatus) {
+  const wasCompleted = String(rawStatus || "").toLowerCase() === "completed";
+  let next = steps;
+  for (const stepId of LATE_ADDED_STEPS) {
+    if (next[stepId] !== "pending") continue;
+    const others = SOCIAL_ONBOARDING_STEPS.filter((id) => !LATE_ADDED_STEPS.includes(id));
+    const othersSettled = others.every((id) => next[id] === "done" || next[id] === "skipped");
+    if (othersSettled || wasCompleted) next = { ...next, [stepId]: "done" };
   }
-  return steps;
+  return next;
 }
 
 export function normalizeSocialOnboardingState(raw) {
@@ -51,7 +57,7 @@ export function normalizeSocialOnboardingState(raw) {
     const v = String(incoming[id] || "pending").toLowerCase();
     steps[id] = v === "done" || v === "skipped" ? v : "pending";
   }
-  steps = applyWelcomeSoftMigrate(steps, raw.status);
+  steps = applyLateStepSoftMigrate(steps, raw.status);
   let status = String(raw.status || "not_started").toLowerCase();
   const allSettled = SOCIAL_ONBOARDING_STEPS.every(
     (id) => steps[id] === "done" || steps[id] === "skipped"

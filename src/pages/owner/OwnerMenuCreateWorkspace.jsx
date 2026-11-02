@@ -7,6 +7,7 @@ import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import OwnerBrandStorePicker, { isBrandRecord } from "./OwnerBrandStorePicker.jsx";
 import OwnerMleLocations from "./OwnerMleLocations.jsx";
 import OwnerProfileManager from "./OwnerProfileManager.jsx";
+import OwnerRestaurantDealsPanel from "./OwnerRestaurantDealsPanel.jsx";
 import {
   BusinessTypeConvertPanel,
   BusinessTypeCreateField,
@@ -451,6 +452,7 @@ const RESTAURANT_SECTIONS = [
   { key: "details", label: "Details" },
   { key: "profile", label: "Public profile" },
   { key: "menus", label: "Menus" },
+  { key: "deals", label: "Deals" },
 ];
 
 function restaurantSectionFrom(searchParams) {
@@ -667,7 +669,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [menuTabBusy, setMenuTabBusy] = useState(false);
-  // Restaurant Manager: one restaurant, three sections (?section=details|profile|menus).
+  // Restaurant Manager: one restaurant, four sections (?section=details|profile|menus|deals).
   const section = restaurantSectionFrom(searchParams);
   const showProfilePanel = section === "details";
 
@@ -2395,6 +2397,10 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       {restaurant && existingRestaurant && section === "profile" ? (
         <OwnerProfileManager key={rid} embedded restaurantId={rid} />
+      ) : null}
+
+      {restaurant && existingRestaurant && section === "deals" ? (
+        <OwnerRestaurantDealsPanel key={rid} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />
       ) : null}
 
       {showMenusSection ? (

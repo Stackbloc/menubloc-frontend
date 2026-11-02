@@ -184,7 +184,9 @@ test("social tab shows connection count, clickable connections, groups, and even
   assert.match(social, /sectionTitle\}>Crews</);
   const app = read("src/App.jsx");
   assert.match(app, /\/account\/connections\/:peerId/);
-  assert.match(app, /ConsumerConnectionPeerPage/);
+  assert.match(app, /ConnectProfilePage/);
+  // The older hub page stays reachable with ?hub=1.
+  assert.match(read("src/pages/consumer/ConnectProfilePage.jsx"), /hub"\) === "1"\) return <ConsumerConnectionPeerPage \/>/);
 });
 
 test("empty states and share/unlike actions use real existing functions", () => {

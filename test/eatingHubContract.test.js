@@ -84,13 +84,7 @@ test("My Menuply and peer hub use five-section presentation hub", () => {
     mine,
     /previewAsConnect|get\("view"\) === "connect"|URLSearchParams\(window\.location\.search\)\.get\("view"\)/
   );
-  const viewToggle = read("src/components/consumer/feed/ProfileViewModeToggle.jsx");
-  assert.match(viewToggle, /profile-view-mode-toggle/);
-  assert.match(viewToggle, /Edit View/);
-  assert.match(viewToggle, /Connect View/);
-  assert.match(viewToggle, /Switch to Connect View — see your profile the way others do/);
-  assert.match(viewToggle, /Switch to Edit View — make changes and add data/);
-  assert.match(read("src/pages/consumer/feed/FeedShellPage.jsx"), /profileViewToggle/);
+  assert.match(read("src/pages/consumer/myMenuply/AppProfileCards.jsx"), /<CompactSwitch left="Edit profile" right="View profile"/); // glasses toggle replaced (Andre 2026-10-30)
   assert.match(section, /isConnectPreview=\{isConnectPreview\}/);
   assert.match(mine, /handleJoinMeFromCraving/);
   assert.match(mine, /handleTakeMeOutFromCraving/);

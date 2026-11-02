@@ -197,6 +197,32 @@ export async function fetchClusterMenuItems(
   return apiGet(path, { signal });
 }
 
+/** Food by type: tile counts for the active chips (one request per chip change). */
+export async function fetchClusterFoodByTypeCounts(clusterSlug, { chips = [], signal } = {}) {
+  const params = new URLSearchParams();
+  if (chips.length) params.set("chips", chips.join(","));
+  const qs = params.toString();
+  return apiGet(`/public/clusters/${encodeURIComponent(clusterSlug)}/food-by-type/counts${qs ? `?${qs}` : ""}`, {
+    signal,
+  });
+}
+
+/** Food by type: one category's dishes, cursor-paged (40 per page; total on the first page). */
+export async function fetchClusterFoodByTypeDishes(
+  clusterSlug,
+  category,
+  { chips = [], cursor = null, limit = 40, signal } = {}
+) {
+  const params = new URLSearchParams();
+  if (chips.length) params.set("chips", chips.join(","));
+  if (cursor) params.set("cursor", cursor);
+  if (limit != null) params.set("limit", String(limit));
+  return apiGet(
+    `/public/clusters/${encodeURIComponent(clusterSlug)}/food-by-type/${encodeURIComponent(category)}/dishes?${params.toString()}`,
+    { signal }
+  );
+}
+
 export async function searchCluster(clusterSlug, { q, limit = 24, offset = 0, priceSort = null, signal } = {}) {
   const params = new URLSearchParams();
   params.set("q", q);

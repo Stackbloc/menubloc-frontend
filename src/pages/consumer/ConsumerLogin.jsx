@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
+import CheckEmailNotice from "../../components/consumer/CheckEmailNotice.jsx";
+import { needsEmailVerification } from "../../lib/emailVerification.js";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -30,6 +32,8 @@ export default function ConsumerLogin() {
   const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+  // Set when sign-in answers email_verification_required: { email, token } for the resend button.
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   function openPhoneVerification(payload) {
     setPhoneVerificationToken(payload?.phone_verification_token || "");
@@ -64,6 +68,10 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error("LOGIN ERROR", err);
+      if (needsEmailVerification(err?.payload)) {
+        setPendingEmail({ email: err.payload.email || trimmedEmail, token: err.payload.email_verification_token || "" });
+        return;
+      }
       if (err?.payload?.code === "phone_verification_required" || err?.payload?.requires_phone_verification) {
         openPhoneVerification(err.payload);
         return;
@@ -147,6 +155,9 @@ export default function ConsumerLogin() {
           </>
         )}
       >
+        {pendingEmail ? (
+          <CheckEmailNotice email={pendingEmail.email} pendingToken={pendingEmail.token} onBack={() => setPendingEmail(null)} />
+        ) : (
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={styles.fieldGroup}>
             <label htmlFor="consumer-login-email" style={styles.label}>{t("auth.email", "Email")}</label>
@@ -192,6 +203,7 @@ export default function ConsumerLogin() {
             {loading ? t("auth.loggingIn", "Logging in…") : t("auth.signIn", "Sign in")}
           </button>
         </form>
+        )}
 
         <SocialAuthSection
           mode="login"

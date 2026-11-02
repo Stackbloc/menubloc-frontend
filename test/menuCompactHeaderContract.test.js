@@ -20,11 +20,17 @@ test("menu page hides the header address only for Classic/Fine and provides the 
   assert.match(page, /<MenuHeaderTrailingActionContext\.Provider value=\{menuInfoAction\}>/);
 });
 
-test("ⓘ sheet carries address, directions, phone and website", () => {
+test("ⓘ is About this menu: review date or not-claimed note + report email naming the menu (Andre 2026-10-31)", () => {
   const btn = read("src/components/menu/MenuInfoButton.jsx");
-  for (const s of ["MenuAddressLines", "Get directions", "tel:", "Website", 'aria-label="Restaurant info"']) {
+  for (const s of ['aria-label="About this menu"', "menuTrustText", "menuReportMailto", "submit a report", "isUnclaimedProfile"]) {
     assert.ok(btn.includes(s), s);
   }
+  // Directions, phone and the profile live on the profile now (the restaurant name links there).
+  for (const s of ["Get directions", "tel:", "Restaurant profile"]) assert.ok(!btn.includes(s), s);
+  assert.doesNotMatch(btn, /website_url|websiteHref/);
+  const page = read("src/pages/PublicMenuPage.jsx");
+  assert.match(page, /reviewedAt=\{data\?\.menu_last_verified_at \|\| null\}/);
+  assert.match(page, /menuUrl=\{shareData\?\.url \|\| null\}/);
 });
 
 test("Classic and Fine render the trailing slot in the header icon row", () => {
@@ -35,8 +41,8 @@ test("Classic and Fine render the trailing slot in the header icon row", () => {
   }
 });
 
-test("purchase hint keeps tap-to-add messaging and stays sticky", () => {
+test("purchase hint keeps tap-to-order messaging and stays sticky", () => {
   const hint = read("src/components/menu/MenuPurchaseWaiterHint.jsx");
-  assert.match(hint, /Order here · Tap a dish to add it to your basket · Hold to remove/);
+  assert.match(hint, /Order here · Tap a dish to see it, pick options and add it/);
   assert.match(hint, /position: "sticky"/);
 });

@@ -25,7 +25,7 @@ import {
 import { buildFeedMenuSampleDeck } from "../../../lib/feedMenuSampleStack.js";
 
 const MENU_STACK_INSTRUCTION =
-  "Liked restaurants stay here until you unlike them. Tap Save (☆) to pin any menu. Menus you open from Feed stay for 48 hours; saved pins stay until you remove them.";
+  "Fav restaurants stay here until you remove them from your Favs. Tap Save (☆) to pin any menu. Menus you open from Feed stay for 48 hours; saved pins stay until you remove them.";
 
 function resolveLocationParams() {
   if (typeof window === "undefined") return {};
@@ -246,7 +246,7 @@ export default function FeedMenusPage() {
             </span>
           ) : current?.tier === "followed" ? (
             <span style={styles.tierBadge} data-testid="feed-menus-tier-followed">
-              Liked
+              My Fav
             </span>
           ) : current?.tier === "recent" ? (
             <span style={styles.tierBadge} data-testid="feed-menus-tier-recent">

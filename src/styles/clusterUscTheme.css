@@ -200,3 +200,8 @@
     border-radius: 1rem;
   }
 }
+
+/* Sticky clip player band matches the sticky search chrome. */
+.cluster-theme-usc .cluster-video-hero-band[data-sticky="1"] {
+  background: rgba(255, 253, 249, 0.96) !important;
+}

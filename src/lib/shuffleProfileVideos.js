@@ -12,8 +12,17 @@ export function shuffleProfileVideos(list) {
   return next;
 }
 
-/** Alias for Feed / non-profile callers. */
-export const shuffleFeedVideos = shuffleProfileVideos;
+/**
+ * Feed: shuffle the regular clips but leave paid sponsored clips where the server put them
+ * (one after every 12 clips, Andre 2026-10-31), so they never bunch up.
+ */
+export function shuffleFeedVideos(list) {
+  const rows = Array.isArray(list) ? list : [];
+  const isSponsored = (row) => String(row?.kind || "").toLowerCase() === "sponsored";
+  const shuffled = shuffleProfileVideos(rows.filter((row) => !isSponsored(row)));
+  let k = 0;
+  return rows.map((row) => (isSponsored(row) ? row : shuffled[k++]));
+}
 
 /**
  * True when `next` keeps the viewer's place in `prev`: a Load More page appended to the end,

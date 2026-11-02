@@ -1488,7 +1488,7 @@ export default function MenuItemDetailPage() {
     if (!shareData) return undefined;
     return applyDocumentSocialMetadata({
       title: shareData.title,
-      description: shareData.text,
+      description: shareData.description || shareData.text,
       url: shareData.url,
       image: shareData.image,
     });

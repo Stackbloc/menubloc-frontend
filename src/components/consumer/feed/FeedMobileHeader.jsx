@@ -1,11 +1,12 @@
 /**
- * Mobile Feed top bar — More menu entry (TikTok mobile hamburger pattern).
+ * Mobile Feed top bar — More menu entry (TikTok mobile hamburger pattern). The cart button sits
+ * beside ☰ whenever the basket has items, as in the app (CartButton); there is no Basket tab.
  */
 
 import { Link } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
-import ProfileViewModeToggle from "./ProfileViewModeToggle.jsx";
+import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
@@ -13,8 +14,8 @@ export default function FeedMobileHeader({
   onMoreClick,
   isAuthenticated = false,
   showShopBasket = false,
-  profileViewToggle = null,
 }) {
+  const { itemCount } = useOrderCart();
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
       <div style={styles.logoWrap} onClick={() => clearStuckMediaChrome()}>
@@ -29,18 +30,11 @@ export default function FeedMobileHeader({
         />
       </div>
       <div style={styles.actions}>
-        {showShopBasket ? <FeedShopBasketButton variant="feedDark" /> : null}
+        {showShopBasket || itemCount > 0 ? <FeedShopBasketButton variant="feedDark" /> : null}
         {!isAuthenticated ? (
           <Link to={FEED_SHELL_LOGIN_PATH} style={styles.loginChip} data-testid="feed-mobile-login">
             Log in
           </Link>
-        ) : null}
-        {profileViewToggle ? (
-          <ProfileViewModeToggle
-            previewAsConnect={profileViewToggle.previewAsConnect}
-            onToggle={profileViewToggle.onToggle}
-            variant="feedDark"
-          />
         ) : null}
         <button
           type="button"

@@ -7,8 +7,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { isFeedShopRoute } from "../../../lib/feedShellNavigation.js";
-import { SEARCH_SHOP_MODE_MENU_BROWSER, resolveSearchShopMode } from "../../../lib/searchShopMode.js";
 import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
 import FeedMobileHeader from "../../../components/consumer/feed/FeedMobileHeader.jsx";
@@ -27,25 +25,16 @@ import {
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
-function isOwnFeedProfilePath(pathname) {
-  return /^\/feed\/profile\/?$/.test(String(pathname || ""));
-}
-
 export default function FeedShellPage({ children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
   // Feed pages read the saved city; refill it when only coordinates were saved.
   useDiscoveryAutoLocation({ repairOnly: true });
-  const showShopBasket = isFeedShopRoute(location.pathname);
-  // Search & Shop → Menu Browser: menus take orders, so mobile shows the ordering
-  // BottomNav (Home · Waiter · X · Basket · My Menuply) rendered by BrowseMenus instead.
-  const hideFeedPrimaryNav =
-    !isDesktop &&
-    showShopBasket &&
-    resolveSearchShopMode(searchParams) === SEARCH_SHOP_MODE_MENU_BROWSER;
+  // Same bottom tabs on every Feed screen, Menu Browser included (the app's tab bar, 2026-10-29).
+  const hideFeedPrimaryNav = false;
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [composeCategory, setComposeCategory] = useState("");
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
@@ -60,7 +49,6 @@ export default function FeedShellPage({ children = null }) {
   const [previewAsConnect, setPreviewAsConnect] = useState(() => readConnectViewFromWindow());
   const previewAsConnectRef = useRef(previewAsConnect);
   previewAsConnectRef.current = previewAsConnect;
-  const showProfileViewToggle = isAuthenticated && isOwnFeedProfilePath(location.pathname);
 
   function closeShellOverlays(except = null) {
     if (except !== "create") setCreateSheetOpen(false);
@@ -145,10 +133,14 @@ export default function FeedShellPage({ children = null }) {
     return () => window.removeEventListener(CLEAR_STUCK_MEDIA_CHROME_EVENT, onClearStuck);
   }, []);
 
+  // Post opens the one-screen Post straight away (Andre 2026-10-28); Quick Invite is on My Profile.
   function openCreateSheet() {
     openingShellOverlayRef.current = "create";
     clearStuckMediaChrome();
-    setCreateSheetOpen(true);
+    setComposeMediaSource("camera");
+    setComposeOpenLibrary(false);
+    setComposeInitialWhere(null);
+    setComposeCategory("post");
     openingShellOverlayRef.current = null;
   }
 
@@ -240,11 +232,6 @@ export default function FeedShellPage({ children = null }) {
           onMoreClick={() => setMoreOpen(true)}
           isAuthenticated={isAuthenticated}
           showShopBasket={false}
-          profileViewToggle={
-            showProfileViewToggle
-              ? { previewAsConnect, onToggle: toggleProfileView }
-              : null
-          }
         />
       )}
 

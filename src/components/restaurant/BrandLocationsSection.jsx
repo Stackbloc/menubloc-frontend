@@ -8,11 +8,12 @@
  * Store mode (franchise store pages, 2026-10-21): one shared brand profile across stores, so the
  * page offers "Find closest location" — no location prompt until tapped, and each row opens that
  * store's own page (store pages keep local SEO: address, hours, menu).
+ * Each row also shows the store's phone (tap to call) and today's hours (Location Bot, 2026-10-23).
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { restaurantPath } from "../../lib/canonicalUrlCore.js";
-import { saveDetectedLocation } from "../../lib/discoveryLocationPersistence.js";
+import { readDetectedLocation, saveDetectedLocation } from "../../lib/discoveryLocationPersistence.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const RADIUS_MILES = 25;
@@ -20,6 +21,33 @@ const RADIUS_MILES = 25;
 function asFinite(value) {
   const n = Number(value);
   return value == null || value === "" || !Number.isFinite(n) ? null : n;
+}
+
+function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+  if (digits.length !== 10) return value ? String(value) : null;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function formatClock(value) {
+  const [h, m] = String(value || "").split(":").map(Number);
+  if (!Number.isFinite(h)) return null;
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
+}
+
+/** "Open 24 hours" | "Today 7 AM – 10 PM" | "Closed today" | null */
+export function todayHoursLabel(loc) {
+  if (loc?.open_24_hours) return "Open 24 hours";
+  const h = loc?.hours_today;
+  if (!h) return null;
+  if (h.is_closed) return "Closed today";
+  const opens = String(h.opens_at || "").slice(0, 5);
+  const closes = String(h.closes_at || "").slice(0, 5);
+  if (opens && opens === closes) return h.label || "Open 24 hours";
+  const from = formatClock(opens);
+  const to = formatClock(closes);
+  return from && to ? `Today ${from} – ${to}` : h.label || null;
 }
 
 function withLocationParam(path, restaurantId) {
@@ -44,7 +72,10 @@ export default function BrandLocationsSection({
   const [coords, setCoords] = useState(() => {
     const lat = asFinite(initialLat);
     const lng = asFinite(initialLng);
-    return lat != null && lng != null ? { lat, lng } : null;
+    if (lat != null && lng != null) return { lat, lng };
+    // Brand page: the location the app already detected, so nearby stores show without a prompt.
+    const saved = !storeMode && typeof window !== "undefined" ? readDetectedLocation(window.localStorage) : null;
+    return saved ? { lat: saved.lat, lng: saved.lng } : null;
   });
   const [geoState, setGeoState] = useState(coords ? "ready" : "idle"); // idle | asking | ready | denied | unavailable
   const [state, setState] = useState({ status: "idle", locations: [] });
@@ -98,7 +129,8 @@ export default function BrandLocationsSection({
 
   if (!chainId) return null;
 
-  const sectionStyle = { maxWidth: 860, margin: "0 auto", padding: "8px 16px 24px" };
+  // Explicit ink: the profile stays light even when the body inherits a dark-mode text color.
+  const sectionStyle = { maxWidth: 860, margin: "0 auto", padding: "8px 16px 24px", color: "#111827" };
   const muted = { fontSize: 13, color: "#6b7280" };
 
   return (
@@ -161,11 +193,18 @@ export default function BrandLocationsSection({
                   `/restaurants/${encodeURIComponent(String(loc.restaurant_id))}`
               : withLocationParam(menuHref, loc.restaurant_id);
             const cityLine = [loc.city, loc.state].filter(Boolean).join(", ");
+            const hoursLabel = todayHoursLabel(loc);
+            const phone = formatPhone(loc.phone);
             const body = (
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{loc.address_line1}</div>
                   {cityLine ? <div style={muted}>{cityLine}</div> : null}
+                  {hoursLabel ? (
+                    <div data-testid="brand-location-hours" style={{ fontSize: 13, color: "#15803d", fontWeight: 600, marginTop: 2 }}>
+                      {hoursLabel}
+                    </div>
+                  ) : null}
                   {isHere ? (
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", marginTop: 2 }}>You're here</div>
                   ) : null}
@@ -187,6 +226,15 @@ export default function BrandLocationsSection({
                 ) : (
                   body
                 )}
+                {phone ? (
+                  <a
+                    href={`tel:${String(loc.phone).replace(/[^\d+]/g, "")}`}
+                    data-testid="brand-location-phone"
+                    style={{ display: "inline-block", marginTop: 4, fontSize: 13, fontWeight: 700, color: "#15803d", textDecoration: "none" }}
+                  >
+                    📞 {phone}
+                  </a>
+                ) : null}
               </li>
             );
           })}

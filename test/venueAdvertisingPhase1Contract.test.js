@@ -104,7 +104,11 @@ describe("venue advertising Phase 1 contracts", () => {
     assert.doesNotMatch(page, /cluster_deals_top[\s\S]{0,240}cluster_events_top/);
     assert.doesNotMatch(page, /cluster_landing_hero[\s\S]{0,240}cluster_events_top/);
     assert.doesNotMatch(page, /cluster_restaurant_header/);
-    assert.match(page, /searchActive \? null : preContent/);
+    // Search results: the hero steps aside (a clip the diner is already watching stays).
+    assert.match(page, /<ClusterSearchActiveContext\.Provider value=\{searchActive\}>\{preContent\}/);
+    const hero = read("src/components/cluster/video/ClusterVideoHero.jsx");
+    assert.match(hero, /if \(searchActive \|\| !ad\) return null;/);
+    assert.match(hero, /if \(!playing && searchActive\) return null;/);
     assert.match(page, /cluster-ad-space/);
   });
 

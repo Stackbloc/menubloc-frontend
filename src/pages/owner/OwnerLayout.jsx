@@ -128,9 +128,11 @@ export default function OwnerLayout({ title, children, actions = null }) {
       {
         id: "restaurant-manager",
         label: "Restaurant Manager",
-        // One search-first workspace (search → Details · Public profile · Menus, or Add).
+        // One search-first workspace (search → Details · Public profile · Menus · Deals, or Add);
+        // Deals also has its own page for jumping straight to a restaurant's deals.
         items: [
           { to: "/owner/restaurant-manager", label: "Restaurants" },
+          { to: "/owner/deals", label: "Deals" },
         ],
       },
       {
@@ -141,10 +143,11 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/menubot", label: "Menubot" },
           { to: "/owner/photo-bot", label: "Photo Bot" },
           { to: "/owner/bots/nutribot", label: "Nutribot" },
-          { to: "/owner/bots/language-bot", label: "Language Bot" },
           { to: "/owner/bots/hours-bot", label: "Hours Bot" },
           { to: "/owner/bots/address-bot", label: "Address Bot" },
           { to: "/owner/bots/franchise-bot", label: "Franchise Bot" },
+          { to: "/owner/bots/location-bot", label: "Location Bot" },
+          { to: "/owner/bots/agent", label: "Agent" },
         ],
       },
       NAV_SECTIONS_STATIC[1],

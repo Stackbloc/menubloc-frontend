@@ -67,7 +67,7 @@ export default function InvitePickerSheet({
           <p style={styles.empty} data-testid="invite-picker-empty">
             {emptyMessage ||
               (kind === "event"
-                ? "Create an event first from X → My Events."
+                ? "Create an event first from X → Plan an event."
                 : "Create a crew first from X → My Crews.")}
           </p>
         ) : (

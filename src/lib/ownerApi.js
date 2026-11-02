@@ -210,6 +210,20 @@ export const getOwnerEngagementOverview = (params = {}) =>
   get(`/api/owner/analytics/engagement/overview${engagementQuery(params)}`);
 export const getOwnerEngagementCluster = (clusterId, params = {}) =>
   get(`/api/owner/analytics/engagement/clusters/${encodeURIComponent(String(clusterId))}${engagementQuery(params)}`);
+/** Restaurant report PDF to share with the restaurant. Params: from, to. Resolves to a Blob. */
+export async function downloadOwnerRestaurantReportPdf(restaurantId, params = {}) {
+  const res = await fetch(
+    `${API}/api/owner/analytics/engagement/restaurants/${encodeURIComponent(String(restaurantId))}/report.pdf${engagementQuery(params)}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+}
 
 function intelligenceQueryString(params = {}) {
   const qs = new URLSearchParams();
@@ -465,6 +479,11 @@ export const listMenuConsoleFranchiseBrands = (q = "") =>
 /** Stand-alone | MLE | franchise (joins or creates a chain; its menu becomes the chain menu). */
 export const setMenuConsoleBusinessType = (restaurantId, body) =>
   put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/business-type`, body);
+/** Dish photos on the menu rows (one switch per restaurant). */
+export const getMenuConsoleMenuPhotos = (restaurantId) =>
+  get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/menu-photos`);
+export const setMenuConsoleMenuPhotos = (restaurantId, body) =>
+  put(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/menu-photos`, body);
 /** MLE locations: one restaurant, several kitchens. */
 const mleLocationsPath = (restaurantId) =>
   `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/locations`;
@@ -553,6 +572,17 @@ export const putMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId, m
   });
 export const getMenuConsoleItemModifierGroups = (restaurantId, menuId, itemId) =>
   get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}/modifier-groups`);
+/** Every modifier group on a menu with its scope (this item / section / picked items) and items. */
+export const listMenuConsoleModifierGroups = (restaurantId, menuId) =>
+  get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups`);
+/** body: { group, applies_to: { type: "item" | "section" | "items", section? }, item_ids? } */
+export const putMenuConsoleModifierGroupScope = (restaurantId, menuId, groupId, body) =>
+  req(
+    `/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups/${encodeURIComponent(groupId)}`,
+    { method: "PUT", body: JSON.stringify(body) }
+  );
+export const deleteMenuConsoleModifierGroup = (restaurantId, menuId, groupId) =>
+  del(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/modifier-groups/${encodeURIComponent(groupId)}`);
 export const deleteMenuConsoleItem = (restaurantId, menuId, itemId) =>
   req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
     method: "DELETE",
@@ -602,6 +632,30 @@ export const previewPhotoBotImport = (restaurantId, body) =>
 export const applyPhotoBotImport = (restaurantId, body) =>
   post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/apply`, body);
 
+/** Read-only: match uploaded photo file names to CK menu items. body = { filenames: [...] }. */
+export const previewPhotoBotUpload = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/upload-preview`, body);
+
+/** Read-only: match the Photo Bot bookmark's list. body = { page_url, items: [{ name, image_url }] }. */
+export const previewPhotoBotHelper = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/helper-preview`, body);
+
+/** Import approved pairs from the bookmark's list: body = { page_url, items, selections }. */
+export const applyPhotoBotHelper = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/helper-apply`, body);
+
+/** Import uploaded files: files = File[], selections = [{ image_id: <file name>, menu_item_id }]. */
+export function applyPhotoBotUpload(restaurantId, files, selections) {
+  const fd = new FormData();
+  for (const file of files) fd.append("photos", file, file.name);
+  fd.append("selections", JSON.stringify(selections));
+  return postFormData(
+    `/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/photo-import/upload-apply`,
+    fd,
+    { timeoutMs: OWNER_MENU_UPLOAD_TIMEOUT_MS }
+  );
+}
+
 // ─── Bots (Nutribot + Language Bot schedules, runs, history) ──────────────────
 
 /** Status of every automatic bot: schedule, next run, active run, last run. */
@@ -622,6 +676,36 @@ export const runNutribotForRestaurant = (restaurantId) =>
   post(`/api/owner/bots/nutribot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
 
 export const getNutribotRun = (logId) => get(`/api/owner/bots/nutribot/runs/${encodeURIComponent(logId)}`);
+
+function nutribotQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v != null && v !== "") qs.set(k, String(v));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Nutribot: items it could not process (no dish template). params: { restaurantId, q, limit, offset } */
+export const listNutribotUnprocessed = (params) =>
+  get(`/api/owner/bots/nutribot/unprocessed${nutribotQuery(params)}`);
+
+/** Nutribot: active dish templates. params: { q, limit, offset } */
+export const listNutribotTemplates = (params) =>
+  get(`/api/owner/bots/nutribot/templates${nutribotQuery(params)}`);
+
+/** Nutribot: ingredient picker for new templates. */
+export const searchNutribotIngredients = (q) =>
+  get(`/api/owner/bots/nutribot/ingredients${nutribotQuery({ q })}`);
+
+/**
+ * Nutribot: create a dish template. body = template fields + { dry_run?, acknowledge_warnings? }.
+ * A 409 with code "critical_warnings" carries the preview in error.payload.
+ */
+export const createNutribotTemplate = (body) => post("/api/owner/bots/nutribot/templates", body);
+
+/** Nutribot: assign templates by hand and recompute those items. body = { assignments: [{ menu_item_id, template_id }] } */
+export const assignNutribotTemplates = (assignments) => post("/api/owner/bots/nutribot/assign", { assignments });
 
 /** Hours Bot: find hours for one restaurant now. */
 export const runHoursBotForRestaurant = (restaurantId) =>
@@ -654,6 +738,33 @@ export const startFranchiseBotPreview = (body) => post("/api/owner/franchise-bot
 /** Starts a background install job: { chain_id, rows, hide_legacy } */
 export const startFranchiseBotInstall = (body) => post("/api/owner/franchise-bot/install", body);
 export const getFranchiseBotJob = (jobId) => get(`/api/owner/franchise-bot/jobs/${encodeURIComponent(jobId)}`);
+
+// ─── Location Bot (paste a chain's locations → per-store changes → apply) ─────
+// Chains + paste parsing reuse the Franchise Bot endpoints; jobs share its job store.
+
+/** Starts a background check job: { chain_id, locations, locator_base_url, default_state } */
+export const startLocationBotPreview = (body) => post("/api/owner/location-bot/preview", body);
+/** Starts a background apply job: { chain_id, rows } */
+export const startLocationBotApply = (body) => post("/api/owner/location-bot/apply", body);
+
+// ─── Agent (place + radius → find restaurants → draft menus → publish via Menubot) ───
+
+/** { place, radius_m, name? } → { status: 'proposed', proposal } or { status: 'needs_info', question } */
+export const listAgentClusters = () => get("/api/owner/agent/clusters");
+export const proposeAgentCluster = (body) => post("/api/owner/agent/propose", body);
+/** Starts a run from a proposal: { name, center_lat, center_lng, radius_m, city, state, objective_text } */
+export const startAgentObjective = (proposal) => post("/api/owner/agent/objectives", proposal);
+export const listAgentObjectives = () => get("/api/owner/agent/objectives");
+export const getAgentObjective = (id) => get(`/api/owner/agent/objectives/${encodeURIComponent(id)}`);
+/** action: pause | resume | cancel */
+export const objectiveAgentAction = (id, action) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/${action}`, {});
+export const prepareAgentPlace = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/prepare`, {});
+export const publishAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/publish`, { note });
+export const rejectAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/reject`, { note });
+// Add info + Recheck: { url } or { text }; runs in the background on the server.
+export const recheckAgentPlace = (id, { url = null, text = null } = {}) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/recheck`, { url, text });
+export const createAgentPlaceProfile = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/create-profile`, {});
+export const publishAllAgentRun = (id) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/publish-all`, {});
 
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
 
@@ -1045,8 +1156,16 @@ export const listOwnerDealMenuItems = (restaurantId) =>
 export const updateOwnerDeal = (restaurantId, dealId, body) =>
   patch(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`, body);
 
-export const publishOwnerDeal = (restaurantId, dealId) =>
-  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, {});
+/** Clip Manager publishes to Feed → Deals (video required); the Deals panel passes
+ * { require_video: false } so structured deals without a video can go live. */
+export const publishOwnerDeal = (restaurantId, dealId, body = {}) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, body);
+
+export const pauseOwnerDeal = (restaurantId, dealId) =>
+  post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/pause`, {});
+
+export const removeOwnerDeal = (restaurantId, dealId) =>
+  del(`/api/owner/restaurants/${restaurantId}/deals/${dealId}`);
 
 export const uploadOwnerDealMediaVideo = (restaurantId, dealId, file) => {
   const form = new FormData();

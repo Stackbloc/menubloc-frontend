@@ -6,16 +6,22 @@
 import { restaurantPath } from "./canonicalUrlCore.js";
 import { formatDealMealPeriodLabels, formatMealTimeDealCaption, normalizeDealMealPeriodList } from "./dealMealPeriods.js";
 
+/** $9 for whole dollars, $9.50 otherwise. */
+export function formatDealDollars(cents) {
+  const n = Number(cents);
+  return n % 100 === 0 ? `$${n / 100}` : `$${(n / 100).toFixed(2)}`;
+}
+
 export function formatDealDiscountLabel(deal) {
   if (!deal) return "";
   if (deal.deal_type === "percent_off" && deal.discount_percent != null) {
     return `${deal.discount_percent}% off`;
   }
   if (deal.deal_type === "amount_off" && deal.discount_amount_cents != null) {
-    return `$${(Number(deal.discount_amount_cents) / 100).toFixed(2)} off`;
+    return `${formatDealDollars(deal.discount_amount_cents)} off`;
   }
   if (deal.deal_type === "fixed_price" && deal.fixed_price_cents != null) {
-    return `$${(Number(deal.fixed_price_cents) / 100).toFixed(2)}`;
+    return formatDealDollars(deal.fixed_price_cents);
   }
   if (deal.discount_value) return String(deal.discount_value);
   return "";

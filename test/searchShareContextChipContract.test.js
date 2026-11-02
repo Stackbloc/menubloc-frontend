@@ -54,10 +54,13 @@ test("HomeNextFoodGrid still navigates with prefetch state (unchanged entry path
   assert.match(foodGrid, /buildHomeContextChipSearchUrl/);
 });
 
-test("Share results copies the searchable URL with the sharer's location pinned", () => {
+test("Share results sends a note with the searchable URL and the sharer's location pinned", () => {
   assert.match(searchPage, /handleShareResults/);
   assert.match(searchPage, /buildSearchResultsShareUrl\(window\.location\.href,/);
-  assert.match(searchPage, /navigator\.clipboard\.writeText\(shareUrl\)/);
+  // Every share is a short note with the link inside it (Andre 2026-10-29, like Quick invite).
+  assert.match(searchPage, /Look what I found on Menuply: \$\{food\}/);
+  assert.match(searchPage, /navigator\.share\(\{ title: "Menuply", text: note, url: shareUrl \}\)/);
+  assert.match(searchPage, /navigator\.clipboard\.writeText\(message\)/);
   // Device GPS is not in the page URL; without it recipients search near themselves.
   assert.match(searchPage, /sp\.set\("lat", geo\.lat\.toFixed\(2\)\)/);
 });

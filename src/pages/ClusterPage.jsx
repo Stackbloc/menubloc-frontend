@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
+import useMatchMedia from "../hooks/useMatchMedia.js";
 import useClusterFavs from "../hooks/useClusterFavs.js";
 import FavHeartIcon from "../components/icons/FavHeartIcon.jsx";
 import { FAV_ACCENT } from "../lib/likeButtonStyles.js";
@@ -10,7 +12,7 @@ import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
-import ClusterAdSlot from "../components/cluster/ClusterAdSlot.jsx";
+import ClusterAdSlot, { ClusterAdCreative, useClusterAd } from "../components/cluster/ClusterAdSlot.jsx";
 import {
   ClusterDishList,
   ClusterPlaceholderFoodCard,
@@ -78,7 +80,7 @@ import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
-import { ClusterVideoProvider, useClusterVideos } from "../components/cluster/video/ClusterVideoContext.jsx";
+import { ClusterSearchActiveContext, ClusterVideoProvider, useClusterVideos } from "../components/cluster/video/ClusterVideoContext.jsx";
 import ClusterVideoHero from "../components/cluster/video/ClusterVideoHero.jsx";
 import ClusterVideoPlayButton, { ClusterVideosPill } from "../components/cluster/video/ClusterVideoPlayButton.jsx";
 
@@ -449,11 +451,21 @@ function SpacedClusterAdSlot({ compact = false, slim = false, ...props }) {
   );
 }
 
+/** Ads sit between results: after the 4th, then every 6th, never as the last row. */
+const CLUSTER_SEARCH_AD_FIRST = 4;
+const CLUSTER_SEARCH_AD_EVERY = 6;
+
 function shouldInsertClusterSearchAd(index, totalCount) {
-  if (totalCount < 8) return false;
   const after = index + 1;
-  return after === 4 && totalCount - after >= 3;
+  if (after < CLUSTER_SEARCH_AD_FIRST || totalCount - after < 2) return false;
+  return (after - CLUSTER_SEARCH_AD_FIRST) % CLUSTER_SEARCH_AD_EVERY === 0;
 }
+
+/** Not boxes on the cluster page, same as the app (Andre 2026-10-26/30); their dishes still show in search. */
+const CLUSTER_HIDDEN_BOX_TYPES = new Set(["KIDS", "SIDES", "COMBOS", "SPECIALS", "BREAKFAST"]);
+
+/** Phones: in-result ads use the 16:9 creative; wider rows use the slim one so the artwork isn't cropped. */
+const CLUSTER_PHONE_QUERY = "(max-width: 640px)";
 
 const CLUSTER_STICKY_CHROME_STYLE = {
   position: "sticky",
@@ -469,7 +481,8 @@ const CLUSTER_STICKY_CHROME_STYLE = {
   minWidth: 0,
 };
 
-function ClusterFoodSearchForm({
+/** Shared with the Food by type screen (same search, same behavior). */
+export function ClusterFoodSearchForm({
   searchInput,
   onSearchInputChange,
   searchPlaceholder,
@@ -547,6 +560,7 @@ function ClusterMenuExplorerTab({
   postContent = null,
 }) {
   const PAGE_SIZE = 40;
+  const location = useLocation();
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -568,6 +582,10 @@ function ClusterMenuExplorerTab({
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
   const { index: videoIndex } = useClusterVideos();
+  // One fetch for every ad between search results (house "Eating is Social" until one is sold).
+  // Phones get the 16:9 inline creative; wide rows get the slim one so the artwork isn't cropped.
+  const resultAdRegion = useMatchMedia(CLUSTER_PHONE_QUERY) ? "cluster_search_inline" : "cluster_search_top";
+  const searchInlineAd = useClusterAd({ clusterSlug, pageRegion: resultAdRegion });
   const [drinkSubcategory, setDrinkSubcategory] = useState(() =>
     normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
   );
@@ -733,7 +751,13 @@ function ClusterMenuExplorerTab({
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load food categories");
         const cats = Array.isArray(data.mks_categories) ? data.mks_categories : [];
-        setMksCategories(cats.filter((c) => Number(c?.item_count || 0) > 0 || c?.item_count == null));
+        setMksCategories(
+          cats.filter(
+            (c) =>
+              !CLUSTER_HIDDEN_BOX_TYPES.has(c?.code) &&
+              (Number(c?.item_count || 0) > 0 || c?.item_count == null)
+          )
+        );
         setPagination(data.pagination || null);
         setStatus("ok");
       })
@@ -953,7 +977,13 @@ function ClusterMenuExplorerTab({
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {displaySearchItems.map((row, index) => {
               const inlineSlot = shouldInsertClusterSearchAd(index, displaySearchItems.length) ? (
-                <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_search_inline" />
+                <div data-testid="cluster-ad-space" data-ad-result="true">
+                  <ClusterAdCreative
+                    {...searchInlineAd}
+                    pageRegion={resultAdRegion}
+                    size="result"
+                  />
+                </div>
               ) : null;
 
               if (row?.placeholder_item) {
@@ -1188,6 +1218,26 @@ function ClusterMenuExplorerTab({
           {mksCategories.length === 0 && status === "ok" ? (
             <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
           ) : null}
+          {isClusterFoodByTypeEnabled() && clusterSlug ? (
+            <Link
+              to={`${location.pathname.replace(/\/$/, "")}/food-by-type`}
+              data-testid="cluster-food-by-type-link"
+              style={{
+                display: "inline-flex",
+                alignSelf: "start",
+                justifySelf: "start",
+                padding: "0.55rem 0.9rem",
+                borderRadius: 999,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#111827",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Food by type · filter by calories, protein, diet →
+            </Link>
+          ) : null}
           <ClusterMksCategoryGrid
             categories={mksCategories}
             onSelect={(category) => selectCategory(category)}
@@ -1214,7 +1264,7 @@ function ClusterMenuExplorerTab({
         </div>
       </div>
       <div style={{ overflowX: "clip", minWidth: 0 }}>
-        {searchActive ? null : preContent}
+        <ClusterSearchActiveContext.Provider value={searchActive}>{preContent}</ClusterSearchActiveContext.Provider>
         <main
           aria-label="Cluster content"
           style={{
@@ -1434,8 +1484,10 @@ export default function ClusterPage() {
   }
 
   // Video first; falls back to the delivered hero ad (see ClusterVideoHero for slot rules).
+  // display: contents so a playing clip can stick below the search bar over the food list;
+  // the hero owns its own spacing.
   const clusterFoodHero = (
-    <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={CLUSTER_AD_SPACE_STYLE}>
+    <div data-testid="cluster-ad-space" data-ad-compact="false" data-ad-slim="false" style={{ display: "contents" }}>
       <ClusterVideoHero clusterSlug={cluster.slug} />
     </div>
   );
@@ -1466,6 +1518,34 @@ export default function ClusterPage() {
     <>
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
       {clusterDisclaimer}
+    </>
+  );
+
+  const clusterContext = (
+    <>
+      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
+      {cluster.slug ? (
+        <ClusterPublicFeed
+          cluster={cluster}
+          venueFilter={campusVenueFilter}
+          onVenueFilterChange={setCampusVenueFilter}
+        />
+      ) : null}
+
+      {/* University clusters only — hidden when no campus dining members. */}
+      <CampusDiningSection
+        cluster={cluster}
+        showGlance={false}
+        onSelectVenue={(venue) => {
+          setCampusVenueFilter(venue);
+          document.getElementById("cluster-live-posts")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+      />
+
+      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
     </>
   );
 
@@ -1588,29 +1668,7 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
-      {cluster.slug ? (
-        <ClusterPublicFeed
-          cluster={cluster}
-          venueFilter={campusVenueFilter}
-          onVenueFilterChange={setCampusVenueFilter}
-        />
-      ) : null}
-
-      {/* University clusters only — hidden when no campus dining members. */}
-      <CampusDiningSection
-        cluster={cluster}
-        showGlance={false}
-        onSelectVenue={(venue) => {
-          setCampusVenueFilter(venue);
-          document.getElementById("cluster-live-posts")?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }}
-      />
-
-      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
+      {clusterContext}
 
       {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
       <div

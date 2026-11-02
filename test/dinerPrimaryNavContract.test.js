@@ -15,7 +15,7 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("BottomNav is Home Waiter X Basket My Menuply (no Menu Browser tab)", () => {
+test("BottomNav is Home Waiter X Basket My Profile (no Menu Browser tab)", () => {
   const nav = read("src/components/BottomNav.jsx");
   assert.match(nav, /to: "\/"/);
   assert.match(nav, /to: "\/waiter"/);
@@ -31,6 +31,8 @@ test("BottomNav is Home Waiter X Basket My Menuply (no Menu Browser tab)", () =>
   assert.match(nav, /visibility: "hidden"/);
   assert.match(nav, /to: "\/checkout"/);
   assert.match(nav, /MY_MENUPLY_PROFILE_PATH/);
+  // Andre 2026-10-25: the tab reads "My Profile" (the hub page itself keeps "My Menuply").
+  assert.match(nav, /t\("nav\.myProfile", "My Profile"\)/);
   assert.doesNotMatch(nav, /<span>Browser<\/span>/);
   assert.match(nav, /MenuplyXMark size=\{24\}/);
   assert.match(nav, /translateY\(6px\)/);
@@ -50,12 +52,12 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   );
   assert.match(sheet, /title: "What I'm Eating"/);
   assert.match(sheet, /title: "What I Want to Eat"/);
-  assert.match(sheet, /title: "My Eating Plans"/);
+  assert.match(sheet, /title: "Plan a meal"/);
   assert.match(sheet, /title: "My Crews"/);
-  assert.match(sheet, /title: "My Events"/);
+  assert.match(sheet, /title: "Plan an event"/);
   assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "ate" \}\)/);
   assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "want" \}\)/);
-  assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "plan" \}\)/);
+  assert.match(sheet, /to: "\/account\/social-plans\?new=meal"/);
   assert.match(sheet, /Invite to Eat/);
   assert.match(sheet, /Find venue events/);
   assert.match(sheet, /title: "Search profiles"/);

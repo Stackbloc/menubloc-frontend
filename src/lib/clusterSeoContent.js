@@ -61,7 +61,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
   }),
   lacc: Object.freeze({
     slug: "lacc",
-    displayName: "Los Angeles Convention Center",
+    displayName: "LA Convention Center",
     city: "Los Angeles",
     state: "CA",
     clusterType: "convention_district",

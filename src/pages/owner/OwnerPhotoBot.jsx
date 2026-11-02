@@ -1,16 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  applyPhotoBotHelper,
   applyPhotoBotImport,
+  applyPhotoBotUpload,
+  previewPhotoBotHelper,
   previewPhotoBotImport,
+  previewPhotoBotUpload,
   searchMenuConsoleRestaurants,
 } from "../../lib/ownerApi.js";
+import { buildPhotoBotBookmarklet, HELPER_ITEMS_MESSAGE, HELPER_READY_MESSAGE } from "../../lib/photoBotHelper.js";
 
 /**
  * Photo Bot — copy dish photos from a restaurant's online ordering site
- * (Square Online today) into Menu Manager dish photos.
- *   1. Pick the restaurant + paste the ordering page URL
+ * (Square Online, ChowNow, Clover, Chowbus POS) or from photo files the
+ * restaurant sent into Menu Manager dish photos. Toast and Popmenu pages are
+ * read in the operator's own browser by the Photo Bot bookmark.
+ *   1. Pick the restaurant + paste the ordering page URL, use the bookmark,
+ *      or upload photos named after their dishes
  *   2. Review suggested matches (change or skip any) — nothing is written yet
  *   3. Import the checked photos
  */
@@ -67,6 +75,27 @@ function thumbUrl(url) {
   }
 }
 
+const SOURCE_MODES = [
+  { id: "link", label: "Paste a link" },
+  { id: "browser", label: "Toast or Popmenu" },
+  { id: "upload", label: "Upload photos" },
+];
+
+function pageHost(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "the page";
+  }
+}
+
+// Uploaded photos are sent in small batches (server takes up to 20 per request).
+const UPLOAD_BATCH_SIZE = 10;
+
+function hasPhoto(row) {
+  return Boolean(row.image_url || row.filename);
+}
+
 const ACTION_LABELS = {
   added_primary: "Added as main photo",
   added_secondary: "Added as extra photo",
@@ -81,6 +110,12 @@ export default function OwnerPhotoBot() {
   const [searchResults, setSearchResults] = useState(null);
   const [restaurant, setRestaurant] = useState(null);
   const [sourceUrl, setSourceUrl] = useState("");
+  const [mode, setMode] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("helper") ? "browser" : "link"
+  );
+  const [helperList, setHelperList] = useState(null); // { page_url, page_title, items } from the bookmark
+  const bookmarkRef = useRef(null);
+  const [files, setFiles] = useState([]); // File[] picked for upload
 
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -88,6 +123,49 @@ export default function OwnerPhotoBot() {
   const [choices, setChoices] = useState({}); // image_id -> { menu_item_id, checked }
   const [filter, setFilter] = useState("selected");
   const [result, setResult] = useState(null);
+
+  const fileUrls = useMemo(() => {
+    const urls = {};
+    for (const f of files) urls[f.name] = URL.createObjectURL(f);
+    return urls;
+  }, [files]);
+  useEffect(() => () => Object.values(fileUrls).forEach((u) => URL.revokeObjectURL(u)), [fileUrls]);
+
+  // React won't render javascript: links, so the bookmark's href is set directly.
+  useEffect(() => {
+    bookmarkRef.current?.setAttribute("href", buildPhotoBotBookmarklet(window.location.origin));
+  });
+
+  // Opened by the bookmark: say "ready" until its list arrives.
+  useEffect(() => {
+    if (!window.opener) return undefined;
+    let received = false;
+    function onMessage(e) {
+      const data = e.data;
+      if (!data || data.type !== HELPER_ITEMS_MESSAGE || !Array.isArray(data.items)) return;
+      received = true;
+      setHelperList({
+        page_url: String(data.page_url || ""),
+        page_title: String(data.page_title || ""),
+        items: data.items.slice(0, 500).map((it) => ({ name: String(it?.name || ""), image_url: String(it?.image_url || "") })),
+      });
+      setMode("browser");
+      setPreview(null);
+      setResult(null);
+    }
+    window.addEventListener("message", onMessage);
+    const ping = () => {
+      if (!received && window.opener) window.opener.postMessage({ type: HELPER_READY_MESSAGE }, "*");
+    };
+    ping();
+    const timer = setInterval(ping, 1000);
+    const stop = setTimeout(() => clearInterval(timer), 3 * 60 * 1000);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      clearInterval(timer);
+      clearTimeout(stop);
+    };
+  }, []);
 
   async function run(kind, fn) {
     setBusy(kind);
@@ -124,6 +202,50 @@ export default function OwnerPhotoBot() {
     setResult(null);
   }
 
+  function changeMode(next) {
+    setMode(next);
+    setPreview(null);
+    setResult(null);
+    setError("");
+  }
+
+  function showPreview(data) {
+    const next = {};
+    for (const row of data.rows || []) {
+      if (!hasPhoto(row)) continue;
+      next[row.image_id] = {
+        menu_item_id: row.suggested_menu_item_id || "",
+        checked: Boolean(row.suggested_menu_item_id) && !row.already_imported,
+      };
+    }
+    setChoices(next);
+    setPreview(data);
+    setFilter("selected");
+  }
+
+  function handleFiles(e) {
+    const picked = [...(e.target.files || [])];
+    e.target.value = "";
+    if (!picked.length || !restaurant) return;
+    // Same file name twice: keep the first.
+    const byName = new Map();
+    for (const f of picked) if (!byName.has(f.name)) byName.set(f.name, f);
+    const unique = [...byName.values()];
+    setFiles(unique);
+    run("preview", async () => {
+      setResult(null);
+      showPreview(await previewPhotoBotUpload(restaurant.id, { filenames: unique.map((f) => f.name) }));
+    });
+  }
+
+  function handleHelperPreview() {
+    if (!restaurant || !helperList?.items?.length) return;
+    run("preview", async () => {
+      setResult(null);
+      showPreview(await previewPhotoBotHelper(restaurant.id, { page_url: helperList.page_url, items: helperList.items }));
+    });
+  }
+
   function handlePreview(e) {
     e?.preventDefault();
     if (!restaurant || !sourceUrl.trim()) return;
@@ -132,7 +254,7 @@ export default function OwnerPhotoBot() {
       const data = await previewPhotoBotImport(restaurant.id, { url: sourceUrl.trim() });
       const next = {};
       for (const row of data.rows || []) {
-        if (!row.image_url) continue;
+        if (!hasPhoto(row)) continue;
         next[row.image_id] = {
           menu_item_id: row.suggested_menu_item_id || "",
           checked: Boolean(row.suggested_menu_item_id) && !row.already_imported,
@@ -153,7 +275,7 @@ export default function OwnerPhotoBot() {
     });
   }
 
-  const photoRows = useMemo(() => (preview?.rows || []).filter((r) => r.image_url), [preview]);
+  const photoRows = useMemo(() => (preview?.rows || []).filter(hasPhoto), [preview]);
 
   const menuGroups = useMemo(() => {
     const groups = new Map();
@@ -191,7 +313,12 @@ export default function OwnerPhotoBot() {
   function handleImport() {
     if (!selections.length) return;
     run("apply", async () => {
-      const data = await applyPhotoBotImport(restaurant.id, { url: sourceUrl.trim(), selections });
+      const data =
+        mode === "upload"
+          ? await importUploads()
+          : mode === "browser"
+            ? await applyPhotoBotHelper(restaurant.id, { page_url: helperList.page_url, items: helperList.items, selections })
+            : await applyPhotoBotImport(restaurant.id, { url: sourceUrl.trim(), selections });
       setResult(data);
       const imported = new Set(
         (data.results || [])
@@ -209,6 +336,20 @@ export default function OwnerPhotoBot() {
     });
   }
 
+  async function importUploads() {
+    const fileByName = new Map(files.map((f) => [f.name, f]));
+    const merged = { counts: {}, results: [] };
+    for (let i = 0; i < selections.length; i += UPLOAD_BATCH_SIZE) {
+      const batch = selections.slice(i, i + UPLOAD_BATCH_SIZE);
+      const batchFiles = batch.map((s) => fileByName.get(s.image_id)).filter(Boolean);
+      const data = await applyPhotoBotUpload(restaurant.id, batchFiles, batch);
+      merged.restaurant = data.restaurant;
+      merged.results.push(...(data.results || []));
+      for (const [k, n] of Object.entries(data.counts || {})) merged.counts[k] = (merged.counts[k] || 0) + n;
+    }
+    return merged;
+  }
+
   const alreadyImportedCount = photoRows.filter((r) => r.already_imported).length;
 
   return (
@@ -217,7 +358,7 @@ export default function OwnerPhotoBot() {
         <PageCard style={{ padding: 20 }}>
           <SectionTitle
             title="Restaurant and photo source"
-            subtitle="Copies dish photos from the restaurant's online ordering page into Menu Manager. Square Online pages are supported today."
+            subtitle="Copies dish photos from the restaurant's own ordering page into Menu Manager. Works with Square Online, ChowNow, Clover and Chowbus POS, or paste the restaurant's website and Photo Bot follows its Order link. For Toast and Popmenu, use the Photo Bot bookmark; for anything else, upload the photos the restaurant sends you. Marketplaces like DoorDash and Uber Eats are never used."
           />
 
           {restaurant ? (
@@ -281,6 +422,93 @@ export default function OwnerPhotoBot() {
             </form>
           )}
 
+          <div role="tablist" aria-label="Photo source" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+            {SOURCE_MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                role="tab"
+                aria-selected={mode === m.id}
+                onClick={() => changeMode(m.id)}
+                style={{
+                  ...secondaryButtonStyle,
+                  padding: "6px 14px",
+                  fontSize: 13,
+                  background: mode === m.id ? OWNER_COLORS.accentSoft : "#fff",
+                  borderColor: mode === m.id ? OWNER_COLORS.accent : OWNER_COLORS.line,
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {mode === "browser" ? (
+            <div>
+              {helperList ? (
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 260px" }}>
+                    <div style={{ fontWeight: 700 }}>
+                      {helperList.items.length} dish photo{helperList.items.length === 1 ? "" : "s"} from {pageHost(helperList.page_url)}
+                    </div>
+                    <div style={mutedStyle}>{helperList.page_title || helperList.page_url}</div>
+                  </div>
+                  <button
+                    type="button"
+                    style={primaryButtonStyle({ busy: busy === "preview", disabled: !restaurant || !helperList.items.length })}
+                    disabled={!restaurant || !helperList.items.length || Boolean(busy)}
+                    onClick={handleHelperPreview}
+                  >
+                    {busy === "preview" ? "Finding matches…" : restaurant ? "Find matches" : "Pick the restaurant first"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                    <a
+                      ref={bookmarkRef}
+                      onClick={(e) => e.preventDefault()}
+                      title="Drag me to your bookmarks bar"
+                      style={{ ...secondaryButtonStyle, display: "inline-block", textDecoration: "none", color: OWNER_COLORS.ink, cursor: "grab" }}
+                    >
+                      Menuply Photo Bot
+                    </a>
+                    <span style={mutedStyle}>Drag this button to your bookmarks bar (one time).</span>
+                  </div>
+                  <div style={mutedStyle}>
+                    Then open the restaurant's Toast ordering page or Popmenu menu page and click the bookmark. Photo Bot opens with the
+                    dish photos it found. Only use photos the restaurant owns or has permission to use.
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : mode === "upload" ? (
+            <div>
+              <label
+                htmlFor="photo-bot-files"
+                style={{
+                  ...primaryButtonStyle({ busy: busy === "preview", disabled: !restaurant }),
+                  display: "inline-block",
+                  pointerEvents: !restaurant || busy ? "none" : "auto",
+                }}
+              >
+                {busy === "preview" ? "Matching photos…" : files.length ? "Choose different photos" : "Choose photos"}
+              </label>
+              <input
+                id="photo-bot-files"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={handleFiles}
+                disabled={!restaurant || Boolean(busy)}
+                style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+              />
+              {files.length ? <span style={{ ...mutedStyle, marginLeft: 10 }}>{files.length} photo{files.length === 1 ? "" : "s"} chosen</span> : null}
+              <div style={{ ...mutedStyle, marginTop: 8 }}>
+                Name each photo after its dish, like "Asada Taco.jpg". JPEG, PNG or WebP, up to 10 MB each. Only use photos the restaurant owns or has permission to use.
+              </div>
+            </div>
+          ) : (
           <form onSubmit={handlePreview}>
             <label style={labelStyle} htmlFor="photo-bot-url">Ordering page URL</label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -304,6 +532,7 @@ export default function OwnerPhotoBot() {
               Only use photos the restaurant owns or has permission to use. DoorDash, Uber Eats and Grubhub are not supported.
             </div>
           </form>
+          )}
 
           {error ? (
             <div style={{ marginTop: 14, color: "#b42318", fontSize: 14, fontWeight: 600 }}>{error}</div>
@@ -342,7 +571,7 @@ export default function OwnerPhotoBot() {
           <PageCard style={{ padding: 20 }}>
             <SectionTitle
               title="Review matches"
-              subtitle={`${preview.restaurant?.restaurant_name}: ${photoRows.length} photos on ${preview.source?.label || "the site"}, ${preview.counts?.menu_items ?? 0} items in Menu Manager${
+              subtitle={`${preview.restaurant?.restaurant_name}: ${photoRows.length} photos ${mode === "upload" ? "uploaded" : `from ${preview.source?.label || "the site"}`}, ${preview.counts?.menu_items ?? 0} items in Menu Manager${
                 alreadyImportedCount ? `, ${alreadyImportedCount} already imported` : ""
               }. Nothing is saved until you import.`}
             />
@@ -397,7 +626,7 @@ export default function OwnerPhotoBot() {
                         style={{ width: 18, height: 18 }}
                       />
                       <img
-                        src={thumbUrl(row.image_url)}
+                        src={row.filename ? fileUrls[row.filename] : thumbUrl(row.image_url)}
                         alt={row.source_name}
                         loading="lazy"
                         style={{ width: 72, height: 54, objectFit: "cover", borderRadius: 8, flex: "0 0 auto", background: OWNER_COLORS.page }}

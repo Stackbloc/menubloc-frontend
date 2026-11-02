@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import DinerAvatar from "../social/DinerAvatar.jsx";
 
 /**
@@ -6,7 +7,14 @@ import DinerAvatar from "../social/DinerAvatar.jsx";
  * Reads `row.social_activity` from Search. Does not fetch, infer, or rank.
  * Optional Invite CTA only when the projection supplies cta_label + cta_href
  * (never invent a dead button — Working Features Only).
+ * The photo + line open the person (Andre 2026-10-31): your Connect's screen, else their diner page.
  */
+function personHref(row) {
+  const id = Number(row?.consumer_user_id);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return row.second_degree || row.everyone ? `/diners/${id}` : `/account/connections/${id}`;
+}
+
 export default function SearchResultSocialActivity({ items }) {
   const list = Array.isArray(items)
     ? items.filter((row) => row && String(row.line || "").trim()).slice(0, 1)
@@ -30,6 +38,8 @@ export default function SearchResultSocialActivity({ items }) {
         const ctaLabel = String(row.cta_label || "").trim();
         const ctaHref = String(row.cta_href || row.cta_url || "").trim();
         const showCta = Boolean(ctaLabel && ctaHref);
+        const href = personHref(row);
+        const PersonTag = href ? Link : "span";
         return (
           <li
             key={row.activity_id || `${row.kind}:${row.source_id}`}
@@ -44,9 +54,13 @@ export default function SearchResultSocialActivity({ items }) {
               color: "#C0C8D5",
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <PersonTag
+              {...(href ? { to: href, "data-testid": "search-result-social-person", "aria-label": `${row.display_name || "Connect"} profile` } : {})}
+              style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, color: "inherit", textDecoration: "none" }}
+            >
               <DinerAvatar
                 avatarUrl={row.avatar_url}
+                avatarMotionUrl={row.avatar_motion_url}
                 displayName={row.display_name}
                 size={20}
                 title={null}
@@ -59,9 +73,9 @@ export default function SearchResultSocialActivity({ items }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {row.line}
+                {row.kind === "catch_me" ? `✈️ ${row.line}` : row.line}
               </span>
-            </span>
+            </PersonTag>
             {showCta ? (
               <a
                 href={ctaHref}

@@ -52,13 +52,14 @@ export function videoDealTermsFromDeal(deal = {}) {
 /** One-line summary shown beside the video, e.g. "20% off · Mar 1 – Mar 31". */
 export function videoDealTermsSummary({ dealType, value, startsAt, expiresAt } = {}) {
   const n = Number(value);
+  const money = Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
   const amount =
     dealType === "percent_off"
       ? `${n}% off`
       : dealType === "amount_off"
-        ? `$${n.toFixed(2)} off`
+        ? `${money} off`
         : dealType === "fixed_price"
-          ? `Special price $${n.toFixed(2)}`
+          ? `Special price ${money}`
           : "";
   const day = (v) => String(v || "").slice(0, 10);
   const dates = startsAt && expiresAt ? `${day(startsAt)} – ${day(expiresAt)}` : "";

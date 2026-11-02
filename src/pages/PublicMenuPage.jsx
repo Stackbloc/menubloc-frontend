@@ -25,6 +25,8 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
+import MenuItemOrderSheet from "../components/basket/MenuItemOrderSheet.jsx";
+import CartAddedPopover from "../components/basket/CartAddedPopover.jsx";
 import SmartCustomizationSheet, { isCustomizableItem } from "../components/basket/SmartCustomizationSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
@@ -63,7 +65,7 @@ import {
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import MenuInfoButton from "../components/menu/MenuInfoButton.jsx";
-import { MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
+import { MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import MenuRestaurantContextualVideo from "../components/menu/MenuRestaurantContextualVideo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
@@ -84,6 +86,8 @@ import {
 } from "../lib/menuAppearances.js";
 import { resolveEffectiveMenuAppearance } from "../lib/menuAppearanceRecommendation.js";
 import { buildMenuChromeRootStyle } from "../lib/menuWallpapers.js";
+import { buildBrandMenuRootStyle, resolveBrandMenuTheme } from "../lib/brandMenuThemes.js";
+import BrandMenuStripe from "../components/menu-templates/BrandMenuStripe.jsx";
 import {
   readMenuAppearanceQueryOverride,
   readMenuWallpaperQueryOverride,
@@ -901,6 +905,8 @@ export default function PublicMenuPage() {
     setItemSheetState(next);
   }, []);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
+  // "Your cart (N)" popover after adding from the item sheet: { lineId, photoUrl }.
+  const [cartPopover, setCartPopover] = useState(null);
   const [hoveredItemId, setHoveredItemId] = useState(null);
   // Multi-menu tab state
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -1222,7 +1228,7 @@ export default function PublicMenuPage() {
 
     return applyDocumentSocialMetadata({
       title: liveShareData.title,
-      description: liveShareData.text,
+      description: liveShareData.description || liveShareData.text,
       url: liveShareData.url,
       image: liveShareData.image,
     });
@@ -1498,6 +1504,8 @@ export default function PublicMenuPage() {
     pageType: "public_menu",
     shareTarget: "menu",
   };
+  const shareHeaderValue = { shareData, analyticsContext: shareAnalyticsContext };
+
   const cartRestaurant = {
     restaurantId: currentRestaurantId,
     restaurantName,
@@ -1516,9 +1524,22 @@ export default function PublicMenuPage() {
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
 
+  const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
+  const wallpaperQueryOverride = readMenuWallpaperQueryOverride(searchParams);
+  // National chains: menu wears the same brand colors as the brand profile (display-only).
+  // Owner looks, ?menuAppearance/?menuWallpaper previews and template previews win.
+  const brandMenuTheme =
+    isMenuTemplatePreview || appearanceQueryOverride || wallpaperQueryOverride !== undefined
+      ? null
+      : resolveBrandMenuTheme(data, restaurantName);
   const menuBrand = data ? buildRestaurantMenuBrand({
     ...data,
-    accent_color: menuThemeSettings.primary_color || menuThemeSettings.accent_color || data?.accent_color || null,
+    accent_color:
+      menuThemeSettings.primary_color ||
+      menuThemeSettings.accent_color ||
+      data?.accent_color ||
+      brandMenuTheme?.tokens.accent ||
+      null,
     hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
@@ -1531,8 +1552,6 @@ export default function PublicMenuPage() {
     data?.menu_style ||
     "v1";
   const applyMenuAppearance = shouldApplyMenuAppearance(appearanceStyleSource);
-  const appearanceQueryOverride = readMenuAppearanceQueryOverride(searchParams);
-  const wallpaperQueryOverride = readMenuWallpaperQueryOverride(searchParams);
   const effectiveMenuAppearance = applyMenuAppearance
     ? appearanceQueryOverride ||
       (isValidMenuAppearanceKey(data?.effective_menu_appearance)
@@ -1552,7 +1571,7 @@ export default function PublicMenuPage() {
         : String(data.menu_wallpaper_key).trim()
     : null;
   const appearanceTokens = applyMenuAppearance
-    ? getMenuAppearanceTokens(effectiveMenuAppearance)
+    ? brandMenuTheme?.tokens || getMenuAppearanceTokens(effectiveMenuAppearance)
     : null;
   const stickyBarBackground = applyMenuAppearance
     ? appearanceTokens.pageBackground
@@ -1560,11 +1579,13 @@ export default function PublicMenuPage() {
   const pageShellStyle = applyMenuAppearance
     ? {
         minHeight: "100vh",
-        ...buildMenuChromeRootStyle(
-          effectiveMenuAppearance,
-          effectiveMenuWallpaper,
-          data?.resolved_menu_wallpaper || null
-        ),
+        ...(brandMenuTheme
+          ? buildBrandMenuRootStyle(brandMenuTheme.tokens)
+          : buildMenuChromeRootStyle(
+              effectiveMenuAppearance,
+              effectiveMenuWallpaper,
+              data?.resolved_menu_wallpaper || null
+            )),
       }
     : {
         minHeight: "100vh",
@@ -1630,10 +1651,18 @@ export default function PublicMenuPage() {
   }
 
 
-  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
+  function commitMenuItemToBasket(
+    item,
+    itemName,
+    itemDescription,
+    modifiers = [],
+    preparationInstructions = null,
+    { quantity = 1, announce = true } = {}
+  ) {
     if (!isOnlineOrderingAvailable(presentationData || data)) return null;
     return addMenuItem({
       restaurant: cartRestaurant,
+      announce,
       item: {
         menu_item_id: item?.menu_item_id,
         restaurant_id: item?.restaurant_id,
@@ -1645,9 +1674,25 @@ export default function PublicMenuPage() {
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
         preparationInstructions: preparationInstructions || null,
+        quantity,
       },
     });
   }
+
+  /** Item sheet "Add to order": basket line + "Your cart" popover instead of the generic toast. */
+  function addFromOrderSheet(sheet, { quantity, modifiers, preparationInstructions }) {
+    const result = commitMenuItemToBasket(sheet.item, sheet.name, sheet.desc, modifiers, preparationInstructions, {
+      quantity,
+      announce: false,
+    });
+    setItemSheet(null);
+    if (result?.ok && result.addedLine?.lineId) {
+      setAddedConfirmation(null);
+      setCartPopover({ lineId: result.addedLine.lineId, photoUrl: getMenuItemImageUrl(sheet.item) || null });
+    }
+  }
+
+  const closeCartPopover = useCallback(() => setCartPopover(null), []);
 
   function openCheckout() {
     navigate("/checkout");
@@ -1703,6 +1748,7 @@ export default function PublicMenuPage() {
     () => ({
       hideDishShare: false,
       tapRowToAdd: true,
+      tapRowOpensSheet: true,
       nonOrderableOpensDish: true,
       keepNutritionChip: true,
       onRemoveOne: removeOneFromBasket,
@@ -1721,13 +1767,13 @@ export default function PublicMenuPage() {
   const compactMenuHeader = ["v1", "v16", "v17"].includes(menuPresentationStyle);
   const menuInfoAction = compactMenuHeader ? (
     <MenuInfoButton
+      restaurantId={currentRestaurantId || null}
       restaurantName={restaurantName}
-      addressLine1={addressLine1}
-      addressLine2={addressLine2}
-      addressLine={addressLine}
-      directionsHref={directionsHref}
-      phone={data?.phone || null}
-      website={data?.website_url || data?.website || null}
+      city={data?.city || null}
+      state={data?.state || null}
+      menuUrl={shareData?.url || null}
+      reviewedAt={data?.menu_last_verified_at || null}
+      franchiseStore={Number(data?.chain_id) > 0 && data?.is_canonical_parent !== true}
     />
   ) : null;
 
@@ -1932,6 +1978,7 @@ export default function PublicMenuPage() {
       ref={engagementRootRef}
       style={pageShellStyle}
       data-menu-appearance={applyMenuAppearance ? effectiveMenuAppearance : undefined}
+      data-brand-theme={applyMenuAppearance && brandMenuTheme ? brandMenuTheme.name : undefined}
     >
       <StickyPageHeader
         barBackground={stickyBarBackground}
@@ -1985,7 +2032,8 @@ export default function PublicMenuPage() {
           </div>
         ) : null}
 
-        <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
+        <MenuHeaderShareContext.Provider value={shareHeaderValue}>
+          <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
         {applyMenuAppearance && appearanceTokens ? (
           <div
             style={{
@@ -1998,6 +2046,7 @@ export default function PublicMenuPage() {
               color: appearanceTokens.ink,
             }}
           >
+            {appearanceTokens.heroStripe ? <BrandMenuStripe background={appearanceTokens.heroStripe} /> : null}
             <MenuRowActionsContext.Provider value={menuRowActions}>
               <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
             </MenuRowActionsContext.Provider>
@@ -2008,10 +2057,32 @@ export default function PublicMenuPage() {
           </MenuRowActionsContext.Provider>
         )}
         </MenuHeaderTrailingActionContext.Provider>
+          </MenuHeaderShareContext.Provider>
       </div>
 
-      {/* Item detail sheet */}
-      {itemSheet ? (
+      {/* Orderable dish → order sheet (photo, quantity, choices, Add to order $X); otherwise info sheet. */}
+      {itemSheet && isItemOrderable(itemSheet.item) && isOnlineOrderingAvailable(presentationData || data) ? (
+        <MenuItemOrderSheet
+          key={String(getNormalizedMenuItemId(itemSheet.item) ?? itemSheet.name)}
+          item={itemSheet.item}
+          name={itemSheet.name}
+          description={itemSheet.desc}
+          basePriceCents={getConsumerDisplayPrice(itemSheet.item) ?? 0}
+          foodsToAvoid={foodsToAvoid}
+          brand={menuBrand}
+          onClose={() => setItemSheet(null)}
+          onAdd={(choice) => addFromOrderSheet(itemSheet, choice)}
+          onOpenDetails={
+            itemSheet.canNavigate
+              ? () => {
+                  const target = getNormalizedMenuItemId(itemSheet.item);
+                  setItemSheet(null);
+                  navigate(`/menu-items/${target}?from=menu`);
+                }
+              : null
+          }
+        />
+      ) : itemSheet ? (
         <ItemDetailSheet
           sheetData={itemSheet}
           activeCartItems={activeCartItems}
@@ -2077,6 +2148,20 @@ export default function PublicMenuPage() {
           summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} · ${formatMoneyFromCents(subtotalCents)}`}
           onOpenBasket={() => navigate("/checkout")}
           onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
+        />
+      ) : null}
+
+      {cartPopover ? (
+        <CartAddedPopover
+          line={activeCartItems.find((line) => line.lineId === cartPopover.lineId) || null}
+          photoUrl={cartPopover.photoUrl}
+          itemCount={itemCount}
+          subtotalCents={subtotalCents}
+          brand={menuBrand}
+          onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
+          onRemove={(lineId) => { removeItem(lineId); setCartPopover(null); }}
+          onContinue={() => { setCartPopover(null); navigate("/checkout"); }}
+          onClose={closeCartPopover}
         />
       ) : null}
 

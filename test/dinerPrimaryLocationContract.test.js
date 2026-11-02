@@ -21,9 +21,9 @@ test("PrimaryLocationPicker uses canonical location reference API", () => {
   assert.match(picker, /fetchUsStates/);
 });
 
-test("Find Diners page integrates search + connections", () => {
+test("Find Connects page integrates search + connections", () => {
   const findPage = read("src/pages/consumer/FindDinersPage.jsx");
-  assert.match(findPage, /Find Diners/);
+  assert.match(findPage, /Find Connects/);
   assert.match(findPage, /searchDiners/);
   assert.match(findPage, /requestConnection/);
   assert.match(findPage, /mutual/);

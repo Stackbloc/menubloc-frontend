@@ -1,12 +1,12 @@
 /**
- * Feed shell Shop tab — original Menuply search discovery (HomeNext) + in-shell results,
+ * Feed shell Search tab — the app's Search home (AppSearchHome, Andre 2026-10-29) + in-shell results,
  * with a [ Search | Menu Browser ] toggle over the search box. Menu Browser mode embeds the
  * /browse-menus experience. Both modes share the typed query; Search is the default.
  */
 
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import HomeNext from "../../HomeNext.jsx";
+import AppSearchHome from "../../../components/consumer/feed/AppSearchHome.jsx";
 import GrubbidSearchResults from "../../GrubbidSearchResults.jsx";
 import BrowseMenus from "../../BrowseMenus.jsx";
 import SearchShopModeToggle from "../../../components/consumer/feed/SearchShopModeToggle.jsx";
@@ -49,7 +49,7 @@ export default function FeedSearchPage() {
       ) : showResults ? (
         <GrubbidSearchResults embedInFeedShell modeToggleSlot={toggle} />
       ) : (
-        <HomeNext embedInFeedShell
+        <AppSearchHome
           modeToggleSlot={toggle}
           initialQuery={draftQuery}
           onDraftQueryChange={setDraftQuery}

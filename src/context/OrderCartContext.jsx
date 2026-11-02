@@ -102,7 +102,8 @@ export function OrderCartProvider({ children }) {
     return result;
   }, [pendingReplacement]);
 
-  const addToCart = useCallback(({ restaurant: nextRestaurant, item }) => {
+  // announce: false = the caller shows its own confirmation (menu item sheet → "Your cart" popover).
+  const addToCart = useCallback(({ restaurant: nextRestaurant, item, announce = true }) => {
     const result = addItemToCart(stateRef.current, {
       restaurant: nextRestaurant,
       item,
@@ -127,11 +128,13 @@ export function OrderCartProvider({ children }) {
     }
 
     setCartState(result.cart);
-    setNotice({
-      tone: "success",
-      title: "Added to your order",
-      message: "Added to your order",
-    });
+    if (announce) {
+      setNotice({
+        tone: "success",
+        title: "Added to your order",
+        message: "Added to your order",
+      });
+    }
     return result;
   }, []);
   const addMenuItem = addToCart;

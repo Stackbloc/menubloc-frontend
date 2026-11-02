@@ -1,10 +1,11 @@
 import useMenuItemLike from "../hooks/useMenuItemLike.js";
-import { LIKE_ACCENT, likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
+import { FAV_ACCENT, likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
-import ThumbsUpIcon from "./icons/ThumbsUpIcon.jsx";
+import FavHeartIcon from "./icons/FavHeartIcon.jsx";
 
 /**
- * Row-level "like" control for a menu item — thumbs up on menu rows and detail pages.
+ * Row-level Fav control for a menu item — the Fav heart on menu rows and detail pages. One Fav for
+ * restaurants and dishes (Andre 2026-10-24); stored as the dish like, so existing likes show as Favs.
  * Same like/unlike API underneath. onLikedChange(liked) fires on a user toggle (and on revert),
  * so a row can keep its visible like count in step.
  */
@@ -22,7 +23,7 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
   const inline = tone === "inline";
   const ghost = tone === "ghost";
   const dim = size === "row" ? 28 : size === "compact" ? 32 : 36;
-  const hoverLabel = liked ? "Liked" : "Like";
+  const hoverLabel = liked ? "My Fav" : "Fav";
 
   return (
     <IconHoverLabel label={hoverLabel}>
@@ -30,7 +31,7 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
         type="button"
         onClick={handleClick}
         disabled={loading || busy}
-        aria-label={liked ? "Unlike this dish" : "Like this dish"}
+        aria-label={liked ? "Remove this dish from your Favs" : "Fav this dish"}
         aria-pressed={liked}
         title={hoverLabel}
         style={{
@@ -41,10 +42,10 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
           minHeight: inline ? "auto" : dim,
         }}
       >
-        <ThumbsUpIcon
+        <FavHeartIcon
           size={size === "row" ? 14 : size === "compact" ? 15 : 16}
           filled={liked}
-          color={liked ? LIKE_ACCENT : "currentColor"}
+          color={liked ? FAV_ACCENT : "currentColor"}
         />
       </button>
     </IconHoverLabel>

@@ -5,8 +5,17 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import FeedGuestProfileLanding from "../../components/consumer/feed/FeedGuestProfileLanding.jsx";
-import ProfileViewModeToggle from "../../components/consumer/feed/ProfileViewModeToggle.jsx";
+import {
+  AppIdentityCard,
+  AppMyActivity,
+  AppProfileGuest,
+  AppSettings,
+  AppProfileControls,
+  AppProfileStack,
+  AppProfileStarterCard,
+  AppVibeCard,
+} from "./myMenuply/AppProfileCards.jsx";
+import CurrentVibeProfileSection from "./myMenuply/CurrentVibeProfileSection.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
@@ -84,6 +93,12 @@ import DinerSocialPresetsPanel, {
   parseDinerSocialDefaults,
 } from "./myMenuply/DinerSocialPresetsPanel.jsx";
 import CrewQuickCompose from "./myMenuply/CrewQuickCompose.jsx";
+import ConnectsNowSection from "./myMenuply/ConnectsNowSection.jsx";
+import { MyClipsView, SelfConnectView } from "./ConnectProfilePage.jsx";
+import MonthReportNudge from "./monthInFood/MonthReportNudge.jsx";
+import ProfileConnectsBox from "./myMenuply/ProfileConnectsBox.jsx";
+import SocialCalendarCard from "./myMenuply/SocialCalendarCard.jsx";
+import QuickInviteCard from "./myMenuply/QuickInviteCard.jsx";
 import EventComposeSheet from "./myMenuply/EventComposeSheet.jsx";
 import PlanVideoAttachSheet from "./myMenuply/PlanVideoAttachSheet.jsx";
 import InvitePickerSheet from "./myMenuply/InvitePickerSheet.jsx";
@@ -145,6 +160,7 @@ import {
   uploadHomemadeDishPhoto,
 } from "../../lib/homemadeDishApi.js";
 import HomeAtHomeSection from "./myMenuply/HomeAtHomeSection.jsx";
+import { unlistedPlaceName } from "../../lib/unlistedPlace.js";
 
 async function maybeFollowRestaurant(restaurantId) {
   const id = Number(restaurantId);
@@ -246,7 +262,7 @@ function MyMenuplyAccountSettingsLink({ style }) {
 }
 
 export default function MyMenuplyPage() {
-  const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
+  const { isAuthenticated, loading: authLoading, consumer, logout } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -318,6 +334,7 @@ export default function MyMenuplyPage() {
   const [lastPost, setLastPost] = useState(null);
   const [wantDiscovery, setWantDiscovery] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [discoverLevel, setDiscoverLevel] = useState(null);
   const [sharePayload, setSharePayload] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarTitle, setCalendarTitle] = useState("Eating");
@@ -674,7 +691,7 @@ export default function MyMenuplyPage() {
   );
 
   function openEventsCalendar() {
-    setCalendarTitle("My Events");
+    setCalendarTitle("Social Plans · Events");
     setCalendarOpen(true);
   }
 
@@ -751,7 +768,7 @@ export default function MyMenuplyPage() {
     try {
       const data = await uploadDinerAvatar(file);
       setAvatarUrl(resolveConsumerMediaUrl(data.avatar_url || data.card?.avatar_url || ""));
-      setIdentityNotice("Profile photo updated.");
+      setIdentityNotice(data.avatar_motion_url ? "Motion photo saved. It plays where your photo is small." : "Profile photo updated.");
     } catch (err) {
       setAvatarUrl(resolveConsumerMediaUrl(profile?.avatar_url || ""));
       setIdentityError(err.message || "Unable to upload photo");
@@ -791,7 +808,8 @@ export default function MyMenuplyPage() {
 
   async function onCurrentVibeChange(next) {
     setIdentityError("");
-    const data = await updateCurrentVibe({ currentVibe: next });
+    // docs/16: { vibes, until } from the picker; a plain value from older controls.
+    const data = await updateCurrentVibe(next && Array.isArray(next.vibes) ? next : { currentVibe: next });
     const value = data?.current_vibe || data?.currentVibe || next;
     setProfile((prev) => ({
       ...(prev || {}),
@@ -1141,6 +1159,7 @@ export default function MyMenuplyPage() {
       const data = await createWhatIAteMeal({
         where_type: resolvedWhere || undefined,
         restaurant_id: restaurantId,
+        place_name: restaurantId || resolvedWhere === "home" ? null : unlistedPlaceName(restaurant),
         meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
         eaten_on: eatenOn,
         eaten_at: eatenAt || new Date().toISOString(),
@@ -1516,7 +1535,7 @@ export default function MyMenuplyPage() {
     setPlanPrefill(prefill);
     setSchedulingPlans(true);
     setCalendarOpen(true);
-    setCalendarTitle("My Eating Plans");
+    setCalendarTitle("Social Plans · Meals");
   }
 
   function handleTakeMeOutFromCraving(selected) {
@@ -2331,14 +2350,33 @@ export default function MyMenuplyPage() {
 
 
   if (!authLoading && !isAuthenticated) {
-    return <FeedGuestProfileLanding />;
+    return (
+      <div
+        style={{
+          ...s.page,
+          background: "#f5f7f4",
+          paddingTop: isDesktopFeed ? 16 : "max(56px, calc(env(safe-area-inset-top, 0px) + 52px))",
+          paddingBottom: "calc(var(--feed-primary-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 16px)",
+        }}
+      >
+        <AppProfileGuest />
+      </div>
+    );
   }
+
+  // The app's Profile (Andre 2026-10-29: the app wins). "View as a Connect" is the app's Connect
+  // screen with your data (SelfConnectView, Andre 2026-10-30). The older hub stays only for links
+  // that open one of its compose sheets (?compose= / ?focus= / ?mmt=).
+  const subView = ["settings", "clips"].includes(searchParams.get("view")) ? searchParams.get("view") : null;
+  const appLayout =
+    !subView && !previewAsConnect && !["compose", "focus", "mmt"].some((key) => String(searchParams.get(key) || "").trim());
 
   return (
     <>
       <div
         style={{
           ...s.page,
+          ...(appLayout ? { background: "#f5f7f4" } : null),
           paddingTop: 12,
           paddingBottom:
             "calc(var(--feed-primary-nav-h, 56px) + env(safe-area-inset-bottom, 0px) + 16px)",
@@ -2360,22 +2398,70 @@ export default function MyMenuplyPage() {
               }}
               data-testid="feed-profile-settings-row"
             >
-              {/* Desktop: glasses toggle lives here (next to settings). Mobile uses FeedMobileHeader. */}
-              {isDesktopFeed ? (
-                <ProfileViewModeToggle
-                  previewAsConnect={previewAsConnect}
-                  onToggle={toggleProfileViewMode}
-                  variant="light"
-                />
-              ) : null}
-              <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />
+              {/* Edit / View profile is the switch on the Profile itself now (Andre 2026-10-30), not a glasses toggle here. */}
+              {appLayout ? null : <MyMenuplyAccountSettingsLink style={s.settingsIconLink} />}
             </div>
         ) : null}
         {error ? <p style={{ ...s.error, marginTop: 16 }}>{error}</p> : null}
 
         {authLoading || (isAuthenticated && loading) ? <p style={s.muted}>Loading…</p> : null}
 
-        {isAuthenticated && !loading ? (
+        {isAuthenticated && !loading && appLayout ? (
+          <AppProfileStack>
+            <AppIdentityCard
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+              occupation={profile?.diner_occupation || null}
+              about={profile?.diner_about || null}
+              locationLabel={profile?.primary_location?.public_label || null}
+              busy={identityBusy}
+              notice={identityNotice}
+              error={identityError}
+              onAvatarFile={onAvatarFile}
+              onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()}
+            />
+            <ProfileConnectsBox />
+            <AppProfileStarterCard avatarUrl={avatarUrl} />
+            <MonthReportNudge />
+            {discoverLevel === "hidden" ? null : (
+              <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
+                <CurrentVibeProfileSection
+                  value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
+                  values={profile?.current_vibe_meta?.current_vibes || null}
+                  expiresAt={profile?.current_vibe_meta?.expires_at || null}
+                  catalog={profile?.current_vibe_catalog || null}
+                  busy={identityBusy}
+                  onChange={onCurrentVibeChange}
+                />
+              </AppVibeCard>
+            )}
+            <SocialCalendarCard />
+            <QuickInviteCard />
+            <AppMyActivity />
+          </AppProfileStack>
+        ) : null}
+
+        {isAuthenticated && !loading && subView === "settings" ? (
+          <AppSettings
+            onDiscoverChange={setDiscoverLevel}
+            onSignOut={async () => {
+              await logout();
+              navigate("/feed");
+            }}
+          />
+        ) : null}
+        {isAuthenticated && !loading && subView === "clips" ? <MyClipsView /> : null}
+
+        {isAuthenticated && !loading && previewAsConnect ? (
+          <SelfConnectView
+            profile={profile}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            header={<AppProfileControls viewing onViewing={(next) => next !== previewAsConnect && toggleProfileViewMode()} />}
+          />
+        ) : null}
+
+        {isAuthenticated && !loading && !appLayout && !previewAsConnect && !subView ? (
           <>
             {profile?.profile_completion?.needs_primary_location && !previewAsConnect ? (
               <ProfileCompletionBanner message="Add your primary location so friends and nearby diners can find you when you choose." />
@@ -2395,7 +2481,9 @@ export default function MyMenuplyPage() {
               catchMe={profile?.catch_me || null}
               onCatchMeSave={previewAsConnect ? undefined : onCatchMeSave}
               onCatchMeClear={previewAsConnect ? undefined : onCatchMeClear}
-              currentVibe={profile?.current_vibe || profile?.currentVibe || "open_for_suggestions"}
+              currentVibe={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
+              currentVibes={profile?.current_vibe_meta?.current_vibes || null}
+              currentVibeExpiresAt={profile?.current_vibe_meta?.expires_at || null}
               currentVibeCatalog={profile?.current_vibe_catalog || null}
               onCurrentVibeChange={previewAsConnect ? undefined : onCurrentVibeChange}
               searchVibeAudience={profile?.search_vibe_audience || "connects"}
@@ -2422,6 +2510,10 @@ export default function MyMenuplyPage() {
               eduConsumer={eduConsumer}
               readOnly={previewAsConnect}
             />
+            {/* Social Plans Phase C (docs/15): things to do with Connects — owner view only. */}
+            {previewAsConnect ? null : <ConnectsNowSection />}
+            {previewAsConnect ? null : <QuickInviteCard />}
+            {previewAsConnect ? null : <SocialCalendarCard />}
             <ProfileGalleryComposeSheet
               open={profileGalleryPickerOpen}
               onClose={closeHighlightPicker}

@@ -161,7 +161,7 @@ export default function SocialCrewTab() {
       <section style={styles.section}>
         <AccountActionLink
           to="/account/find-diners"
-          title="Find Diners"
+          title="Find Connects"
           description="Search by name, phone, email, hometown, or city — then Connect."
           actionLabel="Search"
           last

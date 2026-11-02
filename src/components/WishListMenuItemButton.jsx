@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import useWishListEntry from "../hooks/useWishListEntry.js";
 import { likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
@@ -5,6 +6,23 @@ import WishListIcon from "./icons/WishListIcon.jsx";
 
 /** Wish List accent — the profile Wish List header color. */
 export const WISH_LIST_ACCENT = "#D4537E";
+
+/** Hover text and the confirmation after a click (Andre 2026-10-30). */
+export const WISH_LIST_ADD = "Add this to your Wish List";
+export const WISH_LIST_ADDED = "Added to your Wish List";
+
+/** Shows the confirmation for 2 seconds after adding, so touch screens (no hover) see it too. */
+function useAddedFlash() {
+  const [flash, setFlash] = useState(false);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const show = () => {
+    clearTimeout(timer.current);
+    setFlash(true);
+    timer.current = setTimeout(() => setFlash(false), 2000);
+  };
+  return [flash, show];
+}
 
 /**
  * Row-level "+Wish List" for a dish — first of the four menu row actions
@@ -24,15 +42,16 @@ export default function WishListMenuItemButton({
     restaurantId,
     restaurantName,
   });
+  const [flash, showFlash] = useAddedFlash();
   const id = Number(menuItemId);
   if (!available || !Number.isInteger(id) || id <= 0) return null;
 
   const dim = size === "row" ? 28 : size === "compact" ? 32 : 36;
-  const hoverLabel = added ? "On Wish List" : "+Wish List";
+  const hoverLabel = added ? WISH_LIST_ADDED : WISH_LIST_ADD;
   const style = likeButtonVisualStyle({ selected: false, ghost: !dark, dark, loading: busy });
 
   return (
-    <IconHoverLabel label={hoverLabel}>
+    <IconHoverLabel label={hoverLabel} forceShow={flash}>
       <button
         type="button"
         data-testid="menu-item-wish-list"
@@ -43,6 +62,7 @@ export default function WishListMenuItemButton({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (!added) showFlash();
           toggle();
         }}
         style={{
@@ -68,15 +88,16 @@ export default function WishListMenuItemButton({
  */
 export function WishListRestaurantButton({ restaurantId, restaurantName = "", size = "row", dark = false }) {
   const { available, added, busy, toggle } = useWishListEntry({ restaurantId, restaurantName });
+  const [flash, showFlash] = useAddedFlash();
   if (!available) return null;
 
   const dim = typeof size === "number" ? size : size === "row" ? 28 : size === "compact" ? 32 : 36;
-  const hoverLabel = added ? "On Wish List" : "+Wish List";
+  const hoverLabel = added ? WISH_LIST_ADDED : WISH_LIST_ADD;
   const style = likeButtonVisualStyle({ selected: false, ghost: !dark, dark, loading: busy });
   const place = restaurantName || "this restaurant";
 
   return (
-    <IconHoverLabel label={hoverLabel}>
+    <IconHoverLabel label={hoverLabel} forceShow={flash}>
       <button
         type="button"
         data-testid="restaurant-wish-list"
@@ -87,6 +108,7 @@ export function WishListRestaurantButton({ restaurantId, restaurantName = "", si
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (!added) showFlash();
           toggle();
         }}
         style={{

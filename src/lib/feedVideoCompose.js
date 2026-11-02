@@ -17,6 +17,7 @@ import { defaultWhatIAteMealPeriod } from "./whatIAteTodayMealPeriod.js";
 import { createHomemadeDish } from "./homemadeDishApi.js";
 import { buildGuestPublicationLegalPayload } from "./legalConsent.js";
 import { eatingFoodName, joinHomemadeComment } from "./eatingPlaceLink.js";
+import { unlistedPlaceName } from "./unlistedPlace.js";
 
 export async function postFeedAteVideo({
   file,
@@ -50,7 +51,7 @@ export async function postFeedAteVideo({
       "Food";
 
   const resolvedWhere =
-    whereType === "home" || whereType === "restaurant"
+    whereType === "home" || whereType === "restaurant" || whereType === "other"
       ? whereType
       : homemade
         ? "home"
@@ -67,7 +68,9 @@ export async function postFeedAteVideo({
             restaurant_id:
               item.restaurant_id ?? item.restaurantId ?? (index === 0 ? restaurantId : null),
             is_recommend:
-              index === 0 ? Boolean(isRecommend && (restaurantId || menuItemId)) : false,
+              index === 0
+                ? Boolean(isRecommend && (restaurantId || menuItemId || unlistedPlaceName(restaurant)))
+                : false,
             market_discoverable: true,
           }))
           .filter((item) => item.food_name)
@@ -88,6 +91,7 @@ export async function postFeedAteVideo({
   const data = await createWhatIAteMeal({
     where_type: resolvedWhere,
     restaurant_id: resolvedWhere === "restaurant" ? restaurantId : null,
+    place_name: resolvedWhere !== "home" && !restaurantId ? unlistedPlaceName(restaurant) : null,
     meal_period: mealPeriod || defaultWhatIAteMealPeriod(),
     eaten_on: whatIAteTodayLocalDate(),
     eaten_at: new Date().toISOString(),
@@ -149,7 +153,7 @@ export async function postFeedWantVideo({
   return data?.item || data;
 }
 
-export async function postFeedCookingVideo({ file, text = "", onUploadProgress }) {
+export async function postFeedCookingVideo({ file, text = "", name: dishName = "", onUploadProgress }) {
   if (!file || !isVideoFile(file)) {
     throw new Error("Feed posts need a video");
   }
@@ -157,7 +161,8 @@ export async function postFeedCookingVideo({ file, text = "", onUploadProgress }
   const { photo_url, video_url } = eatingMediaFromUpload(up);
   if (!video_url) throw new Error("Could not upload video");
 
-  const name = String(text || "").trim() || "What's Cooking @home";
+  // One-screen Post sends the dish name separately; the long form puts it in text.
+  const name = String(dishName || text || "").trim() || "What's Cooking @home";
   const created = await createHomemadeDish({
     name,
     description: String(text || "").trim() || null,
@@ -191,6 +196,7 @@ export async function postGuestFeedAteVideo(payload, { legalConsent, onUploadPro
   const foodName = homemade
     ? note || "@home"
     : String(payload.dish?.item_name || "").trim() ||
+      String(payload.items?.[0]?.food_name || "").trim() ||
       String(payload.restaurant?.restaurant_name || "").trim() ||
       note ||
       "Food";

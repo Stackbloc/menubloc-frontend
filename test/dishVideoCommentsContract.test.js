@@ -64,3 +64,17 @@ test("C2: dish page lists video comments and refreshes after a post", () => {
   assert.match(list, /playsInline/);
   assert.match(read("src/components/comments/DishVideoCommentSheet.jsx"), /DISH_VIDEO_COMMENT_POSTED_EVENT/);
 });
+
+test("dish rows: Wish List · Like · Invite visible, Share + video comment behind \"…\" (Andre 2026-10-23)", () => {
+  const card = read("src/components/menu-templates/PublicMenuItemCard.jsx");
+  assert.equal((card.match(/<DishMoreActions/g) || []).length, 3);
+  for (const f of ["src/components/menu/MenuItemDetailActionRail.jsx", "src/components/cluster/ClusterDishActions.jsx"]) {
+    const src = read(f);
+    const more = src.indexOf("<DishMoreActions");
+    assert.ok(more > 0, f);
+    assert.ok(src.indexOf("<InviteToEatButton") < more, f);
+    assert.ok(src.indexOf("<ShareButton") > more && src.indexOf("<DishVideoCommentButton") > more, f);
+  }
+  const more = read("src/components/menu/DishMoreActions.jsx");
+  assert.match(more, /onClickCapture=\{\(\) => setMode\("hidden"\)\}/);
+});

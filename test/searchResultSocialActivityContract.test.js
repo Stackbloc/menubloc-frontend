@@ -103,3 +103,10 @@ test("Restaurants view never carries a dish's videos or social line onto a resta
   assert.deepEqual(restRow.videos, [restVideo]);
   assert.deepEqual(restRow.social_activity, restSocial);
 });
+
+test("the photo + line open the person: Connect screen, else their diner page (Andre 2026-10-31)", () => {
+  const src = read("src/components/search/SearchResultSocialActivity.jsx");
+  assert.match(src, /row\.second_degree \|\| row\.everyone \? `\/diners\/\$\{id\}` : `\/account\/connections\/\$\{id\}`/);
+  assert.match(src, /data-testid": "search-result-social-person"/);
+  assert.match(src, /const PersonTag = href \? Link : "span"/);
+});

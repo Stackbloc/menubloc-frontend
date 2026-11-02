@@ -78,9 +78,10 @@ const ACTION_DEFS = {
   },
   plan: {
     id: "plan",
-    title: "My Eating Plans",
-    description: "Schedule a future meal. Join Me stays on the plan.",
-    to: myMenuplyProfileHref({ compose: "plan" }),
+    title: "Plan a meal",
+    description: "Add a meal to your Social Calendar.",
+    // Same New plan form as the calendar (Andre 2026-10-28): it adds the plan, not a post.
+    to: "/account/social-plans?new=meal",
     guestOk: false,
   },
   crew: {
@@ -92,9 +93,16 @@ const ACTION_DEFS = {
   },
   event: {
     id: "event",
-    title: "My Events",
-    description: "Create a social event — dinner, concert, game, birthday.",
-    to: myMenuplyProfileHref({ compose: "event" }),
+    title: "Plan an event",
+    description: "Add an event to your Social Calendar.",
+    to: "/account/social-plans?new=event",
+    guestOk: false,
+  },
+  "social-calendar": {
+    id: "social-calendar",
+    title: "My Social Calendar",
+    description: "Every meal, event and invite you're going to, in one list.",
+    to: "/account/social-plans",
     guestOk: false,
   },
   "invite-crew": {
@@ -152,9 +160,9 @@ export const POST_ABOUT_SECTIONS = [
   },
   {
     id: "plan-invite",
-    title: "Plan & Invite",
+    title: "Social Plans",
     defaultOpen: true,
-    actionIds: ["plan", "crew", "event", "invite-crew", "invite-event", "invite"],
+    actionIds: ["social-calendar", "plan", "event", "invite", "invite-event", "crew", "invite-crew"],
   },
   {
     id: "discover",

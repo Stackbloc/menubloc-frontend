@@ -146,8 +146,10 @@ export function buildMonthInFoodModel(payload = {}) {
   const mealOccasions = mealsFromApi || groupDiaryMealsForModel(diary);
   const wants = payload.wants || [];
   const diningIntents = payload.dining_intents || [];
-  const plans = payload.plans || [];
-  const events = payload.events || [];
+  // Only this month's plans belong in this month's report.
+  const inMonth = (date) => !payload.ym || String(date || "").startsWith(payload.ym);
+  const plans = (payload.plans || []).filter((p) => inMonth(p.plan_date));
+  const events = (payload.events || []).filter((e) => inMonth(e.event_date));
   const profileMedia = payload.profile_media || [];
   const isSelf = payload.is_self === true;
   const ym = payload.ym || "";

@@ -55,16 +55,18 @@ import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerEduVerify from "./pages/consumer/ConsumerEduVerify.jsx";
+import ConsumerVerifyEmail from "./pages/consumer/ConsumerVerifyEmail.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
-import ConsumerConnections from "./pages/consumer/ConsumerConnections.jsx";
 import FindDinersPage from "./pages/consumer/FindDinersPage.jsx";
 import DiscoverableDinerProfilePage from "./pages/consumer/DiscoverableDinerProfilePage.jsx";
 import SocialEventJoinPage from "./pages/SocialEventJoinPage.jsx";
-import ConsumerConnectionPeerPage from "./pages/consumer/ConsumerConnectionPeerPage.jsx";
+// A Connect's profile follows the app (Andre 2026-10-30); ?hub=1 keeps ConsumerConnectionPeerPage.
+import ConnectProfilePage from "./pages/consumer/ConnectProfilePage.jsx";
 import DinerQrPage from "./pages/consumer/DinerQrPage.jsx";
 import MeetMeHerePage from "./pages/consumer/MeetMeHerePage.jsx";
 import WhatWeDoingPage from "./pages/consumer/WhatWeDoingPage.jsx";
+import SocialPlansPage from "./pages/consumer/SocialPlansPage.jsx";
 import WhatWeDoingSessionPage from "./pages/consumer/WhatWeDoingSessionPage.jsx";
 import ConsumerNotificationsPage from "./pages/consumer/ConsumerNotificationsPage.jsx";
 import DinerQrConnectPage from "./pages/consumer/DinerQrConnectPage.jsx";
@@ -83,6 +85,7 @@ import ConnectionPeerWhatIAtePage from "./pages/consumer/ConnectionPeerWhatIAteP
 import HomemadeDishDetailPage from "./pages/HomemadeDishDetailPage.jsx";
 import HomemadeDishComposePage from "./pages/consumer/homemade/HomemadeDishComposePage.jsx";
 import MonthInFoodPage from "./pages/consumer/monthInFood/MonthInFoodPage.jsx";
+import MonthInFoodPublicPage from "./pages/consumer/monthInFood/MonthInFoodPublicPage.jsx";
 import MyHighlightsPage from "./pages/consumer/myMenuply/MyHighlightsPage.jsx";
 import ConnectionsPlanningPage from "./pages/consumer/ConnectionsPlanningPage.jsx";
 import ActivityPage from "./pages/ActivityPage.jsx";
@@ -171,6 +174,7 @@ import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerErrors from "./pages/owner/OwnerErrors.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
 import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
+import OwnerDeals from "./pages/owner/OwnerDeals.jsx";
 import OwnerMenuEditorPage from "./pages/owner/OwnerMenuEditorPage.jsx";
 import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
 import OwnerMenuUploadReviewItems from "./pages/owner/OwnerMenuUploadReviewItems.jsx";
@@ -193,6 +197,8 @@ import OwnerMenubotClusterRun from "./pages/owner/OwnerMenubotClusterRun.jsx";
 import OwnerBots from "./pages/owner/OwnerBots.jsx";
 import OwnerScheduledBot from "./pages/owner/OwnerScheduledBot.jsx";
 import OwnerFranchiseBot from "./pages/owner/OwnerFranchiseBot.jsx";
+import OwnerLocationBot from "./pages/owner/OwnerLocationBot.jsx";
+import OwnerAgent from "./pages/owner/OwnerAgent.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -247,6 +253,7 @@ import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
+import ClusterFoodByTypePage from "./pages/ClusterFoodByTypePage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
 import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import {
@@ -863,6 +870,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
             )
           }
         />
+        <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug/food-by-type" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterFoodByTypePage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
         <Route
@@ -1015,8 +1023,10 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />
         <Route path="/account/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
         <Route path="/account/edu-verify" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerEduVerify />} />
+        <Route path="/account/verify-email" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerVerifyEmail />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
         <Route path="/my-menuply" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyMenuplyProfileRedirect />} />
+        <Route path="/m/:token" element={<MonthInFoodPublicPage />} />
         <Route path="/my-menuply/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/my-menuply/highlights" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MyHighlightsPage />} />
         <Route path="/my-menuply/homemade/create" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomemadeDishComposePage />} />
@@ -1029,14 +1039,16 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
         <Route path="/account/connections/:peerId/month-in-food" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MonthInFoodPage />} />
         <Route path="/account/connections/:peerId/what-i-ate" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectionPeerWhatIAtePage />} />
-        <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnectionPeerPage />} />
-        <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerConnections />} />
+        <Route path="/account/connections/:peerId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConnectProfilePage />} />
+        {/* The app's Connects page now (Andre 2026-10-30, app wins). */}
+        <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/feed/connects" replace />} />
         <Route path="/account/diners/:userId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiscoverableDinerProfilePage />} />
         <Route path="/account/find-diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FindDinersPage />} />
         <Route path="/join-event/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialEventJoinPage />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />
         <Route path="/account/invite-to-eat" element={crmHost ? <HostRouteRedirect to="/crm" /> : <InviteToEatStartPage />} />
+        <Route path="/account/social-plans" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialPlansPage />} />
         <Route path="/account/what-we-doing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingPage />} />
         <Route path="/account/what-we-doing/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingSessionPage />} />
         <Route path="/account/notifications" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerNotificationsPage />} />
@@ -1153,14 +1165,17 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/photo-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhotoBot /></OwnerRoute>} />
         <Route path="/owner/bots" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerBots /></OwnerRoute>} />
         <Route path="/owner/bots/nutribot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="nutribot" botKey="nutribot" /></OwnerRoute>} />
-        <Route path="/owner/bots/language-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="language_bot" botKey="language_bot" /></OwnerRoute>} />
+        <Route path="/owner/bots/language-bot" element={<Navigate to="/owner/bots" replace />} />
         <Route path="/owner/bots/hours-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="hours_bot" botKey="hours_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/address-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="address_bot" botKey="address_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/franchise-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerFranchiseBot /></OwnerRoute>} />
+        <Route path="/owner/bots/location-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerLocationBot /></OwnerRoute>} />
+        <Route path="/owner/bots/agent" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />
         <Route path="/owner/restaurant-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
+        <Route path="/owner/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDeals /></OwnerRoute>} />
         <Route path="/owner/profile-manager" element={<RestaurantManagerRedirect section="profile" />} />
         <Route path="/owner/menu-manager" element={<RestaurantManagerRedirect section="menus" />} />
         <Route path="/owner/restaurants/:restaurantId/menus/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuEditorPage /></OwnerRoute>} />

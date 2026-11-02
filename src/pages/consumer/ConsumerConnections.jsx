@@ -24,7 +24,7 @@ import {
 
 function PeerLine({ peer }) {
   if (!peer) return null;
-  const vibeValue = peer.current_vibe || peer.currentVibe || "im_good";
+  const vibeValue = peer.current_vibe || peer.currentVibe || "not_sure_today";
   const vibeEntry = getCurrentVibeEntry(vibeValue);
   const showVibe = showsCurrentVibeBadge(vibeValue);
   const avatarSrc = peer.avatar_url ? resolveConsumerMediaUrl(peer.avatar_url) : "";
@@ -280,7 +280,7 @@ export default function ConsumerConnections({ embedInFeedShell = false }) {
               <h2 style={styles.h2}>Request a Connection</h2>
               <p style={styles.muted}>
                 Use a member id from a shared invitation or meal context, or{" "}
-                <Link to="/account/find-diners">Find Diners</Link> when someone has chosen to be
+                <Link to="/account/find-diners">Find Connects</Link> when someone has chosen to be
                 discoverable.
               </p>
               <form onSubmit={handleRequest} style={styles.form}>

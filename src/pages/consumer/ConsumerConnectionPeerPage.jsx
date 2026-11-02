@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -238,7 +239,7 @@ export default function ConsumerConnectionPeerPage() {
 
   async function endConnection() {
     if (!connection?.id) return;
-    const ok = window.confirm("End this connection? You can still find each other in Find Diners.");
+    const ok = window.confirm("End this connection? You can still find each other in Find Connects.");
     if (!ok) return;
     setSafetyBusy(true);
     setError("");
@@ -255,7 +256,7 @@ export default function ConsumerConnectionPeerPage() {
   async function hardBlock() {
     if (!peerId) return;
     const ok = window.confirm(
-      "Block this diner? Hard block hides both of you in Find Diners and rejects Connect both ways."
+      "Block this diner? Hard block hides both of you in Find Connects and rejects Connect both ways."
     );
     if (!ok) return;
     setSafetyBusy(true);
@@ -326,7 +327,8 @@ export default function ConsumerConnectionPeerPage() {
               }
               eduConsumer={peer}
               catchMe={peer?.catch_me || null}
-              currentVibe={peer?.current_vibe || peer?.currentVibe || "im_good"}
+              currentVibe={peer?.current_vibe || peer?.currentVibe || "not_sure_today"}
+              currentVibes={peer?.current_vibe_meta?.current_vibes || null}
             />
 
             <DinerActivitySelectionLayer
@@ -346,6 +348,9 @@ export default function ConsumerConnectionPeerPage() {
               viewerMayInviteMeOut={viewerMayInviteMeOut}
               onInviteMeOut={() => setInviteMeOutOpen(true)}
             />
+
+            {/* Social Plans Phase B (docs/15): their plans, as far as they share them with me. */}
+            <PeerPlansSection peerId={peerId} name={name} />
 
             <section style={s.section} data-testid="peer-supporting-media">
               <FlashVideosDisplay items={flashVideos} readOnly />

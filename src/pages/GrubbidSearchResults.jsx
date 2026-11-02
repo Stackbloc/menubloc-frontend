@@ -23,6 +23,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
+import SearchSocialSummary, { socialSummaryPeopleCount } from "../components/search/SearchSocialSummary.jsx";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -38,6 +39,17 @@ import {
 } from "../lib/homeContextChipApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import {
+  applySimilarAvailabilityToSearchRows,
+  collectVisibleSimilarUnknownIds,
+} from "../lib/searchSlimPayload.js";
+import {
+  SEARCH_GEO_WAIT_MS,
+  nextStableSearchGeo,
+  readRecentSearchGeo,
+  saveSearchGeo,
+  searchGeoGate,
+} from "../lib/searchStableGeo.js";
 import HomemadeDishSearchCard from "../components/homemade/HomemadeDishSearchCard.jsx";
 import { captureEvent } from "../services/posthog.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -83,9 +95,11 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
-function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange }) {
+function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange, showViewChoice = true, socialCount = 0 }) {
   const dishLabel = `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`;
   const restaurantLabel = `${restaurantCount} ${restaurantCount === 1 ? "Restaurant" : "Restaurants"}`;
+  // Without a Dishes / Restaurants choice, the first option is the results as they are.
+  const firstLabel = showViewChoice || dishCount > 0 ? dishLabel : restaurantLabel;
 
   const optionStyle = (selected) => ({
     display: "inline-flex",
@@ -120,18 +134,33 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
           onChange={() => onModeChange("dishes")}
           style={radioStyle}
         />
-        {dishLabel}
+        {firstLabel}
       </label>
-      <label style={optionStyle(mode === "restaurants")}>
-        <input
-          type="radio"
-          name="search-result-mode"
-          checked={mode === "restaurants"}
-          onChange={() => onModeChange("restaurants")}
-          style={radioStyle}
-        />
-        {restaurantLabel}
-      </label>
+      {showViewChoice ? (
+        <label style={optionStyle(mode === "restaurants")}>
+          <input
+            type="radio"
+            name="search-result-mode"
+            checked={mode === "restaurants"}
+            onChange={() => onModeChange("restaurants")}
+            style={radioStyle}
+          />
+          {restaurantLabel}
+        </label>
+      ) : null}
+      {/* Social (Andre 2026-11-01): every social result for this search, same as the app. */}
+      {socialCount > 0 ? (
+        <label style={optionStyle(mode === "social")} data-testid="search-view-social">
+          <input
+            type="radio"
+            name="search-result-mode"
+            checked={mode === "social"}
+            onChange={() => onModeChange("social")}
+            style={radioStyle}
+          />
+          {`Social · ${socialCount}`}
+        </label>
+      ) : null}
     </div>
   );
 }
@@ -194,25 +223,44 @@ function SearchResultsShareControl({ copied, onShare }) {
   );
 }
 
+function readSearchGeoStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function useGeolocation() {
-  const [geo, setGeo] = useState({ status: "pending", lat: null, lng: null });
+  // Start from the last fix so repeat searches send the same point (searchStableGeo.js).
+  const [geo, setGeo] = useState(() => {
+    const recent = readRecentSearchGeo(readSearchGeoStorage());
+    return recent
+      ? { status: "granted", lat: recent.lat, lng: recent.lng }
+      : { status: "pending", lat: null, lng: null };
+  });
 
   useEffect(() => {
     if (!navigator?.geolocation) {
-      setGeo({ status: "unavailable", lat: null, lng: null });
+      setGeo((prev) => (prev.status === "granted" ? prev : { status: "unavailable", lat: null, lng: null }));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGeo({
-          status: "granted",
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
+        setGeo((prev) => {
+          const stable = nextStableSearchGeo(
+            prev.status === "granted" ? prev : null,
+            { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          );
+          if (!stable) return prev;
+          saveSearchGeo(readSearchGeoStorage(), stable);
+          if (prev.status === "granted" && prev.lat === stable.lat && prev.lng === stable.lng) return prev;
+          return { status: "granted", lat: stable.lat, lng: stable.lng };
         });
       },
       () => {
-        setGeo({ status: "denied", lat: null, lng: null });
+        setGeo((prev) => (prev.status === "granted" ? prev : { status: "denied", lat: null, lng: null }));
       },
       { timeout: 8000, maximumAge: 300000 }
     );
@@ -2056,6 +2104,12 @@ export default function GrubbidSearchResults({
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
+  const [geoWaitExpired, setGeoWaitExpired] = useState(false);
+  useEffect(() => {
+    if (geo.status !== "pending") return undefined;
+    const timer = setTimeout(() => setGeoWaitExpired(true), SEARCH_GEO_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [geo.status]);
   const isMobile = useIsMobile();
   const isFeedDesktop = useFeedShellDesktop();
   const sessionLocation = useMemo(() => {
@@ -2159,6 +2213,7 @@ export default function GrubbidSearchResults({
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
   const [queryMeta, setQueryMeta] = useState(null);
   const [searchMeta, setSearchMeta] = useState(null);
+  const [socialSummary, setSocialSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
@@ -2178,14 +2233,27 @@ export default function GrubbidSearchResults({
       geo,
       sessionLabel: locationLabelRef.current,
     });
+    // A short note with the link inside, like Quick invite (Andre 2026-10-29); same words as the app.
+    const food = String(q || "").trim().toLowerCase() || "food";
+    const near = String(locationLabelRef.current || "").split(",")[0].trim();
+    const note = `Look what I found on Menuply: ${food}${near ? ` near ${near}` : ""}. Want to go?`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "Menuply", text: note, url: shareUrl });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+    const message = `${note} ${shareUrl}`;
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(message);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2200);
     } catch {
-      prompt("Copy this search link:", shareUrl);
+      prompt("Copy this to share:", message);
     }
-  }, [geo]);
+  }, [geo, q]);
 
   const isRestaurantCardResults = searchMeta?.result_type === "restaurant_cards";
   const waiterInventoryRows = useMemo(
@@ -2297,7 +2365,7 @@ export default function GrubbidSearchResults({
     waiterRestoredRef.current = true;
   }, [loading, rows, q, waiterIntentContext]);
 
-  const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
+  const { primaryUrl, fallbackUrl, hasGeoFilter, geoGate } = useMemo(() => {
     const u = new URL(`${API}/search`);
     const hasRouteCoords = routeLat != null && routeLat !== "" && routeLng != null && routeLng !== "";
     // Only URL-authored manual location filters should suppress geo mode.
@@ -2336,6 +2404,10 @@ export default function GrubbidSearchResults({
       if (requestNear) u.searchParams.set("near", requestNear);
     }
     u.searchParams.set("limit", String(SEARCH_LIMIT));
+    // Slim card payload (hidden dishes trimmed, no duplicate arrays) and similar-item
+    // availability loaded after results render — searchSlimPayload.js.
+    u.searchParams.set("slim", "1");
+    u.searchParams.set("defer_similar", "1");
     if (language && language !== "en") {
       u.searchParams.set("lang", language);
     }
@@ -2363,7 +2435,14 @@ export default function GrubbidSearchResults({
 
     appendSearchAnalyticsParams(u.searchParams);
 
-    return { primaryUrl: u.toString(), fallbackUrl: baseUrl, hasGeoFilter: geoAdded };
+    const gate = searchGeoGate({
+      geoStatus: geo.status,
+      hasExplicitLocation,
+      hasRouteCoords,
+      waitExpired: geoWaitExpired,
+    });
+
+    return { primaryUrl: u.toString(), fallbackUrl: baseUrl, hasGeoFilter: geoAdded, geoGate: gate };
   }, [
     q,
     vegan,
@@ -2388,6 +2467,8 @@ export default function GrubbidSearchResults({
     routeRadiusMiles,
     geo.lat,
     geo.lng,
+    geo.status,
+    geoWaitExpired,
     routeCuisine,
     routeCategory,
     language,
@@ -2526,6 +2607,7 @@ export default function GrubbidSearchResults({
       setRows(built.rows);
       setQueryMeta(built.queryMeta);
       setSearchMeta(built.searchMeta);
+      setSocialSummary(null);
       setSearchTotalCount(built.totalCount);
       setSearchOffset(built.totalCount);
       setSearchHasMore(false);
@@ -2541,6 +2623,7 @@ export default function GrubbidSearchResults({
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
+        setSocialSummary(null);
         setContextualSections(null);
         setSearchEvents([]);
         return;
@@ -2617,6 +2700,14 @@ export default function GrubbidSearchResults({
         if (!alive) return;
       }
 
+      // Don't fire a location-less search while the browser location is on its way;
+      // it returned a different (city-wide) result set than the search right after it.
+      if (geoGate === "wait") {
+        setLoading(true);
+        setErr("");
+        return;
+      }
+
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
@@ -2665,6 +2756,8 @@ export default function GrubbidSearchResults({
         setRestaurantMetaMap(rMeta);
         setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
+        // Load more pages carry their own summary; keep the first page's (it names the top results).
+        if (pageOffset === 0) setSocialSummary(json?.social_summary && typeof json.social_summary === "object" ? json.social_summary : null);
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
@@ -2703,6 +2796,7 @@ export default function GrubbidSearchResults({
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
+        setSocialSummary(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -2716,6 +2810,7 @@ export default function GrubbidSearchResults({
     primaryUrl,
     fallbackUrl,
     hasGeoFilter,
+    geoGate,
     q,
     foodNav.pendingNavigation,
     location.state,
@@ -2807,6 +2902,9 @@ export default function GrubbidSearchResults({
     }),
     [searchMeta, dishResultCount, restaurantResultCount]
   );
+  const socialCount = socialSummaryPeopleCount(socialSummary);
+  const showSocialView = searchViewMode === "social" && socialCount > 0;
+  const showModeRadios = showResultModeSelector || socialCount > 0;
   const preferRestaurantView = showResultModeSelector && searchViewMode === "restaurants";
   const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
   const restaurantBrowseRows = useMemo(() => {
@@ -2928,6 +3026,37 @@ export default function GrubbidSearchResults({
       perRestaurantInitialCap,
     ]
   );
+
+  // Search no longer checks similar items before responding (defer_similar=1):
+  // ask once for the dishes on screen, including cards added by Load more.
+  const similarRequestedIdsRef = useRef(new Set());
+  const similarSearchUrlRef = useRef(primaryUrl);
+  useEffect(() => {
+    similarRequestedIdsRef.current = new Set();
+    similarSearchUrlRef.current = primaryUrl;
+  }, [primaryUrl]);
+  useEffect(() => {
+    if (loading || searchMeta?.similar_availability_preflight?.deferred !== true) return;
+    const ids = collectVisibleSimilarUnknownIds(rows).filter((id) => !similarRequestedIdsRef.current.has(id));
+    if (!ids.length) return;
+    for (const id of ids) similarRequestedIdsRef.current.add(id);
+    const requestUrl = similarSearchUrlRef.current;
+    fetchSimilarAvailabilityBatch(ids, {
+      city: city || null,
+      state: state || null,
+      clusterScoped: searchMeta?.cluster_scoped === true,
+      clusterId: searchMeta?.cluster_id ?? null,
+    })
+      .then((json) => {
+        const availability = json?.availability || {};
+        // Drop answers for a search the diner has already moved on from.
+        if (similarSearchUrlRef.current !== requestUrl || !Object.keys(availability).length) return;
+        setRows((prev) => applySimilarAvailabilityToSearchRows(prev, availability, applySimilarAvailabilityToRows));
+      })
+      .catch(() => {
+        // Unknown availability keeps the Similar chip enabled — same as before.
+      });
+  }, [rows, loading, searchMeta, city, state, applySimilarAvailabilityToRows]);
 
   function resolveRowSimilarAvailabilityUnknown(row) {
     if (row?.has_similar_items === true || row?.has_similar_items === false) return false;
@@ -3252,25 +3381,29 @@ export default function GrubbidSearchResults({
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: showResultModeSelector ? "space-between" : "flex-end",
+            justifyContent: showModeRadios ? "space-between" : "flex-end",
             gap: 12,
             flexWrap: "wrap",
             marginBottom: 12,
           }}
         >
-          {showResultModeSelector ? (
+          {showModeRadios ? (
             <SearchResultModeSelector
               dishCount={dishResultCount}
               restaurantCount={restaurantResultCount}
-              mode={searchViewMode}
+              mode={showSocialView ? "social" : searchViewMode === "social" ? "dishes" : searchViewMode}
               onModeChange={setSearchViewMode}
+              showViewChoice={showResultModeSelector}
+              socialCount={socialCount}
             />
           ) : null}
           <SearchResultsShareControl copied={shareCopied} onShare={handleShareResults} />
         </div>
       )}
 
-      {!loading && !err && preferRestaurantView && restaurantBrowseRows.length > 0 && (
+      {!loading && !err && showSocialView ? <SearchSocialSummary summary={socialSummary} /> : null}
+
+      {!loading && !err && !showSocialView && preferRestaurantView && restaurantBrowseRows.length > 0 && (
         <div style={styles.grid}>
           {restaurantBrowseRows.map((r) => (
             <SearchResultCard
@@ -3297,7 +3430,7 @@ export default function GrubbidSearchResults({
         </div>
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && !showSocialView && activeRestaurantGroupedRendering && !preferRestaurantView && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
@@ -3325,7 +3458,7 @@ export default function GrubbidSearchResults({
         </>
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && hasMenuMatches && (
+      {!loading && !err && !showSocialView && activeRestaurantGroupedRendering && !preferRestaurantView && hasMenuMatches && (
         <>
           {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
           <div style={styles.grid}>
@@ -3380,7 +3513,7 @@ export default function GrubbidSearchResults({
         </>
       )}
 
-      {!loading && !err && !activeRestaurantGroupedRendering && hasDishMatches && (
+      {!loading && !err && !showSocialView && !activeRestaurantGroupedRendering && hasDishMatches && (
         <>
           <div style={styles.grid}>
             {visibleDishRows.map((row) => {
@@ -3508,7 +3641,7 @@ export default function GrubbidSearchResults({
       ) : null}
 
       {/* Load More — search pagination */}
-      {!loading && !err && searchHasMore && (
+      {!loading && !err && !showSocialView && searchHasMore && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
           <button
             type="button"

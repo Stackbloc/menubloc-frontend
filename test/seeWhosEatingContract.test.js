@@ -147,15 +147,15 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(cats, /\$\{place\}\/\$\{dishName\}/);
   assert.match(cats, /liveFeedFullCategoryLabel/);
   assert.match(cats, /want: "Wish List"/);
-  assert.match(cats, /My Eating Plans/);
+  assert.match(cats, /Social Plans/);
   assert.match(cats, /What I'm Eating/);
   assert.match(cats, /CHANNEL_LABEL_BY_KIND/);
   assert.doesNotMatch(cats, /LIVE_FEED_CATEGORY_LABELS/);
-  assert.match(cats, /Events/);
+  assert.doesNotMatch(cats, /label: "Events"/); // Social Plans (docs/15) took over the Events channel
   assert.match(cats, /All Content/);
   assert.match(cats, /I'm Eating/);
   assert.match(cats, /label:\s*"Wanna Eat"/);
-  assert.match(cats, /Eating Plans/);
+  assert.match(cats, /Social Plans/);
   assert.doesNotMatch(cats, /short:\s*"ALL"/);
   assert.doesNotMatch(cats, /label:\s*"Wish List"/);
   assert.match(cats, /LIVE_FEED_FULL_CATEGORY_LABELS/);

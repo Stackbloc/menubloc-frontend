@@ -145,6 +145,8 @@ export default function ClassicMenuTemplate(ctx) {
   const surfaceBackground = "var(--menu-surface, #FFFFFF)";
   const ink = appearanceActive ? "var(--menu-ink, #1D1D1F)" : INK;
   const subtle = appearanceActive ? "var(--menu-muted, #6E6E73)" : SUBTLE;
+  // Brand-themed chain menus set --menu-tab-active; everyone else keeps ink.
+  const tabActive = appearanceActive ? `var(--menu-tab-active, ${ink})` : ink;
 
   return (
     <div
@@ -346,8 +348,8 @@ export default function ClassicMenuTemplate(ctx) {
                         flexShrink: 0,
                         padding: "7px 16px",
                         borderRadius: 999,
-                        border: isSelected ? `1px solid ${ink}` : `1px solid ${HAIRLINE}`,
-                        background: isSelected ? ink : "transparent",
+                        border: isSelected ? `1px solid ${tabActive}` : `1px solid ${HAIRLINE}`,
+                        background: isSelected ? tabActive : "transparent",
                         color: isSelected ? "#FFFFFF" : subtle,
                         fontWeight: 500,
                         fontSize: 14,
