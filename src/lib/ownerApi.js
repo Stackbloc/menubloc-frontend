@@ -750,6 +750,7 @@ export const startLocationBotApply = (body) => post("/api/owner/location-bot/app
 // ─── Agent (place + radius → find restaurants → draft menus → publish via Menubot) ───
 
 /** { place, radius_m, name? } → { status: 'proposed', proposal } or { status: 'needs_info', question } */
+export const listAgentClusters = () => get("/api/owner/agent/clusters");
 export const proposeAgentCluster = (body) => post("/api/owner/agent/propose", body);
 /** Starts a run from a proposal: { name, center_lat, center_lng, radius_m, city, state, objective_text } */
 export const startAgentObjective = (proposal) => post("/api/owner/agent/objectives", proposal);
