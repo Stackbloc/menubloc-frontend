@@ -29,10 +29,10 @@ import {
 /**
  * Owner → Bots → Agent.
  *   1. Where: a place name or address + a radius → the map finds it (no AI guesses the spot)
- *   2. Start: the agent finds the restaurants there, skips chains and marketplaces, and drafts
- *      menus from the restaurants' own sites. Nothing goes live.
- *   3. Review: send a draft to Menubot to see its preview, then Publish (goes live through
- *      Menubot) or Reject.
+ *   2. Start: the agent finds the restaurants there, skips chains and marketplaces, reads
+ *      menus from the restaurants' own sites and publishes them through Menubot. Places whose
+ *      menu it can't find get a claimable profile. The owner reviews later.
+ *   3. Review: anything Menubot wouldn't apply on its own stays as a draft (Publish / Reject).
  */
 
 const RADII = [
@@ -224,7 +224,7 @@ function WhereStep({ onStarted }) {
               Not this spot
             </button>
           </div>
-          <div style={mutedStyle}>It finds the restaurants and drafts menus. Nothing goes live until you publish.</div>
+          <div style={mutedStyle}>It finds the restaurants, publishes the menus it can read, and makes claimable profiles for places whose menu it can't find. You can review everything later.</div>
         </div>
       ) : null}
     </Step>
@@ -452,7 +452,7 @@ function RunDetail({ objectiveId, onListChanged }) {
                       </a>
                     ) : null}
                   </td>
-                  <td style={tdStyle}><Pill tone={PLACE_TONES[p.status] || "grey"}>{PLACE_LABELS[p.status] || p.status}</Pill></td>
+                  <td style={tdStyle}><Pill tone={p.profile_created ? "amber" : PLACE_TONES[p.status] || "grey"}>{p.profile_created ? "Profile, no menu" : PLACE_LABELS[p.status] || p.status}</Pill></td>
                   <td style={{ ...tdStyle, ...mutedStyle, maxWidth: 360 }}>{p.notes || ""}</td>
                   <td style={tdStyle}><PlaceActions place={p} onChanged={load} /></td>
                 </tr>
