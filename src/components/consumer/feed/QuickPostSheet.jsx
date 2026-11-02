@@ -1,7 +1,7 @@
 /**
  * Post = a quick post in two steps (Andre 2026-11-02 light design, same as the app's Post tab).
  * 1 · Capture your clip: a dashed frame ("Frame your dish, then hit record") with the tip, optional
- *    "Posting about" pills (A restaurant · A dish · Home cooking), a big red Record button and the
+ *    "Posting about" pills (A restaurant · Cooking @home), a big red Record button and the
  *    gallery (Upload media). A restaurant clip needs no food: the restaurant box comes first.
  * 2 · Tag your clip: the clip (▶ to play, its length), WHERE (📍 Restaurant type-ahead, a new place is
  *    added for review · 🏠 Home; ⭐ Recommend once a restaurant is set), WHAT FOOD (one caption line,
@@ -29,8 +29,7 @@ const GREEN = "#0f7a24";
 /** What the clip is about, picked before the clip; optional, so Record still takes one tap. */
 const ABOUT = [
   { key: "restaurant", icon: "📍", label: "A restaurant" },
-  { key: "dish", icon: "🍜", label: "A dish" },
-  { key: "home", icon: "🏠", label: "Home cooking" },
+  { key: "home", icon: "🏠", label: "Cooking @home" },
 ];
 
 function cleanTyped(value) {
