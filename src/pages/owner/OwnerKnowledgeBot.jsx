@@ -380,6 +380,8 @@ function stepForJob(jobRow) {
 export default function OwnerKnowledgeBot() {
   const [searchParams, setSearchParams] = useSearchParams();
   const resumeJobId = searchParams.get("job");
+  // Opened from Owner → Agent: a way back without the browser arrow.
+  const fromAgent = searchParams.get("from") === "agent";
 
   const [step, setStep] = useState("restaurant");
   const [jobId, setJobId] = useState(resumeJobId || null);
@@ -676,6 +678,11 @@ export default function OwnerKnowledgeBot() {
       }
     >
       <PageCard style={{ padding: "22px 24px" }}>
+        {fromAgent ? (
+          <Link to="/owner/bots/agent" style={{ ...smallButtonStyle, display: "inline-block", textDecoration: "none", color: "inherit", marginBottom: 12 }}>
+            ← Back to Agent
+          </Link>
+        ) : null}
         <SectionTitle
           title="Add a menu"
           subtitle="Pick the restaurant, give Menubot menu links or photos — or let it find the menu online — then review before anything is published."

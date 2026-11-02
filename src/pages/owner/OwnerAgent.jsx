@@ -29,6 +29,7 @@ import {
   runAgentAgain,
   startAgentObjective,
   takeDownAgentPlace,
+  takeDownAgentPlaces,
 } from "../../lib/ownerApi.js";
 import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 
@@ -581,7 +582,7 @@ function PlaceActions({ place, onChanged }) {
     <div style={{ display: "grid", gap: 6 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {place.menubot_job_id ? (
-          <Link to={`/owner/menubot?job=${place.menubot_job_id}`} style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>Open in Menubot</Link>
+          <Link to={`/owner/menubot?job=${place.menubot_job_id}&from=agent`} style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>Open in Menubot</Link>
         ) : (
           <button type="button" style={smallButton} disabled={Boolean(busy)} onClick={() => run("prepare", () => prepareAgentPlace(place.id))}>
             {busy === "prepare" ? "Sending…" : "Send to Menubot"}
@@ -793,6 +794,9 @@ function PublishedMenus({ refreshKey, onChanged }) {
   const [error, setError] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [reloads, setReloads] = useState(0);
+  const [picked, setPicked] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNote, setBulkNote] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -800,6 +804,7 @@ function PublishedMenus({ refreshKey, onChanged }) {
       .then((out) => {
         if (!alive) return;
         setPlaces(out.places || []);
+        setPicked(new Set());
         setError("");
       })
       .catch((err) => {
@@ -814,6 +819,42 @@ function PublishedMenus({ refreshKey, onChanged }) {
 
   const flagged = (places || []).filter((p) => p.check && !p.check.ok);
   const shown = showAll ? [...flagged, ...(places || []).filter((p) => !(p.check && !p.check.ok))] : flagged;
+  const pickedShown = shown.filter((p) => picked.has(p.id));
+  const allPicked = shown.length > 0 && pickedShown.length === shown.length;
+
+  function togglePick(id) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setPicked(allPicked ? new Set() : new Set(shown.map((p) => p.id)));
+  }
+  async function takeDownPicked() {
+    const ids = pickedShown.map((p) => p.id);
+    if (!ids.length) return;
+    if (!window.confirm(`Take down ${ids.length} menu${ids.length === 1 ? "" : "s"}? They go back to draft and the places go to Needs info.`)) return;
+    setBulkBusy(true);
+    setBulkNote("");
+    try {
+      const out = await takeDownAgentPlaces(ids);
+      const failed = out.failed || [];
+      const names = new Map(shown.map((p) => [p.id, p.name]));
+      setBulkNote(
+        `Took down ${(out.done || []).length}.` +
+          (failed.length ? ` Couldn't take down: ${failed.map((f) => `${names.get(f.candidate_id) || f.candidate_id} (${f.error})`).join("; ")}` : "")
+      );
+      setReloads((n) => n + 1);
+      await onChanged();
+    } catch (err) {
+      setBulkNote(err?.message || "Didn't work");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   return (
     <PageCard style={{ padding: 20 }}>
@@ -837,10 +878,28 @@ function PublishedMenus({ refreshKey, onChanged }) {
             </button>
           </div>
           {shown.length ? (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+              <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                <input type="checkbox" checked={allPicked} onChange={toggleAll} />
+                Select all ({shown.length})
+              </label>
+              <button
+                type="button"
+                style={{ ...smallButton, color: "#b42318", opacity: pickedShown.length ? 1 : 0.45 }}
+                disabled={!pickedShown.length || bulkBusy}
+                onClick={takeDownPicked}
+              >
+                {bulkBusy ? "Taking down…" : `Take down selected (${pickedShown.length})`}
+              </button>
+              {bulkNote ? <span style={{ ...mutedStyle, fontSize: 13 }}>{bulkNote}</span> : null}
+            </div>
+          ) : null}
+          {shown.length ? (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
+                    <th style={{ ...thStyle, width: 28 }}></th>
                     <th style={thStyle}>Restaurant</th>
                     <th style={thStyle}>Check</th>
                     <th style={thStyle}>Why</th>
@@ -851,7 +910,10 @@ function PublishedMenus({ refreshKey, onChanged }) {
                   {shown.map((p) => {
                     const menuPath = restaurantMenuPath({ slug: p.slug, city: p.city, state: p.state, id: p.restaurant_id });
                     return (
-                      <tr key={p.id}>
+                      <tr key={p.id} style={picked.has(p.id) ? { background: "#fef3f2" } : undefined}>
+                        <td style={tdStyle}>
+                          <input type="checkbox" aria-label={`Select ${p.name}`} checked={picked.has(p.id)} onChange={() => togglePick(p.id)} />
+                        </td>
                         <td style={tdStyle}>
                           <div style={{ fontWeight: 700 }}>
                             {menuPath ? <a href={menuPath} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.ink }}>{p.name}</a> : p.name}
@@ -867,7 +929,12 @@ function PublishedMenus({ refreshKey, onChanged }) {
                         </td>
                         <td style={tdStyle}>
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                            <Link to={`/owner/menubot?job=${p.menubot_job_id}`} style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>Open in Menubot</Link>
+                            {menuPath ? (
+                              <a href={menuPath} target="_blank" rel="noreferrer" style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>
+                                View menu ↗
+                              </a>
+                            ) : null}
+                            <Link to={`/owner/menubot?job=${p.menubot_job_id}&from=agent`} style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>Open in Menubot</Link>
                             <TakeDownButton
                               place={p}
                               name={p.name}
