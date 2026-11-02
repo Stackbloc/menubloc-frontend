@@ -17,6 +17,7 @@ import {
   createAgentPlaceProfile,
   getAgentObjective,
   listAgentClusters,
+  listAgentPublished,
   listAgentObjectives,
   objectiveAgentAction,
   prepareAgentPlace,
@@ -27,7 +28,9 @@ import {
   rejectAgentPlace,
   runAgentAgain,
   startAgentObjective,
+  takeDownAgentPlace,
 } from "../../lib/ownerApi.js";
+import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 
 /**
  * Owner → Bots → Agent.
@@ -36,6 +39,8 @@ import {
  *      menus from the restaurants' own sites and publishes them through Menubot. Places whose
  *      menu it can't find get a claimable profile. The owner reviews later.
  *   3. Review: anything Menubot wouldn't apply on its own stays as a draft (Publish / Reject).
+ *   4. Published by the agent: every menu it put live, checked again (site links, review
+ *      sentences, too few prices); Take down sends one back to draft.
  */
 
 const RADII = [
@@ -410,6 +415,44 @@ function AddInfo({ place, onChanged }) {
   );
 }
 
+/** The check's verdict on a published menu: green, red with why, or nothing when unchecked. */
+function MenuCheckPill({ check }) {
+  if (!check) return null;
+  return check.ok ? <Pill tone="green">Looks like a menu</Pill> : <Pill tone="red">Not a menu?</Pill>;
+}
+
+function menuCheckWhy(check) {
+  if (!check || check.ok) return "";
+  const ex = check.examples?.length ? ` (e.g. ${check.examples.slice(0, 3).map((e) => `"${String(e).slice(0, 30)}"`).join(", ")})` : "";
+  return `${check.reason}${ex}`;
+}
+
+function TakeDownButton({ place, name, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function takeDown() {
+    if (!window.confirm(`Take down the menu the agent published for ${name}? It goes back to draft and the place goes to Needs info, so you can add the right menu.`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      await takeDownAgentPlace(place.id);
+      await onDone();
+    } catch (err) {
+      setError(err?.message || "Didn't work");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <button type="button" style={{ ...smallButton, color: "#b42318" }} disabled={busy} onClick={takeDown}>
+        {busy ? "Taking down…" : "Take down"}
+      </button>
+      {error ? <div style={{ ...errorStyle, marginTop: 0 }}>{error}</div> : null}
+    </>
+  );
+}
+
 function PlaceActions({ place, onChanged }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -454,6 +497,15 @@ function PlaceActions({ place, onChanged }) {
         <div style={{ display: "grid", gap: 6, justifyItems: "start" }}>
           {addInfo}
           {place.profile_created && place.matched_restaurant_id ? <span style={mutedStyle}>Restaurant #{place.matched_restaurant_id}</span> : null}
+        </div>
+      );
+    }
+    if (place.status === "approved" && place.menubot_job_id && place.matched_restaurant_id) {
+      return (
+        <div style={{ display: "grid", gap: 6, justifyItems: "start" }}>
+          <MenuCheckPill check={place.menu_check} />
+          <span style={mutedStyle}>Restaurant #{place.matched_restaurant_id}</span>
+          <TakeDownButton place={place} name={place.name} onDone={onChanged} />
         </div>
       );
     }
@@ -649,7 +701,10 @@ function RunDetail({ objectiveId, onListChanged }) {
                     ) : null}
                   </td>
                   <td style={tdStyle}><Pill tone={p.profile_created ? "amber" : PLACE_TONES[p.status] || "grey"}>{p.profile_created ? "Profile, no menu" : PLACE_LABELS[p.status] || p.status}</Pill></td>
-                  <td style={{ ...tdStyle, ...mutedStyle, maxWidth: 360 }}>{p.notes || ""}</td>
+                  <td style={{ ...tdStyle, ...mutedStyle, maxWidth: 360 }}>
+                    {p.notes || ""}
+                    {p.menu_check && !p.menu_check.ok ? <div style={{ color: "#b42318", marginTop: 4 }}>Not a menu? {menuCheckWhy(p.menu_check)}</div> : null}
+                  </td>
                   <td style={tdStyle}><PlaceActions place={p} onChanged={changed} /></td>
                 </tr>
               ))}
@@ -658,6 +713,112 @@ function RunDetail({ objectiveId, onListChanged }) {
         </div>
       ) : (
         <div style={mutedStyle}>{live ? "Looking for places…" : "No places found."}</div>
+      )}
+    </PageCard>
+  );
+}
+
+/** Every menu the agent published, the ones the check doesn't like first, each with Take down. */
+function PublishedMenus({ refreshKey, onChanged }) {
+  const [places, setPlaces] = useState(null);
+  const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [reloads, setReloads] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    listAgentPublished()
+      .then((out) => {
+        if (!alive) return;
+        setPlaces(out.places || []);
+        setError("");
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setError(err?.message || "Couldn't load published menus");
+        setPlaces([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [refreshKey, reloads]);
+
+  const flagged = (places || []).filter((p) => p.check && !p.check.ok);
+  const shown = showAll ? [...flagged, ...(places || []).filter((p) => !(p.check && !p.check.ok))] : flagged;
+
+  return (
+    <PageCard style={{ padding: 20 }}>
+      <SectionTitle
+        title="Published by the agent"
+        subtitle={places === null ? "" : `${places.length} menu${places.length === 1 ? "" : "s"} live · ${flagged.length} flagged as not a menu`}
+      />
+      {error ? <div style={errorStyle}>{error}</div> : null}
+      {places === null ? (
+        <div style={mutedStyle}>Loading…</div>
+      ) : !places.length ? (
+        <EmptyState>The agent hasn't published any menus yet.</EmptyState>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            <button type="button" style={{ ...smallButton, ...(showAll ? {} : { background: "#eef2ff" }) }} onClick={() => setShowAll(false)}>
+              Not a menu? ({flagged.length})
+            </button>
+            <button type="button" style={{ ...smallButton, ...(showAll ? { background: "#eef2ff" } : {}) }} onClick={() => setShowAll(true)}>
+              All ({places.length})
+            </button>
+          </div>
+          {shown.length ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Restaurant</th>
+                    <th style={thStyle}>Check</th>
+                    <th style={thStyle}>Why</th>
+                    <th style={thStyle}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.map((p) => {
+                    const menuPath = restaurantMenuPath({ slug: p.slug, city: p.city, state: p.state, id: p.restaurant_id });
+                    return (
+                      <tr key={p.id}>
+                        <td style={tdStyle}>
+                          <div style={{ fontWeight: 700 }}>
+                            {menuPath ? <a href={menuPath} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.ink }}>{p.name}</a> : p.name}
+                          </div>
+                          <div style={{ ...mutedStyle, fontSize: 12 }}>
+                            {p.run_name || `Run ${p.objective_id}`}
+                            {p.published_at ? ` · ${new Date(p.published_at).toLocaleDateString()}` : ""}
+                          </div>
+                        </td>
+                        <td style={tdStyle}>{p.check ? <MenuCheckPill check={p.check} /> : <Pill tone="grey">Not checked</Pill>}</td>
+                        <td style={{ ...tdStyle, ...mutedStyle, maxWidth: 360 }}>
+                          {p.check ? (p.check.ok ? `${p.check.real_dishes} dishes, ${p.check.priced} with prices` : menuCheckWhy(p.check)) : "Menubot kept no dish list for this one."}
+                        </td>
+                        <td style={tdStyle}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                            <Link to={`/owner/menubot?job=${p.menubot_job_id}`} style={{ ...smallButton, textDecoration: "none", color: OWNER_COLORS.ink }}>Open in Menubot</Link>
+                            <TakeDownButton
+                              place={p}
+                              name={p.name}
+                              onDone={async () => {
+                                setReloads((n) => n + 1);
+                                await onChanged();
+                              }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={mutedStyle}>Every published menu passes the check.</div>
+          )}
+        </>
       )}
     </PageCard>
   );
@@ -775,6 +936,14 @@ export default function OwnerAgent() {
             <RunDetail key={`${selected}-${detailKey}`} objectiveId={selected} onListChanged={loadRuns} />
           </div>
         ) : null}
+
+        <PublishedMenus
+          refreshKey={detailKey}
+          onChanged={async () => {
+            await loadRuns();
+            setDetailKey((k) => k + 1);
+          }}
+        />
       </div>
     </OwnerLayout>
   );
