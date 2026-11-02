@@ -22,6 +22,7 @@ import {
   proposeAgentCluster,
   publishAgentPlace,
   publishAllAgentRun,
+  recheckAgentPlace,
   rejectAgentPlace,
   startAgentObjective,
 } from "../../lib/ownerApi.js";
@@ -234,6 +235,88 @@ function WhereStep({ onStarted }) {
   );
 }
 
+/** Add info: a more precise web address or the pasted menu, then the agent checks the place again. */
+function AddInfo({ place, onChanged }) {
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState("url");
+  const [url, setUrl] = useState(place.owner_hint_url || "");
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  if (place.rechecking) return <span style={mutedStyle}>Rechecking…</span>;
+  if (!place.can_recheck) return null;
+  if (!open) {
+    return (
+      <button type="button" style={smallButton} onClick={() => setOpen(true)}>
+        Add info ▾
+      </button>
+    );
+  }
+  const value = kind === "url" ? url.trim() : text.trim();
+  async function recheck() {
+    setBusy(true);
+    setError("");
+    try {
+      await recheckAgentPlace(place.id, kind === "url" ? { url: value } : { text: value });
+      setOpen(false);
+      setText("");
+      await onChanged();
+    } catch (err) {
+      setError(err?.message || "Didn't work");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const tab = (k, label) => (
+    <button
+      type="button"
+      onClick={() => setKind(k)}
+      style={{ ...smallButton, padding: "3px 10px", fontSize: 12, ...(kind === k ? { background: OWNER_COLORS.ink, color: "#fff", border: "none" } : {}) }}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div style={{ display: "grid", gap: 6, minWidth: 260, padding: 10, border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 10, background: "#fafbfd" }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        {tab("url", "Web address")}
+        {tab("text", "Paste menu")}
+      </div>
+      {kind === "url" ? (
+        <input
+          style={{ ...inputStyle, fontSize: 13 }}
+          placeholder="https://restaurant.com/menu"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && value && !busy) recheck(); }}
+        />
+      ) : (
+        <textarea
+          style={{ ...inputStyle, fontSize: 13, minHeight: 110, fontFamily: "inherit" }}
+          placeholder={"One dish per line with its price\nSpicy Miso Ramen $16.50"}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      )}
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          type="button"
+          style={{ ...smallButton, background: OWNER_COLORS.accent, color: "#fff", border: "none", opacity: value ? 1 : 0.45 }}
+          disabled={busy || !value}
+          onClick={recheck}
+        >
+          {busy ? "Starting…" : "Recheck"}
+        </button>
+        <button type="button" style={smallButton} disabled={busy} onClick={() => { setOpen(false); setError(""); }}>
+          Close
+        </button>
+      </div>
+      {error ? <div style={{ ...errorStyle, marginTop: 0 }}>{error}</div> : null}
+    </div>
+  );
+}
+
 function PlaceActions({ place, onChanged }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -252,9 +335,11 @@ function PlaceActions({ place, onChanged }) {
   }
 
   if (place.status !== "review") {
+    const addInfo = <AddInfo place={place} onChanged={onChanged} />;
     if (place.can_create_profile) {
       return (
-        <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "grid", gap: 6, justifyItems: "start" }}>
+          {addInfo}
           <button
             type="button"
             style={smallButton}
@@ -268,6 +353,14 @@ function PlaceActions({ place, onChanged }) {
             {busy === "profile" ? "Creating…" : "Create profile"}
           </button>
           {error ? <div style={{ ...errorStyle, marginTop: 0 }}>{error}</div> : null}
+        </div>
+      );
+    }
+    if (place.can_recheck || place.rechecking) {
+      return (
+        <div style={{ display: "grid", gap: 6, justifyItems: "start" }}>
+          {addInfo}
+          {place.profile_created && place.matched_restaurant_id ? <span style={mutedStyle}>Restaurant #{place.matched_restaurant_id}</span> : null}
         </div>
       );
     }
@@ -310,6 +403,7 @@ function RunDetail({ objectiveId, onListChanged }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const timer = useRef(null);
+  const [pollKey, setPollKey] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -329,14 +423,20 @@ function RunDetail({ objectiveId, onListChanged }) {
       const out = await load();
       if (!alive) return;
       const status = out?.objective?.status;
-      if (status === "running" || status === "queued" || out?.objective?.publishing_now) timer.current = setTimeout(tick, 5000);
+      if (status === "running" || status === "queued" || out?.objective?.publishing_now || (out?.places || []).some((p) => p.rechecking)) timer.current = setTimeout(tick, 5000);
     };
     tick();
     return () => {
       alive = false;
       clearTimeout(timer.current);
     };
-  }, [load]);
+  }, [load, pollKey]);
+
+  // After a place action: refresh now, and keep refreshing while something is still going.
+  const changed = useCallback(async () => {
+    clearTimeout(timer.current);
+    setPollKey((k) => k + 1);
+  }, []);
 
   async function publishAll() {
     const drafts = review.length;
@@ -422,7 +522,7 @@ function RunDetail({ objectiveId, onListChanged }) {
           </button>
         ) : null}
         <RunSummary report={o.seed?.report} />
-        {live || o.publishing_now ? <span style={mutedStyle}>· updates every few seconds</span> : null}
+        {live || o.publishing_now || places.some((p) => p.rechecking) ? <span style={mutedStyle}>· updates every few seconds</span> : null}
       </div>
       {o.status !== "cancelled" ? <RunProgress places={places} status={o.status} /> : null}
       {o.error_message && o.status === "failed" ? <div style={{ ...errorStyle, marginTop: 0, marginBottom: 12 }}>Stopped: {o.error_message}</div> : null}
@@ -457,7 +557,7 @@ function RunDetail({ objectiveId, onListChanged }) {
                   </td>
                   <td style={tdStyle}><Pill tone={p.profile_created ? "amber" : PLACE_TONES[p.status] || "grey"}>{p.profile_created ? "Profile, no menu" : PLACE_LABELS[p.status] || p.status}</Pill></td>
                   <td style={{ ...tdStyle, ...mutedStyle, maxWidth: 360 }}>{p.notes || ""}</td>
-                  <td style={tdStyle}><PlaceActions place={p} onChanged={load} /></td>
+                  <td style={tdStyle}><PlaceActions place={p} onChanged={changed} /></td>
                 </tr>
               ))}
             </tbody>

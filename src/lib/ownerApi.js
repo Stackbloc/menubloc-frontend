@@ -760,6 +760,8 @@ export const objectiveAgentAction = (id, action) => post(`/api/owner/agent/objec
 export const prepareAgentPlace = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/prepare`, {});
 export const publishAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/publish`, { note });
 export const rejectAgentPlace = (id, note = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/reject`, { note });
+// Add info + Recheck: { url } or { text }; runs in the background on the server.
+export const recheckAgentPlace = (id, { url = null, text = null } = {}) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/recheck`, { url, text });
 export const createAgentPlaceProfile = (id) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/create-profile`, {});
 export const publishAllAgentRun = (id) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/publish-all`, {});
 
