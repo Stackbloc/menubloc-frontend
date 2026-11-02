@@ -240,6 +240,16 @@ export const reportDinerAbuse = (userId, body) =>
   post(`/api/consumer/diners/${encodeURIComponent(String(userId))}/report`, body || {});
 export const listDinerAbuseReasons = () => get("/api/consumer/diners/abuse-reasons");
 
+// Play Store safety (Andre approved 2026-11-02, plan 18): report one clip, Blocked list, delete account.
+/** kind = feed/restaurant clip kind ("ate", "want", "managed"…) or "video_comment"; reason from listContentReportReasons. */
+export const reportContent = ({ kind, contentId, reason, note }) =>
+  post("/api/consumer/reports", { kind, content_id: contentId, reason, note: note || undefined });
+export const listContentReportReasons = () => get("/api/consumer/reports/reasons");
+export const listBlockedDiners = () => get("/api/consumer/blocks");
+/** Accounts with a password send it; Google/Apple-only accounts send confirm: "DELETE". */
+export const deleteConsumerAccount = ({ password, confirm }) =>
+  post("/api/consumer/account/delete", { password: password || undefined, confirm: confirm || undefined });
+
 export const listConnectionsEating = (limit = 30, peerId = null) => {
   const q = new URLSearchParams({ limit: String(limit) });
   if (peerId) q.set("peer_id", String(peerId));

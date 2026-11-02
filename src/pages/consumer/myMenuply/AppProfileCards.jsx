@@ -267,6 +267,10 @@ export function AppSettings({ onDiscoverChange, onSignOut }) {
           <span>Change email</span>
           <span style={{ color: C.muted }}>›</span>
         </Link>
+        <Link to="/account/blocked" style={styles.linkRow} data-testid="settings-blocked">
+          <span>Blocked</span>
+          <span style={{ color: C.muted }}>›</span>
+        </Link>
         {LINKS.map(([label, to]) => (
           <Link key={to} to={to} style={styles.linkRow}>
             <span>{label}</span>
@@ -289,6 +293,13 @@ export function AppSettings({ onDiscoverChange, onSignOut }) {
       >
         Sign out
       </button>
+      <Link
+        to="/account/delete"
+        style={{ ...st.link, alignSelf: "center", color: C.danger, fontSize: 14 }}
+        data-testid="settings-delete-account"
+      >
+        Delete account
+      </Link>
     </AppProfileStack>
   );
 }

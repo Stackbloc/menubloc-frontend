@@ -59,6 +59,7 @@ import MenuplyAccountInviteCard from "../../../components/consumer/MenuplyAccoun
 import { feedListKeepsPosition, wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
+import ClipSafetyMenu from "../../../components/safety/ClipSafetyMenu.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -67,6 +68,9 @@ const SWIPE_MIN_PX = 56;
  *   modal — My Menuply overlay (exit closes).
  *   feedHome — primary Feed shell (no exit; swipe down on first stays; bottom padding for shell nav).
  */
+// Clip kinds the backend accepts a report for (sponsored cards are not diner clips).
+const REPORTABLE_KINDS = new Set(["ate", "want", "plan", "event", "managed", "cooking"]);
+
 export default function SeeWhosEatingFullscreen({
   items = [],
   startIndex = 0,
@@ -719,6 +723,18 @@ export default function SeeWhosEatingFullscreen({
       onTouchEnd={onTouchEnd}
     >
       {headerSlot}
+      {item && !menuBrowserOpen && REPORTABLE_KINDS.has(item.kind) && item.source_id != null ? (
+        // Report / Block (Play Store safety, 2026-11-02). Moves on to the next clip once done.
+        <ClipSafetyMenu
+          kind={item.kind}
+          contentId={item.source_id}
+          dinerId={item.diner?.id ?? null}
+          dinerName={item.diner?.display_name || ""}
+          onHidden={() => goNext()}
+          buttonStyle={styles.safetyMenuBtn}
+          label="Report or block"
+        />
+      ) : null}
       {!isFeedHome && !menuBrowserOpen ? (
         <>
           <button
@@ -1181,6 +1197,21 @@ const styles = {
     whiteSpace: "nowrap",
     cursor: "pointer",
     fontFamily: "inherit",
+  },
+  safetyMenuBtn: {
+    position: "absolute",
+    zIndex: 30,
+    top: "calc(max(12px, env(safe-area-inset-top)) + 52px)",
+    right: "max(12px, env(safe-area-inset-right))",
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.4)",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 20,
+    lineHeight: "20px",
+    cursor: "pointer",
   },
   inviteShareBtn: {
     border: "1px solid rgba(255,255,255,0.4)",

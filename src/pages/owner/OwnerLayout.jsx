@@ -71,6 +71,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/videos", label: "Clip Manager" },
       { to: "/owner/phms", label: "Platform Health" },
       { to: "/owner/errors", label: "Errors" },
+      { to: "/owner/reports", label: "Reports" },
       { to: "/owner/homepage", label: "Homepage Controls" },
       { to: "/owner/deployments", label: "Deployment Operations" },
       { to: "/owner/intelligence", label: "Platform Intelligence" },

@@ -5,6 +5,7 @@
  * from DishVideoCommentSheet (DISH_VIDEO_COMMENT_POSTED_EVENT).
  */
 import { useEffect, useRef, useState } from "react";
+import ClipSafetyMenu from "../safety/ClipSafetyMenu.jsx";
 import {
   DISH_VIDEO_COMMENT_POSTED_EVENT,
   listDishVideoComments,
@@ -106,6 +107,16 @@ export default function DishVideoComments({ menuItemId, renderFrame }) {
               <figcaption style={styles.caption}>
                 <span style={styles.author}>{c.author_display_name || "Diner"}</span>
                 <span style={styles.when}>{formatWhen(c.created_at)}</span>
+                {/* Report / Block (Play Store safety, 2026-11-02): the comment leaves this list once done. */}
+                <ClipSafetyMenu
+                  kind="video_comment"
+                  contentId={c.id}
+                  dinerId={c.author_user_id ?? null}
+                  dinerName={c.author_display_name || ""}
+                  onHidden={() => setComments((prev) => prev.filter((x) => x.id !== c.id && (c.author_user_id == null || x.author_user_id !== c.author_user_id)))}
+                  buttonStyle={styles.safetyMenu}
+                  label="Report or block"
+                />
               </figcaption>
             </figure>
           );
@@ -152,6 +163,7 @@ const styles = {
     cursor: "pointer",
   },
   caption: { display: "flex", justifyContent: "space-between", gap: 6, marginTop: 6, fontSize: 12 },
+  safetyMenu: { background: "none", border: 0, padding: "0 2px", fontSize: 16, lineHeight: 1, color: "var(--gb-color-ink-soft, #5c665f)", cursor: "pointer", flex: "0 0 auto" },
   author: { fontWeight: 600, color: "var(--gb-color-ink-soft, #5c665f)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   when: { color: "var(--gb-color-ink-muted, #5c665f)", flexShrink: 0 },
 };

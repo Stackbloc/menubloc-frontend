@@ -172,6 +172,9 @@ import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
 import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
 import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerErrors from "./pages/owner/OwnerErrors.jsx";
+import OwnerContentReports from "./pages/owner/OwnerContentReports.jsx";
+import AccountDeletePage from "./pages/consumer/safety/AccountDeletePage.jsx";
+import BlockedDinersPage from "./pages/consumer/safety/BlockedDinersPage.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
 import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
 import OwnerDeals from "./pages/owner/OwnerDeals.jsx";
@@ -1065,6 +1068,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/diner-status" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerStatusPage />} />
         <Route path="/account/cluster-subscriptions" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterSubscriptionsPage />} />
         <Route path="/account/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerOrderFeedbackPage />} />
+        {/* Play Store safety (2026-11-02): /account/delete is the URL Google Play lists. */}
+        <Route path="/account/delete" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AccountDeletePage />} />
+        <Route path="/account/blocked" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BlockedDinersPage />} />
 
         <Route path="/provider/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProviderApp />} />
 
@@ -1157,6 +1163,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/ads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAdsPage /></OwnerRoute>} />
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/errors" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerErrors /></OwnerRoute>} />
+        <Route path="/owner/reports" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerContentReports /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
         <Route path="/owner/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHelpCenter /></OwnerRoute>} />
