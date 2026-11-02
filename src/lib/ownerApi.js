@@ -1206,6 +1206,10 @@ export const getKnowledgeBotJob = (jobId) =>
 export const updateKnowledgeBotJob = (jobId, body) =>
   patch(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}`, body);
 
+// Review step → Edit: replace the parsed items with the owner's corrected list (rebuilds the plan).
+export const saveKnowledgeBotMenuItems = (jobId, items) =>
+  put(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/menu-items`, { items });
+
 export const uploadKnowledgeBotEvidence = (jobId, formData) =>
   postFormData(`/api/owner/knowledge-bot/jobs/${encodeURIComponent(String(jobId))}/evidence`, formData);
 

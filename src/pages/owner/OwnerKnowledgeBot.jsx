@@ -8,6 +8,7 @@ import {
   getKnowledgeBotJob,
   listKnowledgeBotClusters,
   lookupKnowledgeBotRestaurant,
+  saveKnowledgeBotMenuItems,
   updateKnowledgeBotJob,
   uploadKnowledgeBotEvidence,
 } from "../../lib/ownerApi.js";
@@ -219,6 +220,69 @@ function MenuPreview({ items }) {
   );
 }
 
+// Review step → Edit: fix names, prices, descriptions and sections, remove junk rows, add missing dishes.
+// Nothing is published until Publish; Save only replaces Menubot's parsed list.
+function MenuEditor({ items, saving, onSave, onCancel }) {
+  const [rows, setRows] = useState(() => items.map((item, i) => ({ ...item, _key: `r${i}`, price: item.price == null ? "" : String(item.price) })));
+  const [nextKey, setNextKey] = useState(items.length);
+  const fieldStyle = { ...inputStyle, padding: "6px 8px", fontSize: 13 };
+
+  function change(key, field, value) {
+    setRows((list) => list.map((r) => (r._key === key ? { ...r, [field]: value } : r)));
+  }
+  function remove(key) {
+    setRows((list) => list.filter((r) => r._key !== key));
+  }
+  function addItem() {
+    const section = rows.length ? rows[rows.length - 1].section || "" : "";
+    setRows((list) => [...list, { _key: `n${nextKey}`, name: "", description: "", section, price: "" }]);
+    setNextKey((n) => n + 1);
+  }
+  function save() {
+    onSave(
+      rows.map((row) => {
+        const item = { ...row };
+        delete item._key;
+        return item;
+      })
+    );
+  }
+
+  return (
+    <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 12, padding: "12px 16px" }}>
+      <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 8 }}>
+        {rows.length} item{rows.length === 1 ? "" : "s"}. Blank price = no price shown.
+      </div>
+      <div style={{ maxHeight: 520, overflow: "auto", display: "grid", gap: 8 }}>
+        {rows.map((r) => (
+          <div key={r._key} style={{ display: "grid", gap: 4, paddingBottom: 8, borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input aria-label="Section" placeholder="Section" value={r.section || ""} onChange={(e) => change(r._key, "section", e.target.value)} style={{ ...fieldStyle, width: 140, flex: "none" }} />
+              <input aria-label="Dish name" placeholder="Dish name" value={r.name || ""} onChange={(e) => change(r._key, "name", e.target.value)} style={{ ...fieldStyle, flex: 1, fontWeight: 600 }} />
+              <input aria-label="Price" placeholder="Price" inputMode="decimal" value={r.price} onChange={(e) => change(r._key, "price", e.target.value)} style={{ ...fieldStyle, width: 80, flex: "none", textAlign: "right" }} />
+              <button type="button" aria-label={`Remove ${r.name || "item"}`} title="Remove" onClick={() => remove(r._key)} style={{ ...smallButtonStyle, flex: "none" }}>
+                ×
+              </button>
+            </div>
+            <input aria-label="Description" placeholder="Description (optional)" value={r.description || ""} onChange={(e) => change(r._key, "description", e.target.value)} style={{ ...fieldStyle, fontSize: 12 }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+        <button type="button" onClick={addItem} disabled={saving} style={smallButtonStyle}>
+          + Add item
+        </button>
+        <button type="button" onClick={save} disabled={saving} style={{ ...primaryButtonStyle({ busy: saving }), padding: "6px 14px", fontSize: 13 }}>
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+        <button type="button" onClick={onCancel} disabled={saving} style={smallButtonStyle}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PriceChanges({ plan }) {
   const [showAll, setShowAll] = useState(false);
   const changes = plan?.changes || [];
@@ -323,6 +387,7 @@ export default function OwnerKnowledgeBot() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [confirmLarge, setConfirmLarge] = useState(false);
+  const [editingMenu, setEditingMenu] = useState(false);
   const [clusters, setClusters] = useState([]);
   const [lookup, setLookup] = useState(null);
   const [files, setFiles] = useState([]);
@@ -547,7 +612,16 @@ export default function OwnerKnowledgeBot() {
     });
   }
 
+  async function handleSaveMenu(nextItems) {
+    await run("save-menu", async () => {
+      await saveKnowledgeBotMenuItems(jobId, nextItems);
+      await refresh(jobId);
+      setEditingMenu(false);
+    });
+  }
+
   function startOver() {
+    setEditingMenu(false);
     setJobId(null);
     setJob(null);
     setLookup(null);
@@ -575,6 +649,8 @@ export default function OwnerKnowledgeBot() {
   const restaurantConflict = (preview.conflicts || []).find((c) => c.entity === "restaurant_match");
   const needsRestaurantChoice = Boolean(restaurantConflict) && !row?.restaurant_id;
   const published = row?.status === "completed" && applyResult;
+  // Chain stores use the chain's menu and price updates have their own list; everything else can be corrected.
+  const canEditMenu = !published && !pricePlan && !chainStore && !isFranchise && row?.status !== "applying";
   const publishBlocked =
     (pricePlan ? !priceChangeCount : !items.length && !isFranchise) ||
     needsRestaurantChoice ||
@@ -891,6 +967,8 @@ export default function OwnerKnowledgeBot() {
 
             {pricePlan ? (
               <PriceChanges plan={pricePlan} />
+            ) : editingMenu ? (
+              <MenuEditor items={items} saving={busy === "save-menu"} onSave={handleSaveMenu} onCancel={() => setEditingMenu(false)} />
             ) : items.length ? (
               <MenuPreview items={items} />
             ) : chainStore ? null : (
@@ -916,9 +994,10 @@ export default function OwnerKnowledgeBot() {
               ) : (
                 <button
                   type="button"
-                  disabled={Boolean(busy) || publishBlocked}
+                  disabled={Boolean(busy) || publishBlocked || editingMenu}
+                  title={editingMenu ? "Save or cancel your changes first" : undefined}
                   onClick={handlePublish}
-                  style={primaryButtonStyle({ busy: Boolean(busy), disabled: publishBlocked })}
+                  style={primaryButtonStyle({ busy: Boolean(busy), disabled: publishBlocked || editingMenu })}
                 >
                   {busy === "publish"
                     ? "Publishing…"
@@ -933,6 +1012,11 @@ export default function OwnerKnowledgeBot() {
                           : "Publish"}
                 </button>
               )}
+              {canEditMenu && !editingMenu ? (
+                <button type="button" disabled={Boolean(busy)} onClick={() => setEditingMenu(true)} style={secondaryButtonStyle}>
+                  {items.length ? "Edit menu" : "Type the menu in"}
+                </button>
+              ) : null}
               {!published ? (
                 <button type="button" disabled={Boolean(busy)} onClick={() => setStep("sources")} style={secondaryButtonStyle}>
                   Back to sources
