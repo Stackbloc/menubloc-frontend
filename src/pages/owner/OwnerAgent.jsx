@@ -25,6 +25,7 @@ import {
   publishAllAgentRun,
   recheckAgentPlace,
   rejectAgentPlace,
+  runAgentAgain,
   startAgentObjective,
 } from "../../lib/ownerApi.js";
 
@@ -52,6 +53,14 @@ const RUN_LABELS = { running: "Running", queued: "Starting", paused: "Paused", n
 
 const PLACE_TONES = { review: "blue", ready: "green", approved: "green", needs_info: "amber", failed: "red", rejected: "grey", duplicate: "grey", not_restaurant: "grey", discovered: "grey", researching: "blue" };
 const PLACE_LABELS = { review: "Draft ready", ready: "On Menuply", approved: "Published", needs_info: "Needs info", failed: "Couldn't finish", rejected: "Rejected", duplicate: "Duplicate", not_restaurant: "Not a restaurant", discovered: "Waiting", researching: "Reading…" };
+
+// Run row buttons by run status (Andre 2026-11-02: Pause, Cancel and Run again right on the row).
+const RUN_ROW_ACTIONS = [
+  { action: "pause", label: "Pause", busy: "Pausing…", when: ["running", "queued"] },
+  { action: "resume", label: "Resume", busy: "Resuming…", when: ["paused", "needs_info"], primary: true },
+  { action: "run-again", label: "Run again", busy: "Starting…", when: ["completed", "failed", "cancelled"], primary: true },
+  { action: "cancel", label: "Cancel", busy: "Cancelling…", when: ["running", "queued", "paused", "needs_info", "failed"] },
+];
 
 const smallButton = { ...secondaryButtonStyle, padding: "5px 12px", fontSize: 13 };
 
@@ -674,20 +683,24 @@ export default function OwnerAgent() {
     loadRuns();
   }, [loadRuns]);
 
-  const [cancelling, setCancelling] = useState(null);
+  const [rowBusy, setRowBusy] = useState("");
   const [detailKey, setDetailKey] = useState(0);
-  async function cancelRun(r) {
-    if (!window.confirm(`Cancel the ${r.name || `run ${r.id}`} run? Menus it already published stay.`)) return;
-    setCancelling(r.id);
+  async function rowAction(r, a) {
+    const runName = r.name || `run ${r.id}`;
+    if (a.action === "cancel" && !window.confirm(`Cancel the ${runName} run? Menus it already published stay.`)) return;
+    if (a.action === "run-again" && !window.confirm(`Run ${runName} again? It checks every place that has no menu yet; places with a menu are left alone.`)) return;
+    setRowBusy(`${r.id}:${a.action}`);
     setError("");
     try {
-      await objectiveAgentAction(r.id, "cancel");
+      if (a.action === "run-again") await runAgentAgain(r.id);
+      else await objectiveAgentAction(r.id, a.action);
       await loadRuns();
-      setDetailKey((k) => k + 1); // an open run panel shows the new status
+      setSelected(r.id);
+      setDetailKey((k) => k + 1); // the run panel shows the new status and keeps refreshing
     } catch (err) {
-      setError(err?.message || "Couldn't cancel");
+      setError(err?.message || "Didn't work");
     } finally {
-      setCancelling(null);
+      setRowBusy("");
     }
   }
 
@@ -741,16 +754,13 @@ export default function OwnerAgent() {
                       <td style={tdStyle}><RunSummary report={r.seed?.report} /></td>
                       <td style={{ ...tdStyle, ...mutedStyle }}>{r.started_at ? new Date(r.started_at).toLocaleString() : "—"}</td>
                       <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
-                        {!["completed", "cancelled"].includes(r.status) ? (
-                          <button
-                            type="button"
-                            style={smallButton}
-                            disabled={cancelling === r.id}
-                            onClick={() => cancelRun(r)}
-                          >
-                            {cancelling === r.id ? "Cancelling…" : "Cancel"}
-                          </button>
-                        ) : null}
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {RUN_ROW_ACTIONS.filter((a) => a.when.includes(r.status)).map((a) => (
+                            <button key={a.action} type="button" style={a.primary ? { ...smallButton, background: OWNER_COLORS.accent, color: "#fff", border: "none" } : smallButton} disabled={Boolean(rowBusy)} onClick={() => rowAction(r, a)}>
+                              {rowBusy === `${r.id}:${a.action}` ? a.busy : a.label}
+                            </button>
+                          ))}
+                        </div>
                       </td>
                     </tr>
                   ))}
