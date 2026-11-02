@@ -75,6 +75,8 @@ export default function QuickPostSheet({
   const [place, setPlace] = useState(null);
   const [atHome, setAtHome] = useState(false);
   const [recommend, setRecommend] = useState(false);
+  // "No particular dish": a restaurant clip posts with only the restaurant (Andre 2026-11-02).
+  const [noDish, setNoDish] = useState(false);
   const [about, setAbout] = useState(null);
   const inlineCamera = useMemo(() => inlineCameraSupported() && preferInlineCamera(), []);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
@@ -100,6 +102,7 @@ export default function QuickPostSheet({
     setPlace(null);
     setAtHome(false);
     setRecommend(false);
+    setNoDish(false);
     setAbout(null);
     onClose?.();
   }
@@ -213,14 +216,18 @@ export default function QuickPostSheet({
   const typedFood = cleanTyped(foodText);
   const menuDishes = place?.restaurant_id ? dishHits : [];
   const nearbyDishes = place ? [] : cityDishes;
+  // A Menuply restaurant: only its menu dishes are suggested (Andre 2026-11-02: "Which restaurant dish?").
+  const typeHits = place?.restaurant_id ? [] : foodTypes;
+  // A dish typed at a restaurant that isn't on its menu is new: the server keeps it for review.
+  const typedIsNew = Boolean(place) && !menuDishes.some((h) => same(dishLabel(h), typedFood));
 
   /** What gets posted: the tapped suggestion, an exact match of what you typed, or the typed name. */
   function resolveFood() {
     if (foodPick) return foodPick;
-    if (typedFood.length < 2) return null;
+    if (noDish || typedFood.length < 2) return null;
     const dish = menuDishes.find((h) => same(dishLabel(h), typedFood));
     if (dish) return { kind: "dish", dish: asDishPlace(dish) };
-    const type = foodTypes.find((t) => same(t.name, typedFood));
+    const type = typeHits.find((t) => same(t.name, typedFood));
     if (type) return { kind: "type", type };
     return { kind: "typed", name: typedFood };
   }
@@ -268,13 +275,25 @@ export default function QuickPostSheet({
     setPlace(null);
     setAtHome(false);
     setRecommend(false);
+    setNoDish(false);
     setDishHits([]);
     if (foodPick?.kind === "dish") setFoodPick(null);
   }
 
+  /** "No particular dish": toggles; clears whatever food was typed. */
+  function toggleNoDish() {
+    const next = !noDish;
+    setNoDish(next);
+    if (next) {
+      setFoodPick(null);
+      setFoodText("");
+    }
+  }
+
   const food = resolveFood();
   // A restaurant clip can post with only the restaurant (Andre 2026-10-30: a clip can be about a place, not a dish).
-  const placeOnly = !food && about === "restaurant" && Boolean(place);
+  // So can any clip once "No particular dish" is picked (Andre 2026-11-02).
+  const placeOnly = !food && Boolean(place) && (noDish || about === "restaurant");
   const canPost = Boolean(file) && !busy && (Boolean(food) || placeOnly);
 
   async function submit() {
@@ -314,9 +333,17 @@ export default function QuickPostSheet({
   const foodChips =
     foodFocused && !foodPick && typedFood.length >= 2
       ? [
-          { key: "typed", label: typedFood, typed: true, testId: "quick-post-food-typed", onPick: () => food && pickFood(food) },
+          // At a restaurant, a dish not on its menu says so: "+ “…” · new, we'll review it".
+          {
+            key: "typed",
+            label: typedIsNew ? `+ “${typedFood}”` : typedFood,
+            sub: typedIsNew ? "new, we'll review it" : null,
+            typed: true,
+            testId: "quick-post-food-typed",
+            onPick: () => food && pickFood(food),
+          },
           ...menuDishes.map((h) => ({ key: `dish-${h.menu_item_id}`, label: dishLabel(h), testId: `quick-post-dish-${h.menu_item_id}`, onPick: () => pickFood({ kind: "dish", dish: asDishPlace(h) }) })),
-          ...foodTypes.map((t, i) => ({ key: `type-${i}-${t.name}`, label: t.name, testId: `quick-post-food-type-${i}`, onPick: () => pickFood({ kind: "type", type: t }) })),
+          ...typeHits.map((t, i) => ({ key: `type-${i}-${t.name}`, label: t.name, testId: `quick-post-food-type-${i}`, onPick: () => pickFood({ kind: "type", type: t }) })),
           ...nearbyDishes.map((h) => ({ key: `near-${h.menu_item_id}`, label: dishLabel(h), sub: h.restaurant_name, testId: `quick-post-city-dish-${h.menu_item_id}`, onPick: () => pickCityDish(h) })),
         ]
           .filter((c) => c.typed || !same(c.label, typedFood) || c.sub)
@@ -586,7 +613,7 @@ export default function QuickPostSheet({
             </div>
 
             <div style={styles.section}>
-              <p style={styles.sectionLabel}>What food</p>
+              <p style={styles.sectionLabel}>{place ? "Dish" : "What food"}</p>
               <div style={styles.caption}>
                 <input
                   ref={foodRef}
@@ -595,6 +622,7 @@ export default function QuickPostSheet({
                   onChange={(e) => {
                     setFoodText(e.target.value.slice(0, 160));
                     setFoodPick(null);
+                    setNoDish(false);
                   }}
                   onFocus={() => setFoodFocused(true)}
                   onBlur={() => setFoodFocused(false)}
@@ -605,12 +633,12 @@ export default function QuickPostSheet({
                       e.currentTarget.blur();
                     }
                   }}
-                  placeholder={about === "restaurant" ? "Any food in it? (optional)" : "What food is your clip about?"}
+                  placeholder={place ? "Which restaurant dish?" : about === "restaurant" ? "Any food in it? (optional)" : "What food is your clip about?"}
                   autoComplete="off"
                   enterKeyHint="done"
                   disabled={busy}
                   style={styles.captionInput}
-                  aria-label="What food is your clip about?"
+                  aria-label={place ? "Which restaurant dish?" : "What food is your clip about?"}
                   data-testid="quick-post-food"
                 />
                 {food ? (
@@ -619,7 +647,7 @@ export default function QuickPostSheet({
                   </span>
                 ) : null}
               </div>
-              {typedFood || about === "restaurant" ? null : (
+              {typedFood || place || about === "restaurant" ? null : (
                 <p style={styles.examples} data-testid="quick-post-food-examples">
                   Like tacos, a matcha latte, homemade lasagna
                 </p>
@@ -643,6 +671,20 @@ export default function QuickPostSheet({
                       {c.sub ? <span style={styles.chipSub}> · {c.sub}</span> : null}
                     </button>
                   ))}
+                </div>
+              ) : null}
+              {place && !typedFood ? (
+                <div style={styles.chips}>
+                  <button
+                    type="button"
+                    aria-pressed={noDish}
+                    style={{ ...styles.tag, ...(noDish ? styles.tagOn : null) }}
+                    onMouseDown={keepFocus}
+                    onClick={toggleNoDish}
+                    data-testid="quick-post-no-dish"
+                  >
+                    No particular dish
+                  </button>
                 </div>
               ) : null}
             </div>
