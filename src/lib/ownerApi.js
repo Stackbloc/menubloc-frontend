@@ -739,6 +739,15 @@ export const startFranchiseBotPreview = (body) => post("/api/owner/franchise-bot
 export const startFranchiseBotInstall = (body) => post("/api/owner/franchise-bot/install", body);
 export const getFranchiseBotJob = (jobId) => get(`/api/owner/franchise-bot/jobs/${encodeURIComponent(jobId)}`);
 
+// ─── HealthDeptBot (health department inspection data → facilities matched to Menuply) ─────
+export const previewHealthDeptSource = (url) => post("/api/owner/health-dept-bot/preview", { url });
+/** { url, state?, county?, field_map, run } */
+export const addHealthDeptSource = (body) => post("/api/owner/health-dept-bot/sources", body);
+export const listHealthDeptSources = () => get("/api/owner/health-dept-bot/sources");
+/** action: run | pause */
+export const healthDeptSourceAction = (id, action) => post(`/api/owner/health-dept-bot/sources/${encodeURIComponent(id)}/${action}`, {});
+export const listHealthDeptFacilities = (id, filter = "not_on_menuply") => get(`/api/owner/health-dept-bot/sources/${encodeURIComponent(id)}/facilities?filter=${encodeURIComponent(filter)}`);
+
 // ─── Location Bot (paste a chain's locations → per-store changes → apply) ─────
 // Chains + paste parsing reuse the Franchise Bot endpoints; jobs share its job store.
 

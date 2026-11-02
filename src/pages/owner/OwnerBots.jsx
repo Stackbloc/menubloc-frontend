@@ -43,10 +43,16 @@ const ON_DEMAND_BOTS = [
     blurb: "Paste a chain's locations (e.g. Google Maps results); it updates phone, address, map pin and 24-hour hours on the stores we have, and adds missing ones.",
   },
   {
+    key: "health_dept_bot",
+    name: "HealthDeptBot",
+    path: "/owner/bots/health-dept-bot",
+    blurb: "Add health department inspection data (open data, CSV or a results page); it reads facilities and inspections and shows which restaurants aren't on Menuply.",
+  },
+  {
     key: "agent",
     name: "Agent",
     path: "/owner/bots/agent",
-    blurb: "Pick a spot and a radius; it finds the restaurants there and drafts their menus. You publish each one through Menubot.",
+    blurb: "Pick a cluster, a spot on the map, or a whole county or state; it finds the restaurants there and captures their menus and/or profiles.",
   },
 ];
 
