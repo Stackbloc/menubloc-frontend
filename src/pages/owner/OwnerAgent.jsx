@@ -208,6 +208,9 @@ function WhereStep({ onStarted }) {
       {proposal ? (
         <div style={{ marginTop: 16, padding: 14, border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 12, display: "grid", gap: 8 }}>
           <div style={{ fontWeight: 700 }}>{proposal.name}</div>
+          {proposal.city || proposal.state ? (
+            <div style={{ fontSize: 20, fontWeight: 800 }}>{[proposal.city, proposal.state].filter(Boolean).join(", ")}</div>
+          ) : null}
           <div style={mutedStyle}>{proposal.found_on_map}</div>
           <div style={mutedStyle}>
             {proposal.radius_m} m around {proposal.center_lat}, {proposal.center_lng}
