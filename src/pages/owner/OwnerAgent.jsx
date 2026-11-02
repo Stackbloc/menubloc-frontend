@@ -674,6 +674,29 @@ export default function OwnerAgent() {
     loadRuns();
   }, [loadRuns]);
 
+  const [cancelling, setCancelling] = useState(null);
+  const [detailKey, setDetailKey] = useState(0);
+  async function cancelRun(r) {
+    if (!window.confirm(`Cancel the ${r.name || `run ${r.id}`} run? Menus it already published stay.`)) return;
+    setCancelling(r.id);
+    setError("");
+    try {
+      await objectiveAgentAction(r.id, "cancel");
+      await loadRuns();
+      setDetailKey((k) => k + 1); // an open run panel shows the new status
+    } catch (err) {
+      setError(err?.message || "Couldn't cancel");
+    } finally {
+      setCancelling(null);
+    }
+  }
+
+  // Opening a run scrolls its panel into view (it sits below the list).
+  const detailRef = useRef(null);
+  useEffect(() => {
+    if (selected && detailRef.current) detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selected]);
+
   return (
     <OwnerLayout title="Agent">
       <div style={{ display: "grid", gap: 16 }}>
@@ -692,7 +715,7 @@ export default function OwnerAgent() {
         />
 
         <PageCard style={{ padding: 20 }}>
-          <SectionTitle title="Runs" subtitle="Newest first. Open one to review its drafts." />
+          <SectionTitle title="Runs" subtitle="Newest first. Click a run to see its places." />
           {error ? <div style={errorStyle}>{error}</div> : null}
           {runs === null ? (
             <div style={mutedStyle}>Loading…</div>
@@ -707,6 +730,7 @@ export default function OwnerAgent() {
                     <th style={thStyle}>Status</th>
                     <th style={thStyle}>Result</th>
                     <th style={thStyle}>Started</th>
+                    <th style={thStyle}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -716,6 +740,18 @@ export default function OwnerAgent() {
                       <td style={tdStyle}><Pill tone={RUN_TONES[r.status] || "grey"}>{RUN_LABELS[r.status] || r.status}</Pill></td>
                       <td style={tdStyle}><RunSummary report={r.seed?.report} /></td>
                       <td style={{ ...tdStyle, ...mutedStyle }}>{r.started_at ? new Date(r.started_at).toLocaleString() : "—"}</td>
+                      <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
+                        {!["completed", "cancelled"].includes(r.status) ? (
+                          <button
+                            type="button"
+                            style={smallButton}
+                            disabled={cancelling === r.id}
+                            onClick={() => cancelRun(r)}
+                          >
+                            {cancelling === r.id ? "Cancelling…" : "Cancel"}
+                          </button>
+                        ) : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -724,7 +760,11 @@ export default function OwnerAgent() {
           )}
         </PageCard>
 
-        {selected ? <RunDetail key={selected} objectiveId={selected} onListChanged={loadRuns} /> : null}
+        {selected ? (
+          <div ref={detailRef}>
+            <RunDetail key={`${selected}-${detailKey}`} objectiveId={selected} onListChanged={loadRuns} />
+          </div>
+        ) : null}
       </div>
     </OwnerLayout>
   );
