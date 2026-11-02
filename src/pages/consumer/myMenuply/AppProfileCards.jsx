@@ -313,8 +313,8 @@ function discoverLevelOf(profile) {
  * How discoverable are you? Hidden · My Connects (default) · Connects of Connects · Everyone, with a
  * safety warning before Everyone. Closed to start, showing the current level.
  */
-export function AppDiscoverabilityCard({ onChange }) {
-  const [open, setOpen] = useState(false);
+export function AppDiscoverabilityCard({ onChange, startOpen = false }) {
+  const [open, setOpen] = useState(startOpen);
   const [level, setLevel] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -424,9 +424,28 @@ export function AppDiscoverabilityCard({ onChange }) {
   );
 }
 
-/** "Your vibe": one line with Change, so Profile stays short; Change opens the website's vibe picker. */
-export function AppVibeCard({ label, children }) {
+/**
+ * "Your vibe": one line with Change, so Profile stays short; Change opens the website's vibe picker.
+ * "Who sees your vibe" at the bottom opens How discoverable are you? (Andre 2026-11-02, app parity:
+ * the setting had dropped off Profile; a link keeps the vibe box uncrowded).
+ */
+export function AppVibeCard({ label, children, discover = null, onDiscover }) {
   const [open, setOpen] = useState(false);
+  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [fetched, setFetched] = useState(null);
+  const [picked, setPicked] = useState(null);
+  useEffect(() => {
+    if (discover) return undefined;
+    let alive = true;
+    getConsumerProfile()
+      .then((data) => alive && setFetched(discoverLevelOf(data?.profile || {})))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [discover]);
+  const level = discover || picked || fetched;
+  const levelLabel = LEVELS.find((l) => l.value === level)?.label || "";
   return (
     <div style={{ ...st.card, background: C.accentSoft, border: "none" }} data-testid="vibe-card">
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -446,7 +465,25 @@ export function AppVibeCard({ label, children }) {
           {open ? "Done" : "Change"}
         </button>
       </div>
+      {level === "hidden" ? (
+        <p style={{ ...st.muted, margin: 0 }} data-testid="vibe-hidden">
+          You’re Hidden: nobody sees your vibe in food search.
+        </p>
+      ) : null}
       {open ? children : null}
+      <button type="button" aria-expanded={discoverOpen} onClick={() => setDiscoverOpen((v) => !v)} style={styles.whoSees} data-testid="vibe-who-sees">
+        <span style={{ flex: 1, textAlign: "left", color: C.muted }}>Who sees your vibe</span>
+        <span style={{ color: C.accent }}>{`${levelLabel} ${discoverOpen ? "⌃" : "›"}`}</span>
+      </button>
+      {discoverOpen ? (
+        <AppDiscoverabilityCard
+          startOpen
+          onChange={(l) => {
+            setPicked(l);
+            onDiscover?.(l);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1055,6 +1092,7 @@ const styles = {
   check: { display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 15, color: C.text, cursor: "pointer" },
   gear: { position: "absolute", top: 8, right: 8, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: C.text },
   pillRow: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  whoSees: { display: "flex", alignItems: "center", gap: 8, minHeight: 36, padding: "8px 0 0", border: "none", borderTop: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600 },
   controls: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
   controlsDivider: { borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4 },
   badge: {

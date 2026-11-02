@@ -2423,18 +2423,17 @@ export default function MyMenuplyPage() {
             <ProfileConnectsBox />
             <AppProfileStarterCard avatarUrl={avatarUrl} />
             <MonthReportNudge />
-            {discoverLevel === "hidden" ? null : (
-              <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"}>
-                <CurrentVibeProfileSection
-                  value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
-                  values={profile?.current_vibe_meta?.current_vibes || null}
-                  expiresAt={profile?.current_vibe_meta?.expires_at || null}
-                  catalog={profile?.current_vibe_catalog || null}
-                  busy={identityBusy}
-                  onChange={onCurrentVibeChange}
-                />
-              </AppVibeCard>
-            )}
+            {/* Andre 2026-11-02: the vibe always shows (Hidden says so); its "Who sees your vibe" link opens discoverability. */}
+            <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"} discover={discoverLevel} onDiscover={setDiscoverLevel}>
+              <CurrentVibeProfileSection
+                value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
+                values={profile?.current_vibe_meta?.current_vibes || null}
+                expiresAt={profile?.current_vibe_meta?.expires_at || null}
+                catalog={profile?.current_vibe_catalog || null}
+                busy={identityBusy}
+                onChange={onCurrentVibeChange}
+              />
+            </AppVibeCard>
             <SocialCalendarCard />
             <QuickInviteCard />
             <AppMyActivity />
