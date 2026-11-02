@@ -113,6 +113,13 @@ function clusterLine(c) {
   return `${c.name}${where ? ` — ${where}` : ""} · ${count}${c.restaurants ? missing : ""}`;
 }
 
+const AREA_CAPTURE = [["both", "Menus + restaurants"], ["menus", "Menus only"], ["restaurants", "Restaurants only"]];
+const AREA_CAPTURE_NOTE = {
+  both: "It publishes the menus it can read and makes claimable profiles for places whose menu it can't find.",
+  menus: "It publishes the menus it can read. Places without a menu are left out (no profile).",
+  restaurants: "It makes claimable profiles (name, address, phone, website) without looking for menus.",
+};
+
 function WhereStep({ onStarted }) {
   const [mode, setMode] = useState("cluster");
   const [clusters, setClusters] = useState(null);
@@ -122,6 +129,10 @@ function WhereStep({ onStarted }) {
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherMiles, setOtherMiles] = useState("");
   const [name, setName] = useState("");
+  const [area, setArea] = useState("");
+  const [areaState, setAreaState] = useState("");
+  const [capture, setCapture] = useState("both");
+  const [dailyCap, setDailyCap] = useState(300);
   const otherValue = Number(otherMiles);
   const otherValid = otherMiles.trim() !== "" && otherValue >= OTHER_MIN_MI && otherValue <= OTHER_MAX_MI;
   const radiusReady = !otherOpen || otherValid;
@@ -154,7 +165,9 @@ function WhereStep({ onStarted }) {
     try {
       const out = mode === "cluster"
         ? await proposeAgentCluster({ cluster_id: Number(clusterId) })
-        : await proposeAgentCluster({ place, radius_m: radius, name: name || null });
+        : mode === "area"
+          ? await proposeAgentCluster({ area_run: true, area, state: areaState, capture, daily_cap: Number(dailyCap) })
+          : await proposeAgentCluster({ place, radius_m: radius, name: name || null });
       if (out.status === "proposed") setProposal(out.proposal);
       else setQuestion(out.question);
     } catch (err) {
@@ -173,6 +186,7 @@ function WhereStep({ onStarted }) {
       setPlace("");
       setName("");
       setClusterId("");
+      setArea("");
       onStarted(out.objective);
     } catch (err) {
       setError(err?.message || "Couldn't start");
@@ -187,10 +201,12 @@ function WhereStep({ onStarted }) {
       title="Where"
       subtitle={mode === "cluster"
         ? "Pick a Menuply cluster. The agent finds the menus for the restaurants already in it."
-        : "A landmark, campus, street corner or address, and how far around it. The agent finds the restaurants there."}
+        : mode === "area"
+          ? "A county or a whole state. The agent works through its restaurants a set number a day."
+          : "A landmark, campus, street corner or address, and how far around it. The agent finds the restaurants there."}
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-        {[["cluster", "A Menuply cluster"], ["spot", "A new spot on the map"]].map(([k, label]) => (
+        {[["cluster", "A Menuply cluster"], ["spot", "A new spot on the map"], ["area", "A county or state"]].map(([k, label]) => (
           <button
             key={k}
             type="button"
@@ -221,6 +237,46 @@ function WhereStep({ onStarted }) {
           <div>
             <button type="submit" style={primaryButtonStyle({ busy, disabled: !clusterId })} disabled={busy || !clusterId}>
               {busy && !proposal ? "Looking…" : "Find menus"}
+            </button>
+          </div>
+        </form>
+      ) : mode === "area" ? (
+        <form onSubmit={find} style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))" }}>
+            <div>
+              <label style={labelStyle} htmlFor="agent-area">County (leave empty for the whole state)</label>
+              <input id="agent-area" style={{ ...inputStyle, width: "100%" }} value={area} onChange={(e) => { setArea(e.target.value); setProposal(null); }} placeholder="Orange County" />
+            </div>
+            <div>
+              <label style={labelStyle} htmlFor="agent-area-state">State</label>
+              <input id="agent-area-state" style={{ ...inputStyle, width: 90 }} value={areaState} maxLength={2} onChange={(e) => { setAreaState(e.target.value.toUpperCase()); setProposal(null); }} placeholder="CA" />
+            </div>
+          </div>
+          <div>
+            <div style={labelStyle}>Capture</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {AREA_CAPTURE.map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => { setCapture(k); setProposal(null); }}
+                  style={{ ...smallButton, borderColor: capture === k ? OWNER_COLORS.accent : OWNER_COLORS.line, color: capture === k ? OWNER_COLORS.accent : OWNER_COLORS.ink }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {capture !== "restaurants" ? (
+            <div>
+              <label style={labelStyle} htmlFor="agent-daily-cap">Places a day</label>
+              <input id="agent-daily-cap" type="number" min={10} max={2000} step={10} style={{ ...inputStyle, width: 110 }} value={dailyCap} onChange={(e) => { setDailyCap(e.target.value); setProposal(null); }} />
+              <span style={{ ...mutedStyle, marginLeft: 8 }}>It pauses when it reaches this and starts again the next day.</span>
+            </div>
+          ) : null}
+          <div>
+            <button type="submit" style={primaryButtonStyle({ busy, disabled: !(area.trim() || areaState.trim()) })} disabled={busy || !(area.trim() || areaState.trim())}>
+              {busy && !proposal ? "Looking…" : "Find on map"}
             </button>
           </div>
         </form>
@@ -299,7 +355,13 @@ function WhereStep({ onStarted }) {
             <div style={{ fontSize: 20, fontWeight: 800 }}>{[proposal.city, proposal.state].filter(Boolean).join(", ")}</div>
           ) : null}
           <div style={mutedStyle}>{proposal.found_on_map}</div>
-          {proposal.cluster_id ? (
+          {proposal.area ? (
+            <div style={mutedStyle}>
+              {proposal.area.kind === "state" ? "The whole state, county by county." : "Everywhere inside the county line."}
+              {" "}Restaurants come from OpenStreetMap (free); chain stores are left to Franchise Bot.
+              {proposal.capture !== "restaurants" ? ` Up to ${proposal.daily_cap} places a day.` : ""}
+            </div>
+          ) : proposal.cluster_id ? (
             <div style={mutedStyle}>
               {proposal.restaurants} restaurant{proposal.restaurants === 1 ? "" : "s"} in this cluster
               {proposal.without_menu != null ? `, ${proposal.without_menu} without a menu` : ""}. The agent looks only at these restaurants
@@ -319,11 +381,13 @@ function WhereStep({ onStarted }) {
               Start
             </button>
             <button type="button" style={secondaryButtonStyle} disabled={busy} onClick={() => setProposal(null)}>
-              {proposal.cluster_id ? "Not this one" : "Not this spot"}
+              {proposal.cluster_id || proposal.area ? "Not this one" : "Not this spot"}
             </button>
           </div>
           <div style={mutedStyle}>
-            {proposal.cluster_id
+            {proposal.area
+              ? AREA_CAPTURE_NOTE[proposal.capture]
+              : proposal.cluster_id
               ? "It publishes the menus it can read. Places it can't find a menu for show Add info, where you can give it the menu's web address or paste the menu."
               : "It finds the restaurants, publishes the menus it can read, and makes claimable profiles for places whose menu it can't find. You can review everything later."}
           </div>
@@ -637,6 +701,11 @@ function RunDetail({ objectiveId, onListChanged }) {
         subtitle={o.objective_text}
         action={<Pill tone={RUN_TONES[o.status] || "grey"}>{RUN_LABELS[o.status] || o.status}</Pill>}
       />
+      {o.params?.area && o.params.capture !== "restaurants" && o.params.daily_cap ? (
+        <div style={{ ...mutedStyle, marginBottom: 8 }}>
+          {o.params.daily_cap} places a day. When it pauses at that limit it starts again by itself the next day.
+        </div>
+      ) : null}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         {live ? (
           <button type="button" style={smallButton} disabled={Boolean(busy)} onClick={() => act("pause")}>Pause</button>
