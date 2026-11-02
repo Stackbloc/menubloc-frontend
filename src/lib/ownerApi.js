@@ -776,6 +776,8 @@ export const createAgentPlaceProfile = (id) => post(`/api/owner/agent/places/${e
 export const runAgentAgain = (id) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/run-again`, {});
 export const listAgentPublished = () => get("/api/owner/agent/published");
 export const takeDownAgentPlace = (id, reason = null) => post(`/api/owner/agent/places/${encodeURIComponent(id)}/take-down`, { reason });
+// Published by the agent → Take down selected: { done: [...], failed: [{ candidate_id, error }] }
+export const takeDownAgentPlaces = (ids, reason = null) => post("/api/owner/agent/published/take-down", { ids, reason });
 export const publishAllAgentRun = (id) => post(`/api/owner/agent/objectives/${encodeURIComponent(id)}/publish-all`, {});
 
 // ─── Profile billboards (entrance splash + Windows panel) ─────────────────────
