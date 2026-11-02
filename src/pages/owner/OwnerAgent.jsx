@@ -16,6 +16,7 @@ import {
 import {
   createAgentPlaceProfile,
   getAgentObjective,
+  listAgentClusters,
   listAgentObjectives,
   objectiveAgentAction,
   prepareAgentPlace,
@@ -91,7 +92,17 @@ function RunSummary({ report }) {
   );
 }
 
+function clusterLine(c) {
+  const where = [c.city, c.state].filter(Boolean).join(", ");
+  const count = `${c.restaurants} restaurant${c.restaurants === 1 ? "" : "s"}`;
+  const missing = c.without_menu ? `, ${c.without_menu} without a menu` : ", all have menus";
+  return `${c.name}${where ? ` — ${where}` : ""} · ${count}${c.restaurants ? missing : ""}`;
+}
+
 function WhereStep({ onStarted }) {
+  const [mode, setMode] = useState("cluster");
+  const [clusters, setClusters] = useState(null);
+  const [clusterId, setClusterId] = useState("");
   const [place, setPlace] = useState("");
   const [radius, setRadius] = useState(804);
   const [otherOpen, setOtherOpen] = useState(false);
@@ -105,6 +116,21 @@ function WhereStep({ onStarted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    let alive = true;
+    listAgentClusters()
+      .then((out) => { if (alive) setClusters(out.clusters || []); })
+      .catch(() => { if (alive) setClusters([]); });
+    return () => { alive = false; };
+  }, []);
+
+  function pickMode(next) {
+    setMode(next);
+    setProposal(null);
+    setQuestion("");
+    setError("");
+  }
+
   async function find(e) {
     e.preventDefault();
     setBusy(true);
@@ -112,7 +138,9 @@ function WhereStep({ onStarted }) {
     setQuestion("");
     setProposal(null);
     try {
-      const out = await proposeAgentCluster({ place, radius_m: radius, name: name || null });
+      const out = mode === "cluster"
+        ? await proposeAgentCluster({ cluster_id: Number(clusterId) })
+        : await proposeAgentCluster({ place, radius_m: radius, name: name || null });
       if (out.status === "proposed") setProposal(out.proposal);
       else setQuestion(out.question);
     } catch (err) {
@@ -130,6 +158,7 @@ function WhereStep({ onStarted }) {
       setProposal(null);
       setPlace("");
       setName("");
+      setClusterId("");
       onStarted(out.objective);
     } catch (err) {
       setError(err?.message || "Couldn't start");
@@ -139,7 +168,49 @@ function WhereStep({ onStarted }) {
   }
 
   return (
-    <Step number={1} title="Where" subtitle="A landmark, campus, street corner or address, and how far around it.">
+    <Step
+      number={1}
+      title="Where"
+      subtitle={mode === "cluster"
+        ? "Pick a Menuply cluster. The agent finds the menus for the restaurants already in it."
+        : "A landmark, campus, street corner or address, and how far around it. The agent finds the restaurants there."}
+    >
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+        {[["cluster", "A Menuply cluster"], ["spot", "A new spot on the map"]].map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => pickMode(k)}
+            style={{ ...smallButton, ...(mode === k ? { background: OWNER_COLORS.ink, color: "#fff", borderColor: OWNER_COLORS.ink } : {}) }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {mode === "cluster" ? (
+        <form onSubmit={find} style={{ display: "grid", gap: 12 }}>
+          <div>
+            <label style={labelStyle} htmlFor="agent-cluster">Cluster</label>
+            {clusters === null ? (
+              <div style={mutedStyle}>Loading clusters…</div>
+            ) : clusters.length === 0 ? (
+              <div style={mutedStyle}>No clusters found. Use a new spot on the map instead.</div>
+            ) : (
+              <select id="agent-cluster" style={{ ...inputStyle, width: "100%", maxWidth: 560 }} value={clusterId} onChange={(e) => { setClusterId(e.target.value); setProposal(null); setQuestion(""); }}>
+                <option value="">Choose a cluster…</option>
+                {clusters.map((c) => (
+                  <option key={c.id} value={c.id} disabled={!c.restaurants}>{clusterLine(c)}</option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div>
+            <button type="submit" style={primaryButtonStyle({ busy, disabled: !clusterId })} disabled={busy || !clusterId}>
+              {busy && !proposal ? "Looking…" : "Find menus"}
+            </button>
+          </div>
+        </form>
+      ) : (
       <form onSubmit={find} style={{ display: "grid", gap: 12 }}>
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))" }}>
           <div>
@@ -204,6 +275,7 @@ function WhereStep({ onStarted }) {
           </button>
         </div>
       </form>
+      )}
       {question ? <div style={{ ...errorStyle, color: "#93370d" }}>{question}</div> : null}
       {error ? <div style={errorStyle}>{error}</div> : null}
       {proposal ? (
@@ -213,22 +285,34 @@ function WhereStep({ onStarted }) {
             <div style={{ fontSize: 20, fontWeight: 800 }}>{[proposal.city, proposal.state].filter(Boolean).join(", ")}</div>
           ) : null}
           <div style={mutedStyle}>{proposal.found_on_map}</div>
-          <div style={mutedStyle}>
-            {proposal.radius_m} m around {proposal.center_lat}, {proposal.center_lng}
-            {" · "}
-            <a href={`https://www.openstreetmap.org/?mlat=${proposal.center_lat}&mlon=${proposal.center_lng}#map=16/${proposal.center_lat}/${proposal.center_lng}`} target="_blank" rel="noreferrer">
-              Check the spot
-            </a>
-          </div>
+          {proposal.cluster_id ? (
+            <div style={mutedStyle}>
+              {proposal.restaurants} restaurant{proposal.restaurants === 1 ? "" : "s"} in this cluster
+              {proposal.without_menu != null ? `, ${proposal.without_menu} without a menu` : ""}. The agent looks only at these restaurants
+              (no map search) and puts each menu it finds on that restaurant's profile.
+            </div>
+          ) : (
+            <div style={mutedStyle}>
+              {proposal.radius_m} m around {proposal.center_lat}, {proposal.center_lng}
+              {" · "}
+              <a href={`https://www.openstreetmap.org/?mlat=${proposal.center_lat}&mlon=${proposal.center_lng}#map=16/${proposal.center_lat}/${proposal.center_lng}`} target="_blank" rel="noreferrer">
+                Check the spot
+              </a>
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" style={primaryButtonStyle({ busy })} disabled={busy} onClick={start}>
               Start
             </button>
             <button type="button" style={secondaryButtonStyle} disabled={busy} onClick={() => setProposal(null)}>
-              Not this spot
+              {proposal.cluster_id ? "Not this one" : "Not this spot"}
             </button>
           </div>
-          <div style={mutedStyle}>It finds the restaurants, publishes the menus it can read, and makes claimable profiles for places whose menu it can't find. You can review everything later.</div>
+          <div style={mutedStyle}>
+            {proposal.cluster_id
+              ? "It publishes the menus it can read. Places it can't find a menu for show Add info, where you can give it the menu's web address or paste the menu."
+              : "It finds the restaurants, publishes the menus it can read, and makes claimable profiles for places whose menu it can't find. You can review everything later."}
+          </div>
         </div>
       ) : null}
     </Step>
@@ -590,12 +674,36 @@ export default function OwnerAgent() {
     loadRuns();
   }, [loadRuns]);
 
+  const [cancelling, setCancelling] = useState(null);
+  const [detailKey, setDetailKey] = useState(0);
+  async function cancelRun(r) {
+    if (!window.confirm(`Cancel the ${r.name || `run ${r.id}`} run? Menus it already published stay.`)) return;
+    setCancelling(r.id);
+    setError("");
+    try {
+      await objectiveAgentAction(r.id, "cancel");
+      await loadRuns();
+      setDetailKey((k) => k + 1); // an open run panel shows the new status
+    } catch (err) {
+      setError(err?.message || "Couldn't cancel");
+    } finally {
+      setCancelling(null);
+    }
+  }
+
+  // Opening a run scrolls its panel into view (it sits below the list).
+  const detailRef = useRef(null);
+  useEffect(() => {
+    if (selected && detailRef.current) detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selected]);
+
   return (
     <OwnerLayout title="Agent">
       <div style={{ display: "grid", gap: 16 }}>
         <div style={mutedStyle}>
-          Pick a spot and the agent finds the restaurants around it, skips chains and delivery marketplaces, and drafts menus from
-          the restaurants' own sites. Drafts wait here; they go live only when you publish them through Menubot.{" "}
+          Pick a Menuply cluster and the agent finds the menus for its restaurants, or pick a new spot and it finds the restaurants
+          there too. It reads menus from the restaurants' own sites (never delivery marketplaces) and publishes them through
+          Menubot; you can review everything later.{" "}
           <Link to="/owner/bots">All bots</Link>
         </div>
 
@@ -607,7 +715,7 @@ export default function OwnerAgent() {
         />
 
         <PageCard style={{ padding: 20 }}>
-          <SectionTitle title="Runs" subtitle="Newest first. Open one to review its drafts." />
+          <SectionTitle title="Runs" subtitle="Newest first. Click a run to see its places." />
           {error ? <div style={errorStyle}>{error}</div> : null}
           {runs === null ? (
             <div style={mutedStyle}>Loading…</div>
@@ -622,6 +730,7 @@ export default function OwnerAgent() {
                     <th style={thStyle}>Status</th>
                     <th style={thStyle}>Result</th>
                     <th style={thStyle}>Started</th>
+                    <th style={thStyle}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -631,6 +740,18 @@ export default function OwnerAgent() {
                       <td style={tdStyle}><Pill tone={RUN_TONES[r.status] || "grey"}>{RUN_LABELS[r.status] || r.status}</Pill></td>
                       <td style={tdStyle}><RunSummary report={r.seed?.report} /></td>
                       <td style={{ ...tdStyle, ...mutedStyle }}>{r.started_at ? new Date(r.started_at).toLocaleString() : "—"}</td>
+                      <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
+                        {!["completed", "cancelled"].includes(r.status) ? (
+                          <button
+                            type="button"
+                            style={smallButton}
+                            disabled={cancelling === r.id}
+                            onClick={() => cancelRun(r)}
+                          >
+                            {cancelling === r.id ? "Cancelling…" : "Cancel"}
+                          </button>
+                        ) : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -639,7 +760,11 @@ export default function OwnerAgent() {
           )}
         </PageCard>
 
-        {selected ? <RunDetail key={selected} objectiveId={selected} onListChanged={loadRuns} /> : null}
+        {selected ? (
+          <div ref={detailRef}>
+            <RunDetail key={`${selected}-${detailKey}`} objectiveId={selected} onListChanged={loadRuns} />
+          </div>
+        ) : null}
       </div>
     </OwnerLayout>
   );
