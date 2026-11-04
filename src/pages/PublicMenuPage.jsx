@@ -1672,6 +1672,7 @@ export default function PublicMenuPage() {
         description: itemDescription,
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
+        active_deal: item?.active_deal ?? null,
         modifiers,
         preparationInstructions: preparationInstructions || null,
         quantity,

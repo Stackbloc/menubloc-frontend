@@ -12,6 +12,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 import { findAvoidedInIngredientList } from "../../lib/foodsToAvoidMatch.js";
 import { getIngredients } from "./SmartCustomizationSheet.jsx";
+import DealPriceTag from "../menu/DealPriceTag.jsx";
+import { liveItemDeal } from "../../lib/itemDeal.js";
 import {
   MAX_ITEM_QUANTITY,
   clampQuantity,
@@ -97,7 +99,7 @@ export default function MenuItemOrderSheet({
   item,
   name,
   description,
-  basePriceCents,
+  basePriceCents: listedPriceCents,
   foodsToAvoid = [],
   brand,
   onClose,
@@ -105,6 +107,13 @@ export default function MenuItemOrderSheet({
   onOpenDetails,
 }) {
   const accent = brand?.accent || "var(--mp-accent, #0f7a24)";
+  // A live deal is the price you pay (Andre 2026-11-04): the sheet totals at the deal price and
+  // shows the regular price struck through; the basket line and checkout use the same price.
+  const deal = liveItemDeal(item);
+  const basePriceCents =
+    deal?.dealCents != null && deal.dealCents > 0 && (!listedPriceCents || deal.dealCents < listedPriceCents)
+      ? deal.dealCents
+      : listedPriceCents;
   const onAccent = brand?.onAccent || "#fff";
   const groups = useMemo(() => getSheetGroups(item), [item]);
   const photos = useMemo(() => getItemPhotoUrls(item), [item]);
@@ -220,7 +229,13 @@ export default function MenuItemOrderSheet({
             <h2 style={{ margin: 0, fontSize: 26, lineHeight: 1.15, fontWeight: 900, letterSpacing: 0.2, fontFamily: brand?.headingFontFamily || "inherit" }}>
               {displayName}
             </h2>
-            <div style={{ marginTop: 10, fontSize: 21 }}>{formatCents(basePriceCents)}</div>
+            {deal ? (
+              <div style={{ marginTop: 10, fontSize: 21 }}>
+                <DealPriceTag deal={deal} regular={listedPriceCents ? formatCents(listedPriceCents) : null} iconSize={24} align="start" testId="order-sheet-deal" />
+              </div>
+            ) : (
+              <div style={{ marginTop: 10, fontSize: 21 }}>{formatCents(basePriceCents)}</div>
+            )}
             {description ? (
               <p style={{ margin: "14px 0 0", fontSize: 16, lineHeight: 1.55, color: "#2b3338" }}>{description}</p>
             ) : null}
