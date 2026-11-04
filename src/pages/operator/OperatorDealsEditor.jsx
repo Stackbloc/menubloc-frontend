@@ -26,6 +26,16 @@ import {
   normalizeDealMealPeriodList,
 } from "../../lib/dealMealPeriods.js";
 import { resolveBillboardMediaUrl } from "../../lib/billboardMediaUrl.js";
+import DealScheduleFields, { DealTermsHelper } from "../../components/operator/DealScheduleFields.jsx";
+import {
+  buildDealTermsText,
+  dealScheduleProblem,
+  dealScheduleLabel,
+  normalizeDealDays,
+  normalizeDealTime,
+} from "../../lib/dealSchedule.js";
+
+const SCHEDULE_COLORS = { accent: "#1F4E3D", accentSoft: "#e8f2ee", line: "#d7dee7", muted: "#8a9ab0", ink: "#0f1720" };
 import {
   videoDealTermsFromDeal,
   videoDealTermsProblem,
@@ -186,6 +196,12 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     initial.show_meal_time_caption === true
   );
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
+  // Days of week + time of day (Andre 2026-11-04).
+  const [schedule, setSchedule] = useState(() => ({
+    days: normalizeDealDays(initial.valid_days),
+    start: normalizeDealTime(initial.valid_start_time),
+    end: normalizeDealTime(initial.valid_end_time),
+  }));
 
   // Combo additional items: up to 3 slots, each {id, name}
   const initComboIds = Array.isArray(initial.combo_item_ids) ? initial.combo_item_ids : [];
@@ -271,7 +287,12 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
       video_url: form.video_url.trim() || null,
       meal_periods: mealPeriods,
       show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
+      valid_days: schedule.days,
+      valid_start_time: schedule.start || null,
+      valid_end_time: schedule.end || null,
     };
+    // Empty description → the terms built from the choices (Andre 2026-11-04).
+    if (!String(p.description || "").trim()) p.description = termsText;
     // Backend buildDealFields reads `body.value`:
     // percent_off → value is the percent integer (e.g. 20)
     // amount_off  → value is dollars (e.g. 3.00); backend multiplies by 100
@@ -346,6 +367,21 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
     startsAt: form.starts_at,
     expiresAt: form.expires_at,
   };
+  const primaryItemName = form.menu_item_id
+    ? allItems.find((i) => String(i.id) === String(form.menu_item_id))?.name || itemSearch
+    : null;
+  const termsText = buildDealTermsText({
+    dealType: form.deal_type,
+    value: formTerms.value,
+    itemNames: form.menu_item_id
+      ? [primaryItemName, ...(form.deal_type === "combo" ? [] : appliesItems.filter((c) => c.id).map((c) => c.name))]
+      : [],
+    days: schedule.days,
+    start: schedule.start,
+    end: schedule.end,
+    startDate: form.starts_at,
+    endDate: form.expires_at,
+  });
   const formTermsProblem = videoDealTermsProblem(formTerms);
   const savedTermsProblem = initial.id ? videoDealTermsProblem(videoDealTermsFromDeal(initial)) : null;
   const videoTermsProblem =
@@ -354,8 +390,9 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
 
   // Start and end dates are both required; same-day deals are allowed (end of day > start of day).
   const datesOutOfOrder = Boolean(form.starts_at && form.expires_at && form.expires_at < form.starts_at);
+  const scheduleProblem = dealScheduleProblem(schedule);
   const valid =
-    form.title && form.description && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id &&
+    form.title && (form.description || termsText) && !scheduleProblem && form.starts_at && form.expires_at && !datesOutOfOrder && form.menu_item_id &&
     !videoNeedsTerms;
 
   return (
@@ -380,7 +417,22 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={LABEL}>Description *</label>
-          <input style={{ ...INPUT, width: "100%" }} value={form.description} onChange={f("description")} placeholder="Short description shown to customers" />
+          <input style={{ ...INPUT, width: "100%" }} value={form.description} onChange={f("description")} placeholder="Short description shown to customers" data-testid="operator-deal-description" />
+          <div style={{ marginTop: 6 }}>
+            <DealTermsHelper
+              description={form.description}
+              termsText={termsText}
+              schedule={schedule}
+              colors={SCHEDULE_COLORS}
+              disabled={busy}
+              onAdd={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  description: [String(prev.description || "").trim(), termsText].filter(Boolean).join(" "),
+                }))
+              }
+            />
+          </div>
         </div>
 
         {/* Item picker */}
@@ -563,6 +615,14 @@ function DealForm({ allItems, restaurantId, initial = {}, initialBillboard = nul
             />
             Display on Menu Browser (as sponsored ad page)
           </label>
+        </div>
+
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={LABEL}>When the deal runs</label>
+          <DealScheduleFields value={schedule} onChange={setSchedule} disabled={busy} colors={SCHEDULE_COLORS} />
+          {scheduleProblem && (schedule.start || schedule.end) ? (
+            <div style={{ color: "#b91c1c", fontSize: 12, marginTop: 6 }}>{scheduleProblem}</div>
+          ) : null}
         </div>
 
         <div style={{ gridColumn: "1 / -1" }}>
@@ -1010,6 +1070,22 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy, labels }) {
           >
             {dealMealPeriodSummary(deal.meal_periods)}
           </span>
+          {dealScheduleLabel(deal) ? (
+            <span
+              style={{
+                background: "#e8f2ee",
+                color: "#1F4E3D",
+                borderRadius: 999,
+                padding: "2px 8px",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.2,
+              }}
+              data-testid="deal-row-schedule"
+            >
+              {dealScheduleLabel(deal)}
+            </span>
+          ) : null}
         </div>
       </div>
 

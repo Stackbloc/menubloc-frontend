@@ -26,6 +26,8 @@ export function liveItemDeal(item, now = Date.now()) {
     regularCents: toInt(raw.regular_price_cents),
     dealCents: toInt(raw.deal_price_cents),
     expiresAt: raw.expires_at || null,
+    // Days/hours the deal runs; the server only sends active_deal inside them.
+    schedule: raw.schedule_label ? String(raw.schedule_label) : null,
   };
 }
 

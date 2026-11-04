@@ -86,6 +86,9 @@ export function ProfileDealRows({ deals = [], placement = "profile_deals", badge
             >
               {deal.name && deal.deal_title ? <span>{deal.name}</span> : null}
               {price ? <span>{price}</span> : null}
+              {deal.schedule_label ? (
+                <span data-testid="profile-deal-schedule">{deal.schedule_label}</span>
+              ) : null}
             </div>
           </div>
         );

@@ -682,13 +682,18 @@ export default function DealVideoSwipe({
             {item.discount_label}
           </span>
         ) : null}
-        {Array.isArray(item.meal_period_labels) && item.meal_period_labels.length ? (
+        {(Array.isArray(item.meal_period_labels) && item.meal_period_labels.length) || item.schedule_label ? (
           <div style={styles.mealRow} data-testid="feed-deals-meal-labels">
-            {item.meal_period_labels.map((label) => (
+            {(item.meal_period_labels || []).map((label) => (
               <span key={label} style={styles.mealBadge}>
                 {label}
               </span>
             ))}
+            {item.schedule_label ? (
+              <span style={styles.mealBadge} data-testid="feed-deals-schedule">
+                {item.schedule_label}
+              </span>
+            ) : null}
           </div>
         ) : null}
         {item.eligible_item_names?.length > 1 ? (
