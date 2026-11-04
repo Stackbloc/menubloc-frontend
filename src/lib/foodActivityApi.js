@@ -138,8 +138,18 @@ export async function resolveEatingPrefill({ restaurantId = null, menuItemId = n
   const rid = restaurantId != null ? String(restaurantId).trim() : "";
   let restaurant = null;
   let menuItem = null;
+  // A dish that no longer loads (menu re-imported, item removed) must not hide the
+  // restaurant link too — fall through to the restaurant lookup below.
+  let itemData = null;
   if (mid) {
-    const data = await apiGet(`/menu-items/${encodeURIComponent(mid)}`);
+    try {
+      itemData = await apiGet(`/menu-items/${encodeURIComponent(mid)}`);
+    } catch (err) {
+      if (!rid) throw err;
+    }
+  }
+  if (mid && itemData) {
+    const data = itemData;
     const item = data?.item || data?.menu_item || data || {};
     menuItem = asDishPlace({
       menu_item_id: item.menu_item_id || item.id || mid,

@@ -32,6 +32,7 @@ import {
   formatMealTimeDealCaption,
 } from "../../lib/dealMealPeriods.js";
 import { formatOwnerVideoCreatorLabel } from "../../lib/ownerVideoCatalogLabels.js";
+import { CLIP_SORTABLE_KEYS, clipSettingsLabel, sortClipRows } from "../../lib/ownerClipSort.js";
 import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
 import { videoDealTermsProblem } from "../../lib/videoDealTerms.js";
 import DealMenuItemsPicker from "./OwnerDealMenuItemsPicker.jsx";
@@ -1563,6 +1564,20 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     menuItemId: video.menu_item_id,
     videoKey: video.video_id,
   });
+  // Restaurant/menu links are only sent when the owner changes them here. Before
+  // 2026-11-04 every save re-sent the pickers, so a save while they were still loading
+  // (or after the saved dish failed to load) wrote restaurant_id/menu_item_id = null.
+  const [placeTouched, setPlaceTouched] = useState(false);
+  useEffect(() => {
+    setPlaceTouched(false);
+  }, [video.video_id]);
+  const placeLoadMissed =
+    !placeLoading &&
+    ((video.restaurant_id != null && !restaurant) || (video.menu_item_id != null && !dish));
+  function handleRestaurantPick(next) {
+    setPlaceTouched(true);
+    setRestaurant(next);
+  }
   const [marketDiscoverable, setMarketDiscoverable] = useState(video.market_discoverable !== false);
   const [playMuted, setPlayMuted] = useState(video.play_muted === true);
   const [foodForm, setFoodForm] = useState(video.food_form || "");
@@ -1711,6 +1726,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
   }
 
   function handleDishChange(next) {
+    setPlaceTouched(true);
     setDish(next);
     if (next && !title.trim()) {
       setTitle(dishLabel(next) || title);
@@ -1739,18 +1755,22 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
       };
       // Deal videos: send the restaurant only when it changed — the metadata save clears
       // the deal's items on any restaurant patch; items are saved below via the deal itself.
-      if (supportsRestaurant && (!isDealVideo || dealRestaurantChanged)) {
+      // Links go out only when the owner changed them in this editor (see placeTouched).
+      if (placeTouched && supportsRestaurant && (!isDealVideo || dealRestaurantChanged)) {
         body.restaurant_id = restaurant?.restaurant_id ?? null;
       }
-      if (supportsMenuItem) {
+      if (placeTouched && supportsMenuItem) {
         body.menu_item_id = dish?.menu_item_id ?? null;
       }
       if (video.video_kind === "managed") {
         body.cluster_id = clusterId;
-        // Always send the extras with the dish (the server clears them on a dish/restaurant save).
+        // Send the extras with a dish/restaurant change (the server clears them on a
+        // dish/restaurant save) or when they were edited; otherwise the server keeps them.
         const restaurantChanged =
           String(restaurant?.restaurant_id || "") !== String(video.restaurant_id || "");
-        if (!dish?.menu_item_id) {
+        if (!placeTouched && !extraDishesDirty) {
+          // untouched — omit
+        } else if (!dish?.menu_item_id) {
           body.applies_to_menu_item_ids = [];
         } else if (restaurantDishes.state === "ready") {
           body.applies_to_menu_item_ids = extraDishes
@@ -1769,7 +1789,7 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
         isDealVideo &&
         dealRestaurantId &&
         dealItemsState === "ready" &&
-        (dealItemsDirty || dealRestaurantChanged)
+        (dealItemsDirty || (placeTouched && dealRestaurantChanged))
       ) {
         await updateOwnerDeal(dealRestaurantId, video.video_source_id, {
           menu_item_id: dealItems[0] ? Number(dealItems[0].id) : null,
@@ -2203,15 +2223,28 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           placeLoading ? (
             <p style={{ fontSize: 13, color: OWNER_COLORS.muted, margin: 0 }}>Loading CK place data…</p>
           ) : (
+            <>
+            {placeLoadMissed && !placeTouched ? (
+              <p
+                data-testid="owner-video-place-load-missed"
+                style={{ fontSize: 13, color: "#92400e", background: "#fef3c7", borderRadius: 8, padding: "8px 10px", margin: 0 }}
+              >
+                Saved links couldn't be shown
+                {video.restaurant_id != null ? ` (restaurant #${video.restaurant_id}` : " ("}
+                {video.menu_item_id != null ? `${video.restaurant_id != null ? ", " : ""}dish #${video.menu_item_id}` : ""}
+                ). Saving keeps them unless you pick new ones here.
+              </p>
+            ) : null}
             <CkRestaurantMenuPicker
               restaurant={restaurant}
-              onRestaurantChange={setRestaurant}
+              onRestaurantChange={handleRestaurantPick}
               dish={dish}
               onDishChange={handleDishChange}
               allowMenuItem={supportsMenuItem}
               disabled={busy}
               testIdPrefix="owner-video"
             />
+            </>
           )
         ) : null}
 
@@ -2441,7 +2474,14 @@ export default function OwnerVideoCuration() {
     loadVideos();
   }, [loadVideos]);
 
-  const rows = useMemo(() => videos || [], [videos]);
+  // Click a column header to sort; click again to flip ascending/descending.
+  const [sort, setSort] = useState(null); // { key, dir }
+  function handleSortChange(key) {
+    setSort((prev) =>
+      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+    );
+  }
+  const rows = useMemo(() => sortClipRows(videos || [], sort), [videos, sort]);
 
   async function handleLookup(e) {
     e.preventDefault();
@@ -2599,16 +2639,7 @@ export default function OwnerVideoCuration() {
               [
                 "Settings",
                 "settings",
-                (row) => {
-                  const bits = [];
-                  if (row.play_muted === true) bits.push("Muted");
-                  if (row.food_form) bits.push(row.food_form);
-                  if (row.cuisine) bits.push(row.cuisine);
-                  if (row.manager_active === false) bits.push("Inactive");
-                  if (row.is_entertainment === true) bits.push("Entertainment");
-                  if (row.run_starts_at || row.run_ends_at) bits.push("Scheduled");
-                  return bits.length ? bits.join(" · ") : "—";
-                },
+                (row) => clipSettingsLabel(row) || "—",
               ],
               ["Created", "created_at", (row) => formatWhen(row.created_at)],
               [
@@ -2639,6 +2670,9 @@ export default function OwnerVideoCuration() {
             ]}
             emptyLabel="No videos match these filters."
             onRowClick={(row) => setSelected(row)}
+            sort={sort}
+            onSortChange={handleSortChange}
+            sortableKeys={CLIP_SORTABLE_KEYS}
           />
         ) : null}
 

@@ -67,5 +67,6 @@ test("Video Manager editor exposes the entertainment designation (off the search
   assert.match(src, /owner-video-entertainment/);
   assert.match(src, /is_entertainment: isEntertainment/);
   assert.match(src, /not in search results/);
-  assert.match(src, /bits\.push\("Entertainment"\)/);
+  // Settings column label lives in ownerClipSort.js since the 2026-11-04 sortable columns.
+  assert.match(read("src/lib/ownerClipSort.js"), /bits\.push\("Entertainment"\)/);
 });
