@@ -284,7 +284,6 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
 import { buildMenuBrowserRedirectPath } from "./lib/searchShopMode.js";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
 
-import DealsPage from "./pages/DealsPage.jsx";
 import DealDetailPage from "./pages/DealDetailPage.jsx";
 
 import ClaimVerify from "./pages/ClaimVerify.jsx";
@@ -898,7 +897,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenusRedirect />} />
         <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
-        <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
+        {/* Old "Deals Near You" list retired (Andre 2026-11-04): /deals opens the Deals feed. */}
+        <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/feed/deals" replace />} />
         <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />
         <Route path="/events/groups/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupInvitePage />} />
         <Route path="/events/groups/:slug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EventGroupDetailPage />} />

@@ -77,7 +77,7 @@ export function mapDealRowToFeedVideoItem(deal) {
     restaurant_href:
       restaurantPath({ slug, city, state }) ||
       (deal.restaurant_id ? `/restaurants/${encodeURIComponent(String(deal.restaurant_id))}` : null),
-    deal_href: dealId ? `/deals/${dealId}` : "/deals",
+    deal_href: dealId ? `/deals/${dealId}` : "/feed/deals",
   };
 }
 

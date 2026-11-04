@@ -125,7 +125,7 @@ export default function StickyPageHeader({
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
               <Link
-                to="/deals"
+                to="/feed/deals"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 3,
                   minHeight: 32, padding: "0 12px", borderRadius: 999,

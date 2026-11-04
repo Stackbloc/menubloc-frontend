@@ -16,7 +16,6 @@ function page(path, title, description, changefreq = "monthly", priority = 0.5) 
 
 export const INDEXABLE_STATIC_PAGES = [
   page("/", "Menuply | Discover Local Menus, Deals & Nutrition", "Browse restaurant menus near you. Find dishes, deals, and nutrition insights on Menuply.", "daily", 1),
-  page("/deals", "Restaurant Deals | Menuply", "Browse current restaurant deals available through Menuply.", "daily", 0.7),
   page("/foodtrucks", "Food Truck Directory | Menuply", "Discover public food truck profiles and schedules on Menuply.", "weekly", 0.6),
   page("/about", "About Menuply | Find, Explore & Share Food", "Menuply helps people find, explore, share, and experience food together—menus, social dining, and better restaurant economics."),
   page("/contact", "Contact Menuply | Get in Touch", "Contact the Menuply team for support, restaurant partnerships, or general inquiries.", "monthly", 0.4),
