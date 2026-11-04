@@ -195,7 +195,9 @@ export default function FeedVideoActionRail({
         data-testid="feed-video-action-rail"
         style={{
           ...styles.rail,
-          bottom: `calc(${inset}px + max(88px, env(safe-area-inset-bottom) + 72px))`,
+          // Raised so the rail sits well clear of the Report flag under it (Andre 2026-11-04): 124 px
+          // on tall phones, less on short ones (iPhone SE) so +Wish List stays under the ☰ button.
+          bottom: `calc(${inset}px + max(clamp(92px, 15vh, 124px), env(safe-area-inset-bottom) + 72px))`,
         }}
       >
         {topSlot}
@@ -298,13 +300,14 @@ const styles = {
    */
   rail: {
     position: "absolute",
-    right: "max(10px, env(safe-area-inset-right))",
+    // Further in from the edge (Andre 2026-11-04; was 10 px).
+    right: "max(20px, env(safe-area-inset-right))",
     zIndex: 5,
     width: 64,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 14,
+    gap: "min(14px, 1.6vh)",
     pointerEvents: "auto",
   },
   btn: {

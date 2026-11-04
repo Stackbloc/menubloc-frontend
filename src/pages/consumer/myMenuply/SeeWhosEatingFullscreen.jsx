@@ -1207,7 +1207,8 @@ const styles = {
   safetyMenuBtn: {
     position: "absolute",
     zIndex: 30,
-    right: "max(16px, env(safe-area-inset-right))",
+    // Lined up under the rail's circles (rail moved in to 20 px, Andre 2026-11-04).
+    right: "max(32px, env(safe-area-inset-right))",
     display: "flex",
     alignItems: "center",
     gap: 4,
