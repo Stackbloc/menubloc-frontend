@@ -1,5 +1,5 @@
 /**
- * Live Feed right action rail — Wish List · Fav · Invite · Share · Menu Browser, as in the app
+ * Live Feed right action rail — Wish List · Fav · Invite · Share · Menu, as in the app
  * (menuply-mobile FeedClip; app wins, Andre 2026-10-29): Menu Browser is a round button with a
  * yellow ring and the menu icon, labeled like the others (it replaced the green "Order this" pill).
  * "+Wish List": linked dish → saves the dish; otherwise saves the restaurant. Both land in
@@ -26,7 +26,7 @@ import { WISH_LIST_ACCENT, WISH_LIST_ADD, WISH_LIST_ADDED } from "../../WishList
  * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
  * shown to the left of the icon on mouse hover; it is also the accessible name.
  */
-function RailButton({ testId, label, hint, disabled, onClick, children, pressed, circleStyle = null }) {
+function RailButton({ testId, label, hint, disabled, onClick, children, pressed, circleStyle = null, circleClassName = undefined }) {
   const [hovered, setHovered] = useState(false);
   const explanation = hint || label;
   return (
@@ -50,7 +50,7 @@ function RailButton({ testId, label, hint, disabled, onClick, children, pressed,
         ...(disabled ? styles.btnDisabled : null),
       }}
     >
-      <span style={{ ...styles.iconCircle, ...circleStyle }}>{children}</span>
+      <span className={circleClassName} style={{ ...styles.iconCircle, ...circleStyle }}>{children}</span>
       <span style={styles.label}>{label}</span>
       {hovered ? (
         <span role="tooltip" data-testid={`${testId}-hint`} style={styles.hint}>
@@ -75,6 +75,13 @@ function ConnectGlyph({ size = 22 }) {
     </svg>
   );
 }
+
+/** Menu ring pulses yellow ↔ white (Andre 2026-11-04, as the app); still when motion is reduced. */
+const MENU_PULSE_CSS = `
+@keyframes mpMenuPulse { 0%, 100% { border-color: #FACC15; } 50% { border-color: #FFFFFF; } }
+.mp-menu-pulse { animation: mpMenuPulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mp-menu-pulse { animation: none; } }
+`;
 
 /** One label for every video; short enough to stay on one line in the rail. */
 const WISH_LIST_LABEL = "+Wish List";
@@ -183,6 +190,7 @@ export default function FeedVideoActionRail({
 
   return (
     <>
+      <style>{MENU_PULSE_CSS}</style>
       <div
         data-testid="feed-video-action-rail"
         style={{
@@ -253,10 +261,11 @@ export default function FeedVideoActionRail({
         {showMenu ? (
           <RailButton
             testId="feed-rail-menu"
-            label="Menu Browser"
+            label="Menu"
             hint={isDishVideo ? "Order this dish from the menu" : "See this restaurant's menu"}
             onClick={onMenu}
             circleStyle={styles.menuCircle}
+            circleClassName="mp-menu-pulse"
           >
             <AppIcon name="menu" size={22} color="#fff" />
           </RailButton>
@@ -335,7 +344,7 @@ const styles = {
     maxWidth: 64,
     textAlign: "center",
   },
-  /** Menu Browser: the app's yellow-ringed circle. */
+  /** Menu: the app's yellow-ringed circle (pulses, MENU_PULSE_CSS). */
   menuCircle: {
     border: "2px solid #FACC15",
     background: "rgba(0,0,0,0.2)",

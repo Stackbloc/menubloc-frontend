@@ -60,6 +60,7 @@ import { feedListKeepsPosition, wrapEndlessFeedNext } from "../../../lib/shuffle
 import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlightMedia.js";
 import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
 import ClipSafetyMenu from "../../../components/safety/ClipSafetyMenu.jsx";
+import AppIcon from "../../../components/icons/AppIcon.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -725,15 +726,20 @@ export default function SeeWhosEatingFullscreen({
       {headerSlot}
       {item && !menuBrowserOpen && REPORTABLE_KINDS.has(item.kind) && item.source_id != null ? (
         // Report / Block (Play Store safety, 2026-11-02). Moves on to the next clip once done.
+        // Support, not a rail action (Andre 2026-11-04, as the app): small flag + "Report", no
+        // circle, right side, low under the rail.
         <ClipSafetyMenu
           kind={item.kind}
           contentId={item.source_id}
           dinerId={item.diner?.id ?? null}
           dinerName={item.diner?.display_name || ""}
           onHidden={() => goNext()}
-          buttonStyle={styles.safetyMenuBtn}
+          buttonStyle={{ ...styles.safetyMenuBtn, bottom: `calc(${navInset}px + max(52px, env(safe-area-inset-bottom) + 36px))` }}
           label="Report or block"
-        />
+        >
+          <AppIcon name="flag" size={14} color="rgba(255,255,255,0.8)" />
+          <span>Report</span>
+        </ClipSafetyMenu>
       ) : null}
       {!isFeedHome && !menuBrowserOpen ? (
         <>
@@ -1201,16 +1207,18 @@ const styles = {
   safetyMenuBtn: {
     position: "absolute",
     zIndex: 30,
-    top: "calc(max(12px, env(safe-area-inset-top)) + 52px)",
-    right: "max(12px, env(safe-area-inset-right))",
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.4)",
-    background: "rgba(0,0,0,0.55)",
-    color: "#fff",
-    fontSize: 20,
-    lineHeight: "20px",
+    right: "max(16px, env(safe-area-inset-right))",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    padding: "4px 2px",
+    border: "none",
+    background: "transparent",
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: "inherit",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
     cursor: "pointer",
   },
   inviteShareBtn: {
