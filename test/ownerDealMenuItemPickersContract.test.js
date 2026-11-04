@@ -36,5 +36,9 @@ test("Video Manager editor: deal videos use the 3-item picker and save via the d
   assert.match(src, /await updateOwnerDeal\(dealRestaurantId, video\.video_source_id, \{/);
   assert.match(src, /linked_items_source: dealMenu\.source/);
   // Unchanged restaurant is not re-sent (that would clear the deal's items).
-  assert.match(src, /if \(supportsRestaurant && \(!isDealVideo \|\| dealRestaurantChanged\)\)/);
+  // Links are only sent when the owner picked them here (2026-11-04: a save while the
+  // pickers were empty used to null restaurant_id/menu_item_id).
+  assert.match(src, /if \(placeTouched && supportsRestaurant && \(!isDealVideo \|\| dealRestaurantChanged\)\)/);
+  assert.match(src, /if \(placeTouched && supportsMenuItem\)/);
+  assert.match(src, /dealItemsDirty \|\| \(placeTouched && dealRestaurantChanged\)/);
 });

@@ -141,10 +141,16 @@ export function SimpleTable({
   wrapKeys = [],
   maxHeight = null,
   onRowClick = null,
+  // Optional click-to-sort headers: sort = { key, dir: "asc" | "desc" }, onSortChange(key).
+  // Only keys in sortableKeys get a clickable header; other tables are unchanged.
+  sort = null,
+  onSortChange = null,
+  sortableKeys = null,
 }) {
   if (!rows?.length) return <EmptyState>{emptyLabel}</EmptyState>;
   const wrapSet = new Set(wrapKeys);
   const hasWrap = wrapSet.size > 0;
+  const sortableSet = onSortChange ? new Set(sortableKeys || []) : null;
   return (
     <div
       style={{
@@ -158,20 +164,50 @@ export function SimpleTable({
       <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: hasWrap ? "fixed" : "auto" }}>
         <thead>
           <tr>
-            {columns.map(([label, key]) => (
-              <th
-                key={label}
-                style={
-                  wrapSet.has(key)
-                    ? thStyle
-                    : hasWrap
-                      ? { ...thMetricStyle }
-                      : thStyle
-                }
-              >
-                {label}
-              </th>
-            ))}
+            {columns.map(([label, key]) => {
+              const sortable = sortableSet?.has(key);
+              const active = sortable && sort?.key === key;
+              return (
+                <th
+                  key={label}
+                  aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}
+                  style={
+                    wrapSet.has(key)
+                      ? thStyle
+                      : hasWrap
+                        ? { ...thMetricStyle }
+                        : thStyle
+                  }
+                >
+                  {sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSortChange(key)}
+                      title={`Sort by ${label}`}
+                      data-testid={`table-sort-${key}`}
+                      style={{
+                        all: "unset",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        font: "inherit",
+                        color: active ? OWNER_COLORS.accent : "inherit",
+                        textDecoration: active ? "underline" : "none",
+                        textUnderlineOffset: 3,
+                      }}
+                    >
+                      {label}
+                      <span aria-hidden="true" style={{ fontSize: 10, opacity: active ? 1 : 0.35 }}>
+                        {active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+                      </span>
+                    </button>
+                  ) : (
+                    label
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
