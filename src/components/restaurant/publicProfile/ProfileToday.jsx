@@ -18,7 +18,6 @@ export default function ProfileToday({
   name = "",
   updates = [],
   dealItems = [],
-  restaurantId = null,
   isMobile = false,
 }) {
   const posts = (Array.isArray(updates) ? updates : []).filter((u) => String(u?.title || "").trim());
@@ -29,9 +28,7 @@ export default function ProfileToday({
 
   const placeName = String(name || "").trim();
   const heading = placeName ? `Today at ${placeName}` : "Today";
-  const dealsHref = restaurantId
-    ? `/deals?restaurant_id=${encodeURIComponent(String(restaurantId))}`
-    : "/deals";
+  const dealsHref = "/feed/deals"; // old /deals list retired (Andre 2026-11-04)
 
   return (
     <section

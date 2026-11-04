@@ -3,7 +3,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 const NAV_ITEMS = [
-  { label: "Deals",               href: "/deals",             icon: "🏷️" },
+  { label: "Deals",               href: "/feed/deals",           icon: "🏷️" },
   { label: "Food Truck Directory", href: "/foodtrucks",       icon: "🚚" },
 ];
 

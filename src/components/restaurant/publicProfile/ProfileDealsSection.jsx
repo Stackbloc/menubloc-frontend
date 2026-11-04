@@ -108,7 +108,6 @@ export function ProfileDealRows({ deals = [], placement = "profile_deals", badge
 
 export default function ProfileDealsSection({
   dealItems = [],
-  restaurantId = null,
   isMobile = false,
   showClaimInvites = false,
 }) {
@@ -117,9 +116,7 @@ export default function ProfileDealsSection({
   );
   if (!deals.length && !showClaimInvites) return null;
 
-  const browseHref = restaurantId
-    ? `/deals?restaurant_id=${encodeURIComponent(String(restaurantId))}`
-    : "/deals";
+  const browseHref = "/feed/deals"; // old /deals list retired (Andre 2026-11-04)
 
   return (
     <section

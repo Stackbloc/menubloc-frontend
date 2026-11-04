@@ -297,7 +297,7 @@ export default function HomeNext({
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Link
-                to="/deals"
+                to="/feed/deals"
                 style={{
                   fontSize: 13,
                   fontWeight: 800,

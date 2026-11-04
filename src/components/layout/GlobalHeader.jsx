@@ -120,7 +120,7 @@ export default function GlobalHeader() {
   const params = new URLSearchParams(location.search || "");
   const [query, setQuery] = useState(params.get("q") || "");
   const [appMenuOpen, setAppMenuOpen] = useState(false);
-  const showDealsNav = location.pathname !== "/deals";
+  const showDealsNav = location.pathname !== "/deals" && location.pathname !== "/feed/deals";
 
   const profileLabel =
     profile?.display_name ||
@@ -192,7 +192,7 @@ export default function GlobalHeader() {
 
           {showDealsNav ? (
             <nav aria-label={t("global.primaryNav", "Primary")} style={navStyle}>
-              <NavLink to="/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
+              <NavLink to="/feed/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
                 {t("global.deals", "Deals")}
               </NavLink>
             </nav>
