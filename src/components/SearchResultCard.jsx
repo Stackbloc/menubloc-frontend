@@ -10,7 +10,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
@@ -39,8 +39,7 @@ import { liveItemDeal } from "../lib/itemDeal.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
-import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
-import CompareItemsModal from "./menu/CompareItemsModal.jsx";
+import { fetchSimilarItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
 import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
 import {
   SIMILAR_INITIAL_LIMIT,
@@ -51,7 +50,6 @@ import {
   getSimilarMoreButtonLabel,
   groupSimilarResultsByMatchStrength,
   humanizeSimilarMatchReasons,
-  isShowSimilarChipVisible,
   mergeSimilarItems,
   resolveSimilarEmptyStateMessage,
   shouldExposeSimilarMatchReasons,
@@ -65,7 +63,6 @@ import {
 } from "../lib/nutritionInsights.js";
 import {
   buildItemRowDetailHref,
-  buildMenuItemDetailQuery,
   returnNavigationExtraParams,
   isPlaceScopedReturn,
   isSinglePlaceReturn,
@@ -1200,7 +1197,6 @@ function ItemRow({
   activeRefinement = null,
   returnNavigation = null,
 }) {
-  const navigate = useNavigate();
   const location = useLocation();
   const [openTab, setOpenTab] = useState(null);
   const [similarState, setSimilarState] = useState({
@@ -1210,11 +1206,6 @@ function ItemRow({
     pagination: null,
   });
   const similarRequestRef = useRef(0);
-  const [compareOpen, setCompareOpen] = useState(false);
-  const [compareData, setCompareData] = useState(null);
-  const [compareLoading, setCompareLoading] = useState(false);
-  const [compareError, setCompareError] = useState(null);
-  const [currentCompareCandidate, setCurrentCompareCandidate] = useState(null);
   const [intelligenceState, setIntelligenceState] = useState({
     status: "idle",
     data: null,
@@ -1384,10 +1375,8 @@ function ItemRow({
     ));
   const hasNutritionOrInsights = hasNut || hasIns;
   const intelligenceLoading = intelligenceState.status === "loading";
-  const showSimilarChip = isShowSimilarChipVisible(mid);
   const similarAvailability = resolveSimilarAvailability(displayRow);
   const similarChipDisabled = similarAvailability === false;
-  const similarChipAvailable = similarAvailability !== false;
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1521,75 +1510,6 @@ function ItemRow({
       const nextState = { status: "failed", items: [], meta: null, pagination: null };
       setSimilarState(nextState);
     }
-  }
-
-  async function loadMoreSimilarForRow() {
-    if (!mid || !similarCacheKey) return;
-    if (similarState.status === "loading" || similarState.status === "loading_more") return;
-    if (similarState.pagination?.has_more !== true) return;
-
-    const requestId = similarRequestRef.current + 1;
-    similarRequestRef.current = requestId;
-    const existingItems = similarState.items || [];
-    const nextOffset = existingItems.length;
-    setSimilarState((prev) => ({ ...prev, status: "loading_more" }));
-
-    try {
-      const json = await fetchSimilarItems(mid, {
-        lat: similarRequest?.lat ?? null,
-        lng: similarRequest?.lng ?? null,
-        city: similarRequest?.city ?? null,
-        state: similarRequest?.state ?? null,
-        filters: similarRequest?.filters || {},
-        limit: SIMILAR_PAGE_SIZE,
-        offset: nextOffset,
-      });
-      if (similarRequestRef.current !== requestId) return;
-      const nextState = buildSimilarStateFromResponse(json, { appendItems: existingItems });
-      cacheSimilarState(similarCacheKey, nextState);
-      setSimilarState(nextState);
-    } catch {
-      if (similarRequestRef.current !== requestId) return;
-      setSimilarState((prev) => ({ ...prev, status: "ready" }));
-    }
-  }
-
-  function markCompareIneligible(entry) {
-    setSimilarState((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
-        getItemId(item) === getItemId(entry) ? { ...item, compare_eligible: false } : item
-      ),
-    }));
-  }
-
-  function handleCompare(similarEntry) {
-    const candidateId = getNormalizedMenuItemId(similarEntry);
-    if (!mid || !candidateId) return;
-    setCurrentCompareCandidate(similarEntry);
-    setCompareData(null);
-    setCompareError(null);
-    setCompareLoading(true);
-    setCompareOpen(true);
-    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null, {
-      skipEligibilityCheck: true,
-      city: geo?.city ?? null,
-      state: geo?.state ?? null,
-    })
-      .then((data) => {
-        if (!data?.baseItem && !data?.candidateItem) {
-          setCompareLoading(false);
-          setCompareError("This comparison is no longer available.");
-          return;
-        }
-        setCompareData(data);
-        setCompareLoading(false);
-      })
-      .catch((error) => {
-        setCompareLoading(false);
-        setCompareData(null);
-        setCompareError(error?.message || "This comparison is no longer available.");
-      });
   }
 
   function toggle(tab) {
@@ -1932,23 +1852,7 @@ function ItemRow({
           available={hasNutritionOrInsights}
           onClick={() => toggle("nutrition")}
         />
-        {showSimilarChip ? (
-          <Chip
-            label={labels.showSimilar}
-            active={openTab === "similar"}
-            available={similarChipAvailable}
-            disabled={similarChipDisabled}
-            onClick={() => {
-              if (similarChipDisabled) return;
-              toggle("similar");
-            }}
-            ariaLabel={
-              similarChipDisabled
-                ? `${labels.showSimilar} — none available`
-                : labels.showSimilar
-            }
-          />
-        ) : null}
+        {/* No Similar Items / Compare on the web (Andre 2026-11-04: not in the new design; backend kept). */}
         </div>
       </div>
 
@@ -1958,44 +1862,12 @@ function ItemRow({
           row={displayRow}
           similarState={similarState}
           onFindSimilar={() => {}}
-          onCompare={handleCompare}
+          onCompare={() => {}}
           labels={labels}
           intelligenceLoading={intelligenceLoading}
         />
       )}
 
-      {openTab === "similar" && (
-        <DetailPanel
-          tab={openTab}
-          row={displayRow}
-          similarState={similarState}
-          onFindSimilar={() => toggle("similar")}
-          onCompare={handleCompare}
-          onLoadMoreSimilar={() => { void loadMoreSimilarForRow(); }}
-          labels={labels}
-        />
-      )}
-
-      {compareOpen && (
-        <CompareItemsModal
-          open={compareOpen}
-          loading={compareLoading}
-          error={compareError}
-          comparison={compareData}
-          onClose={() => setCompareOpen(false)}
-          onSwap={(candidateItem) => {
-            setCompareOpen(false);
-            const candidateId = getNormalizedMenuItemId(candidateItem) || getNormalizedMenuItemId(currentCompareCandidate);
-            if (candidateId) {
-              navigate(`/menu-items/${candidateId}${buildMenuItemDetailQuery({ geo, returnNavigation })}`);
-            }
-          }}
-          onViewBase={() => {
-            setCompareOpen(false);
-            if (href) navigate(href);
-          }}
-        />
-      )}
     </div>
   );
 }

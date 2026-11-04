@@ -123,3 +123,18 @@ None. `handleCompare`, `DetailPanel`, eligibility and Compare modal wiring are u
 
 ### Approval basis
 Andre 2026-11-04: "Yes, I approve the search changes to show the deal icon and deal price."
+
+## Change: Remove Similar Items + Compare from the web (2026-11-04)
+
+### Files modified
+- `src/components/SearchResultCard.jsx` — "Similar Items" chip, its panel and the Compare modal removed; dead compare state removed.
+- `src/pages/MenuItemDetailPage.jsx`, `src/pages/MenuItemInfoPage.jsx` — "Explore Similar Dishes" section (with Compare) removed.
+
+### What changed
+Search cards keep the Nutrition chip only. Dish pages no longer show similar dishes or Compare.
+
+### Impact on Similar/Compare
+Removed from the website on purpose. Backend `/menu-items/:id/similar` and compare endpoints are unchanged and still served.
+
+### Approval basis
+Andre 2026-11-04: "remove from web but keep on backend." (The new design / app has no Similar or Compare.)

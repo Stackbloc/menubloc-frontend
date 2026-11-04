@@ -5,9 +5,7 @@
  * ============================================================
  *
  * Read-only nutrition/info page for menu-origin item clicks.
- * Shows similar items and compare when the basket is empty.
- * Similar items section is hidden while the basket has items so
- * the user stays focused on the current restaurant.
+ * No Similar Dishes / Compare on the web (Andre 2026-11-04: not in the new design; backend kept).
  *
  * Used when a user taps a menu item from a restaurant menu page.
  * Search/discovery clicks use MenuItemDetailPage.
@@ -25,19 +23,12 @@ import {
   buildDishShareData,
   buildCanonicalMenuPath,
   appendMenuHighlightQuery,
-  getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
-import { formatMenuItemName } from "../utils/formatMenuItemName.js";
-import { fetchCompareItems } from "../lib/api.js";
-import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
-import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
-import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 import { API_BASE } from "../lib/api.js";
 import { buildMenuItemDetailApiQuery } from "../lib/menuItemDetailGeoQuery.js";
@@ -939,158 +930,7 @@ function MissingNutritionState() {
       <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
         Incomplete nutrition data is available for this item.
       </div>
-      <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF" }}>
-        Try similar items for guidance
-      </div>
     </Surface>
-  );
-}
-
-// ── Explore Similar Dishes ───────────────────────────────────
-
-const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
-  "vegan", "vegetarian", "gluten_free", "dairy_free",
-  "diabetic_friendly", "low_fat", "low_sodium", "keto",
-]);
-
-function buildSimilarItemsLabel(meta) {
-  if (!meta) return null;
-  if (meta.used_broad_fallback) return "Showing broader matches because nearby similar dishes were limited";
-  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) return "Expanded nearby search";
-  return null;
-}
-
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, geoCity = null, geoState = null, activeSearchParams, t }) {
-  const navigate = useNavigate();
-  const { itemCount } = useOrderCart();
-  const [similar, setSimilar] = useState(null);
-  const [similarMeta, setSimilarMeta] = useState(null);
-  const [failed, setFailed] = useState(false);
-  const searchSuffix = (() => {
-    const p = new URLSearchParams(activeSearchParams?.toString() || "");
-    p.set("from", "menu");
-    return `?${p.toString()}`;
-  })();
-  const [compareOpen, setCompareOpen] = useState(false);
-  const [compareLoading, setCompareLoading] = useState(false);
-  const [compareData, setCompareData] = useState(null);
-  const [compareError, setCompareError] = useState(null);
-
-  useEffect(() => {
-    if (!itemId) return undefined;
-    let cancelled = false;
-    const params = new URLSearchParams();
-    if (geoLat && geoLng) { params.set("lat", geoLat); params.set("lng", geoLng); }
-    if (geoCity) params.set("city", geoCity);
-    if (geoState) params.set("state", geoState);
-    for (const key of SIMILAR_DIET_FILTER_KEYS) {
-      if (activeSearchParams?.get(key) === "1") params.set(key, "1");
-    }
-    const suffix = params.toString() ? `?${params.toString()}` : "";
-    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((json) => {
-        if (!cancelled) {
-          setSimilar(Array.isArray(json?.similar) ? json.similar : []);
-          setSimilarMeta(json?.meta || null);
-        }
-      })
-      .catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; };
-  }, [activeSearchParams, geoLat, geoLng, geoCity, geoState, itemId]);
-
-  function handleCompare(similarEntry) {
-    if (!isSimilarRowCompareEligible(similarEntry)) return;
-    setCompareData(null);
-    setCompareError(null);
-    setCompareLoading(true);
-    setCompareOpen(true);
-    fetchCompareItems(itemId, similarEntry.menu_item_id, geoLat || null, geoLng || null, {
-      skipEligibilityCheck: true,
-      city: geoCity,
-      state: geoState,
-    })
-      .then((data) => { setCompareData(data); setCompareLoading(false); })
-      .catch((err) => { setCompareError(String(err?.message || "Compare failed")); setCompareLoading(false); });
-  }
-
-  function handleSwap(candidateItem) {
-    setCompareOpen(false);
-    const slug = candidateItem?.restaurant_slug || null;
-    const id = candidateItem?.menu_item_id;
-    if (!id) return;
-    const geoSuffix = buildMenuItemDetailApiQuery({
-      lat: geoLat,
-      lng: geoLng,
-      city: geoCity,
-      state: geoState,
-    });
-    navigate(slug ? `/restaurants/${slug}/menu-item-info/${id}${geoSuffix}` : `/menu-item-info/${id}${geoSuffix}`);
-  }
-
-  if (itemCount > 0) return null;
-  if (failed || similar === null || similar.length === 0) return null;
-  const helperLabel = buildSimilarItemsLabel(similarMeta);
-
-  return (
-    <>
-      <SectionCard
-        title={t("menuItemDetail.similarItems", "Similar Items")}
-        eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
-        style={{ marginTop: 24 }}
-      >
-        <div style={{ display: "grid", gap: 14 }}>
-          {helperLabel && (
-            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--gb-color-ink-muted)", background: "var(--gb-color-surface)", border: "1px solid var(--gb-color-border)", borderRadius: 12, padding: "10px 12px" }}>
-              {helperLabel}
-            </div>
-          )}
-          {similar.map((entry) => (
-            <div key={entry.menu_item_id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
-                {entry.restaurant_name}
-                {entry.distance_miles != null && <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>}
-              </div>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                <Link
-                  to={`${getCanonicalMenuItemPath({ restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null }, menuItem: { id: entry.menu_item_id } })}${searchSuffix}`}
-                  style={{ textDecoration: "none", color: "#22C55E", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
-                >
-                  {formatMenuItemName(entry.name)}
-                </Link>
-                {isSimilarRowCompareEligible(entry) ? (
-                  <button
-                    type="button"
-                    onClick={() => handleCompare(entry)}
-                    style={{ flexShrink: 0, background: "rgba(34,197,94,0.09)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 800, color: "#22C55E", cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4 }}
-                  >
-                    Compare
-                  </button>
-                ) : null}
-              </div>
-              {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                  {entry.profile_differences.map((phrase) => (
-                    <span key={phrase} style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "3px 10px" }}>
-                      {phrase}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-      <CompareItemsModal
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        comparison={compareData}
-        loading={compareLoading}
-        error={compareError}
-        onSwap={handleSwap}
-        baseLabel="Current"
-      />
-    </>
   );
 }
 
@@ -1102,7 +942,6 @@ export default function MenuItemInfoPage() {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { language, t } = useLanguage();
-  const { isAuthenticated, allergenFilter } = useConsumer();
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
@@ -1245,7 +1084,6 @@ export default function MenuItemInfoPage() {
   const showRestaurantLogo = hasRenderableImage(item.restaurant.logoUrl);
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = "1fr";
-  const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
 
@@ -1429,16 +1267,7 @@ export default function MenuItemInfoPage() {
         <MissingNutritionState />
       )}
 
-      <ExploreSimilarDishes
-        itemId={item.menu_item_id}
-        geoLat={geoLat}
-        geoLng={geoLng}
-        geoCity={geoCity}
-        geoState={geoState}
-        activeSearchParams={searchParams}
-        t={t}
-        allergenFilter={effectiveAllergenFilter}
-      />
+      {/* No Explore Similar Dishes / Compare on the web (Andre 2026-11-04: not in the new design; backend kept). */}
     </PageShell>
   );
 }
