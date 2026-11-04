@@ -32,7 +32,8 @@ test("MenuItemDetailPage hides nutrition verdict only for alcoholic beverages", 
   assert.match(source, /showStickyVerdict && !isAlcoholicBeverage/);
   assert.match(source, /ResponsibleDrinkingNotice/);
   assert.match(source, /<NutritionInsightsCluster/);
-  assert.match(source, /\{!isAlcoholicBeverage \? \([\s\S]*<ExploreSimilarDishes/);
+  // No Similar Dishes / Compare on the web (Andre 2026-11-04).
+  assert.doesNotMatch(source, /<ExploreSimilarDishes/);
 });
 
 test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
@@ -64,3 +65,12 @@ test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage
   assert.match(detailSource, /const rawRouteId = routeId \?\? itemSlug/);
   assert.match(detailSource, /parseMenuItemRouteId\(rawRouteId\)/);
 });
+
+test("No Similar Items / Compare on web search cards or dish pages (Andre 2026-11-04; backend kept)", () => {
+  const card = fs.readFileSync(new URL("../src/components/SearchResultCard.jsx", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /label=\{labels\.showSimilar\}/);
+  assert.doesNotMatch(card, /<CompareItemsModal/);
+  const info = fs.readFileSync(new URL("../src/pages/MenuItemInfoPage.jsx", import.meta.url), "utf8");
+  assert.doesNotMatch(info, /<ExploreSimilarDishes|<CompareItemsModal|Try similar items/);
+});
+
