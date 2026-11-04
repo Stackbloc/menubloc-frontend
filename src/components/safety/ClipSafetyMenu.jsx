@@ -28,7 +28,8 @@ const sheet = {
   link: { alignSelf: "flex-start", background: "none", border: 0, padding: 0, color: "#0f7a24", fontSize: 15, cursor: "pointer" },
 };
 
-export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerName = "", onHidden, buttonStyle, label = "More" }) {
+/** `children` replaces the ⋯ (the Feed shows a small flag + "Report", Andre 2026-11-04). */
+export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerName = "", onHidden, buttonStyle, label = "More", children = null }) {
   const { isAuthenticated, consumer } = useConsumer();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -86,7 +87,7 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
           setOpen(true);
         }}
       >
-        ⋯
+        {children ?? "⋯"}
       </button>
       {open ? (
         <div style={sheet.backdrop} onClick={close} onTouchStart={stop} onTouchEnd={stop} role="presentation">

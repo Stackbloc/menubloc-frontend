@@ -181,6 +181,7 @@ export default function AppIcon({ name, size = 18, color = "currentColor", fille
           <path d="M6.5 18.5a6 6 0 0 1 11 0" {...stroke} />
         </>
       ) : null}
+      {name === 'flag' ? <path d="M5 21V4M5 4h11.5l-2.5 4 2.5 4H5" {...stroke} /> : null}
       {name === 'more' ? (
         <>
           <circle cx="5" cy="12" r="1.6" fill={color} />
