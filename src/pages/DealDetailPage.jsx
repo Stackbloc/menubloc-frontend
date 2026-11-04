@@ -436,6 +436,12 @@ export default function DealDetailPage() {
                 {deal.expires_at && (
                   <TermRow label="Valid until" value={new Date(deal.expires_at).toLocaleDateString()} />
                 )}
+                {deal.schedule_label && (
+                  <TermRow
+                    label="When"
+                    value={deal.open_now === false ? `${deal.schedule_label} (not on right now)` : deal.schedule_label}
+                  />
+                )}
                 {deal.restaurant_city && deal.restaurant_state && (
                   <TermRow label="Location" value={`${deal.restaurant_city}, ${deal.restaurant_state}`} />
                 )}

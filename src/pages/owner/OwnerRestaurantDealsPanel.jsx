@@ -23,6 +23,14 @@ import {
   videoDealTermsSummary,
 } from "../../lib/videoDealTerms.js";
 import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
+import DealScheduleFields, { DealTermsHelper } from "../../components/operator/DealScheduleFields.jsx";
+import {
+  buildDealTermsText,
+  dealScheduleProblem,
+  dealScheduleLabel,
+  normalizeDealDays,
+  normalizeDealTime,
+} from "../../lib/dealSchedule.js";
 
 /**
  * Restaurant Manager → Deals (2026-10-24): structured deals for one restaurant, entered by the
@@ -108,6 +116,7 @@ function emptyForm() {
     items: [],
     mealPeriods: [],
     showMealTimeCaption: true,
+    schedule: { days: [], start: "", end: "" },
     startDate: todayYmd(),
     endDate: plusDaysYmd(30),
     videoUrl: "",
@@ -124,6 +133,11 @@ function formFromDeal(deal, menuItems) {
     items: itemIdsFromDeal(deal).map((id) => byId.get(id) || { id, name: `Item #${id}` }),
     mealPeriods: normalizeDealMealPeriodList(deal.meal_periods),
     showMealTimeCaption: deal.show_meal_time_caption !== false,
+    schedule: {
+      days: normalizeDealDays(deal.valid_days),
+      start: normalizeDealTime(deal.valid_start_time),
+      end: normalizeDealTime(deal.valid_end_time),
+    },
     startDate: ymd(deal.starts_at) || todayYmd(),
     endDate: ymd(deal.expires_at) || plusDaysYmd(30),
     videoUrl: deal.video_url || "",
@@ -174,6 +188,16 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
     expiresAt: form.endDate,
   });
   const wantsVideo = Boolean(videoFile || form.videoUrl);
+  const termsText = buildDealTermsText({
+    dealType: form.dealType,
+    value: form.value,
+    itemNames: form.items.map((i) => i.name),
+    days: form.schedule.days,
+    start: form.schedule.start,
+    end: form.schedule.end,
+    startDate: form.startDate,
+    endDate: form.endDate,
+  });
   const captionPreview =
     form.showMealTimeCaption && form.mealPeriods.length ? formatMealTimeDealCaption(form.mealPeriods) : null;
 
@@ -202,6 +226,8 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
         return setError(form.dealType === "percent_off" ? "Enter a percent off between 1 and 100." : "Enter the deal amount.");
       }
     }
+    const scheduleProblem = dealScheduleProblem(form.schedule);
+    if (scheduleProblem) return setError(scheduleProblem);
     if (wantsVideo && termsProblem) return setError(`Video deals: ${termsProblem}`);
     if (videoFile && Number(videoFile.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
       return setError(`Video is too large (${formatBytes(videoFile.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}.`);
@@ -209,13 +235,17 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
 
     const body = {
       title: form.title.trim(),
-      description: form.description.trim(),
+      // Empty description → the terms built from the choices above (Andre 2026-11-04).
+      description: form.description.trim() || termsText,
       deal_type: form.dealType,
       value: priced ? Number(form.value) : null,
       start_date: form.startDate,
       end_date: form.endDate,
       meal_periods: form.mealPeriods,
       show_meal_time_caption: form.showMealTimeCaption && form.mealPeriods.length > 0,
+      valid_days: form.schedule.days,
+      valid_start_time: form.schedule.start || null,
+      valid_end_time: form.schedule.end || null,
       menu_item_id: form.items.length ? Number(form.items[0].id) : null,
       applies_to_menu_item_ids: form.dealType === "combo" ? [] : form.items.slice(1).map((i) => Number(i.id)),
       linked_items_source: menu.source,
@@ -331,8 +361,19 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
               placeholder="Fine print, what's included, how to redeem"
               style={{ ...inputStyle, resize: "vertical" }}
               disabled={busy}
+              data-testid="owner-deal-form-description"
             />
           </label>
+          <DealTermsHelper
+            description={form.description}
+            termsText={termsText}
+            schedule={form.schedule}
+            disabled={busy}
+            colors={OWNER_COLORS}
+            onAdd={() =>
+              set({ description: [form.description.trim(), termsText].filter(Boolean).join(" ") })
+            }
+          />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "grid", gap: 6 }}>
@@ -358,6 +399,13 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
               />
             </label>
           </div>
+
+          <DealScheduleFields
+            value={form.schedule}
+            onChange={(schedule) => set({ schedule })}
+            disabled={busy}
+            colors={OWNER_COLORS}
+          />
 
           <div style={{ display: "grid", gap: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>Meal time</span>
@@ -661,7 +709,7 @@ export default function OwnerRestaurantDealsPanel({ restaurantId, restaurantName
                       ) : null}
                     </div>
                     <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-                      {[dealTermsLabel(deal), `${ymd(deal.starts_at)} – ${ymd(deal.expires_at)}`, meal]
+                      {[dealTermsLabel(deal), `${ymd(deal.starts_at)} – ${ymd(deal.expires_at)}`, dealScheduleLabel(deal), meal]
                         .filter(Boolean)
                         .join(" · ")}
                     </div>

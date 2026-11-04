@@ -52,13 +52,17 @@ export function mapDealRowToFeedVideoItem(deal) {
     meal_time_caption: mealTimeCaption,
     headline: mealTimeCaption || title,
     description: String(deal.description || "").trim(),
+    // Days/hours the deal runs, e.g. "Mon–Fri · 11 AM–2 PM" (null = any time).
+    schedule_label: deal.schedule_label ? String(deal.schedule_label) : null,
     restaurant_name: String(deal.restaurant_name || "").trim() || "Restaurant",
     restaurant_id: deal.restaurant_id || null,
     restaurant_slug: slug,
     city,
     state,
     meal_periods: mealPeriods,
-    meal_period_labels: formatDealMealPeriodLabels(mealPeriods),
+    // "All day" would contradict set hours ("11 AM–2 PM"), so it's dropped when there are hours.
+    meal_period_labels:
+      !mealPeriods.length && deal.valid_start_time ? [] : formatDealMealPeriodLabels(mealPeriods),
     menu_item_name: String(deal.menu_item_name || "").trim(),
     menu_item_id: deal.menu_item_id != null ? deal.menu_item_id : null,
     // Menu items the deal applies to (same terms on each), in order; first = menu_item_id.
