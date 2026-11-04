@@ -42,6 +42,7 @@ import {
   formatVerticalReelNavHint,
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
+import DealIcon from "../../icons/DealIcon.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -676,8 +677,8 @@ export default function DealVideoSwipe({
           </span>
         ) : null}
         {item.discount_label ? (
-          <span style={styles.discount} data-testid="feed-deals-discount">
-            <span aria-hidden="true">🏷️ </span>
+          <span style={{ ...styles.discount, display: "inline-flex", alignItems: "center", gap: 6 }} data-testid="feed-deals-discount">
+            <DealIcon size={22} ring />
             {item.discount_label}
           </span>
         ) : null}

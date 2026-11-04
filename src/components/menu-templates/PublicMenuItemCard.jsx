@@ -7,6 +7,8 @@ import DishVideoCommentButton from "../comments/DishVideoCommentButton.jsx";
 import DishMoreActions from "../menu/DishMoreActions.jsx";
 import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import MenuItemDealsIndicator from "../menu/MenuItemDealsIndicator.jsx";
+import DealPriceTag from "../menu/DealPriceTag.jsx";
+import { DEAL_ROW_HIGHLIGHT, liveItemDeal } from "../../lib/itemDeal.js";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -84,10 +86,24 @@ function TitlePriceActionsBlock({
   price,
   priceTextStyle,
   hasDeal,
+  itemDeal,
   openSheet,
   iconButtons,
 }) {
-  const priceEl = price ? (
+  const priceEl = itemDeal ? (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        whiteSpace: "nowrap",
+        minWidth: priceMinWidth,
+        justifyContent: "flex-end",
+        flexShrink: 0,
+      }}
+    >
+      <DealPriceTag deal={itemDeal} regular={price} priceStyle={priceTextStyle} />
+    </span>
+  ) : price ? (
     <span
       style={{
         display: "inline-flex",
@@ -328,7 +344,9 @@ export default function PublicMenuItemCard({
       themeSettings.intelligence_density === "detailed" ||
       themeSettings.intelligence_density === "functional");
   const deal = normalizedItemId != null ? dealMap.get(normalizedItemId) : undefined;
-  const hasDeal = !!deal;
+  // Live item deal (Andre 2026-11-04): deal icon + deal price + highlighted row.
+  const itemDeal = liveItemDeal(it);
+  const hasDeal = !!deal || !!itemDeal;
   const itemIsOrderable = isItemOrderable(it, getConsumerDisplayPrice);
   const restaurantOrderingAvailable = isOnlineOrderingAvailable(data);
   const canAddToOrder = restaurantOrderingAvailable && itemIsOrderable;
@@ -365,7 +383,7 @@ export default function PublicMenuItemCard({
           ? { key: "featured", label: t("menu.featuredDish", "Featured Dish"), color: accent, soft: true }
           : null,
         !itemIsOrderable ? { key: "unavailable", label: t("common.unavailable", "Unavailable"), color: ed.subtle, soft: true } : null,
-        hasDeal ? { key: "deal", label: t("common.deals", "Deals"), color: accent } : null,
+        hasDeal && !itemDeal ? { key: "deal", label: t("common.deals", "Deals"), color: accent } : null,
         it?.is_vegan ? { key: "vegan", label: t("diet.vegan", "Vegan"), color: ed.subtle } : null,
         it?.is_gluten_free ? { key: "gf", label: "GF", color: ed.subtle } : null,
       ].filter(Boolean).slice(0, 2)
@@ -578,7 +596,10 @@ export default function PublicMenuItemCard({
         filter: pressed ? "brightness(0.94)" : undefined,
         transition: "background 120ms ease, border-color 120ms ease, transform 90ms ease, filter 90ms ease",
         WebkitTapHighlightColor: "transparent",
+        ...(itemDeal ? DEAL_ROW_HIGHLIGHT : null),
+        ...(itemDeal && editorialRefresh ? { borderRadius: 10, paddingLeft: 10, paddingRight: 8 } : null),
       }}
+      data-deal={itemDeal ? "live" : undefined}
     >
       <div style={{ display: "flex", gap: imageUrl || designEdit?.enabled ? 12 : 0, alignItems: imageUrl || designEdit?.enabled ? "flex-start" : "baseline" }}>
         {(showImage && imageUrl) || designEdit?.enabled ? (
@@ -659,7 +680,8 @@ export default function PublicMenuItemCard({
                 fontVariantNumeric: "tabular-nums",
                 textAlign: "right",
               }}
-              hasDeal={hasDeal}
+              hasDeal={hasDeal && !itemDeal}
+              itemDeal={itemDeal}
               openSheet={openSheet}
               iconButtons={
                 <>
@@ -759,7 +781,8 @@ export default function PublicMenuItemCard({
                 whiteSpace: "nowrap",
                 textAlign: "right",
               }}
-              hasDeal={hasDeal}
+              hasDeal={hasDeal && !itemDeal}
+              itemDeal={itemDeal}
               openSheet={openSheet}
               iconButtons={
                 <>
@@ -859,7 +882,8 @@ export default function PublicMenuItemCard({
                 whiteSpace: "nowrap",
                 textAlign: "right",
               }}
-              hasDeal={hasDeal}
+              hasDeal={hasDeal && !itemDeal}
+              itemDeal={itemDeal}
               openSheet={openSheet}
               iconButtons={
                 <>
@@ -1001,7 +1025,7 @@ export default function PublicMenuItemCard({
                     />
                   ) : null}
                   {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
-                  {hasDeal && (
+                  {hasDeal && !itemDeal && (
                     <Badge
                       label={t("common.deals", "Deals")}
                       bg={softBg}

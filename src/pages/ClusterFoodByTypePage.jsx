@@ -25,6 +25,8 @@ import {
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import "../styles/clusterFoodByType.css";
+import DealPriceTag from "../components/menu/DealPriceTag.jsx";
+import { DEAL_ROW_HIGHLIGHT, liveItemDeal } from "../lib/itemDeal.js";
 
 const CATEGORY_QUERY_KEY = "category";
 const SKELETON_TILE_COUNT = 12;
@@ -422,10 +424,14 @@ function FoodByTypeDishRow({ item, returnTo }) {
   const href = useMemo(() => buildDishHref(item, returnTo, "Food by type"), [item, returnTo]);
   const priceCents = getConsumerDisplayPrice(item);
   const nutrition = dishNutritionParts(item);
+  // Live deal (Andre 2026-11-04): deal icon + deal price, and the whole box is highlighted.
+  const itemDeal = liveItemDeal(item);
   return (
     <Link
       to={href}
       className="fbt-row"
+      style={itemDeal ? DEAL_ROW_HIGHLIGHT : undefined}
+      data-deal={itemDeal ? "live" : undefined}
       data-mp-event="menu_item_click"
       data-mp-menu-item-id={item.menu_item_id ?? undefined}
       data-mp-restaurant-id={item.restaurant_id ?? undefined}
@@ -433,7 +439,13 @@ function FoodByTypeDishRow({ item, returnTo }) {
     >
       <span className="fbt-row-top">
         <span className="fbt-row-name">{item.name}</span>
-        {priceCents != null ? <span className="fbt-row-price">{formatMoney(priceCents)}</span> : null}
+        {itemDeal ? (
+          <span className="fbt-row-price">
+            <DealPriceTag deal={itemDeal} regular={priceCents != null ? formatMoney(priceCents) : null} />
+          </span>
+        ) : priceCents != null ? (
+          <span className="fbt-row-price">{formatMoney(priceCents)}</span>
+        ) : null}
       </span>
       {item.restaurant_name ? <span className="fbt-row-restaurant">{item.restaurant_name}</span> : null}
       {nutrition.length ? (

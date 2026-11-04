@@ -31,6 +31,7 @@ import useMatchMedia from "../../../hooks/useMatchMedia.js";
 import { ClusterAdCreative, adEngagementAttrs } from "../ClusterAdSlot.jsx";
 import { ClusterSearchActiveContext, useClusterVideos } from "./ClusterVideoContext.jsx";
 import { PlayGlyph } from "./ClusterVideoPlayButton.jsx";
+import DealIcon from "../../icons/DealIcon.jsx";
 
 const PAGE_REGION = "cluster_landing_hero";
 const SURFACE = "cluster_hero";
@@ -501,7 +502,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
             ) : (
               <div style={styles.info}>
                 <span style={styles.eyebrow}>{eyebrow}</span>
-                {dishName || dealTitle ? <span style={styles.fromVideo}>{dishName ? "From the clip" : "Deal"}</span> : null}
+                {dishName || dealTitle ? <span style={styles.fromVideo}>{dishName ? "From the clip" : <DealIcon size={18} ring />}</span> : null}
                 <h2 style={styles.dish} data-testid="cluster-video-hero-dish">
                   {dishName || dealTitle || clip.restaurant_name || "Watch"}
                 </h2>

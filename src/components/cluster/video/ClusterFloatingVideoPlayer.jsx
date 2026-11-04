@@ -12,6 +12,7 @@ import { clusterVideoDealTitle, clusterVideoDishName } from "../../../lib/cluste
 import { clusterVideoSrc } from "../../../lib/clusterVideoMedia.js";
 import { createWatchReporter, trackClusterVideoEvent } from "../../../lib/clusterVideoAnalytics.js";
 import { PlayGlyph } from "./ClusterVideoPlayButton.jsx";
+import DealIcon from "../../icons/DealIcon.jsx";
 
 const SURFACE = "cluster_floating";
 
@@ -195,7 +196,7 @@ export default function ClusterFloatingVideoPlayer({ cluster, player, compact = 
       </div>
       {compact ? null : (
         <div style={styles.footer} data-testid="cluster-floating-video-dish">
-          <span style={styles.eyebrow}>{dishName ? "From the clip" : dealTitle ? "Deal" : "Clip"}</span>
+          <span style={styles.eyebrow}>{dishName ? "From the clip" : dealTitle ? <DealIcon size={16} ring /> : "Clip"}</span>
           <span style={styles.dish}>{dishName || dealTitle || clip.restaurant_name || "Restaurant"}</span>
           {(dishName || dealTitle) && clip.restaurant_name ? (
             <span style={styles.restaurant}>{clip.restaurant_name}</span>

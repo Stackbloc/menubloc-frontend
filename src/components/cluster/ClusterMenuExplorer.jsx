@@ -4,6 +4,8 @@ import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 import { formatClusterDishExcerpt } from "../../lib/clusterDishExcerpt.js";
 import { formatMoney, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
+import DealPriceTag from "../menu/DealPriceTag.jsx";
+import { DEAL_ROW_HIGHLIGHT, liveItemDeal } from "../../lib/itemDeal.js";
 import { useClusterVideos } from "./video/ClusterVideoContext.jsx";
 import ClusterVideoPlayButton from "./video/ClusterVideoPlayButton.jsx";
 import ClusterDishActions, { resolveClusterDishCkId } from "./ClusterDishActions.jsx";
@@ -88,6 +90,8 @@ function ClusterDishChipText({ item, showExcerpt = false }) {
   const priceCents = getConsumerDisplayPrice(item);
   const priceLabel = priceCents != null ? formatMoney(priceCents) : null;
   const excerpt = showExcerpt ? formatClusterDishExcerpt(item) : null;
+  // Live deal (Andre 2026-11-04): deal icon + deal price.
+  const itemDeal = liveItemDeal(item);
 
   return (
     <>
@@ -113,7 +117,11 @@ function ClusterDishChipText({ item, showExcerpt = false }) {
         >
           {item.name}
         </span>
-        {priceLabel ? (
+        {itemDeal ? (
+          <span data-testid="cluster-dish-price" style={{ flexShrink: 0, fontSize: "0.9rem", lineHeight: 1.3, color: "#0f7a24" }}>
+            <DealPriceTag deal={itemDeal} regular={priceLabel} wasStyle={{ color: "#4b5563", opacity: 1 }} />
+          </span>
+        ) : priceLabel ? (
           <span
             data-testid="cluster-dish-price"
             style={{
@@ -272,8 +280,11 @@ function ClusterDishChipWithVideo({ item, href, showExcerpt, counts }) {
         ...CLUSTER_DISH_CHIP_STYLE,
         ...(hasVideo ? CLUSTER_DISH_VIDEO_ROW_STYLE : null),
         ...(playing ? CLUSTER_DISH_PLAYING_STYLE : null),
+        // Live deal (Andre 2026-11-04): the whole dish box is highlighted.
+        ...(liveItemDeal(item) ? DEAL_ROW_HIGHLIGHT : null),
         cursor: href ? "pointer" : undefined,
       }}
+      data-deal={liveItemDeal(item) ? "live" : undefined}
     >
       {hasVideo ? (
         <ClusterVideoPlayButton
