@@ -150,6 +150,10 @@ export function AppProfileControls({ viewing, onViewing, connectsPill = true }) 
         <Link to="/account/diner-qr" style={styles.pillQuiet} data-testid="profile-share">
           Share My Profile
         </Link>
+        {/* Your own QR message + photo (Andre 2026-11-04). */}
+        <Link to="/account/diner-qr/edit" style={styles.pillQuiet} data-testid="profile-edit-qr">
+          Edit My QR
+        </Link>
       </div>
     </div>
   );

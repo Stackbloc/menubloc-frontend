@@ -45,11 +45,19 @@ test("Diner Card page has branding CTA and optional selfie path", () => {
   assert.match(page, /SCAN TO CONNECT ON MENUPLY/);
   assert.match(page, /MENUPLY/);
   assert.match(page, /menuply-qr-logo-x\.svg/);
-  assert.match(page, /uploadDinerAvatar/);
   assert.match(page, /ShareModal/);
   assert.match(page, /buildDinerQrShareData/);
   assert.match(page, /avatarFallback|initialsFromName/);
-  assert.match(page, /Add or change selfie/);
+  // QR photo + message live on Edit My QR (Andre 2026-11-04): profile photo, another photo, or none.
+  assert.match(page, /\/account\/diner-qr\/edit/);
+  assert.match(page, /qr_settings/);
+  const edit = read("src/pages/consumer/EditDinerQrPage.jsx");
+  assert.match(edit, /uploadDinerQrPhoto/);
+  assert.match(edit, /updateDinerQrSettings/);
+  assert.match(edit, /My profile photo/);
+  assert.match(edit, /No photo/);
+  assert.match(edit, /max_message_length/);
+  assert.match(read("src/pages/consumer/myMenuply/AppProfileCards.jsx"), /Edit My QR/);
   // Same-origin /d/:token/image — Railway CORP same-origin blanks cross-origin <img>
   assert.match(page, /\/d\/\$\{encodeURIComponent\(String\(token\)\)\}\/image/);
   assert.doesNotMatch(page, /resolveConsumerMediaUrl\(path\)/);

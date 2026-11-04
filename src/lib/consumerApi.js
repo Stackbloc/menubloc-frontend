@@ -354,6 +354,8 @@ export const fetchMenuItemConnectionSocialProof = (menuItemId) =>
 // ── Personal Diner QR (Phase 1) ───────────────────────────────────────────
 export const getMyDinerQr = () => get("/api/consumer/diner-qr");
 export const updateDinerQrPrivacy = (body) => put("/api/consumer/diner-qr/privacy", body);
+/** Share My Profile QR message + photo (Andre 2026-11-04): { message?, photo_mode?: avatar|custom|none }. */
+export const updateDinerQrSettings = (body) => put("/api/consumer/diner-qr/settings", body);
 export const connectViaDinerQr = (token) =>
   post(`/api/consumer/diner-qr/${encodeURIComponent(String(token))}/connect`, {});
 export const fetchPublicDinerQr = (token) =>
@@ -421,6 +423,28 @@ export async function uploadDinerAvatar(file) {
   const form = new FormData();
   form.append("avatar", file);
   const localizedPath = appendLanguageParam("/api/consumer/profile/avatar", language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method: "POST",
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: form,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || `Upload failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+/** A photo just for the Share My Profile QR; the profile photo is unchanged. */
+export async function uploadDinerQrPhoto(file) {
+  const language = readStoredLanguage();
+  const form = new FormData();
+  form.append("photo", file);
+  const localizedPath = appendLanguageParam("/api/consumer/diner-qr/photo", language);
   const res = await fetch(`${API}${localizedPath}`, {
     method: "POST",
     credentials: "include",
