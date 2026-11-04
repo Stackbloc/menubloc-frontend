@@ -108,3 +108,18 @@ None. `handleCompare`, `DetailPanel`, eligibility, and Compare modal wiring are 
 
 ### Approval basis
 Andre current-turn: deploy held 2026-09-13 search-video work.
+
+## Change: Deal icon + deal price on search dish cards (2026-11-04)
+
+### Files modified
+- `src/components/SearchResultCard.jsx` (dish price slot)
+
+### What changed
+When a dish has a live deal (`active_deal`, sent by backend search), the price slot shows the deal
+icon and the deal price, with the card's regular price struck through under it. No deal: unchanged.
+
+### Impact on Similar/Compare
+None. `handleCompare`, `DetailPanel`, eligibility and Compare modal wiring are unchanged.
+
+### Approval basis
+Andre 2026-11-04: "Yes, I approve the search changes to show the deal icon and deal price."

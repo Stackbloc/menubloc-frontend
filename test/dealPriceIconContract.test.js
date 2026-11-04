@@ -47,3 +47,39 @@ test("deal clips: the icon replaces 🏷️ and the word Deal", () => {
   assert.doesNotMatch(read("src/components/cluster/video/ClusterVideoHero.jsx"), /"From the clip" : "Deal"/);
   assert.doesNotMatch(read("src/components/cluster/video/ClusterFloatingVideoPlayer.jsx"), /dealTitle \? "Deal"/);
 });
+
+test("regular price sits under the deal price, readable (Andre 2026-11-04)", () => {
+  const tag = read("src/components/menu/DealPriceTag.jsx");
+  assert.match(tag, /flexDirection: "column"/);
+  assert.match(tag, /regular price \$\{was\}/);
+  assert.doesNotMatch(tag, /opacity: 0\.6/);
+});
+
+test("search cards show the deal; the basket and order sheet use the deal price", async () => {
+  const card = read("src/components/SearchResultCard.jsx");
+  assert.match(card, /data-testid="search-result-deal-price"/);
+  assert.match(card, /<DealPriceTag/);
+  const sheet = read("src/components/basket/MenuItemOrderSheet.jsx");
+  assert.match(sheet, /deal\.dealCents < listedPriceCents/);
+  for (const f of ["src/pages/PublicMenuPage.jsx", "src/components/menuCatalog/CatalogMenuRenderer.jsx"]) {
+    assert.match(read(f), /active_deal: item\?\.active_deal \?\? null/);
+  }
+  const { createCartLine } = await import("../src/context/orderCartModel.js");
+  const line = createCartLine({
+    restaurant: { restaurantId: 78566 },
+    item: { menu_item_id: 552051, restaurant_id: 78566, name: "Pasta Carbonara", basePriceCents: 1795, originalBasePriceCents: 1795, active_deal: active },
+  });
+  assert.equal(line.basePriceCents, 900);
+  assert.equal(line.originalBasePriceCents, 1795);
+  const expired = createCartLine({
+    restaurant: { restaurantId: 78566 },
+    item: { menu_item_id: 552051, restaurant_id: 78566, name: "Pasta Carbonara", basePriceCents: 1795, active_deal: { ...active, expires_at: "2020-01-01T00:00:00Z" } },
+  });
+  assert.equal(expired.basePriceCents, 1795);
+});
+
+test("cluster price sort uses the deal price", () => {
+  const page = read("src/pages/ClusterPage.jsx");
+  assert.match(page, /getPriceCents: clusterSortPriceCents/);
+  assert.match(page, /deal\?\.dealCents != null \? deal\.dealCents : getConsumerDisplayPrice\(item\)/);
+});

@@ -1,6 +1,7 @@
 import { getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { requireMenuItemIdentity } from "../lib/menuItemIdentity.js";
 import { isAlcoholicBeverageItem } from "../lib/alcoholicBeverageDetail.js";
+import { liveItemDeal } from "../lib/itemDeal.js";
 
 function toInteger(value, fallback = 0) {
   const normalized = Number(value);
@@ -197,10 +198,18 @@ export function createCartLine({ restaurant, item }) {
   );
   const displayPriceCents = getConsumerDisplayPrice(item);
   const baseMenuPriceCents = getBaseMenuPrice(item);
-  const basePriceCents = toInteger(
+  const listedBaseCents = toInteger(
     item?.basePriceCents ?? item?.base_price_cents ?? item?.priceCents ?? item?.price_cents,
     displayPriceCents ?? 0
   );
+  // A live deal is the price you pay (Andre 2026-11-04); the regular price shows as "Was".
+  // Checkout charges the same (server prices the deal too).
+  const deal = liveItemDeal(item);
+  const dealCents =
+    deal?.dealCents != null && deal.dealCents > 0 && (!listedBaseCents || deal.dealCents < listedBaseCents)
+      ? deal.dealCents
+      : null;
+  const basePriceCents = dealCents ?? listedBaseCents;
 
   return normalizeCartLine({
     lineId:
@@ -212,7 +221,7 @@ export function createCartLine({ restaurant, item }) {
     name: item?.name,
     description: item?.description,
     basePriceCents,
-    originalBasePriceCents: toInteger(
+    originalBasePriceCents: dealCents != null ? listedBaseCents || deal.regularCents || dealCents : toInteger(
       item?.originalBasePriceCents ??
         item?.original_base_price_cents ??
         item?.basePriceCents ??

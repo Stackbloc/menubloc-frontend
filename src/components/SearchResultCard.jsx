@@ -34,6 +34,8 @@ import {
 } from "./share/shareUtils.js";
 import { restaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+import DealPriceTag from "./menu/DealPriceTag.jsx";
+import { liveItemDeal } from "../lib/itemDeal.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
@@ -1302,6 +1304,8 @@ function ItemRow({
   const omitPlaceLocation = isPlaceScopedReturn(returnNavigation);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
   const priceLabel = fmtPrice(row);
+  // Live deal (Andre 2026-11-04): icon + deal price, regular price struck through under it.
+  const itemDeal = liveItemDeal(row) ?? liveItemDeal(row?.item) ?? liveItemDeal(displayRow);
   const itemPhotoUrl = pick(
     displayRow,
     ["item_photo_url", "itemPhotoUrl", "photo_url", "image_url"],
@@ -1721,7 +1725,28 @@ function ItemRow({
             hl(name, query)
           )}
         </span>
-        {priceLabel ? (
+        {itemDeal ? (
+          <div
+            data-testid="search-result-deal-price"
+            style={{
+              flexShrink: 0,
+              fontSize: "clamp(16px, 3.5vw, 20px)",
+              fontWeight: 900,
+              letterSpacing: "-0.03em",
+              color: "#22C55E",
+              lineHeight: 1,
+              paddingTop: 2,
+            }}
+          >
+            <DealPriceTag
+              deal={itemDeal}
+              regular={priceLabel && priceLabel !== "Price varies" ? priceLabel : null}
+              iconSize={20}
+              ring
+              wasStyle={{ color: "rgba(255,255,255,0.75)", opacity: 1, letterSpacing: 0, fontWeight: 600 }}
+            />
+          </div>
+        ) : priceLabel ? (
           <div
             style={{
               flexShrink: 0,

@@ -32,6 +32,7 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
+import { liveItemDeal } from "../lib/itemDeal.js";
 import { isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
 import { EXIT_CLUSTER_LABEL, clearClusterExit, resolveClusterExitTo } from "../lib/clusterNavigation.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
@@ -551,6 +552,12 @@ export function ClusterFoodSearchForm({
   );
 }
 
+/** Price sort key: a live deal ranks by its deal price (Andre 2026-11-04), same as the server. */
+function clusterSortPriceCents(item) {
+  const deal = liveItemDeal(item);
+  return deal?.dealCents != null ? deal.dealCents : getConsumerDisplayPrice(item);
+}
+
 function ClusterMenuExplorerTab({
   clusterSlug,
   cluster,
@@ -655,7 +662,7 @@ function ClusterMenuExplorerTab({
     const sorted = applyClusterZoneAndPriceSort(items, {
       zone: selectedZone,
       priceSort,
-      getPriceCents: getConsumerDisplayPrice,
+      getPriceCents: clusterSortPriceCents,
     });
     return drinksCategorySelected && nonAlcoholicDrinksFirst ? sortNonAlcoholicDrinksFirst(sorted) : sorted;
   }, [items, selectedZone, priceSort, drinksCategorySelected, nonAlcoholicDrinksFirst]);
@@ -666,7 +673,7 @@ function ClusterMenuExplorerTab({
       applyClusterZoneAndPriceSort(searchMenuItems, {
         zone: null,
         priceSort,
-        getPriceCents: getConsumerDisplayPrice,
+        getPriceCents: clusterSortPriceCents,
       }),
     [searchMenuItems, priceSort],
   );
