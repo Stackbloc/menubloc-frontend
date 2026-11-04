@@ -538,7 +538,7 @@ export function AppMyActivity() {
     getMonthInFood()
       .then((r) => alive && setMonthHas(Number(r?.items_count || 0) + Number(r?.food_activity_count || 0) > 0))
       .catch(() => undefined);
-    listConsumerProfileMedia()
+    listConsumerProfileMedia({ feed: true })
       .then((m) => alive && setClips(listOf(m, "items").length))
       .catch(() => undefined);
     getConsumerProfile()

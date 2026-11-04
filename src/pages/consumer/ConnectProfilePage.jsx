@@ -143,7 +143,7 @@ function ConnectProfile() {
     listPeerWantToEat(peerId)
       .then((r) => alive && setWishes(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setWishes([]));
-    listPeerProfileMedia(peerId)
+    listPeerProfileMedia(peerId, { feed: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     listPeerFollowedRestaurants(peerId)
@@ -588,7 +588,7 @@ export function SelfConnectView({ profile, displayName, avatarUrl, header = null
     listWantToEat()
       .then((r) => alive && setWishes(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setWishes([]));
-    listConsumerProfileMedia()
+    listConsumerProfileMedia({ feed: true, asConnect: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     getFollowedRestaurants()
@@ -623,7 +623,7 @@ export function MyClipsView() {
   const [clips, setClips] = useState(null);
   useEffect(() => {
     let alive = true;
-    listConsumerProfileMedia()
+    listConsumerProfileMedia({ feed: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     return () => {

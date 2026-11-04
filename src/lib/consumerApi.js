@@ -483,9 +483,13 @@ export async function uploadConsumerProfileMedia(file, { is_highlight = false } 
   return json;
 }
 
-export const listConsumerProfileMedia = () => get("/api/consumer/profile/media");
-export const listPeerProfileMedia = (userId) =>
-  get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/media`);
+// { feed: true } adds Feed clips (ids "ate:88", Andre 2026-11-04); { asConnect: true } = what my Connects see.
+// No options = uploads only (My Highlights manager edits those by numeric id).
+const profileMediaQuery = ({ feed = false, asConnect = false } = {}) =>
+  feed ? (asConnect ? "?include=feed&as=connect" : "?include=feed") : "";
+export const listConsumerProfileMedia = (options) => get(`/api/consumer/profile/media${profileMediaQuery(options)}`);
+export const listPeerProfileMedia = (userId, options) =>
+  get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/media${profileMediaQuery(options)}`);
 export const deleteConsumerProfileMedia = (id) =>
   del(`/api/consumer/profile/media/${encodeURIComponent(String(id))}`);
 export const setConsumerProfileMediaHighlight = (id, isHighlight) =>
