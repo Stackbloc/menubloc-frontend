@@ -76,11 +76,18 @@ function ConnectGlyph({ size = 22 }) {
   );
 }
 
-/** Menu ring pulses yellow ↔ white (Andre 2026-11-04, as the app); still when motion is reduced. */
+/**
+ * Menu ring pulses yellow ↔ white (Andre 2026-11-04, as the app); its three lines and the word Menu
+ * (the label span right after the circle) pulse with it in step. Still when motion is reduced.
+ */
 const MENU_PULSE_CSS = `
 @keyframes mpMenuPulse { 0%, 100% { border-color: #FACC15; } 50% { border-color: #FFFFFF; } }
+@keyframes mpMenuLines { 0%, 100% { stroke: #FACC15; } 50% { stroke: #FFFFFF; } }
+@keyframes mpMenuLabel { 0%, 100% { color: #FACC15; } 50% { color: #FFFFFF; } }
 .mp-menu-pulse { animation: mpMenuPulse 1.8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .mp-menu-pulse { animation: none; } }
+.mp-menu-pulse svg line { animation: mpMenuLines 1.8s ease-in-out infinite; }
+.mp-menu-pulse + span { animation: mpMenuLabel 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mp-menu-pulse, .mp-menu-pulse svg line, .mp-menu-pulse + span { animation: none; } }
 `;
 
 /** One label for every video; short enough to stay on one line in the rail. */
