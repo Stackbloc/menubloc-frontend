@@ -163,6 +163,11 @@ export default function DinerQrConnectPage() {
                 )}
                 <div>
                   <h1 style={styles.headline}>{headline}</h1>
+                  {projection?.custom_message ? (
+                    <p style={styles.ownMessage} data-testid="diner-qr-own-message">
+                      &ldquo;{projection.custom_message}&rdquo;
+                    </p>
+                  ) : null}
                   {projection?.diner?.edu_verified ? (
                     <p style={styles.edu}>{projection.diner.edu_verification_badge}</p>
                   ) : null}
@@ -322,6 +327,14 @@ const styles = {
     fontWeight: 800,
     fontSize: 20,
     flexShrink: 0,
+  },
+  ownMessage: {
+    margin: "8px 0 0",
+    fontSize: 15,
+    fontStyle: "italic",
+    lineHeight: 1.4,
+    color: "#334155",
+    overflowWrap: "anywhere",
   },
   headline: {
     margin: 0,

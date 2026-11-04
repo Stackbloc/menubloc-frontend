@@ -68,14 +68,18 @@ export function formatDinerInviteName(displayName) {
 }
 
 /**
- * @param {{ scan_url?: string, token?: string, display_name?: string|null }} opts
+ * @param {{ scan_url?: string, token?: string, display_name?: string|null, message?: string|null }} opts
+ *   `message`: the diner's own QR message (Andre 2026-11-04); empty = the built-in invite text.
  */
-export function buildDinerQrShareData({ scan_url, token, display_name } = {}) {
+export function buildDinerQrShareData({ scan_url, token, display_name, message } = {}) {
   const url = menuplyDinerConnectUrl(scan_url || token);
   if (!url) return null;
   const inviteName = formatDinerInviteName(display_name) || String(display_name || "").trim();
   const connectPath = `/connect/d/${extractDinerQrToken(scan_url || token)}`;
-  const baseText = inviteName
+  const own = String(message || "").trim();
+  const baseText = own
+    ? own
+    : inviteName
     ? `${inviteName} invited you to connect on Menuply. ${MENUPLY_ACCOUNT_INVITE_BODY}`
     : `You've been invited to connect on Menuply. ${MENUPLY_ACCOUNT_INVITE_BODY}`;
   return {

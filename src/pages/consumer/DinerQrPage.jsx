@@ -13,7 +13,6 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   getMyDinerQr,
   updateDinerQrPrivacy,
-  uploadDinerAvatar,
   resolveConsumerMediaUrl,
   CONSUMER_API_BASE,
 } from "../../lib/consumerApi.js";
@@ -87,6 +86,7 @@ export default function DinerQrPage() {
       scan_url: payload.qr.scan_url,
       token: payload.qr.token,
       display_name: payload.card?.display_name,
+      message: payload.qr_settings?.custom_message,
     });
   }, [payload]);
 
@@ -106,7 +106,7 @@ export default function DinerQrPage() {
     const path = `/d/${encodeURIComponent(String(token))}/image`;
     const bust = [
       payload?.privacy?.show_avatar === false ? "0" : "1",
-      payload?.card?.avatar_url || "",
+      payload?.qr_settings?.photo_url || payload?.card?.avatar_url || "",
       payload?.card?.display_name || "",
     ].join("|");
     const withV = `${path}?v=${encodeURIComponent(bust)}`;
@@ -117,14 +117,15 @@ export default function DinerQrPage() {
   }, [payload]);
 
   const showAvatar = payload?.privacy?.show_avatar !== false;
+  const qrSettings = payload?.qr_settings || null;
   const avatarSrc = useMemo(() => {
     if (!showAvatar) return "";
-    const url = payload?.card?.avatar_url;
+    const url = qrSettings ? qrSettings.photo_url : payload?.card?.avatar_url;
     return url ? resolveConsumerMediaUrl(url) : "";
-  }, [payload, showAvatar]);
+  }, [payload, qrSettings, showAvatar]);
   // Motion profile photo (docs/12, 2026-10-25): muted loop over the still; still for reduced motion.
   const avatarMotionSrc = useMemo(() => {
-    const url = showAvatar ? payload?.card?.avatar_motion_url : null;
+    const url = showAvatar ? (qrSettings ? qrSettings.photo_motion_url : payload?.card?.avatar_motion_url) : null;
     let reduce = false;
     try {
       reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
@@ -132,7 +133,7 @@ export default function DinerQrPage() {
       reduce = false;
     }
     return url && !reduce ? resolveConsumerMediaUrl(url) : "";
-  }, [payload, showAvatar]);
+  }, [payload, qrSettings, showAvatar]);
 
   async function togglePrivacy(field, value) {
     setBusy(true);
@@ -144,24 +145,6 @@ export default function DinerQrPage() {
       setNotice("Privacy updated.");
     } catch (err) {
       setError(err.message || "Unable to update privacy");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onAvatarSelected(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const data = await uploadDinerAvatar(file);
-      setPayload(data);
-      setNotice(data.avatar_motion_url ? "Motion photo saved." : "Profile photo updated.");
-    } catch (err) {
-      setError(err.message || "Unable to upload photo");
     } finally {
       setBusy(false);
     }
@@ -229,6 +212,12 @@ export default function DinerQrPage() {
                   </div>
                 </div>
 
+                {qrSettings?.message ? (
+                  <p style={styles.qrMessage} data-testid="diner-qr-message">
+                    {qrSettings.message}
+                  </p>
+                ) : null}
+
                 <div style={styles.qrFrame}>
                   {qrImageSrc ? (
                     <img
@@ -263,16 +252,9 @@ export default function DinerQrPage() {
               >
                 Share link
               </button>
-              <label style={styles.secondaryBtn}>
-                {busy ? "Working…" : "Add or change selfie"}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  style={{ display: "none" }}
-                  disabled={busy}
-                  onChange={onAvatarSelected}
-                />
-              </label>
+              <Link to="/account/diner-qr/edit" style={styles.secondaryBtn} data-testid="diner-qr-edit">
+                Edit message &amp; photo
+              </Link>
             </div>
 
             <section style={styles.privacy}>
@@ -280,15 +262,6 @@ export default function DinerQrPage() {
               <p style={styles.muted}>
                 Your QR never includes location, restaurant, crews, conversations, or contacts.
               </p>
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={payload.privacy?.show_avatar !== false}
-                  disabled={busy}
-                  onChange={(e) => togglePrivacy("show_avatar", e.target.checked)}
-                />
-                Show my profile photo on this card
-              </label>
               <label style={styles.check}>
                 <input
                   type="checkbox"
@@ -434,6 +407,16 @@ const styles = {
     whiteSpace: "nowrap",
   },
   edu: { margin: "3px 0 0", fontSize: 12, color: GREEN_DEEP, fontWeight: 700 },
+  qrMessage: {
+    margin: "0 4px 14px",
+    width: "100%",
+    fontSize: 14,
+    lineHeight: 1.4,
+    fontWeight: 600,
+    color: INK,
+    textAlign: "center",
+    overflowWrap: "anywhere",
+  },
   qrFrame: {
     width: "100%",
     maxWidth: 248,
