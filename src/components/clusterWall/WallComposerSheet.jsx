@@ -6,7 +6,9 @@ import {
   WALL_CAPTION_LIMIT,
   WALL_CLIP_MAX_BYTES,
   WALL_CLIP_MAX_SECONDS,
+  WALL_ANGLES,
   WALL_FONTS,
+  WALL_INKS,
   WALL_SIZES,
   WALL_THEMES,
   wallInkShadow,
@@ -58,13 +60,13 @@ function readClipDuration(file) {
   });
 }
 
-function Seg({ label, value, options, onChange }) {
+function Seg({ label, value, options, onChange, className = "cw-seg" }) {
   return (
     <div>
       <span className="cw-field-label">{label}</span>
-      <div className="cw-seg" role="radiogroup" aria-label={label}>
+      <div className={className} role="radiogroup" aria-label={label}>
         {options.map((o) => (
-          <button key={o.key} type="button" role="radio" aria-checked={value === o.key} onClick={() => onChange(o.key)}>
+          <button key={o.key} type="button" role="radio" aria-checked={value === o.key} onClick={() => onChange(o.key)} style={o.style}>
             {o.label}
           </button>
         ))}
@@ -267,9 +269,14 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
           <div style={{ display: "grid", gap: 10 }}>
             <Seg
               label="Font"
+              className="cw-seg cw-fontpick"
               value={style.font}
               onChange={(font) => setStyle((s) => ({ ...s, font }))}
-              options={Object.entries(WALL_FONTS).map(([key, f]) => ({ key, label: f.label }))}
+              options={Object.entries(WALL_FONTS).map(([key, f]) => ({
+                key,
+                label: f.label,
+                style: { fontFamily: f.family, fontWeight: f.weight, textTransform: f.upper ? "uppercase" : "none" },
+              }))}
             />
             <div>
               <span className="cw-field-label">Surface</span>
@@ -291,6 +298,33 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
                 ))}
               </div>
             </div>
+            <div>
+              <span className="cw-field-label">Paint</span>
+              <div role="radiogroup" aria-label="Paint colour" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {Object.entries(WALL_INKS).map(([key, p]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={(style.ink || "auto") === key}
+                    aria-label={key === "auto" ? "Surface colour" : p.label}
+                    title={key === "auto" ? "Surface colour" : p.label}
+                    className="cw-paint"
+                    onClick={() => setStyle((s) => ({ ...s, ink: key }))}
+                    style={p.color ? { background: p.color } : undefined}
+                  >
+                    {key === "auto" ? "Auto" : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Seg
+              label="Turn"
+              className="cw-seg cw-fontpick"
+              value={style.angle || 0}
+              onChange={(angle) => setStyle((s) => ({ ...s, angle }))}
+              options={WALL_ANGLES.map((a) => ({ key: a.key, label: a.label }))}
+            />
             <Seg
               label="Line up"
               value={style.align}

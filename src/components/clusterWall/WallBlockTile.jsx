@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { WALL_FONTS, WALL_THEMES, wallInkShadow, wallStyle, wallSurfaceStyle, wallTextFontSize } from "../../lib/clusterWallStyles.js";
+import { WALL_FONTS, WALL_THEMES, wallInk, wallStyle, wallSurfaceStyle, wallTextFontSize } from "../../lib/clusterWallStyles.js";
 import "./clusterWall.css";
 
 /** Shrinks the text until it fits its rectangle (and again when the rectangle resizes). */
@@ -29,33 +29,43 @@ function useFitText(boxRef, textRef, startSize, deps) {
   }, deps);
 }
 
+/** Frame the words are fitted into: whole box, a smaller tilted box, or the box turned sideways. */
+function frameStyle(angle) {
+  if (angle === 90 || angle === -90) return { width: "100cqh", height: "100cqw", transform: `rotate(${angle}deg)` };
+  if (angle) return { width: "86%", height: "78%", transform: `rotate(${angle}deg)` };
+  return { width: "100%", height: "100%" };
+}
+
 export function WallInscription({ block, scale = 1, className = "cw-tile-text", style }) {
   const s = wallStyle(block.style);
   const font = WALL_FONTS[s.font];
-  const theme = WALL_THEMES[s.theme];
+  const ink = wallInk(s);
   const text = String(block.body || "");
   const boxRef = useRef(null);
   const textRef = useRef(null);
   const startSize = wallTextFontSize(block.size, text.length, { scale });
-  useFitText(boxRef, textRef, startSize, [text, startSize, s.font, block.size]);
+  useFitText(boxRef, textRef, startSize, [text, startSize, s.font, s.angle, block.size]);
   return (
     <div
-      ref={boxRef}
-      className={className}
+      className={s.angle ? `${className} cw-turned` : className}
       style={{
-        color: theme.ink,
-        textShadow: wallInkShadow(s.theme),
+        color: ink.color,
+        textShadow: ink.textShadow,
         fontFamily: font.family,
         fontWeight: font.weight,
         fontStyle: font.italic ? "italic" : "normal",
         textTransform: font.upper ? "uppercase" : "none",
-        fontSize: startSize,
-        justifyContent: s.align === "left" ? "flex-start" : "center",
         textAlign: s.align,
         ...style,
       }}
     >
-      <span ref={textRef} style={{ width: "100%" }}>{text}</span>
+      <div
+        ref={boxRef}
+        className="cw-tile-frame"
+        style={{ ...frameStyle(s.angle), fontSize: startSize, justifyContent: s.align === "left" ? "flex-start" : "center" }}
+      >
+        <span ref={textRef} style={{ width: "100%" }}>{text}</span>
+      </div>
     </div>
   );
 }

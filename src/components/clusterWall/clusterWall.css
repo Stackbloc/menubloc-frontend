@@ -1,3 +1,47 @@
+/* Wall handwriting fonts (Apache/OFL; licenses in public/cluster-wall/fonts). */
+@font-face {
+  font-family: "Permanent Marker";
+  src: url("/cluster-wall/fonts/PermanentMarker-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Caveat Brush";
+  src: url("/cluster-wall/fonts/CaveatBrush-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Kalam";
+  src: url("/cluster-wall/fonts/Kalam-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gochi Hand";
+  src: url("/cluster-wall/fonts/GochiHand-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Rubik Spray Paint";
+  src: url("/cluster-wall/fonts/RubikSprayPaint-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Patrick Hand";
+  src: url("/cluster-wall/fonts/PatrickHand-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Cluster Wall — rectangles, thin rules, no pills (Andre 2026-11-05). */
 
 .cw-mosaic {
@@ -148,6 +192,10 @@
 }
 .cw-seg > button:last-child { border-right: 0; }
 .cw-seg > button[aria-checked="true"] { background: #111827; color: #fff; }
+/* Font picker: 7 looks, each label in its own lettering; wraps on phones. */
+.cw-fontpick { display: flex; flex-wrap: wrap; gap: 6px; border: 0; overflow: visible; }
+.cw-fontpick > button { border: 1px solid #d1d5db; border-radius: 4px; font-size: 15px; padding: 6px 11px; }
+.cw-fontpick > button:last-child { border-right: 1px solid #d1d5db; }
 
 /* Desktop side panel: sticky, own scroll. */
 .cw-panel {
@@ -233,6 +281,20 @@
   cursor: pointer;
   font: 800 13px/1 Arial, sans-serif;
 }
+/* Turned lettering: the frame is fitted inside the tile (container units), then rotated. */
+.cw-tile-text.cw-turned { container-type: size; justify-content: center; }
+.cw-tile-frame { display: flex; align-items: center; overflow: hidden; flex: none; }
+.cw-paint {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  cursor: pointer;
+  font: 800 11px/1 system-ui, sans-serif;
+  color: #374151;
+  background: #fff;
+}
+.cw-paint[aria-checked="true"] { border-color: #111827; box-shadow: 0 0 0 2px #fff inset; }
 .cw-swatch[aria-checked="true"] { border-color: #111827; box-shadow: 0 0 0 2px #fff inset; }
 .cw-field-label { display: block; font: 700 12px/1.2 system-ui, sans-serif; color: #374151; margin: 0 0 6px; text-transform: none; }
 .cw-notice {

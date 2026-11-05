@@ -1,15 +1,24 @@
 /**
  * Cluster Wall looks — same keys as the backend (menubloc-backend src/services/clusterWall/wallStyles.js),
- * which also draws the share pictures. Fonts are generic families + weight / case / italic.
+ * which also draws the share pictures.
  */
 
+// Handwriting first (Andre 2026-11-05: "a few handwriting fonts", like the mockup), then two print looks.
+// Font files live in public/cluster-wall/fonts (@font-face in clusterWall.css); the backend draws the
+// same files in share pictures.
 export const WALL_FONTS = Object.freeze({
+  marker: { label: "Marker", family: "'Permanent Marker', 'Comic Sans MS', cursive", weight: 400, italic: false, upper: false },
+  brush: { label: "Brush", family: "'Caveat Brush', 'Comic Sans MS', cursive", weight: 400, italic: false, upper: false },
+  neat: { label: "Neat", family: "'Kalam', 'Comic Sans MS', cursive", weight: 700, italic: false, upper: false },
+  bouncy: { label: "Bouncy", family: "'Gochi Hand', 'Comic Sans MS', cursive", weight: 400, italic: false, upper: false },
+  spray: { label: "Spray paint", family: "'Rubik Spray Paint', Impact, sans-serif", weight: 400, italic: false, upper: false, spray: true },
+  print: { label: "Hand print", family: "'Patrick Hand', 'Comic Sans MS', cursive", weight: 400, italic: false, upper: false },
   clean: { label: "Clean", family: "Arial, Helvetica, sans-serif", weight: 700, italic: false, upper: false },
   loud: { label: "Loud", family: "'Arial Black', Arial, Helvetica, sans-serif", weight: 900, italic: false, upper: true },
-  classic: { label: "Classic", family: "Georgia, 'Times New Roman', serif", weight: 700, italic: false, upper: false },
-  note: { label: "Note", family: "Georgia, 'Times New Roman', serif", weight: 400, italic: true, upper: false },
-  typewriter: { label: "Typewriter", family: "'Courier New', Courier, monospace", weight: 700, italic: false, upper: false },
 });
+
+// Print fonts from the first build → the nearest handwriting (same as the backend's LEGACY_FONTS).
+const LEGACY_FONTS = Object.freeze({ classic: "neat", note: "brush", typewriter: "print" });
 
 // Surfaces (Andre 2026-11-05: "the bricks should have different textures"). Same keys + texture files
 // as the backend (src/services/clusterWall/wallStyles.js), which draws the share pictures on them.
@@ -23,6 +32,42 @@ export const WALL_THEMES = Object.freeze({
   wood: { label: "Wood", ink: "#FFF1DC", shadow: "#1A0C04", paper: "#5B3520", texture: "wood.jpg" },
   concrete: { label: "Concrete", ink: "#1B1B1B", shadow: "#FFFFFF", paper: "#CBC8C1", texture: "concrete.jpg" },
 });
+
+// Paint colours (Andre 2026-11-05: "a spray paint font, with color pick?"). Same keys as the backend.
+// "auto" = the surface's own ink. The spray font adds a soft overspray halo in the paint colour.
+export const WALL_INKS = Object.freeze({
+  auto: { label: "Surface", color: null, shadow: null },
+  white: { label: "White", color: "#FFFFFF", shadow: "#000000" },
+  black: { label: "Black", color: "#111111", shadow: "#FFFFFF" },
+  red: { label: "Red", color: "#E5202E", shadow: "#000000" },
+  cardinal: { label: "Cardinal", color: "#990000", shadow: "#FFFFFF" },
+  gold: { label: "Gold", color: "#FFCC00", shadow: "#000000" },
+  orange: { label: "Orange", color: "#FF7A00", shadow: "#000000" },
+  pink: { label: "Pink", color: "#FF3EA5", shadow: "#000000" },
+  lime: { label: "Lime", color: "#7CFF3A", shadow: "#000000" },
+  cyan: { label: "Cyan", color: "#22D3EE", shadow: "#000000" },
+  purple: { label: "Purple", color: "#8B5CF6", shadow: "#FFFFFF" },
+});
+
+// Orientation (Andre 2026-11-05: "so they are not all presented squarely"). Degrees clockwise.
+export const WALL_ANGLES = Object.freeze([
+  { key: 0, label: "Straight" },
+  { key: -10, label: "Tilt left" },
+  { key: 10, label: "Tilt right" },
+  { key: -90, label: "Up" },
+  { key: 90, label: "Down" },
+]);
+
+/** Letter colour + shadow for a style (paint colour wins over the surface ink). */
+export function wallInk(style) {
+  const s = wallStyle(style);
+  const theme = WALL_THEMES[s.theme];
+  const paint = WALL_INKS[s.ink];
+  const color = paint.color || theme.ink;
+  const shadow = paint.shadow || theme.shadow;
+  const halo = WALL_FONTS[s.font].spray ? `, 0 0 0.16em ${color}99, 0 0 0.4em ${color}55` : "";
+  return { color, textShadow: `1px 1px 0 ${shadow}99, 0 0 6px ${shadow}66${halo}` };
+}
 
 /** CSS for a surface: the texture over its flat colour (shows while the picture loads). */
 export function wallSurfaceStyle(themeKey) {
@@ -51,14 +96,20 @@ export const WALL_CAPTION_LIMIT = 80;
 export const WALL_CLIP_MAX_SECONDS = 20;
 export const WALL_CLIP_MAX_BYTES = 60 * 1024 * 1024;
 
-export const DEFAULT_WALL_STYLE = Object.freeze({ font: "clean", theme: "brick", align: "center" });
+export const DEFAULT_WALL_STYLE = Object.freeze({ font: "marker", theme: "brick", align: "center", ink: "auto", angle: 0 });
 
 export function wallStyle(style) {
   const s = style && typeof style === "object" ? style : {};
   return {
-    font: Object.prototype.hasOwnProperty.call(WALL_FONTS, s.font) ? s.font : DEFAULT_WALL_STYLE.font,
+    font: Object.prototype.hasOwnProperty.call(WALL_FONTS, s.font)
+      ? s.font
+      : Object.prototype.hasOwnProperty.call(LEGACY_FONTS, s.font)
+        ? LEGACY_FONTS[s.font]
+        : DEFAULT_WALL_STYLE.font,
     theme: Object.prototype.hasOwnProperty.call(WALL_THEMES, s.theme) ? s.theme : DEFAULT_WALL_STYLE.theme,
     align: s.align === "left" ? "left" : "center",
+    ink: Object.prototype.hasOwnProperty.call(WALL_INKS, s.ink) ? s.ink : "auto",
+    angle: WALL_ANGLES.some((a) => a.key === Number(s.angle)) ? Number(s.angle) : 0,
   };
 }
 
