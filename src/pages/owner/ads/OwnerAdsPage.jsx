@@ -251,7 +251,10 @@ export default function OwnerAdsPage() {
 
   // Private clusters (e.g. Menuply Holding) are never set up by "all clusters", so they don't count.
   const clustersMissingSlots = clusters.filter(
-    (c) => c.is_public !== false && c.active_slots < c.max_active_slots
+    (c) =>
+      c.is_public !== false &&
+      c.active_slots < STANDARD_SLOT_COUNT &&
+      hasSlotRoom(c.active_slots, c.max_active_slots)
   );
 
   return (
@@ -327,8 +330,8 @@ export default function OwnerAdsPage() {
                         </td>
                         <td style={{ padding: "10px 6px" }}>{c.venue_name || "Menuply"}</td>
                         <td style={{ padding: "10px 6px" }}>
-                          {c.active_slots} / {c.max_active_slots}
-                          {c.active_slots > c.max_active_slots ? (
+                          {formatSlotCount(c.active_slots, c.max_active_slots)}
+                          {c.max_active_slots != null && c.active_slots > c.max_active_slots ? (
                             <span style={{ color: OWNER_COLORS.muted, fontSize: 12 }}> (legacy)</span>
                           ) : null}
                         </td>
@@ -354,6 +357,19 @@ export default function OwnerAdsPage() {
   );
 }
 
+// Standard cluster slot templates (backend clusterAdSlotTemplate.js). Not a cap:
+// since 2026-11-04 clusters have no global slot limit, only an optional own cap
+// (max_active_slots null = no cap).
+const STANDARD_SLOT_COUNT = 6;
+
+function hasSlotRoom(active, cap) {
+  return cap == null || Number(active) < Number(cap);
+}
+
+function formatSlotCount(active, cap, joiner = "/") {
+  return cap == null ? `${active}` : `${active} ${joiner} ${cap}`;
+}
+
 function ClusterSlotsPanel({ detail, busy, run }) {
   const { cluster, slots, missing_standard_slots: missing = [], active_slots, max_active_slots } = detail;
   const publicPath = clusterPath(cluster);
@@ -362,7 +378,7 @@ function ClusterSlotsPanel({ detail, busy, run }) {
     <PageCard style={{ padding: 20 }}>
       <SectionTitle
         title={cluster.name}
-        subtitle={`${active_slots} of ${max_active_slots} slots active · owned by ${cluster.venue_name || "Menuply"} · dates follow ${cluster.state || "UTC"} local time`}
+        subtitle={`${formatSlotCount(active_slots, max_active_slots, "of")} slots active · owned by ${cluster.venue_name || "Menuply"} · dates follow ${cluster.state || "UTC"} local time`}
         action={
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {publicPath ? (
@@ -370,7 +386,7 @@ function ClusterSlotsPanel({ detail, busy, run }) {
                 View cluster
               </a>
             ) : null}
-            {missing.length && active_slots < max_active_slots ? (
+            {missing.length && hasSlotRoom(active_slots, max_active_slots) ? (
               <button
                 type="button"
                 disabled={busy}
