@@ -49,6 +49,7 @@
   padding: 10px 14px; font-size: 14px; font-weight: 600;
 }
 .ad-notice-muted { background: var(--ad-card); border-color: var(--ad-line); }
+.ad-notice-soon { background: var(--ad-gold-soft); border-color: var(--ad-gold-line); font-weight: 500; line-height: 1.5; }
 .ad-error { margin-top: 12px; color: var(--ad-red); font-weight: 700; font-size: 14px; }
 .ad-state { margin-top: 18px; color: var(--ad-muted); font-size: 14px; }
 

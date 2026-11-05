@@ -328,6 +328,16 @@ export default function AdvertisePage() {
         <h1 className="ad-h1">{STEP_TITLE[step] || "Advertise on Menuply"}</h1>
         {cluster ? <p className="ad-sub">{cluster.name}</p> : null}
 
+        {/* Checkout is closed for now (Andre 2026-11-05): say so up top, not only next to the basket. */}
+        {catalog && !checkoutOpen && !done && !canceled ? (
+          <div className="ad-notice ad-notice-soon" role="status">
+            <strong>Advertising will be available soon.</strong>{" "}
+            {spots.length
+              ? "You can look at the spots and prices now and plan what you want. Booking opens on this page."
+              : "Booking opens on this page."}
+          </div>
+        ) : null}
+
         {done ? (
           <div className="ad-notice" role="status">
             Thanks. We're confirming your payment with the card company.
