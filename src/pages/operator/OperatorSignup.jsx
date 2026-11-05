@@ -13,6 +13,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
+import { claimIntentPath } from "../../lib/joinLaunch.js";
 import {
   AuthPageFrame,
   FormError,
@@ -40,7 +41,8 @@ export default function OperatorSignup() {
   const [busy, setBusy] = useState(false);
 
   if (!loading && isAuthenticated) {
-    const nextPath = restaurants?.length === 0 ? "/operator/claim" : "/operator";
+    // Started a claim on a launch page (/join/…): go claim that restaurant.
+    const nextPath = claimIntentPath() || (restaurants?.length === 0 ? "/operator/claim" : "/operator");
     return <Navigate to={isEmailVerified ? nextPath : "/operator/verify-email"} replace state={{ email: operator?.email, nextPath }} />;
   }
 
@@ -96,7 +98,7 @@ export default function OperatorSignup() {
         fields.full_name.trim() || undefined,
         buildLegalConsentPayload(),
       );
-      const dest = result.restaurants?.length === 0 ? "/operator/claim" : "/operator";
+      const dest = claimIntentPath() || (result.restaurants?.length === 0 ? "/operator/claim" : "/operator");
       if (result.operator?.email_verified !== true) {
         navigate("/operator/verify-email", {
           replace: true,

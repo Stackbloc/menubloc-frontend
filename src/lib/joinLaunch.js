@@ -77,7 +77,9 @@ export function safeJoinReturnPath(value) {
 
 // ---------------------------------------------------------------------------
 // Claim intent: survives sign-up / sign-in / email verification, which land
-// new owners on /operator/claim without our query params.
+// new owners on /operator/claim without our query params. Kept in localStorage
+// (not sessionStorage) so closing the tab or opening a new one in the same
+// browser keeps it; it expires after a few hours and is cleared on claim.
 // ---------------------------------------------------------------------------
 
 const INTENT_KEY = "menuply.joinClaimIntent";
@@ -85,7 +87,7 @@ const INTENT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 export function saveClaimIntent({ restaurantId, restaurantName, returnPath, src }) {
   try {
-    window.sessionStorage.setItem(
+    window.localStorage.setItem(
       INTENT_KEY,
       JSON.stringify({ restaurantId, restaurantName, returnPath, src: src || null, savedAt: Date.now() }),
     );
@@ -96,10 +98,13 @@ export function saveClaimIntent({ restaurantId, restaurantName, returnPath, src 
 
 export function readClaimIntent() {
   try {
-    const raw = window.sessionStorage.getItem(INTENT_KEY);
+    const raw = window.localStorage.getItem(INTENT_KEY);
     if (!raw) return null;
     const v = JSON.parse(raw);
-    if (!v || Date.now() - Number(v.savedAt || 0) > INTENT_MAX_AGE_MS) return null;
+    if (!v || Date.now() - Number(v.savedAt || 0) > INTENT_MAX_AGE_MS || !safeJoinReturnPath(v.returnPath)) {
+      window.localStorage.removeItem(INTENT_KEY);
+      return null;
+    }
     return v;
   } catch {
     return null;
@@ -108,8 +113,24 @@ export function readClaimIntent() {
 
 export function clearClaimIntent() {
   try {
+    window.localStorage.removeItem(INTENT_KEY);
     window.sessionStorage.removeItem(INTENT_KEY);
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Where sign-up / sign-in should send an owner who started a claim on a launch page:
+ * the claim page with that restaurant picked and the launch return path. null = no intent.
+ */
+export function claimIntentPath() {
+  const v = readClaimIntent();
+  if (!v) return null;
+  const p = new URLSearchParams();
+  if (v.restaurantId) p.set("restaurant", String(v.restaurantId));
+  if (v.restaurantName) p.set("q", v.restaurantName);
+  p.set("return", v.returnPath);
+  if (v.src) p.set("src", v.src);
+  return `/operator/claim?${p.toString()}`;
 }

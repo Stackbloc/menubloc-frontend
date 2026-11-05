@@ -200,7 +200,11 @@ export default function OperatorClaimSearch() {
               {" · "}
               <button
                 type="button"
-                onClick={() => navigate("/operator")}
+                onClick={() => {
+                  // Skipping drops a launch-page claim so later sign-ins go to the dashboard.
+                  clearClaimIntent();
+                  navigate("/operator");
+                }}
                 style={{
                   ...styles.link,
                   background: "none",

@@ -17,6 +17,7 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 import { resolveOperatorResumePath } from "../../lib/operatorOnboardingCheckpoints.js";
+import { claimIntentPath } from "../../lib/joinLaunch.js";
 import {
   isFoodTruckRestaurant,
   resolveFoodTruckOnboardingRoute,
@@ -63,6 +64,16 @@ export default function OperatorLogin() {
   }, [location.state?.email]);
 
   if (!loading && isAuthenticated) {
+    // Started a claim on a launch page (/join/…): go claim that restaurant, even for
+    // owners who already have one (they are claiming another).
+    const claimPath = claimIntentPath();
+    if (claimPath) {
+      return isEmailVerified ? (
+        <Navigate to={claimPath} replace />
+      ) : (
+        <Navigate to="/operator/verify-email" replace state={{ email: operator?.email, nextPath: claimPath }} />
+      );
+    }
     if (!isEmailVerified) {
       const dest = restaurants?.length === 0
         ? "/operator/claim"
@@ -97,6 +108,18 @@ export default function OperatorLogin() {
     setBusy(true);
     try {
       const result = await login(email.trim(), password);
+      const claimPath = claimIntentPath();
+      if (claimPath) {
+        if (result.operator?.email_verified !== true) {
+          navigate("/operator/verify-email", {
+            replace: true,
+            state: { email: email.trim(), nextPath: claimPath, autoSend: true },
+          });
+          return;
+        }
+        navigate(claimPath, { replace: true });
+        return;
+      }
       if (!result.restaurants?.length) {
         navigate("/operator/claim", { replace: true });
         return;
