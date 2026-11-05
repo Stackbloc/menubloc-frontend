@@ -19,23 +19,14 @@ import {
   updateOwnerAdDefault,
   deleteOwnerAdDefault,
 } from "../../../lib/venueApi.js";
+import { REGION_PLACEMENT } from "../../../lib/adPlacements.js";
+import MarketplacePanel from "./OwnerAdsMarketplacePanel.jsx";
 
 /**
  * Owner > Ads — manage the ad slots on every cluster.
  * Menuply house slots (no venue) and venue-owned slots side by side.
  * Backend: /api/owner/ads (src/routes/ownerAds.js).
  */
-
-const REGION_PLACEMENT = {
-  cluster_landing_hero: "Top of the Food page",
-  cluster_landing_footer: "Below the food category chips",
-  cluster_search_top: "Inside a food category's dish list",
-  cluster_deals_top: "Inside the Drinks dish list",
-  cluster_search_inline: "Inside food search results",
-  cluster_events_top: "Middle of the Restaurants directory",
-  cluster_restaurant_footer: "Bottom of the Restaurants directory",
-  cluster_restaurant_header: "Not shown on the cluster page yet",
-};
 
 const ADVERTISER_LABELS = {
   house: "Menuply",
@@ -348,7 +339,10 @@ export default function OwnerAdsPage() {
         <DefaultBannersPanel busy={busy} run={run} />
 
         {detail ? (
-          <ClusterSlotsPanel detail={detail} busy={busy} run={run} />
+          <>
+            <MarketplacePanel key={detail.cluster.id} detail={detail} busy={busy} run={run} />
+            <ClusterSlotsPanel detail={detail} busy={busy} run={run} />
+          </>
         ) : selectedId ? (
           <EmptyState>Loading ad slots…</EmptyState>
         ) : null}
@@ -577,6 +571,7 @@ function SlotPricingForm({ slot, busy, run, onDone }) {
   const [price, setPrice] = useState(slot.price_cents != null ? (slot.price_cents / 100).toFixed(2) : "");
   const [period, setPeriod] = useState(slot.billing_period || "");
   const [purchasable, setPurchasable] = useState(Boolean(slot.purchasable));
+  const [shares, setShares] = useState(String(slot.rotation_shares || 1));
 
   return (
     <form
@@ -584,7 +579,13 @@ function SlotPricingForm({ slot, busy, run, onDone }) {
         e.preventDefault();
         const cents = price === "" ? null : Math.round(Number(price) * 100);
         const result = await run(
-          () => updateOwnerAdSlot(slot.id, { price_cents: cents, billing_period: period || null, purchasable }),
+          () =>
+            updateOwnerAdSlot(slot.id, {
+              price_cents: cents,
+              billing_period: period || null,
+              purchasable,
+              rotation_shares: Number(shares),
+            }),
           "Pricing saved."
         );
         if (result) onDone();
@@ -601,8 +602,26 @@ function SlotPricingForm({ slot, busy, run, onDone }) {
       }}
     >
       <div style={{ gridColumn: "1 / -1", fontSize: 12, color: OWNER_COLORS.muted }}>
-        For future paid ads. Advertisers can't buy slots yet; these values are only stored.
+        {slot.public_spot_id ? `Spot ID ${slot.public_spot_id}. ` : ""}
+        “Open for purchase” lists this spot on /advertise. Leave the price blank to use the rate card; a price here
+        replaces the rate card for this spot only. Checkout opens when Menuply turns it on.
       </div>
+      <label style={labelStyle}>
+        Ads that take turns
+        <input
+          type="number"
+          min="1"
+          max="50"
+          step="1"
+          value={shares}
+          onChange={(e) => setShares(e.target.value)}
+          style={inputStyle}
+          aria-describedby={`shares-help-${slot.id}`}
+        />
+        <span id={`shares-help-${slot.id}`} style={{ fontSize: 11, color: OWNER_COLORS.muted, fontWeight: 500 }}>
+          1 = exclusive
+        </span>
+      </label>
       <label style={labelStyle}>
         Price (USD)
         <input

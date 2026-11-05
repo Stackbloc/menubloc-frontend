@@ -114,6 +114,22 @@ export const createOwnerAd = (body) => post("/api/owner/ads/advertisements", bod
 export const updateOwnerAd = (adId, body) =>
   patch(`/api/owner/ads/advertisements/${encodeURIComponent(String(adId))}`, body);
 export const deleteOwnerAd = (adId) => del(`/api/owner/ads/advertisements/${encodeURIComponent(String(adId))}`);
+
+// Marketplace bookings, launch date and MAU (plan 22 Phase 3 backend)
+const putJson = (path, body) => req(path, { method: "PUT", body: JSON.stringify(body || {}) });
+export const listOwnerAdBookings = (clusterId) =>
+  get(`/api/owner/ads/bookings${clusterId ? `?cluster_id=${encodeURIComponent(String(clusterId))}` : ""}`);
+export const attachOwnerBookingCreative = (bookingId, advertisementId) =>
+  post(`/api/owner/ads/bookings/${encodeURIComponent(String(bookingId))}/creative`, { advertisement_id: advertisementId });
+export const setOwnerBookingPaused = (bookingId, paused) =>
+  patch(`/api/owner/ads/bookings/${encodeURIComponent(String(bookingId))}`, { paused });
+export const setOwnerClusterLaunch = (clusterId, launchDate) =>
+  putJson(`/api/owner/ads/clusters/${encodeURIComponent(String(clusterId))}/launch`, { launch_date: launchDate });
+export const setOwnerClusterMau = (clusterId, adMau, asOf) =>
+  putJson(`/api/owner/ads/clusters/${encodeURIComponent(String(clusterId))}/mau`, {
+    ad_mau: adMau,
+    as_of: asOf || undefined,
+  });
 export const searchOwnerAdRestaurants = (q) =>
   get(`/api/owner/ads/advertisers/restaurants?q=${encodeURIComponent(String(q || ""))}`);
 export const listOwnerAdRestaurantDeals = (restaurantId) =>

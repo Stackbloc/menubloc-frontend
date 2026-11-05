@@ -1,0 +1,122 @@
+/* /advertise marketplace. Scoped with .ad- prefix; same palette as the owner launch pages. */
+.ad-page {
+  --ad-ink: #14110f;
+  --ad-muted: #6b625b;
+  --ad-line: #ece4d8;
+  --ad-bg: #fbf8f3;
+  --ad-card: #ffffff;
+  --ad-green: #1f9d3a;
+  --ad-green-ink: #ffffff;
+  --ad-green-soft: #e8f6ea;
+  --ad-gold-soft: #fff6d6;
+  --ad-gold-line: #f2dc8a;
+  --ad-red: #b91c1c;
+  min-height: 100vh;
+  background: var(--ad-bg);
+  color: var(--ad-ink);
+  font-family: var(--gb-font-ui, "Inter", system-ui, sans-serif);
+  padding-bottom: 56px;
+}
+.ad-wrap { max-width: 680px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; }
+.ad-top { background: var(--ad-card); border-bottom: 1px solid var(--ad-line); }
+.ad-top .ad-wrap { display: flex; align-items: center; gap: 10px; min-height: 58px; }
+.ad-spacer { flex: 1; }
+.ad-toplink { font-size: 13px; font-weight: 700; color: var(--ad-muted); }
+
+.ad-h1 { font-size: clamp(26px, 6vw, 34px); line-height: 1.1; font-weight: 900; letter-spacing: -.02em; margin: 22px 0 0; }
+.ad-h2 { font-size: 16px; font-weight: 800; margin: 0 0 8px; }
+.ad-sub { margin: 4px 0 0; color: var(--ad-muted); font-size: 15px; font-weight: 600; }
+
+.ad-terms {
+  margin-top: 14px; background: var(--ad-gold-soft); border: 1px solid var(--ad-gold-line);
+  border-radius: 14px; padding: 10px 14px; font-size: 13.5px; line-height: 1.5;
+}
+.ad-terms p { margin: 4px 0; }
+
+.ad-notice {
+  margin-top: 14px; background: var(--ad-green-soft); border: 1px solid #bfe5c6; border-radius: 12px;
+  padding: 10px 14px; font-size: 14px; font-weight: 600;
+}
+.ad-notice-muted { background: var(--ad-card); border-color: var(--ad-line); }
+.ad-error { margin-top: 12px; color: var(--ad-red); font-weight: 700; font-size: 14px; }
+.ad-state { margin-top: 18px; color: var(--ad-muted); font-size: 14px; }
+
+.ad-spots { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ad-spot { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 14px; }
+.ad-spot-head { position: relative; display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.ad-spot-name { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ad-spot-meta { margin-top: 2px; font-size: 13px; color: var(--ad-muted); font-weight: 600; }
+.ad-tag {
+  flex: none; font-size: 12px; font-weight: 800; color: var(--ad-muted); background: var(--ad-bg);
+  border: 1px solid var(--ad-line); border-radius: 999px; padding: 4px 9px;
+}
+.ad-spot-buy { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ad-periods { display: flex; gap: 6px; flex-wrap: wrap; }
+.ad-chip {
+  font: inherit; font-size: 13px; font-weight: 700; padding: 6px 11px; border-radius: 999px;
+  border: 1px solid #ddd3c4; background: var(--ad-card); color: #3d3631; cursor: pointer;
+}
+.ad-chip[aria-checked="true"] { background: var(--ad-ink); color: #fff; border-color: var(--ad-ink); }
+.ad-count { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.ad-step {
+  font: inherit; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #ddd3c4;
+  background: var(--ad-card); color: var(--ad-ink); font-size: 16px; font-weight: 800; cursor: pointer;
+}
+.ad-step:disabled { opacity: .4; cursor: default; }
+
+/* Compact pills sized to their label (no full-width buttons). */
+.ad-pill {
+  display: inline-flex; align-items: center; justify-content: center; font: inherit; font-size: 14px; font-weight: 800;
+  padding: 9px 16px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; text-decoration: none;
+}
+.ad-pill-green { background: var(--ad-green); color: var(--ad-green-ink); }
+.ad-pill:disabled { opacity: .55; cursor: default; }
+.ad-link-btn {
+  font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ad-muted); background: none; border: 0;
+  padding: 4px 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.ad-chip:focus-visible, .ad-step:focus-visible, .ad-pill:focus-visible, .ad-link-btn:focus-visible, .ad-info-btn:focus-visible {
+  outline: 2px solid var(--ad-green); outline-offset: 2px;
+}
+
+/* Spot details: hover, keyboard focus, or tap (.is-open). */
+/* Anchored to the spot head (full card width) so it never runs off a phone screen. */
+.ad-info { display: inline-flex; }
+.ad-info-btn {
+  width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid var(--ad-muted); background: var(--ad-card);
+  color: var(--ad-muted); font: 800 11px/1 Georgia, serif; font-style: italic; cursor: pointer; padding: 0;
+}
+.ad-info-pop {
+  position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: min(300px, 100%); box-sizing: border-box;
+  display: none; flex-direction: column; gap: 4px; background: var(--ad-ink); color: #fff;
+  border-radius: 12px; padding: 10px 12px; font-size: 12.5px; font-weight: 500; line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+}
+.ad-info-id { opacity: .7; font-size: 11.5px; }
+.ad-info:hover .ad-info-pop, .ad-info:focus-within .ad-info-pop, .ad-info.is-open .ad-info-pop { display: flex; }
+.ad-info.is-dismissed .ad-info-pop { display: none; }
+
+.ad-basket { margin-top: 20px; background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 14px; }
+.ad-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.ad-lines li { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.ad-line-right { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; }
+.ad-total { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ad-line); display: flex; justify-content: space-between; font-size: 15px; }
+
+.ad-field { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; font-size: 14px; font-weight: 700; }
+.ad-field select { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 10px; border: 1.5px solid #ddd3c4; background: var(--ad-card); color: var(--ad-ink); max-width: 360px; }
+
+.ad-actions { margin-top: 18px; display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.ad-soon { font-size: 13.5px; font-weight: 700; color: var(--ad-muted); margin-right: auto; }
+.ad-fine { margin-top: 14px; font-size: 12px; color: var(--ad-muted); text-align: right; }
+
+@media (prefers-color-scheme: dark) {
+  .ad-page {
+    --ad-ink: #f4efe9; --ad-muted: #b3a89e; --ad-line: #3a332d; --ad-bg: #171411; --ad-card: #221d19;
+    --ad-green-soft: #16301c; --ad-gold-soft: #2e2711; --ad-gold-line: #5c4c1c; --ad-red: #f87171;
+  }
+  .ad-chip { border-color: var(--ad-line); color: var(--ad-ink); }
+  .ad-chip[aria-checked="true"] { background: var(--ad-ink); color: #171411; }
+  .ad-step, .ad-field select { border-color: var(--ad-line); }
+  .ad-info-pop { background: #f4efe9; color: #171411; }
+  .ad-notice { border-color: #2c5a36; }
+}
