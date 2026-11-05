@@ -412,6 +412,8 @@ export function validateRecordedVideoBlob(blob, existingObjectUrl = "") {
 export const MIN_RECORDED_VIDEO_BYTES = 8 * 1024;
 /** TikTok iOS-class client upload ceiling (~287 MB) — must match BE diner-media MAX_VIDEO_BYTES. */
 export const MAX_UPLOAD_VIDEO_BYTES = 287 * 1024 * 1024;
+/** Clip Manager uploads from a computer (5–10 min 1080p) — must match BE MAX_MANAGED_VIDEO_BYTES. */
+export const MAX_CLIP_MANAGER_VIDEO_BYTES = 1024 * 1024 * 1024;
 /** Duration gate for native OS clips (not in-app MediaRecorder). */
 export const MAX_RECORD_SECONDS = SOCIAL_VIDEO_MAX_RECORD_SECONDS;
 
@@ -419,7 +421,8 @@ export function formatBytes(n) {
   const size = Number(n) || 0;
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
 export function formatCameraError(err) {

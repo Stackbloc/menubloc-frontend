@@ -33,7 +33,11 @@ import {
 } from "../../lib/dealMealPeriods.js";
 import { formatOwnerVideoCreatorLabel, ownerVideoCreatorProfilePath } from "../../lib/ownerVideoCatalogLabels.js";
 import { CLIP_SORTABLE_KEYS, clipSettingsLabel, sortClipRows } from "../../lib/ownerClipSort.js";
-import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
+import {
+  formatBytes,
+  MAX_CLIP_MANAGER_VIDEO_BYTES,
+  MAX_UPLOAD_VIDEO_BYTES,
+} from "../../lib/consumerCameraCapture.js";
 import { videoDealTermsProblem } from "../../lib/videoDealTerms.js";
 import DealMenuItemsPicker from "./OwnerDealMenuItemsPicker.jsx";
 
@@ -645,9 +649,9 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
       setError("Choose a video file to upload.");
       return;
     }
-    if (Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+    if (Number(file.size || 0) > MAX_CLIP_MANAGER_VIDEO_BYTES) {
       setError(
-        `Video is too large (${formatBytes(file.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}. Use a shorter/smaller clip.`
+        `Video is too large (${formatBytes(file.size)}). Max is 1 GB. Use a shorter clip or export at 1080p.`
       );
       return;
     }
@@ -688,7 +692,7 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
     <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-video-upload-panel">
       <SectionTitle
         title="Upload video"
-        subtitle="Upload MP4, WebM, or MOV (up to ~10 minutes / ~287 MB). Bytes go direct to storage; Menuply normalizes to Chrome-safe H.264 in the background. Stay on this page until upload finishes. Restaurant and menu item are optional — add or change them anytime after upload."
+        subtitle="Upload MP4, WebM, or MOV (up to 1 GB, about 5–10 minutes at 1080p). Bytes go direct to storage; Menuply normalizes to Chrome-safe H.264 in the background. Stay on this page until upload finishes. Restaurant and menu item are optional — add or change them anytime after upload."
       />
       <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 520 }}>
         <label style={{ display: "grid", gap: 6 }}>
@@ -1852,9 +1856,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
 
   async function applyReplaceVideoFile(file) {
     if (!file) return;
-    if (Number(file.size || 0) > MAX_UPLOAD_VIDEO_BYTES) {
+    if (Number(file.size || 0) > MAX_CLIP_MANAGER_VIDEO_BYTES) {
       setError(
-        `Video is too large (${formatBytes(file.size)}). Max is ${formatBytes(MAX_UPLOAD_VIDEO_BYTES)}. Use a shorter/smaller clip.`
+        `Video is too large (${formatBytes(file.size)}). Max is 1 GB. Use a shorter clip or export at 1080p.`
       );
       return;
     }

@@ -1,6 +1,6 @@
 import {
+  clipManagerUploadTimeoutMs,
   putBlobWithProgress,
-  videoUploadTimeoutMs,
 } from "./multipartUpload.js";
 
 const VITE_ENV = import.meta.env || {};
@@ -986,7 +986,7 @@ export async function uploadOwnerVideo({
   onProgress,
 } = {}) {
   if (!file) throw new Error("No file selected");
-  const timeoutMs = videoUploadTimeoutMs(file.size);
+  const timeoutMs = clipManagerUploadTimeoutMs(file.size);
   try {
     const grant = await post("/api/owner/videos/upload/sign", {
       filename: file.name || "video.mp4",
@@ -1092,7 +1092,7 @@ export const uploadOwnerVideoThumbnail = (kind, sourceId, file) => {
 export async function replaceOwnerVideoMedia({ kind, sourceId, file, onProgress } = {}) {
   if (!kind || sourceId == null) throw new Error("Missing video reference");
   if (!file) throw new Error("No file selected");
-  const timeoutMs = videoUploadTimeoutMs(file.size);
+  const timeoutMs = clipManagerUploadTimeoutMs(file.size);
   const base = `/api/owner/videos/${encodeURIComponent(kind)}/${encodeURIComponent(String(sourceId))}/replace-media`;
   try {
     const grant = await post(`${base}/sign`, {
