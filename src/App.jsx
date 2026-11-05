@@ -137,6 +137,7 @@ import {
 } from "./pages/owner/venues/OwnerVenuesPages.jsx";
 import OwnerAdsPage from "./pages/owner/ads/OwnerAdsPage.jsx";
 import AdvertisePage from "./pages/advertise/AdvertisePage.jsx";
+import AdRenewalPage from "./pages/advertise/AdRenewalPage.jsx";
 import { VenueProvider, useVenue } from "./context/VenueContext.jsx";
 import VenueLogin from "./pages/venue/VenueLogin.jsx";
 import VenueInventoryPage from "./pages/venue/VenueInventoryPage.jsx";
@@ -967,6 +968,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/join/dothan" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="dothan" />} />
         <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
         <Route path="/advertise" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AdvertisePage />} />
+        <Route path="/advertise/renewal" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AdRenewalPage />} />
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/franchises" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FranchisesPage />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />

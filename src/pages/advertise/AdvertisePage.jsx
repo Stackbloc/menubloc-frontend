@@ -348,6 +348,7 @@ export default function AdvertisePage() {
                 <strong>{formatUsd(quote.total_cents)}</strong>
               </div>
             ) : null}
+            {cluster?.renewal ? <p className="ad-fine">{cluster.renewal}</p> : null}
             {quoteError ? <div className="ad-error" role="alert">{quoteError}</div> : null}
           </section>
         ) : null}

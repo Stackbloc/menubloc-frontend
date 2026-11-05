@@ -123,6 +123,8 @@ export const attachOwnerBookingCreative = (bookingId, advertisementId) =>
   post(`/api/owner/ads/bookings/${encodeURIComponent(String(bookingId))}/creative`, { advertisement_id: advertisementId });
 export const setOwnerBookingPaused = (bookingId, paused) =>
   patch(`/api/owner/ads/bookings/${encodeURIComponent(String(bookingId))}`, { paused });
+export const setOwnerBookingAutoRenew = (bookingId, autoRenew) =>
+  patch(`/api/owner/ads/bookings/${encodeURIComponent(String(bookingId))}`, { auto_renew: autoRenew === true });
 export const setOwnerClusterLaunch = (clusterId, launchDate) =>
   putJson(`/api/owner/ads/clusters/${encodeURIComponent(String(clusterId))}/launch`, { launch_date: launchDate });
 export const setOwnerClusterMau = (clusterId, adMau, asOf) =>
