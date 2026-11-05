@@ -21,6 +21,7 @@ import {
   termLabel,
 } from "../../lib/adMarketplaceApi.js";
 import { PRODUCT_LABEL, REGION_PLACEMENT } from "../../lib/adPlacements.js";
+import { joinBasePath, resolveJoinCluster } from "../../lib/joinLaunch.js";
 import "../../styles/advertise.css";
 
 const STEP_TITLE = {
@@ -40,6 +41,57 @@ function formatLaunch(dateStr) {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+/**
+ * For people who arrive cold (footer link, a shared link) instead of from the owner
+ * flyer flow: what Menuply is, what you can buy, how it works, and who it's for.
+ * Hidden on the flyer flow's steps (?step=…), which already explain themselves.
+ */
+function AdvertiseIntro({ clusterSlug, clusterName, launch }) {
+  const where = clusterName || "your area";
+  const claimPath = resolveJoinCluster(`${clusterSlug}-launch`) ? joinBasePath(clusterSlug) : null;
+  return (
+    <section className="ad-intro" aria-label="About advertising on Menuply">
+      <p className="ad-intro-lead">
+        Menuply is where people near {where} look up what to eat: menus, dishes, deals, and food clips from local
+        restaurants. {launch ? `We launch near ${where} on ${launch}.` : `We're launching near ${where} soon.`}
+      </p>
+
+      <h2 className="ad-h2">What you can put in front of diners</h2>
+      <ul className="ad-kinds">
+        <li>
+          <strong>Deal promotions</strong>
+          <span>Your deal at the top of food search results.</span>
+        </li>
+        <li>
+          <strong>Billboards</strong>
+          <span>Your ad on the {where} Food page or inside a food category, like Pasta or Tacos.</span>
+        </li>
+        <li>
+          <strong>Clips</strong>
+          <span>A short clip of your food, featured for diners near {where}.</span>
+        </li>
+      </ul>
+
+      <h2 className="ad-h2">How it works</h2>
+      <ol className="ad-how">
+        <li>Pick a spot below and how long it runs.</li>
+        <li>Pay by card.</li>
+        <li>Your ad starts on launch day, or once it's approved if you buy after launch.</li>
+      </ol>
+
+      <p className="ad-intro-who">
+        For restaurants near {where}.{" "}
+        {claimPath ? (
+          <>
+            Your restaurant is probably already listed: <Link to={claimPath}>claim it free</Link> first.
+          </>
+        ) : null}{" "}
+        Not near {where}? Ads are only open here for now.
+      </p>
+    </section>
+  );
 }
 
 function unavailableText(reason) {
@@ -284,6 +336,10 @@ export default function AdvertisePage() {
           <div className="ad-notice ad-notice-muted" role="status">
             Checkout was canceled. Nothing was charged.
           </div>
+        ) : null}
+
+        {cluster && !step && !done && !canceled ? (
+          <AdvertiseIntro clusterSlug={clusterSlug} clusterName={cluster.name} launch={launch} />
         ) : null}
 
         {cluster ? (

@@ -33,6 +33,17 @@
 }
 .ad-terms p { margin: 4px 0; }
 
+/* Intro for cold visitors (no ?step). */
+.ad-intro { margin-top: 14px; background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 14px 16px; }
+.ad-intro .ad-h2 { margin-top: 14px; }
+.ad-intro-lead { margin: 0; font-size: 15px; line-height: 1.5; }
+.ad-kinds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.4; }
+.ad-kinds li { display: flex; flex-direction: column; gap: 1px; }
+.ad-kinds span { color: var(--ad-muted); }
+.ad-how { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.4; }
+.ad-intro-who { margin: 14px 0 0; font-size: 13.5px; color: var(--ad-muted); line-height: 1.5; }
+.ad-intro-who a { color: var(--ad-green); font-weight: 700; }
+
 .ad-notice {
   margin-top: 14px; background: var(--ad-green-soft); border: 1px solid #bfe5c6; border-radius: 12px;
   padding: 10px 14px; font-size: 14px; font-weight: 600;
