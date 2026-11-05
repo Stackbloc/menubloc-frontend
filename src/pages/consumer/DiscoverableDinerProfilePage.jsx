@@ -2,10 +2,12 @@
  * Canonical peer diner profile — activity-selection layer before media/Feed.
  * Route: /account/diners/:userId
  * Accepted connections redirect to /account/connections/:id (full hub + same activity layer).
+ * Anyone can open it, signed in or not (Andre 2026-11-05, TikTok-style Feed name tap):
+ * guests get the public profile and a Sign in to Connect pill.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -14,6 +16,9 @@ import {
   blockDiner,
   declineConnection,
   getDiscoverableDiner,
+  getPublicDiner,
+  getPublicDinerClips,
+  getPublicDinerConnects,
   removeConnection,
   reportDinerAbuse,
   requestConnection,
@@ -34,16 +39,19 @@ const ABUSE_REASONS = [
 function backTarget(from) {
   if (from === "incoming" || from === "social") return "/account?tab=social";
   if (from === "find-diners") return "/account/find-diners";
+  if (from === "feed") return "/feed";
   return "/account/find-diners";
 }
 
 export default function DiscoverableDinerProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId: userIdParam } = useParams();
   const [searchParams] = useSearchParams();
   const from = searchParams.get("from") || "find-diners";
   const dinerId = Number(userIdParam);
-  const { isAuthenticated, loading: authLoading } = useConsumer();
+  const { consumer, isAuthenticated, loading: authLoading } = useConsumer();
+  const viewerId = consumer?.id != null ? Number(consumer.id) : null;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,37 +61,79 @@ export default function DiscoverableDinerProfilePage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("harassment");
   const [reportDetails, setReportDetails] = useState("");
+  const [clips, setClips] = useState([]);
+  const [playing, setPlaying] = useState(null);
+  const [connectsOpen, setConnectsOpen] = useState(false);
+  const [connectsList, setConnectsList] = useState(null);
+  const [connectsError, setConnectsError] = useState("");
+  const [inviteNote, setInviteNote] = useState("");
 
   const load = useCallback(async () => {
     setError("");
     try {
-      const data = await getDiscoverableDiner(dinerId);
+      const data = isAuthenticated ? await getDiscoverableDiner(dinerId) : await getPublicDiner(dinerId);
       setPayload(data);
+      getPublicDinerClips(dinerId)
+        .then((r) => setClips(Array.isArray(r?.clips) ? r.clips : []))
+        .catch(() => setClips([]));
     } catch (err) {
       setPayload(null);
       setError(err.message || "Unable to load profile");
     } finally {
       setLoading(false);
     }
-  }, [dinerId]);
+  }, [dinerId, isAuthenticated]);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate(
-        `/account/login?next=${encodeURIComponent(`/account/diners/${userIdParam || ""}?from=${from}`)}`,
-        { replace: true }
-      );
+    if (authLoading) return;
+    if (!Number.isFinite(dinerId) || dinerId <= 0) {
+      setError("Invalid profile");
+      setLoading(false);
       return;
     }
-    if (!authLoading && isAuthenticated) {
-      if (!Number.isFinite(dinerId) || dinerId <= 0) {
-        setError("Invalid profile");
-        setLoading(false);
-        return;
-      }
-      load();
+    // Your own name → your own profile.
+    if (viewerId != null && viewerId === dinerId) {
+      navigate("/feed/profile", { replace: true });
+      return;
     }
-  }, [authLoading, isAuthenticated, navigate, load, dinerId, userIdParam, from]);
+    setLoading(true);
+    load();
+  }, [authLoading, viewerId, navigate, load, dinerId]);
+
+  async function toggleConnects() {
+    if (connectsOpen) {
+      setConnectsOpen(false);
+      return;
+    }
+    setConnectsOpen(true);
+    if (connectsList) return;
+    setConnectsError("");
+    try {
+      const r = await getPublicDinerConnects(dinerId);
+      setConnectsList(Array.isArray(r?.connects) ? r.connects : []);
+    } catch (err) {
+      setConnectsError(err.message || "Couldn't load Connects");
+    }
+  }
+
+  function onInvite() {
+    if (!isAuthenticated) {
+      signInToConnect();
+      return;
+    }
+    if (payload?.activity?.invite_me_out?.viewer_may_invite) {
+      const first = String(name).split(" ")[0];
+      navigate(`/account/invite-to-eat?invitee_name=${encodeURIComponent(first)}`);
+      return;
+    }
+    // Follows their "Who can invite me" setting (Andre 2026-11-05).
+    setInviteNote(`${String(name).split(" ")[0]} takes invites from Connects. Connect first.`);
+  }
+
+  function signInToConnect() {
+    const here = `${location.pathname}${location.search}`;
+    navigate(`/account/login?next=${encodeURIComponent(here)}`);
+  }
 
   useEffect(() => {
     if (!payload?.diner) return;
@@ -184,7 +234,46 @@ export default function DiscoverableDinerProfilePage() {
                 </p>
               ) : null}
               {diner.diner_about ? <p style={styles.about}>{diner.diner_about}</p> : null}
+              <div style={styles.stats} data-testid="discoverable-stats">
+                {payload?.connects?.can_view_list ? (
+                  <button
+                    type="button"
+                    style={styles.statBtn}
+                    onClick={toggleConnects}
+                    aria-expanded={connectsOpen}
+                    data-testid="discoverable-connects-count"
+                  >
+                    <strong>{payload.connects.count}</strong> {payload.connects.count === 1 ? "Connect" : "Connects"}
+                  </button>
+                ) : (
+                  <span style={styles.stat} data-testid="discoverable-connects-count">
+                    <strong>{payload?.connects?.count ?? 0}</strong>{" "}
+                    {payload?.connects?.count === 1 ? "Connect" : "Connects"}
+                  </span>
+                )}
+                <span style={styles.stat}>
+                  <strong>{clips.length}</strong> {clips.length === 1 ? "Clip" : "Clips"}
+                </span>
+              </div>
             </section>
+
+            {connectsOpen ? (
+              <section style={styles.section} data-testid="discoverable-connects-list">
+                <h2 style={styles.heading}>Connects</h2>
+                {connectsError ? <p style={styles.muted}>{connectsError}</p> : null}
+                {connectsList && !connectsList.length ? <p style={styles.muted}>No Connects to show.</p> : null}
+                {(connectsList || []).map((c) => (
+                  <Link
+                    key={c.id}
+                    to={viewerId === c.id ? "/feed/profile" : `/account/diners/${c.id}?from=${from}`}
+                    style={styles.connectRow}
+                  >
+                    <DinerAvatar avatarUrl={c.avatar_url} displayName={c.display_name} size={36} />
+                    <span>{c.display_name}</span>
+                  </Link>
+                ))}
+              </section>
+            ) : null}
 
             {favorites.length ? (
               <section style={styles.section} data-testid="discoverable-favorite-foods">
@@ -222,11 +311,24 @@ export default function DiscoverableDinerProfilePage() {
                   Decline
                 </button>
               ) : null}
+              {actions?.sign_in_to_connect ? (
+                <button
+                  type="button"
+                  style={styles.primaryBtn}
+                  onClick={signInToConnect}
+                  data-testid="discoverable-sign-in-to-connect"
+                >
+                  Sign in to Connect
+                </button>
+              ) : null}
               {actions?.connect ? (
                 <button type="button" style={styles.primaryBtn} disabled={busy} onClick={() => runAction("connect")}>
                   Connect
                 </button>
               ) : null}
+              <button type="button" style={styles.secondaryBtn} onClick={onInvite} data-testid="discoverable-invite">
+                Invite to Eat
+              </button>
               {actions?.cancel_request ? (
                 <button
                   type="button"
@@ -264,6 +366,35 @@ export default function DiscoverableDinerProfilePage() {
               ) : null}
             </div>
 
+            {inviteNote ? <p style={styles.muted} data-testid="discoverable-invite-note">{inviteNote}</p> : null}
+
+            {clips.length ? (
+              <section style={styles.section} data-testid="discoverable-clips">
+                <h2 style={styles.heading}>Clips</h2>
+                <div style={styles.clipGrid}>
+                  {clips.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      style={styles.clipTile}
+                      onClick={() => setPlaying(c)}
+                      aria-label={c.title ? `Play ${c.title}` : "Play clip"}
+                    >
+                      <video
+                        src={`${c.media_url}#t=0.1`}
+                        poster={c.poster_url || undefined}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        style={styles.clipMedia}
+                      />
+                      {c.title ? <span style={styles.clipTitle}>{c.title}</span> : null}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {reportOpen ? (
               <form onSubmit={submitReport} style={styles.reportBox} data-testid="abuse-report-form">
                 <h2 style={styles.sectionTitle}>Report to Menuply</h2>
@@ -298,6 +429,28 @@ export default function DiscoverableDinerProfilePage() {
           </>
         ) : null}
       </main>
+      {playing ? (
+        <div
+          style={styles.player}
+          role="dialog"
+          aria-label={playing.title || "Clip"}
+          onClick={() => setPlaying(null)}
+          data-testid="discoverable-clip-player"
+        >
+          <video
+            src={playing.media_url}
+            poster={playing.poster_url || undefined}
+            autoPlay
+            controls
+            playsInline
+            style={styles.playerVideo}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button type="button" style={styles.playerClose} onClick={() => setPlaying(null)}>
+            Close
+          </button>
+        </div>
+      ) : null}
       <BottomNav />
     </div>
   );
@@ -339,6 +492,17 @@ const styles = {
   },
   lead: { margin: "0 0 14px", fontSize: 14, color: "#64748b", lineHeight: 1.5 },
   actions: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+  stats: { display: "flex", gap: 18, justifyContent: "center", marginTop: 10, fontSize: 15, color: "#0f172a" },
+  stat: { color: "#0f172a" },
+  statBtn: { background: "none", border: "none", padding: 0, font: "inherit", color: "#0f172a", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 },
+  connectRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 0", color: "#0f172a", textDecoration: "none", fontSize: 15 },
+  clipGrid: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 },
+  clipTile: { position: "relative", aspectRatio: "9 / 16", padding: 0, border: "none", borderRadius: 6, overflow: "hidden", background: "#111", cursor: "pointer" },
+  clipMedia: { width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" },
+  clipTitle: { position: "absolute", left: 6, right: 6, bottom: 6, color: "#fff", fontSize: 12, fontWeight: 600, textAlign: "left", textShadow: "0 1px 3px rgba(0,0,0,0.8)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  player: { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, padding: 16 },
+  playerVideo: { maxWidth: "100%", maxHeight: "85vh", borderRadius: 8 },
+  playerClose: { padding: "8px 16px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.4)", background: "transparent", color: "#fff", fontSize: 14, cursor: "pointer" },
   primaryBtn: {
     padding: "10px 14px",
     borderRadius: 10,

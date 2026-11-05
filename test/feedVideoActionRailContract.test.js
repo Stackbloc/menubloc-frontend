@@ -60,7 +60,7 @@ test("feed home: mobile rail + desktop Share & Invite dock", () => {
   assert.match(reel, /feed-video-yellow-browser/);
   assert.match(reel, /Share & Invite/);
   assert.match(reel, /Invite to Eat/);
-  assert.match(reel, /requestConnection/);
+  assert.match(reel, /openPosterProfile/);
 });
 
 test("feed deals: mobile rail + desktop Share & Invite dock", () => {
