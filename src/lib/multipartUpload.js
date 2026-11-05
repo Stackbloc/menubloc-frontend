@@ -19,6 +19,20 @@ export function videoUploadTimeoutMs(fileSizeBytes) {
   );
 }
 
+/** Clip Manager (desktop, up to 1 GB): budget ~2 Mbps upload, cap 75 min. Bytes go straight
+ * to storage and conversion runs afterwards, so no normalize pad is needed. */
+export const CLIP_MANAGER_UPLOAD_TIMEOUT_CAP_MS = 75 * 60 * 1000;
+const DESKTOP_BYTES_PER_SEC = 250 * 1024;
+
+export function clipManagerUploadTimeoutMs(fileSizeBytes) {
+  const size = Math.max(0, Number(fileSizeBytes) || 0);
+  const transferMs = size > 0 ? (size / DESKTOP_BYTES_PER_SEC) * 1000 : 0;
+  return Math.min(
+    CLIP_MANAGER_UPLOAD_TIMEOUT_CAP_MS,
+    Math.max(videoUploadTimeoutMs(fileSizeBytes), Math.ceil(transferMs))
+  );
+}
+
 export function isLikelyVideoUploadFile(file) {
   const type = String(file?.type || "").toLowerCase();
   const name = String(file?.name || "").toLowerCase();
