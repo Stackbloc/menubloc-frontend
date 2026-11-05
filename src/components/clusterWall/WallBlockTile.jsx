@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { WALL_FONTS, WALL_THEMES, wallStyle, wallTextFontSize } from "../../lib/clusterWallStyles.js";
+import { WALL_FONTS, WALL_THEMES, wallInkShadow, wallStyle, wallSurfaceStyle, wallTextFontSize } from "../../lib/clusterWallStyles.js";
 import "./clusterWall.css";
 
 /** Shrinks the text until it fits its rectangle (and again when the rectangle resizes). */
@@ -44,6 +44,7 @@ export function WallInscription({ block, scale = 1, className = "cw-tile-text", 
       className={className}
       style={{
         color: theme.ink,
+        textShadow: wallInkShadow(s.theme),
         fontFamily: font.family,
         fontWeight: font.weight,
         fontStyle: font.italic ? "italic" : "normal",
@@ -107,7 +108,7 @@ export default function WallBlockTile({ block, onOpen }) {
           onOpen?.(block);
         }
       }}
-      style={{ background: isClip ? "#111827" : theme.paper }}
+      style={isClip ? { background: "#111827" } : wallSurfaceStyle(s.theme)}
     >
       {isClip ? (
         <>

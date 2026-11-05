@@ -12,7 +12,7 @@ import {
   trackWallShare,
   wallSmsHref,
 } from "../../lib/clusterWallShare.js";
-import { WALL_THEMES, wallStyle, wallWeekLabel } from "../../lib/clusterWallStyles.js";
+import { WALL_THEMES, wallStyle, wallSurfaceStyle, wallWeekLabel } from "../../lib/clusterWallStyles.js";
 import { WallInscription } from "./WallBlockTile.jsx";
 import "./clusterWall.css";
 
@@ -50,14 +50,14 @@ export function WallBlockLarge({ block }) {
   }
   const aspect = block.size === "medium" ? "2 / 1" : "1 / 1";
   return (
-    <div style={{ background: theme.paper, borderRadius: 4, aspectRatio: aspect, position: "relative", overflow: "hidden" }}>
+    <div style={{ ...wallSurfaceStyle(s.theme), borderRadius: 4, aspectRatio: aspect, position: "relative", overflow: "hidden" }}>
       <WallInscription
         block={block}
         scale={block.size === "large" ? 1.25 : block.size === "medium" ? 1.5 : 2.1}
         style={{ inset: "18px 20px 30px" }}
       />
       {block.author?.first_name ? (
-        <span style={{ position: "absolute", right: 14, bottom: 10, color: theme.ink, opacity: 0.75, font: "700 13px/1 Arial, sans-serif" }}>
+        <span style={{ position: "absolute", right: 14, bottom: 10, color: theme.ink, opacity: 0.85, font: "700 13px/1 Arial, sans-serif" }}>
           — {block.author.first_name}
         </span>
       ) : null}

@@ -9,6 +9,8 @@ import {
   WALL_FONTS,
   WALL_SIZES,
   WALL_THEMES,
+  wallInkShadow,
+  wallSurfaceStyle,
   wallLimitFor,
 } from "../../lib/clusterWallStyles.js";
 import WallBlockTile from "./WallBlockTile.jsx";
@@ -270,8 +272,8 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
               options={Object.entries(WALL_FONTS).map(([key, f]) => ({ key, label: f.label }))}
             />
             <div>
-              <span className="cw-field-label">Colors</span>
-              <div role="radiogroup" aria-label="Colors" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <span className="cw-field-label">Surface</span>
+              <div role="radiogroup" aria-label="Surface" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {Object.entries(WALL_THEMES).map(([key, t]) => (
                   <button
                     key={key}
@@ -282,7 +284,7 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
                     title={t.label}
                     className="cw-swatch"
                     onClick={() => setStyle((s) => ({ ...s, theme: key }))}
-                    style={{ background: t.paper, color: t.ink }}
+                    style={{ ...wallSurfaceStyle(key), color: t.ink, textShadow: wallInkShadow(key) }}
                   >
                     Aa
                   </button>

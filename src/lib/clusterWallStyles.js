@@ -11,16 +11,35 @@ export const WALL_FONTS = Object.freeze({
   typewriter: { label: "Typewriter", family: "'Courier New', Courier, monospace", weight: 700, italic: false, upper: false },
 });
 
+// Surfaces (Andre 2026-11-05: "the bricks should have different textures"). Same keys + texture files
+// as the backend (src/services/clusterWall/wallStyles.js), which draws the share pictures on them.
 export const WALL_THEMES = Object.freeze({
-  chalk: { label: "Chalkboard", ink: "#F4F1E8", paper: "#1F3A2E" },
-  paper: { label: "Paper", ink: "#1B1B1B", paper: "#F7F2E7" },
-  cardinal: { label: "Cardinal", ink: "#FFCC00", paper: "#990000" },
-  night: { label: "Night", ink: "#F8FAFC", paper: "#111827" },
-  sky: { label: "Sky", ink: "#0B2545", paper: "#CFE8FF" },
-  sun: { label: "Sun", ink: "#111111", paper: "#FFD23F" },
-  mint: { label: "Mint", ink: "#0F3D2E", paper: "#C8F2DC" },
-  rose: { label: "Rose", ink: "#4A0D24", paper: "#FFD6E3" },
+  brick: { label: "Red brick", ink: "#FFF4E6", shadow: "#2A0A04", paper: "#9B3A2A", texture: "brick.jpg" },
+  whitebrick: { label: "White brick", ink: "#1B1B1B", shadow: "#FFFFFF", paper: "#ECEAE5", texture: "whitebrick.jpg" },
+  slate: { label: "Slate", ink: "#F8FAFC", shadow: "#000000", paper: "#2C2F31", texture: "slate.jpg" },
+  marble: { label: "Marble", ink: "#1B1B1B", shadow: "#FFFFFF", paper: "#F4F2EE", texture: "marble.jpg" },
+  gold: { label: "Gold", ink: "#2A1A00", shadow: "#FFF1B8", paper: "#E2B94A", texture: "gold.jpg" },
+  teal: { label: "Worn teal", ink: "#0E2420", shadow: "#CFEFE9", paper: "#4FA99C", texture: "teal.jpg" },
+  wood: { label: "Wood", ink: "#FFF1DC", shadow: "#1A0C04", paper: "#5B3520", texture: "wood.jpg" },
+  concrete: { label: "Concrete", ink: "#1B1B1B", shadow: "#FFFFFF", paper: "#CBC8C1", texture: "concrete.jpg" },
 });
+
+/** CSS for a surface: the texture over its flat colour (shows while the picture loads). */
+export function wallSurfaceStyle(themeKey) {
+  const t = WALL_THEMES[themeKey] || WALL_THEMES.brick;
+  return {
+    backgroundColor: t.paper,
+    backgroundImage: `url(/cluster-wall/textures/${t.texture})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
+/** Soft copy under the letters so they read on busy surfaces. */
+export function wallInkShadow(themeKey) {
+  const t = WALL_THEMES[themeKey] || WALL_THEMES.brick;
+  return `1px 1px 0 ${t.shadow}99, 0 0 6px ${t.shadow}66`;
+}
 
 export const WALL_SIZES = Object.freeze([
   { key: "small", label: "Small", limit: 80 },
@@ -32,7 +51,7 @@ export const WALL_CAPTION_LIMIT = 80;
 export const WALL_CLIP_MAX_SECONDS = 20;
 export const WALL_CLIP_MAX_BYTES = 60 * 1024 * 1024;
 
-export const DEFAULT_WALL_STYLE = Object.freeze({ font: "clean", theme: "chalk", align: "center" });
+export const DEFAULT_WALL_STYLE = Object.freeze({ font: "clean", theme: "brick", align: "center" });
 
 export function wallStyle(style) {
   const s = style && typeof style === "object" ? style : {};
