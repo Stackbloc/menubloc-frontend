@@ -131,3 +131,4 @@
   .ad-info-pop { background: #f4efe9; color: #171411; }
   .ad-notice { border-color: #2c5a36; }
 }
+.ad-fine a { color: var(--ad-green); font-weight: 700; }

@@ -82,10 +82,11 @@ function AdvertiseIntro({ clusterSlug, clusterName, launch }) {
       </ol>
 
       <p className="ad-intro-who">
-        For restaurants near {where}.{" "}
+        If your restaurant is near {where}, it's already in the {where} cluster on Menuply. Your restaurant profile
+        page and menu are already created.{" "}
         {claimPath ? (
           <>
-            Your restaurant is probably already listed: <Link to={claimPath}>claim it free</Link> first.
+            <Link to={claimPath}>Claim it free</Link> to manage them and book ads.
           </>
         ) : null}{" "}
         Not near {where}? Ads are only open here for now.
@@ -450,7 +451,9 @@ export default function AdvertisePage() {
             </button>
           ) : null}
         </div>
-        <p className="ad-fine">Payments are by card through Stripe. Menuply never sees your card number.</p>
+        <p className="ad-fine">
+          Questions? Email <a href="mailto:andre@menuply.com">andre@menuply.com</a>
+        </p>
       </main>
     </div>
   );
