@@ -3,6 +3,7 @@
  * Discover column removed (2026-08-24) — Search/Restaurants/Menus/Dishes/Deals/Clusters/Events/Waiter.
  * Diners / For Businesses (Restaurants onboarding) / Menuply remain.
  * Food Distributors is the last For Businesses link (`/distributors`).
+ * Advertise (`/advertise?cluster=usc`, the ad marketplace) sits under For Businesses (Andre 2026-11-05).
  * no restaurant auth links in footer row.
  */
 import assert from "node:assert/strict";
@@ -47,6 +48,14 @@ function testFooterMarketplaceLinks() {
   assert.ok(
     businesses.includes('<Link to="/restaurant/signup"'),
     "expected For Businesses Restaurants to open invitation signup"
+  );
+  assert.ok(
+    businesses.includes('<Link to="/advertise?cluster=usc"') && businesses.includes(">Advertise</Link>"),
+    "expected Advertise under For Businesses"
+  );
+  assert.ok(
+    businesses.lastIndexOf('<Link to="/distributors"') > businesses.lastIndexOf('<Link to="/advertise'),
+    "expected Food Distributors after Advertise"
   );
   assert.ok(
     businesses.lastIndexOf('<Link to="/distributors"') > businesses.lastIndexOf('<Link to="/creative-pros"'),
