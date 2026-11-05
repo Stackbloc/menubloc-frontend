@@ -392,6 +392,10 @@ export function resolveOperatorResumePath(restaurant, preferredNextPath) {
       if (/^\/distributors\/[a-z0-9-]+\/claim\/?$/i.test(preferred)) {
         return preferred;
       }
+      // Allow return to the advertising marketplace (/advertise?…) after sign-in.
+      if (/^\/advertise(\?|\/?$)/.test(preferred)) {
+        return preferred;
+      }
     }
     return "/operator";
   }
