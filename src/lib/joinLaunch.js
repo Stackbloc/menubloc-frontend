@@ -3,13 +3,25 @@
  * Plan: 21-cluster-owner-claim-and-sales-page-plan.md (Andre 2026-11-04).
  *
  * Paid steps (deal promotion, billboards, clips) hand off to the advertising
- * marketplace built separately (Codex). This file holds the agreed hand-off
- * URLs; it never prices, sells or confirms anything itself.
+ * marketplace (/advertise, plan 22). This file holds the agreed hand-off URLs;
+ * it never prices, sells or confirms anything itself.
  */
 
-// Off until the marketplace's /advertise page and hand-off token check exist.
-// While off, paid steps show a clearly marked "opens soon" placeholder.
-export const ADVERTISING_MARKETPLACE_LIVE = false;
+import { apiPost } from "./api.js";
+
+// On since the /advertise page and the backend hand-off token check exist (plan 22
+// Phase 4). /advertise itself says "Checkout opens soon" until the backend's
+// AD_MARKETPLACE_CHECKOUT_ENABLED switch is on, so nothing can be bought early.
+export const ADVERTISING_MARKETPLACE_LIVE = true;
+
+/**
+ * Ask the ad backend what really happened on a step. The URL's `status` is never
+ * trusted. Returns { status: "paid" | "pending" | "skipped" | "not_paid" | "refunded", step }.
+ * A paid/skipped token works once; a second check gets code ad_handoff_used.
+ */
+export function verifyAdvertiseHandoff(token) {
+  return apiPost("/api/advertise/handoff/verify", { handoff_token: token });
+}
 
 export const JOIN_STEPS = ["deal", "billboards", "clip", "ordering"];
 

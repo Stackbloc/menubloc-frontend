@@ -3,12 +3,12 @@
  * optional sales steps Deals → Billboards → Clips → Ordering (Andre's order).
  * Plan: 21-cluster-owner-claim-and-sales-page-plan.md.
  *
- * Paid steps hand off to the advertising marketplace (Codex) using the agreed
+ * Paid steps hand off to the advertising marketplace using the agreed
  * /advertise contract. This page never prices, sells or confirms a purchase:
- * a `status=paid` on the return URL is NOT proof of payment (only the ad
- * backend's token check can confirm it), so we never show a paid/booked state.
+ * a `status=paid` on the return URL is NOT proof of payment. Only the ad
+ * backend's hand-off token check (HandoffNotice) can say a step was paid.
  */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -18,6 +18,7 @@ import {
   buildAdvertiseUrl,
   joinBasePath,
   resolveJoinCluster,
+  verifyAdvertiseHandoff,
 } from "../../lib/joinLaunch.js";
 import "../../styles/joinLaunch.css";
 
@@ -44,6 +45,96 @@ function MarketplaceButton({ label, href }) {
   return <a className="jl-pill jl-pill-green" href={href}>{label}</a>;
 }
 
+const HANDOFF_POLL_MS = 3000;
+const HANDOFF_POLL_TRIES = 10;
+
+// A paid/skipped token works once, so every check of the same token on this page
+// shares one request (React may run an effect twice). Pending answers don't use the
+// token up, so those are dropped from the cache and polled again.
+const handoffChecks = new Map();
+function checkHandoffOnce(token) {
+  if (!handoffChecks.has(token)) {
+    const p = verifyAdvertiseHandoff(token).then((res) => {
+      if (res?.status === "pending") handoffChecks.delete(token);
+      return res;
+    });
+    p.catch(() => handoffChecks.delete(token));
+    handoffChecks.set(token, p);
+  }
+  return handoffChecks.get(token);
+}
+
+/**
+ * Coming back from /advertise with a hand-off token: ask the backend. "Paid" shows
+ * only when the backend says the order is paid (Stripe webhook confirmed). A
+ * verified skip moves straight on (onSkipped).
+ */
+function HandoffNotice({ token, onContinue, onSkipped }) {
+  const [state, setState] = useState({ status: "checking" });
+
+  useEffect(() => {
+    let alive = true;
+    let tries = 0;
+    let timer = null;
+    const check = () => {
+      tries += 1;
+      checkHandoffOnce(token).then(
+        (res) => {
+          if (!alive) return;
+          if (res.status === "pending" && tries < HANDOFF_POLL_TRIES) {
+            setState({ status: "pending" });
+            timer = setTimeout(check, HANDOFF_POLL_MS);
+          } else {
+            setState({ status: res.status });
+          }
+        },
+        (err) => {
+          if (!alive) return;
+          // Used, expired or unknown links (e.g. a reload or an edited URL) just show the step.
+          const quiet = ["ad_handoff_used", "ad_handoff_expired", "ad_handoff_not_found", "ad_handoff_token_required"];
+          setState({ status: quiet.includes(err?.code) ? "used" : "error" });
+        }
+      );
+    };
+    check();
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [token]);
+
+  const skipped = state.status === "skipped";
+  useEffect(() => {
+    if (skipped) onSkipped();
+    // onSkipped is a fresh function each render; only the verified skip matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skipped]);
+
+  const text = {
+    checking: "Checking your order…",
+    pending: "Thanks. We're confirming your payment with the card company. This page updates on its own.",
+    paid: "Payment confirmed. Your ad is booked and starts on launch day.",
+    skipped: null,
+    not_paid: "That checkout didn't go through, so nothing was charged. You can try again any time.",
+    refunded: "That order was refunded.",
+    used: null,
+    error: "We couldn't check that order just now. Reload this page in a minute to try again.",
+  }[state.status];
+  if (!text) return null;
+  return (
+    <div className="jl-notice" role="status" aria-live="polite">
+      {text}
+      {state.status === "paid" ? (
+        <div className="jl-btns" style={{ marginTop: 10 }}>
+          <button type="button" className="jl-pill jl-pill-green" onClick={onContinue}>
+            Continue
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SoonNote() {
   if (ADVERTISING_MARKETPLACE_LIVE) return null;
   return (
@@ -67,7 +158,6 @@ export default function JoinClusterNextPage() {
   const restaurantId = Number(sp.get("restaurant") || 0);
   const step = JOIN_STEPS.includes(sp.get("step")) || sp.get("step") === "done" ? sp.get("step") : "";
   const src = sp.get("src") || "";
-  const returnedStatus = sp.get("status"); // from the marketplace; informational only
   const handoffToken = sp.get("handoff_token");
 
   // The marketplace's return doesn't carry restaurant; fall back to the owner's only/first restaurant.
@@ -175,13 +265,11 @@ export default function JoinClusterNextPage() {
     buildAdvertiseUrl({ restaurantId: restaurant.id, clusterSlug: cluster.clusterSlug, step: s, src, ...extra });
 
   // Coming back from the marketplace. Only the ad backend's token check can confirm
-  // a payment; until that check exists we never say "paid" or "booked".
-  const returnNotice =
-    handoffToken && returnedStatus === "paid" ? (
-      <div className="jl-notice" role="status">
-        Thanks. We're confirming your payment and will email your receipt once it clears.
-      </div>
-    ) : null;
+  // a payment; the URL's status is ignored.
+  // The return URL's step is the one just finished at /advertise.
+  const returnNotice = handoffToken ? (
+    <HandoffNotice token={handoffToken} onContinue={() => go(after(step))} onSkipped={() => go(after(step))} />
+  ) : null;
 
   let body = null;
   if (step === "deal") {
