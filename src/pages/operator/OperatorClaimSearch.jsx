@@ -15,10 +15,11 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
+import { clearClaimIntent, readClaimIntent, safeJoinReturnPath } from "../../lib/joinLaunch.js";
 import { API_BASE } from "../../lib/operatorApi.js";
 import {
   AuthPageFrame,
@@ -65,7 +66,26 @@ export default function OperatorClaimSearch() {
   const createListingHref = "/restaurant/signup";
   const createListingState = { from: "operator_claim", create_listing: true };
 
-  const [query, setQuery] = useState("");
+  // Owner launch page hand-off (/join/:cluster-launch): pre-fill the chosen restaurant
+  // and, after a successful claim, return to the launch flow. URL params win; the saved
+  // intent covers owners who came through sign-up / sign-in / email verification.
+  const [searchParams] = useSearchParams();
+  const [joinIntent] = useState(() => {
+    const urlReturn = safeJoinReturnPath(searchParams.get("return"));
+    if (urlReturn) {
+      return {
+        restaurantId: Number(searchParams.get("restaurant") || 0) || null,
+        restaurantName: searchParams.get("q") || "",
+        returnPath: urlReturn,
+        src: searchParams.get("src") || null,
+      };
+    }
+    const saved = readClaimIntent();
+    if (saved && safeJoinReturnPath(saved.returnPath)) return saved;
+    return null;
+  });
+
+  const [query, setQuery] = useState(() => joinIntent?.restaurantName || "");
   const [city, setCity] = useState("");
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
@@ -111,6 +131,14 @@ export default function OperatorClaimSearch() {
     setError("");
     try {
       const data = await claimRestaurant(restaurantId, buildLegalConsentPayload());
+      if (joinIntent?.returnPath) {
+        await refreshRestaurants();
+        clearClaimIntent();
+        const p = new URLSearchParams({ restaurant: String(restaurantId) });
+        if (joinIntent.src) p.set("src", joinIntent.src);
+        navigate(`${joinIntent.returnPath}?${p.toString()}`, { replace: true });
+        return;
+      }
       setSuccess(data.restaurant.restaurant_name);
       await refreshRestaurants();
     } catch (e) {
@@ -303,7 +331,13 @@ export default function OperatorClaimSearch() {
 
         {!searching && results.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {results.map((r) => (
+            {(joinIntent?.restaurantId
+              ? [...results].sort(
+                  (a, b) =>
+                    (Number(b.id) === joinIntent.restaurantId) - (Number(a.id) === joinIntent.restaurantId),
+                )
+              : results
+            ).map((r) => (
               <div
                 key={r.id}
                 style={{
@@ -316,6 +350,11 @@ export default function OperatorClaimSearch() {
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#F9FAFB" }}>
                     {r.restaurant_name}
                   </div>
+                  {joinIntent?.restaurantId && Number(r.id) === joinIntent.restaurantId ? (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", marginTop: 2 }}>
+                      The location you picked
+                    </div>
+                  ) : null}
                   <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
                     {[r.address_line1, r.city, r.state].filter(Boolean).join(", ")}
                   </div>

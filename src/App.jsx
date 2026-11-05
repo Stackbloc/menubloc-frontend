@@ -261,6 +261,8 @@ import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
 import ClusterFoodByTypePage from "./pages/ClusterFoodByTypePage.jsx";
+import JoinClusterLaunchPage from "./pages/join/JoinClusterLaunchPage.jsx";
+import JoinClusterNextPage from "./pages/join/JoinClusterNextPage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
 import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import {
@@ -794,6 +796,8 @@ function CanonicalUpdater() {
 function AppShell({ easyMenu, crmHost, venuesHost }) {
   const location = useLocation();
   const joinLandingRoute = isJoinLandingPath(location.pathname);
+  // Owner launch pages (/join/usc-launch, /join/usc-launch/next): no diner cart chrome.
+  const ownerLaunchRoute = /^\/join\/[a-z0-9-]+-launch(\/next)?\/?$/i.test(location.pathname);
   const joinSignupRoute =
     location.pathname === "/restaurant/signup/free-profile" ||
     location.pathname === "/restaurant/signup/account" ||
@@ -806,6 +810,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
   const hidePublicChrome =
     crmHost ||
     joinLandingRoute ||
+    ownerLaunchRoute ||
     joinSignupRoute ||
     restaurantOnboardingRoute ||
     operatorTabletRoute ||
@@ -876,6 +881,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
             )
           }
         />
+        <Route path="/join/:clusterLaunch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinClusterLaunchPage />} />
+        <Route path="/join/:clusterLaunch/next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinClusterNextPage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug/food-by-type" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterFoodByTypePage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
