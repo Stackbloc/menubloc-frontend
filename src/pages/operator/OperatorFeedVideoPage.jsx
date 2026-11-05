@@ -3,15 +3,38 @@
  * Uses existing claimed restaurant identity; no separate content account.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import OperatorProfileVideosPanel from "./OperatorProfileVideosPanel.jsx";
+import DealMenuItemsPicker from "../owner/OwnerDealMenuItemsPicker.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
+  API_BASE,
   postRestaurantFeedVideo,
   uploadRestaurantFeedVideoMedia,
 } from "../../lib/operatorApi.js";
+
+/** Up to 3 dishes per restaurant clip (Andre 2026-11-04; diner clips stay at one). */
+export const MAX_CLIP_DISHES = 3;
+
+/** This restaurant's dishes with their CK ids (the ids Feed clips link to), one row per dish. */
+export function clipDishesFromMenu(payload, restaurantId) {
+  const seen = new Set();
+  const out = [];
+  for (const section of payload?.sections || []) {
+    for (const item of section?.items || []) {
+      const id = Number(item?.ck_menu_item_id);
+      if (!Number.isInteger(id) || id <= 0 || seen.has(id)) continue;
+      if (restaurantId && item?.restaurant_id != null && Number(item.restaurant_id) !== Number(restaurantId)) continue;
+      const name = String(item?.name || item?.item_name || "").trim();
+      if (!name) continue;
+      seen.add(id);
+      out.push({ id, name });
+    }
+  }
+  return out;
+}
 
 const LABEL = { display: "block", fontWeight: 700, marginBottom: 6, fontSize: 14 };
 const INPUT = {
@@ -31,11 +54,32 @@ export default function OperatorFeedVideoPage() {
   const [kind, setKind] = useState("ate");
   const [foodName, setFoodName] = useState("");
   const [comment, setComment] = useState("");
-  const [menuItemId, setMenuItemId] = useState("");
+  const [dishes, setDishes] = useState([]);
+  const [menu, setMenu] = useState({ state: "idle", items: [] });
   const [videoFile, setVideoFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!rid) return undefined;
+    let alive = true;
+    setMenu({ state: "loading", items: [] });
+    setDishes([]);
+    fetch(`${API_BASE}/public/restaurants/${encodeURIComponent(String(rid))}/menu`, { cache: "no-cache" })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data) => alive && setMenu({ state: "ready", items: clipDishesFromMenu(data, rid) }))
+      .catch(() => alive && setMenu({ state: "error", items: [] }));
+    return () => {
+      alive = false;
+    };
+  }, [rid]);
+
+  function onDishesChange(next) {
+    // The first dish names the clip when the title is still empty.
+    if (!foodName.trim() && next[0]?.name) setFoodName(next[0].name);
+    setDishes(next.slice(0, MAX_CLIP_DISHES));
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -60,13 +104,14 @@ export default function OperatorFeedVideoPage() {
         kind,
         food_name: foodName.trim(),
         comment: comment.trim() || null,
-        menu_item_id: menuItemId.trim() || null,
+        menu_item_id: dishes[0]?.id ?? null,
+        applies_to_menu_item_ids: dishes.slice(1).map((d) => d.id),
         video_url: videoUrl,
       });
       setSuccess("Published to the national Feed as your restaurant profile.");
       setFoodName("");
       setComment("");
-      setMenuItemId("");
+      setDishes([]);
       setVideoFile(null);
     } catch (err) {
       setError(err?.message || "Unable to publish Feed video");
@@ -133,17 +178,21 @@ export default function OperatorFeedVideoPage() {
             />
           </label>
 
-          <label style={{ ...LABEL, marginTop: 14 }}>
-            Menu item ID (optional)
-            <input
-              type="text"
-              value={menuItemId}
-              onChange={(ev) => setMenuItemId(ev.target.value)}
-              style={INPUT}
-              placeholder="Common Knowledge menu item id"
+          <div style={{ marginTop: 14, maxWidth: 520 }}>
+            <DealMenuItemsPicker
+              items={menu.items}
+              selected={dishes}
+              onChange={onDishesChange}
+              loading={menu.state === "loading"}
               disabled={busy}
+              max={MAX_CLIP_DISHES}
+              title="Dishes in this clip"
+              hint="Pick up to 3 dishes from your menu. They show as tags on the clip in the Feed; the first is the main dish."
             />
-          </label>
+            {menu.state === "error" ? (
+              <p style={{ color: "#b45309", fontSize: 13, marginTop: 6 }}>Couldn’t load your menu. You can still publish with a title.</p>
+            ) : null}
+          </div>
 
           <label style={{ ...LABEL, marginTop: 14 }}>
             Video file

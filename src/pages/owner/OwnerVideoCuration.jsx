@@ -1683,8 +1683,11 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
     setDealItemsDirty(true);
   }
 
-  // Feed (managed) videos can feature up to 3 dishes: main dish above + up to 2 extras here.
-  const isManagedVideo = video.video_kind === "managed";
+  // Feed (managed) videos and restaurant-made ate/want clips (mig 0386, Andre 2026-11-04) can
+  // feature up to 3 dishes: main dish above + up to 2 extras here. Diner clips stay at one dish.
+  const isRestaurantClip =
+    (video.video_kind === "ate" || video.video_kind === "want") && video.creator_type === "restaurant";
+  const isManagedVideo = video.video_kind === "managed" || isRestaurantClip;
   const extrasRestaurantId = isManagedVideo ? restaurant?.restaurant_id || null : null;
   const [restaurantDishes, setRestaurantDishes] = useState({ state: "idle", items: [] });
   const [extraDishes, setExtraDishes] = useState([]);
@@ -1762,8 +1765,8 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
       if (placeTouched && supportsMenuItem) {
         body.menu_item_id = dish?.menu_item_id ?? null;
       }
-      if (video.video_kind === "managed") {
-        body.cluster_id = clusterId;
+      if (isManagedVideo) {
+        if (video.video_kind === "managed") body.cluster_id = clusterId;
         // Send the extras with a dish/restaurant change (the server clears them on a
         // dish/restaurant save) or when they were edited; otherwise the server keeps them.
         const restaurantChanged =

@@ -145,8 +145,10 @@ test("Menu Browser mini player has the same play/pause toggle as the full feed",
 test("Clip captions: restaurant name opens the profile, dish opens the menu (Andre 2026-10-21)", () => {
   const cap = read("src/components/consumer/feed/FeedPlaceCaption.jsx");
   assert.match(cap, /onOpenMenu = null/);
-  // Only the dish link hands off to the Menu Browser.
-  assert.equal((cap.match(/if \(onOpenMenu\) \{\s*e\.preventDefault\(\);\s*onOpenMenu\(e\);/g) || []).length, 1);
+  // Only dish links hand off to the Menu Browser: the main dish + the extra dish tags
+  // (owner/operator clips feature up to 3 dishes, Andre 2026-11-04).
+  assert.equal((cap.match(/if \(onOpenMenu\) \{\s*e\.preventDefault\(\);\s*onOpenMenu\(e\);/g) || []).length, 2);
+  assert.match(cap, /data-testid="feed-video-extra-dish"/);
   const restaurantLink = cap.slice(cap.indexOf('data-testid="feed-video-restaurant-caption"'), cap.indexOf("</Link>"));
   assert.doesNotMatch(restaurantLink, /onOpenMenu/);
   assert.match(read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx"), /onOpenMenu=\{restaurantRef\?\.restaurant_id \? openMenuBrowser : null\}/);
