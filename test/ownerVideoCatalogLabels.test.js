@@ -45,3 +45,14 @@ test("formatOwnerVideoCreatorLabel — deal and venue kinds", () => {
     "Venue"
   );
 });
+
+// Andre 2026-11-04: Clip Manager shows the diner's screen name, linked to their profile.
+test("diner clips show the screen name and link to /diners/:id", async () => {
+  const { formatOwnerVideoCreatorLabel: label, ownerVideoCreatorProfilePath: href } = await import("../src/lib/ownerVideoCatalogLabels.js");
+  const row = { video_kind: "ate", creator_type: "diner", is_guest: false, creator_display_name: "Susie Q", creator_user_id: 160 };
+  assert.equal(label(row), "Susie Q");
+  assert.equal(href(row), "/diners/160");
+  assert.equal(label({ ...row, creator_display_name: null }), "Diner");
+  assert.equal(href({ ...row, is_guest: true }), null);
+  assert.equal(href({ ...row, creator_type: "restaurant" }), null);
+});
