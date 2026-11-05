@@ -31,7 +31,7 @@ import {
   DEAL_MEAL_PERIODS,
   formatMealTimeDealCaption,
 } from "../../lib/dealMealPeriods.js";
-import { formatOwnerVideoCreatorLabel } from "../../lib/ownerVideoCatalogLabels.js";
+import { formatOwnerVideoCreatorLabel, ownerVideoCreatorProfilePath } from "../../lib/ownerVideoCatalogLabels.js";
 import { CLIP_SORTABLE_KEYS, clipSettingsLabel, sortClipRows } from "../../lib/ownerClipSort.js";
 import { formatBytes, MAX_UPLOAD_VIDEO_BYTES } from "../../lib/consumerCameraCapture.js";
 import { videoDealTermsProblem } from "../../lib/videoDealTerms.js";
@@ -2636,7 +2636,17 @@ export default function OwnerVideoCuration() {
               [
                 "Creator",
                 "creator",
-                (row) => formatOwnerVideoCreatorLabel(row),
+                (row) => {
+                  const label = formatOwnerVideoCreatorLabel(row);
+                  const href = ownerVideoCreatorProfilePath(row);
+                  return href ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer" data-testid="owner-video-creator-link">
+                      {label}
+                    </a>
+                  ) : (
+                    label
+                  );
+                },
               ],
               ["Metadata", "tagged", (row) => (row.is_tagged ? "Tagged" : "Needs metadata")],
               [

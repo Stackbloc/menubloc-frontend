@@ -265,6 +265,35 @@ const CLIPS_SHOWN = 3;
 const LIST_SHOWN = 4;
 const ATE_SHOWN = 3;
 
+/**
+ * A video tile is never blank (Andre 2026-11-04): the chosen or auto-made thumbnail (poster_url),
+ * else the clip's own first frame (metadata-only load, muted, no playback), with ▶ on top.
+ */
+export function ClipVideoTile({ clip }) {
+  const poster = clip?.poster_url ? resolveConsumerMediaUrl(clip.poster_url) : null;
+  const [posterFailed, setPosterFailed] = useState(false);
+  const src = resolveConsumerMediaUrl(clip?.media_url);
+  return (
+    <span style={styles.clipFrame}>
+      {poster && !posterFailed ? (
+        <img src={poster} alt="" style={styles.clipImg} onError={() => setPosterFailed(true)} data-testid="clip-poster" />
+      ) : src ? (
+        <video
+          src={`${String(src).split("#")[0]}#t=0.5`}
+          preload="metadata"
+          muted
+          playsInline
+          tabIndex={-1}
+          aria-hidden="true"
+          style={{ ...styles.clipImg, pointerEvents: "none" }}
+          data-testid="clip-first-frame"
+        />
+      ) : null}
+      <span style={styles.playOver}>▶</span>
+    </span>
+  );
+}
+
 /** Three across; tap opens the clip or photo. */
 function ClipGrid({ clips }) {
   const [open, setOpen] = useState(null);
@@ -273,7 +302,7 @@ function ClipGrid({ clips }) {
       <div style={styles.clips}>
         {clips.map((c) => (
           <button key={c.id} type="button" style={styles.clip} aria-label={c.media_kind === "video" ? "Play clip" : "Open photo"} onClick={() => setOpen(c)} data-testid={`clip-${c.id}`}>
-            {c.media_kind === "video" ? <span style={styles.play}>▶</span> : <img src={resolveConsumerMediaUrl(c.media_url)} alt="" style={styles.clipImg} />}
+            {c.media_kind === "video" ? <ClipVideoTile clip={c} /> : <img src={resolveConsumerMediaUrl(c.media_url)} alt="" style={styles.clipImg} />}
           </button>
         ))}
       </div>
@@ -698,6 +727,8 @@ const styles = {
   clip: { aspectRatio: "3 / 4", border: "none", borderRadius: 6, padding: 0, overflow: "hidden", background: "#2e3d1c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   clipImg: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
   play: { fontSize: 22, color: "#fff" },
+  clipFrame: { position: "relative", width: "100%", height: "100%", display: "block" },
+  playOver: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,0.7)" },
   viewer: { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center" },
   viewerMedia: { maxWidth: "100%", maxHeight: "85vh" },
   viewerClose: { position: "absolute", top: 16, right: 16, border: "none", borderRadius: 999, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
