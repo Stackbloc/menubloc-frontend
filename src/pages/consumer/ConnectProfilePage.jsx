@@ -40,6 +40,7 @@ import { getCurrentVibeEntry } from "../../lib/currentVibeDisplay.js";
 import AppIcon from "../../components/icons/AppIcon.jsx";
 import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
 import ConsumerConnectionPeerPage from "./ConsumerConnectionPeerPage.jsx";
+import WallProfileTile from "../../components/clusterWall/WallProfileTile.jsx";
 
 // App tokens (menuply-mobile src/theme/tokens.ts).
 const C = {
@@ -143,7 +144,7 @@ function ConnectProfile() {
     listPeerWantToEat(peerId)
       .then((r) => alive && setWishes(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setWishes([]));
-    listPeerProfileMedia(peerId, { feed: true })
+    listPeerProfileMedia(peerId, { feed: true, wall: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     listPeerFollowedRestaurants(peerId)
@@ -300,11 +301,17 @@ function ClipGrid({ clips }) {
   return (
     <>
       <div style={styles.clips}>
-        {clips.map((c) => (
-          <button key={c.id} type="button" style={styles.clip} aria-label={c.media_kind === "video" ? "Play clip" : "Open photo"} onClick={() => setOpen(c)} data-testid={`clip-${c.id}`}>
-            {c.media_kind === "video" ? <ClipVideoTile clip={c} /> : <img src={resolveConsumerMediaUrl(c.media_url)} alt="" style={styles.clipImg} />}
-          </button>
-        ))}
+        {clips.map((c) =>
+          c.source === "wall" ? (
+            <span key={c.id} style={styles.clip}>
+              <WallProfileTile item={c} />
+            </span>
+          ) : (
+            <button key={c.id} type="button" style={styles.clip} aria-label={c.media_kind === "video" ? "Play clip" : "Open photo"} onClick={() => setOpen(c)} data-testid={`clip-${c.id}`}>
+              {c.media_kind === "video" ? <ClipVideoTile clip={c} /> : <img src={resolveConsumerMediaUrl(c.media_url)} alt="" style={styles.clipImg} />}
+            </button>
+          )
+        )}
       </div>
       {open ? (
         <div role="dialog" aria-modal="true" aria-label="Clip" style={styles.viewer} onClick={() => setOpen(null)}>
@@ -617,7 +624,7 @@ export function SelfConnectView({ profile, displayName, avatarUrl, header = null
     listWantToEat()
       .then((r) => alive && setWishes(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setWishes([]));
-    listConsumerProfileMedia({ feed: true, asConnect: true })
+    listConsumerProfileMedia({ feed: true, wall: true, asConnect: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     getFollowedRestaurants()
@@ -652,7 +659,7 @@ export function MyClipsView() {
   const [clips, setClips] = useState(null);
   useEffect(() => {
     let alive = true;
-    listConsumerProfileMedia({ feed: true })
+    listConsumerProfileMedia({ feed: true, wall: true })
       .then((r) => alive && setClips(Array.isArray(r?.items) ? r.items : []))
       .catch(() => alive && setClips([]));
     return () => {

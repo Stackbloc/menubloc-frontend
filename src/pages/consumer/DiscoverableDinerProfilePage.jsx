@@ -26,6 +26,7 @@ import {
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
 import DinerAvatar from "../../components/social/DinerAvatar.jsx";
+import WallProfileTile from "../../components/clusterWall/WallProfileTile.jsx";
 import { catchMeProfileLine } from "../../lib/dinerCatchMeDisplay.js";
 
 const ABUSE_REASONS = [
@@ -73,7 +74,7 @@ export default function DiscoverableDinerProfilePage() {
     try {
       const data = isAuthenticated ? await getDiscoverableDiner(dinerId) : await getPublicDiner(dinerId);
       setPayload(data);
-      getPublicDinerClips(dinerId)
+      getPublicDinerClips(dinerId, { wall: true })
         .then((r) => setClips(Array.isArray(r?.clips) ? r.clips : []))
         .catch(() => setClips([]));
     } catch (err) {
@@ -372,7 +373,12 @@ export default function DiscoverableDinerProfilePage() {
               <section style={styles.section} data-testid="discoverable-clips">
                 <h2 style={styles.heading}>Clips</h2>
                 <div style={styles.clipGrid}>
-                  {clips.map((c) => (
+                  {clips.map((c) =>
+                    c.source === "wall" ? (
+                      <span key={c.id} style={{ ...styles.clipTile, cursor: "default" }}>
+                        <WallProfileTile item={c} />
+                      </span>
+                    ) : (
                     <button
                       key={c.id}
                       type="button"
@@ -390,7 +396,8 @@ export default function DiscoverableDinerProfilePage() {
                       />
                       {c.title ? <span style={styles.clipTitle}>{c.title}</span> : null}
                     </button>
-                  ))}
+                    )
+                  )}
                 </div>
               </section>
             ) : null}
