@@ -60,6 +60,7 @@ import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import FindDinersPage from "./pages/consumer/FindDinersPage.jsx";
 import DiscoverableDinerProfilePage from "./pages/consumer/DiscoverableDinerProfilePage.jsx";
+import WallBlockPage from "./pages/WallBlockPage.jsx";
 import SocialEventJoinPage from "./pages/SocialEventJoinPage.jsx";
 // A Connect's profile follows the app (Andre 2026-10-30); ?hub=1 keeps ConsumerConnectionPeerPage.
 import ConnectProfilePage from "./pages/consumer/ConnectProfilePage.jsx";
@@ -1059,6 +1060,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         {/* The app's Connects page now (Andre 2026-10-30, app wins). */}
         <Route path="/account/connections" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/feed/connects" replace />} />
         <Route path="/account/diners/:userId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DiscoverableDinerProfilePage />} />
+        {/* Shared Cluster Wall posts (plan 24): anyone can open; writing needs an account. */}
+        <Route path="/wall/:publicId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WallBlockPage />} />
         <Route path="/account/find-diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FindDinersPage />} />
         <Route path="/join-event/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialEventJoinPage />} />
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import OwnerLayout, { EmptyState, PageCard } from "./OwnerLayout.jsx";
 import { getOwnerContentReports, resolveOwnerContentReport } from "../../lib/ownerContentReportsApi.js";
 import { formatApiErrorForDisplay } from "../../lib/apiErrorDisplay.js";
+import OwnerWallReview from "./OwnerWallReview.jsx";
 
 /**
  * Owner → Reports (Play Store safety, Andre approved 2026-11-02, plan 18). Diners report a clip or a dish
@@ -15,7 +16,7 @@ const pill = (bg, fg, border = "transparent") => ({
 });
 const KIND_LABEL = {
   ate: "Diner clip", want: "Wish List clip", cooking: "Cooking clip", food_activity: "Food activity clip",
-  video_comment: "Dish video comment", plan: "Social plan clip", event: "Event clip", managed: "Menuply clip", deal: "Deal clip",
+  video_comment: "Dish video comment", wall: "Wall post", plan: "Social plan clip", event: "Event clip", managed: "Menuply clip", deal: "Deal clip",
 };
 
 export default function OwnerContentReports() {
@@ -57,6 +58,7 @@ export default function OwnerContentReports() {
         </select>
       )}
     >
+      {status === "open" ? <OwnerWallReview /> : null}
       {error ? <p role="alert" style={{ color: "#b42318" }}>{error}</p> : null}
       {data?.migration_pending ? <p>Reports aren&apos;t set up in the database yet (migration 0382).</p> : null}
       {data && !reports.length ? (
@@ -73,6 +75,7 @@ export default function OwnerContentReports() {
             <div style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: 6 }}>
               <strong>{r.reason_label}</strong>
               {r.note ? <span>“{r.note}”</span> : null}
+              {r.wall?.body ? <span style={{ whiteSpace: "pre-wrap" }}>Wall post: “{r.wall.body}”</span> : null}
               <span style={{ color: "#5c665f", fontSize: 14 }}>
                 {KIND_LABEL[r.content_kind] || r.content_kind} #{r.content_id}
                 {r.reports_on_clip > 1 ? ` · reported ${r.reports_on_clip} times` : ""}
@@ -86,7 +89,7 @@ export default function OwnerContentReports() {
               ) : (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
                   {r.can_remove ? (
-                    <button type="button" disabled={busyId === r.id} style={pill("#b42318", "#fff")} onClick={() => act(r, "remove")}>Remove clip</button>
+                    <button type="button" disabled={busyId === r.id} style={pill("#b42318", "#fff")} onClick={() => act(r, "remove")}>{r.content_kind === "wall" ? "Remove post" : "Remove clip"}</button>
                   ) : (
                     <span style={{ fontSize: 14, color: "#5c665f" }}>Remove this one in Clip Manager.</span>
                   )}

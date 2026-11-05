@@ -444,6 +444,57 @@ function buildSearchShareMeta(url) {
   };
 }
 
+// --- Cluster Wall shared posts (/wall/:publicId, plan 24) ---
+const WALL_POST_RE = /^\/wall\/([0-9A-Za-z]{10})\/?$/;
+
+/** { state: "live" | "removed" | "missing", data } — removed posts must not leak into previews. */
+async function fetchWallMeta(publicId, timeoutMs = 3000) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${BACKEND}/public/meta/wall/${encodeURIComponent(publicId)}`, { signal: ac.signal });
+    if (res.status === 410) return { state: "removed", data: null };
+    if (!res.ok) return { state: "missing", data: null };
+    const body = await res.json();
+    return body?.ok && body.data ? { state: "live", data: body.data } : { state: "missing", data: null };
+  } catch {
+    return { state: "error", data: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function wallPostResponse(request, publicId) {
+  const [shell, meta] = await Promise.all([fetchShell(request.url), fetchWallMeta(publicId)]);
+  if (!shell || meta.state === "error") return undefined;
+  const canonical = `${ORIGIN}/wall/${publicId}`;
+  let html;
+  if (meta.state === "live") {
+    const d = meta.data;
+    html = injectMeta(shell, `${d.title} | Menuply`, d.description, canonical, d.image, canonical);
+  } else {
+    html = injectMeta(
+      shell,
+      meta.state === "removed" ? "This post was removed | Menuply" : "Menuply Wall",
+      "Wall posts on Menuply can be deleted by the person who wrote them or taken down by Menuply.",
+      canonical,
+      null,
+      canonical
+    );
+  }
+  // Posts are shareable but not for search engines.
+  html = injectRobots(html, "noindex, follow");
+  return new Response(html, {
+    status: meta.state === "live" ? 200 : meta.state === "removed" ? 410 : 404,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      // Short: a removed post must stop previewing within about a minute.
+      "Cache-Control": "public, max-age=60, s-maxage=60",
+      "X-SEO-Middleware": "injected",
+    },
+  });
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -456,6 +507,9 @@ function injectedResponse(html) {
 
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
+
+  const wallMatch = WALL_POST_RE.exec(pathname);
+  if (wallMatch) return wallPostResponse(request, wallMatch[1]);
 
   if (pathname === "/search") {
     const searchMeta = buildSearchShareMeta(new URL(request.url));
@@ -813,6 +867,7 @@ export const config = {
     "/public/restaurants/:path*",
     "/menu-items/:path*",
     "/videos/:path*",
+    "/wall/:path*",
     "/destination-venues/:slug",
   ],
 };

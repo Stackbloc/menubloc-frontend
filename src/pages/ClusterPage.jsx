@@ -76,6 +76,8 @@ import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.
 import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../lib/clusterSlugAliases.js";
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
+import { ClusterWallBand, ClusterWallPanel, ClusterWallProvider } from "../components/clusterWall/ClusterWall.jsx";
+import { useClusterWallContext } from "../components/clusterWall/clusterWallContext.js";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
 import ClusterNearbyEvents from "../components/cluster/ClusterNearbyEvents.jsx";
@@ -90,6 +92,39 @@ const CLUSTER_VIEW_MODES = Object.freeze({
 });
 
 /** A folded section: one tappable line, like the app's dining halls. Children mount on first open. */
+/**
+ * Cluster Wall layout (Andre 2026-11-05, plan 24): while the Wall is live the page widens to two
+ * columns (food + ads left, Wall right, own scroll). If the Wall API isn't there, nothing changes.
+ */
+function ClusterWallFrame({ rootRef, style, children, ...rest }) {
+  const wallCtx = useClusterWallContext();
+  const wide = Boolean(wallCtx?.active);
+  return (
+    <div ref={rootRef} {...rest} style={{ ...style, maxWidth: wide ? 1240 : style?.maxWidth }}>
+      {children}
+    </div>
+  );
+}
+
+function ClusterWallColumns({ children }) {
+  const wallCtx = useClusterWallContext();
+  if (!wallCtx?.active) return children;
+  return (
+    <div className="cw-layout">
+      <div style={{ minWidth: 0 }}>{children}</div>
+      <aside className="cw-layout-aside" aria-label={`${wallCtx.clusterLabel} Wall`}>
+        <ClusterWallPanel />
+      </aside>
+    </div>
+  );
+}
+
+/** The Wall replaces the Dining halls section; hall data and endpoints are untouched. */
+function HiddenWhileWallLive({ children }) {
+  const wallCtx = useClusterWallContext();
+  return wallCtx?.active ? null : children;
+}
+
 function ClusterFold({ title, meta = null, testId, eager = false, hidden = false, children }) {
   const [open, setOpen] = useState(false);
   const [opened, setOpened] = useState(eager);
@@ -1561,7 +1596,8 @@ export default function ClusterPage() {
   // dining halls, today's reports, events. Restaurants are what Menuply sells, so they come first.
   const clusterExtras = (
     <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }} data-testid="cluster-extras">
-      {/* University clusters only — hidden when no campus dining members. */}
+      {/* University clusters only — hidden when no campus dining members. Replaced by the Wall where it's live. */}
+      <HiddenWhileWallLive>
       <CampusDiningSection
         cluster={cluster}
         showGlance={false}
@@ -1573,6 +1609,7 @@ export default function ClusterPage() {
           });
         }}
       />
+      </HiddenWhileWallLive>
 
       {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
       {cluster.slug ? (
@@ -1638,8 +1675,9 @@ export default function ClusterPage() {
 
   return (
     <ClusterVideoProvider cluster={cluster}>
-    <div
-      ref={engagementRootRef}
+    <ClusterWallProvider clusterSlug={cluster.slug} clusterLabel={isUsc ? "USC" : cluster.name || pageHeading}>
+    <ClusterWallFrame
+      rootRef={engagementRootRef}
       className={themeClass}
       data-cluster-slug={cluster.slug}
       style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box" }}
@@ -1742,6 +1780,7 @@ export default function ClusterPage() {
 
       {/* One page, the app's order (Andre 2026-11-05): clips, food by type, restaurants A–Z, then the
           folded cluster info. The old Food/Restaurants toggle is gone. */}
+      <ClusterWallColumns>
       <div data-testid="cluster-view-panel-menu">
         <ClusterMenuExplorerTab
           clusterSlug={cluster.slug}
@@ -1751,6 +1790,8 @@ export default function ClusterPage() {
           preContent={clusterFoodHero}
           postContent={
             <>
+              {/* Phone: the Wall as a sideways strip right after the food boxes (desktop shows the side column). */}
+              <ClusterWallBand />
               {clusterRestaurantsSection}
               {clusterExtras}
               {clusterFoodTail}
@@ -1758,9 +1799,11 @@ export default function ClusterPage() {
           }
         />
       </div>
+      </ClusterWallColumns>
 
       <BottomNav />
-    </div>
+    </ClusterWallFrame>
+    </ClusterWallProvider>
     </ClusterVideoProvider>
   );
 }

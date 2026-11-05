@@ -21,3 +21,22 @@ export async function resolveOwnerContentReport(id, action) {
   if (!res.ok) throw await apiErrorFromResponse(res);
   return res.json();
 }
+
+// Cluster Wall review (mig 0393): clips waiting, copy-paste holds, posts hidden by 3 reports.
+export async function getOwnerWallQueue() {
+  const res = await fetch(`${BASE}/wall`, { credentials: "include" });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}
+
+/** action: "approve" | "remove" */
+export async function actOnOwnerWallBlock(id, action) {
+  const res = await fetch(`${BASE}/wall/${encodeURIComponent(id)}/${action === "approve" ? "approve" : "remove"}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(action === "remove" ? { reason: "rejected" } : {}),
+  });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}
