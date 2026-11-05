@@ -152,15 +152,33 @@ export default function JoinClusterNextPage() {
   const cluster = resolveJoinCluster(clusterLaunch);
   const { loading, isAuthenticated, isEmailVerified, restaurants } = useOperator();
 
+  const restaurantParam = Number(sp.get("restaurant") || 0);
+  const handoffToken = sp.get("handoff_token");
+  // The marketplace's return link doesn't carry the restaurant; the hand-off token knows it
+  // (owners with several restaurants would otherwise land on "Pick your restaurant").
+  const [handoffRestaurant, setHandoffRestaurant] = useState({ token: null, id: 0 });
+  const needsHandoffRestaurant = Boolean(handoffToken) && !restaurantParam;
+  useEffect(() => {
+    if (!needsHandoffRestaurant) return undefined;
+    let alive = true;
+    checkHandoffOnce(handoffToken).then(
+      (res) => alive && setHandoffRestaurant({ token: handoffToken, id: Number(res?.restaurant_id) || 0 }),
+      () => alive && setHandoffRestaurant({ token: handoffToken, id: 0 })
+    );
+    return () => {
+      alive = false;
+    };
+  }, [needsHandoffRestaurant, handoffToken]);
+  const resolvingHandoff = needsHandoffRestaurant && handoffRestaurant.token !== handoffToken;
+
   if (!cluster) return <Navigate to="/clusters" replace />;
   const base = joinBasePath(cluster.clusterSlug);
 
-  const restaurantId = Number(sp.get("restaurant") || 0);
+  const restaurantId = restaurantParam || (handoffRestaurant.token === handoffToken ? handoffRestaurant.id : 0);
   const step = JOIN_STEPS.includes(sp.get("step")) || sp.get("step") === "done" ? sp.get("step") : "";
   const src = sp.get("src") || "";
-  const handoffToken = sp.get("handoff_token");
 
-  // The marketplace's return doesn't carry restaurant; fall back to the owner's only/first restaurant.
+  // No restaurant in the link or the token: fall back to the owner's only restaurant.
   const restaurant =
     (restaurants || []).find((r) => Number(r.id) === restaurantId) ||
     (!restaurantId && restaurants?.length === 1 ? restaurants[0] : null);
@@ -188,7 +206,7 @@ export default function JoinClusterNextPage() {
     </div>
   );
 
-  if (loading) return shell(<div className="jl-state">Loading…</div>);
+  if (loading || (resolvingHandoff && isAuthenticated)) return shell(<div className="jl-state">Loading…</div>);
 
   if (!isAuthenticated || !isEmailVerified) {
     return shell(
