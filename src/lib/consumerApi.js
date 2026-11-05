@@ -236,8 +236,9 @@ export const getDiscoverableDiner = (userId) =>
 export const getPublicDiner = (userId) =>
   get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}`);
 /** Their public Feed clips (profile grid) and Connects list (owner's setting decides). */
-export const getPublicDinerClips = (userId) =>
-  get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}/clips`);
+// { wall: true } adds their Cluster Wall posts (media_kind "wall", Andre 2026-11-05).
+export const getPublicDinerClips = (userId, { wall = false } = {}) =>
+  get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}/clips${wall ? "?include=wall" : ""}`);
 export const getPublicDinerConnects = (userId) =>
   get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}/connects`);
 export const blockDiner = (userId) =>
@@ -491,10 +492,14 @@ export async function uploadConsumerProfileMedia(file, { is_highlight = false } 
   return json;
 }
 
-// { feed: true } adds Feed clips (ids "ate:88", Andre 2026-11-04); { asConnect: true } = what my Connects see.
+// { feed: true } adds Feed clips (ids "ate:88", Andre 2026-11-04); { wall: true } adds Cluster Wall posts
+// (ids "wall:<public_id>", media_kind "wall", Andre 2026-11-05); { asConnect: true } = what my Connects see.
 // No options = uploads only (My Highlights manager edits those by numeric id).
-const profileMediaQuery = ({ feed = false, asConnect = false } = {}) =>
-  feed ? (asConnect ? "?include=feed&as=connect" : "?include=feed") : "";
+const profileMediaQuery = ({ feed = false, wall = false, asConnect = false } = {}) => {
+  const include = [feed ? "feed" : null, wall ? "wall" : null].filter(Boolean).join(",");
+  if (!include) return "";
+  return `?include=${include}${asConnect ? "&as=connect" : ""}`;
+};
 export const listConsumerProfileMedia = (options) => get(`/api/consumer/profile/media${profileMediaQuery(options)}`);
 export const listPeerProfileMedia = (userId, options) =>
   get(`/api/consumer/profile/users/${encodeURIComponent(String(userId))}/media${profileMediaQuery(options)}`);
