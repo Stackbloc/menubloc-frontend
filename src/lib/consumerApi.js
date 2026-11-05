@@ -232,6 +232,14 @@ export const removeConnection = (id) =>
 /** Discoverable diner profile (Find Diners / incoming Connect review). */
 export const getDiscoverableDiner = (userId) =>
   get(`/api/consumer/diners/${encodeURIComponent(String(userId))}`);
+/** Same profile for signed-out visitors — anyone can see it (Feed name tap, Andre 2026-11-05). */
+export const getPublicDiner = (userId) =>
+  get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}`);
+/** Their public Feed clips (profile grid) and Connects list (owner's setting decides). */
+export const getPublicDinerClips = (userId) =>
+  get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}/clips`);
+export const getPublicDinerConnects = (userId) =>
+  get(`/api/consumer/public/diners/${encodeURIComponent(String(userId))}/connects`);
 export const blockDiner = (userId) =>
   post(`/api/consumer/diners/${encodeURIComponent(String(userId))}/block`, {});
 export const unblockDiner = (userId) =>

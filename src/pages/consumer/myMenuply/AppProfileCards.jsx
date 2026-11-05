@@ -253,6 +253,59 @@ function AppReportSettings() {
   );
 }
 
+const CONNECTS_LIST_OPTIONS = [
+  { value: "anyone", label: "Anyone" },
+  { value: "connections", label: "My Connects" },
+  { value: "only_me", label: "Only me" },
+];
+
+/**
+ * Who can see my Connects list on my profile (Andre 2026-11-05, TikTok-style profile).
+ * Default My Connects; everyone else sees the count only.
+ */
+function AppConnectsListSetting() {
+  const [value, setValue] = useState(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getConsumerProfile()
+      .then((r) => alive && setValue((r?.profile || r)?.connects_list_visibility || "connections"))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!value) return null;
+  const save = (next) => {
+    const prev = value;
+    setValue(next);
+    setFailed(false);
+    updateConsumerProfile({ connects_list_visibility: next }).catch(() => {
+      setValue(prev);
+      setFailed(true);
+    });
+  };
+  return (
+    <div style={st.card} data-testid="settings-connects-list">
+      <strong>Who can see my Connects</strong>
+      <span style={{ color: C.muted, fontSize: 13 }}>Everyone else sees how many you have, not who.</span>
+      {CONNECTS_LIST_OPTIONS.map((o) => (
+        <label key={o.value} style={styles.check}>
+          <input
+            type="radio"
+            name="connects-list-visibility"
+            checked={value === o.value}
+            onChange={() => save(o.value)}
+            data-testid={`settings-connects-list-${o.value}`}
+          />
+          <span>{o.label}</span>
+        </label>
+      ))}
+      {failed ? <span style={st.error}>Couldn&apos;t save. Try again.</span> : null}
+    </div>
+  );
+}
+
 /** Settings (Andre 2026-10-30): everything tucked away from Profile, behind the gear. */
 export function AppSettings({ onDiscoverChange, onSignOut }) {
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -263,6 +316,7 @@ export function AppSettings({ onDiscoverChange, onSignOut }) {
       </Link>
       <h1 style={st.heading}>Settings</h1>
       <AppDiscoverabilityCard onChange={onDiscoverChange} />
+      <AppConnectsListSetting />
       <AppDietaryNeeds />
       <AppReportSettings />
       <AppBasketLocationCard />

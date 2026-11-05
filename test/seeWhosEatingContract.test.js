@@ -1,6 +1,6 @@
 /**
  * See Who's Eating FE contract — guest reel, CK dish links, existing camera path,
- * screen-name Connect request.
+ * screen name → poster profile (anyone, signed in or not).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -46,12 +46,14 @@ test("See Who's Eating reel: guest watch, CK dish, existing camera, Connect noti
   assert.match(scanRow, /Owner profile: long-press/);
 
   const fullscreen = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
-  assert.match(fullscreen, /requestConnection/);
+  // Name tap → poster profile, signed in or not (Andre 2026-11-05) — Connect lives on the profile.
+  assert.doesNotMatch(fullscreen, /requestConnection/);
+  assert.match(fullscreen, /liveFeedCreatorProfilePath\(item\)/);
+  assert.doesNotMatch(fullscreen, /account\/login/);
   assert.doesNotMatch(fullscreen, /hidePublicFeedItem/);
   assert.doesNotMatch(fullscreen, /Remove from Public Feed/);
   assert.doesNotMatch(fullscreen, /see-whos-eating-remove-public-feed/);
   assert.doesNotMatch(fullscreen, /Remove this video from Public Feed/);
-  assert.match(fullscreen, /see_whos_eating/);
   assert.match(fullscreen, /see-whos-eating-screen-name/);
   assert.match(fullscreen, /FeedPlaceCaption/);
   assert.match(fullscreen, /variant === "feedHome"|variant = "modal"/);

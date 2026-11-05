@@ -47,6 +47,16 @@ test("Discoverable diner profile wires Connect End Block Report", () => {
   assert.match(page, /End connection|end_connection/);
   assert.match(page, /Block/);
   assert.match(page, /Report abuse/);
+  // Anyone can open it, signed in or not (Andre 2026-11-05): guests load the public profile.
+  assert.match(page, /getPublicDiner/);
+  assert.match(page, /Sign in to Connect/);
+  // TikTok-style profile (Andre 2026-11-05): Connects count/list, Invite to Eat, public clips grid.
+  assert.match(page, /getPublicDinerClips/);
+  assert.match(page, /getPublicDinerConnects/);
+  assert.match(page, /can_view_list/);
+  assert.match(page, /Invite to Eat/);
+  assert.match(page, /viewer_may_invite/);
+  assert.doesNotMatch(page, /navigate\(\s*`\/account\/login\?next=\$\{encodeURIComponent\(`\/account\/diners/);
   const app = read("src/App.jsx");
   assert.match(app, /DiscoverableDinerProfilePage/);
   assert.match(app, /\/account\/diners\/:userId/);

@@ -1,7 +1,7 @@
 /**
  * TikTok-style See Who's Eating fullscreen reel.
  * Feed home: sound on by default (muted fallback if autoplay blocked). Tap/click toggles mute.
- * Screen name → Connect request when signed in; guests → login.
+ * Screen name → poster profile (anyone, signed in or not — Connect lives on the profile).
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -15,7 +15,6 @@ import FeedPipExpandButton from "../../../components/consumer/feed/FeedPipExpand
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
 import FeedClipClusterBadge from "../../../components/consumer/feed/FeedClipClusterBadge.jsx";
 import useFeedClipClusters from "../../../hooks/useFeedClipClusters.js";
-import { requestConnection } from "../../../lib/consumerApi.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
@@ -27,7 +26,6 @@ import {
   liveFeedCreatorProfilePath,
   isLiveFeedRestaurantCreator,
   isLiveFeedGuestCreator,
-  isLiveFeedVenueItem,
   liveFeedSponsoredBadge,
 } from "../../../lib/liveFeedCategory.js";
 import FeedPlaceCaption from "../../../components/consumer/feed/FeedPlaceCaption.jsx";
@@ -96,9 +94,6 @@ export default function SeeWhosEatingFullscreen({
   /** Feed home keeps a local playlist so wrap can reshuffle without ending the reel. */
   const [playlist, setPlaylist] = useState(() => (Array.isArray(items) ? items : []));
   const [index, setIndex] = useState(startIndex);
-  const [connectBusy, setConnectBusy] = useState(false);
-  const [connectNotice, setConnectNotice] = useState("");
-  const [connectError, setConnectError] = useState("");
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
   const [railShareOpen, setRailShareOpen] = useState(false);
@@ -154,8 +149,6 @@ export default function SeeWhosEatingFullscreen({
   }, [startIndex, items]);
 
   useEffect(() => {
-    setConnectNotice("");
-    setConnectError("");
     setVideoMuted(isManagerForcedMute(item) || defaultFeedVideoMuted(variant));
     setInviteOpen(false);
     // Do not clear browseSession — Browse trail stays independent of Feed navigation.
@@ -557,74 +550,27 @@ export default function SeeWhosEatingFullscreen({
     onToggleVideoSound(e);
   }
 
+  /** Poster name → their profile, like TikTok; anyone can open it, signed in or not (Andre 2026-11-05). */
   function openPosterProfile(e) {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     const path = liveFeedCreatorProfilePath(item);
     if (!path) return;
-    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item) || sponsoredBadge) {
-      onClose?.();
-      navigate(path);
-      return;
-    }
-    if (!isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent(path)}`);
-      return;
-    }
     onClose?.();
-    navigate(path);
+    navigate(path.startsWith("/account/diners/") ? `${path}?from=feed` : path);
   }
 
-  async function onScreenNameClick(e) {
+  function onScreenNameClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (isLiveFeedVenueItem(item) || isLiveFeedRestaurantCreator(item) || sponsoredBadge) {
-      openPosterProfile(e);
-      return;
-    }
-    if (isLiveFeedGuestCreator(item)) {
-      return;
-    }
+    if (isLiveFeedGuestCreator(item)) return;
     const peerId = item?.diner?.id != null ? Number(item.diner.id) : null;
-    if (!peerId) return;
-
-    if (!isAuthenticated) {
-      navigate(`/account/login?next=${encodeURIComponent(MY_MENUPLY_PROFILE_PATH)}`);
+    if (peerId && viewerUserId != null && Number(viewerUserId) === peerId) {
+      onClose?.();
+      navigate(MY_MENUPLY_PROFILE_PATH);
       return;
     }
-
-    if (viewerUserId != null && Number(viewerUserId) === peerId) {
-      setConnectNotice("That's you.");
-      return;
-    }
-
-    setConnectBusy(true);
-    setConnectError("");
-    setConnectNotice("");
-    try {
-      const data = await requestConnection({
-        recipient_user_id: peerId,
-        source: "see_whos_eating",
-        source_ref: item?.id != null ? String(item.id) : null,
-      });
-      const status = data?.connection?.status;
-      if (status === "accepted") {
-        setConnectNotice("You're now Connects.");
-      } else {
-        setConnectNotice("Connect request sent — they'll get a notification.");
-      }
-    } catch (err) {
-      const code = err?.payload?.code || err?.code;
-      if (code === "already_connected") {
-        setConnectNotice("You're already Connects.");
-      } else if (code === "already_pending") {
-        setConnectNotice("Connect request already pending.");
-      } else {
-        setConnectError(err?.message || "Unable to send Connect request");
-      }
-    } finally {
-      setConnectBusy(false);
-    }
+    openPosterProfile(e);
   }
 
   function onFeedMenuLinkClick() {
@@ -634,7 +580,6 @@ export default function SeeWhosEatingFullscreen({
 
   if ((!item && variant === "modal") || typeof document === "undefined") return null;
 
-  const isVenue = isLiveFeedVenueItem(item);
   const screenName = item ? liveFeedPosterDisplayName(item) : "";
   const showRestaurantBadge = item ? isLiveFeedRestaurantCreator(item) : false;
   const sponsoredBadge = item ? liveFeedSponsoredBadge(item) : null;
@@ -996,7 +941,7 @@ export default function SeeWhosEatingFullscreen({
           type="button"
           style={styles.screenNameBtn}
           data-testid="see-whos-eating-screen-name"
-          disabled={(connectBusy && !isVenue && !showRestaurantBadge) || isLiveFeedGuestCreator(item)}
+          disabled={isLiveFeedGuestCreator(item)}
           onClick={onScreenNameClick}
         >
           {screenName}
@@ -1020,8 +965,6 @@ export default function SeeWhosEatingFullscreen({
           onMenuLinkClick={onFeedMenuLinkClick}
           onOpenMenu={restaurantRef?.restaurant_id ? openMenuBrowser : null}
         />
-        {connectNotice ? <p style={styles.notice}>{connectNotice}</p> : null}
-        {connectError ? <p style={styles.error}>{connectError}</p> : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
         {(variant !== "feedHome" || isDesktopViewport) ? (
           <p style={styles.hint}>
