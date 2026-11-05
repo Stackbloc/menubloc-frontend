@@ -9,6 +9,7 @@ import { EmptyState, PageCard, SectionTitle, OWNER_COLORS } from "../OwnerLayout
 import {
   attachOwnerBookingCreative,
   listOwnerAdBookings,
+  setOwnerBookingAutoRenew,
   setOwnerBookingPaused,
   setOwnerClusterLaunch,
   setOwnerClusterMau,
@@ -185,6 +186,7 @@ export default function MarketplacePanel({ detail, busy, run }) {
                 <th style={{ padding: "6px 8px" }}>Paid</th>
                 <th style={{ padding: "6px 8px" }}>Status</th>
                 <th style={{ padding: "6px 8px" }}>Artwork</th>
+                <th style={{ padding: "6px 8px" }}>Renews</th>
                 <th style={{ padding: "6px 8px" }} />
               </tr>
             </thead>
@@ -238,6 +240,29 @@ export default function MarketplacePanel({ detail, busy, run }) {
                       ) : (
                         "—"
                       )}
+                    </td>
+                    <td style={{ padding: 8 }}>
+                      {running ? (
+                        <button
+                          type="button"
+                          style={pill(Boolean(b.renewal?.auto_renew))}
+                          disabled={busy}
+                          aria-label={`Auto-renew for booking ${b.booking_id}`}
+                          onClick={() =>
+                            act(
+                              () => setOwnerBookingAutoRenew(b.booking_id, !b.renewal?.auto_renew),
+                              b.renewal?.auto_renew ? "Auto-renew turned off." : "Auto-renew turned on."
+                            )
+                          }
+                        >
+                          {b.renewal?.auto_renew ? "On" : "Off"}
+                        </button>
+                      ) : (
+                        "—"
+                      )}
+                      {running && b.renewal?.notice_sent_at ? (
+                        <div style={{ color: OWNER_COLORS.muted, fontSize: 11 }}>Notice sent {shortDate(b.renewal.notice_sent_at)}</div>
+                      ) : null}
                     </td>
                     <td style={{ padding: 8 }}>
                       {running ? (

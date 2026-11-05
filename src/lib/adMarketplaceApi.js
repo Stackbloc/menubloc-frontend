@@ -51,3 +51,12 @@ export function termLabel(period, count = 1) {
 export function priceLabel(price) {
   return `${formatUsd(price.price_cents)} / ${price.term_period}`;
 }
+
+/** The renewal behind a 2-day notice email link (the token is the key; no sign-in). */
+export function fetchAdRenewal(token) {
+  return apiPost("/api/advertise/renewal", { token });
+}
+
+export function setAdRenewal(token, autoRenew) {
+  return apiPost("/api/advertise/renewal/set", { token, auto_renew: autoRenew === true });
+}
