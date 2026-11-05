@@ -58,39 +58,56 @@ const BOX_GRID_STYLE = {
   width: "100%",
 };
 
-export function ClusterMksCategoryBlock({ category, onSelect }) {
+export function clusterBoxLook(code) {
+  return BOX_LOOKS[code] || DEFAULT_LOOK;
+}
+
+/**
+ * One box: tinted, outlined in its accent, emoji + name (+ dish count), as the app's TypeBox.
+ * `count` overrides the category's own count (nutrition chips on); 0 = dimmed and not tappable.
+ * `compact` = the app's small drink-kind boxes (emoji beside the name, no count).
+ */
+export function ClusterMksCategoryBlock({ category, onSelect, count: countOverride, compact = false, selected, look: lookOverride }) {
   if (!category) return null;
 
-  const look = BOX_LOOKS[category.code] || DEFAULT_LOOK;
+  const look = lookOverride || clusterBoxLook(category.code);
   const title = category.label || category.code;
-  const count = Number(category.item_count);
-  const sub = Number.isFinite(count) && category.item_count != null ? `${count} ${count === 1 ? "dish" : "dishes"}` : null;
+  const rawCount = countOverride !== undefined ? countOverride : category.item_count;
+  const count = Number(rawCount);
+  const hasCount = !compact && rawCount != null && Number.isFinite(count);
+  const sub = hasCount ? `${count.toLocaleString("en-US")} ${count === 1 ? "dish" : "dishes"}` : null;
+  const empty = hasCount && countOverride !== undefined && count === 0;
 
   return (
     <button
       type="button"
       onClick={() => onSelect?.(category)}
+      disabled={empty}
       data-testid={`cluster-type-${category.code}`}
       aria-label={sub ? `${title}, ${sub}` : title}
+      // aria-current, not aria-pressed: the cluster themes restyle every aria-pressed button.
+      aria-current={selected ? "true" : undefined}
       style={{
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        gap: 4,
+        flexDirection: compact ? "row" : "column",
+        alignItems: compact ? "center" : "stretch",
+        justifyContent: compact ? "flex-start" : "space-between",
+        gap: compact ? 6 : 4,
         minWidth: 0,
-        minHeight: 100,
-        padding: 12,
-        borderRadius: 16,
-        border: `2px solid ${look.accent}`,
-        background: `${look.accent}14`,
+        minHeight: compact ? 52 : 100,
+        padding: compact ? "6px 8px" : 12,
+        borderRadius: compact ? 12 : 16,
+        border: `${selected ? 2.5 : compact ? 1.5 : 2}px solid ${look.accent}`,
+        background: `${look.accent}${selected ? "33" : "14"}`,
+        opacity: empty ? 0.4 : 1,
         boxSizing: "border-box",
         color: "inherit",
-        cursor: "pointer",
+        cursor: empty ? "default" : "pointer",
         textAlign: "left",
         font: "inherit",
       }}
     >
-      <span style={{ fontSize: 26, lineHeight: "32px" }} aria-hidden="true">
+      <span style={{ fontSize: compact ? 18 : 26, lineHeight: compact ? "22px" : "32px" }} aria-hidden="true">
         {look.emoji}
       </span>
       <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
@@ -112,13 +129,56 @@ export function ClusterMksCategoryBlock({ category, onSelect }) {
   );
 }
 
-export function ClusterMksCategoryGrid({ categories, onSelect }) {
+export function ClusterMksCategoryGrid({ categories, onSelect, counts = null, refreshing = false, testId = "cluster-type-boxes" }) {
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
-    <div style={BOX_GRID_STYLE} data-testid="cluster-type-boxes">
+    <div
+      style={{ ...BOX_GRID_STYLE, opacity: refreshing && counts ? 0.6 : 1, transition: "opacity 120ms ease" }}
+      data-testid={testId}
+      aria-busy={refreshing || undefined}
+    >
       {categories.map((category) => (
-        <ClusterMksCategoryBlock key={category.code} category={category} onSelect={onSelect} />
+        <ClusterMksCategoryBlock
+          key={category.code}
+          category={category}
+          onSelect={onSelect}
+          count={counts ? Number(counts[category.code] || 0) : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Drink kinds as small boxes (app 2026-10-26), three across like the food boxes. */
+export const CLUSTER_DRINK_BOX_LOOKS = {
+  all: { emoji: "🍹", accent: "#7c3aed" },
+  cocktails: { emoji: "🍸", accent: "#9333ea" },
+  beer: { emoji: "🍺", accent: "#ca8a04" },
+  wine: { emoji: "🍷", accent: "#be123c" },
+  spirits: { emoji: "🥃", accent: "#92400e" },
+  coffee: { emoji: "☕", accent: "#78716c" },
+  tea: { emoji: "🍵", accent: "#16a34a" },
+  smoothies: { emoji: "🥤", accent: "#f97316" },
+  juice: { emoji: "🧃", accent: "#eab308" },
+  mocktails: { emoji: "🍹", accent: "#ec4899" },
+  non_alcoholic: { emoji: "💧", accent: "#0ea5e9" },
+  happy_hour: { emoji: "🕔", accent: "#f59e0b" },
+};
+
+export function ClusterDrinkBoxGrid({ chips, selectedId, onSelect }) {
+  if (!Array.isArray(chips) || chips.length === 0) return null;
+  return (
+    <div style={{ ...BOX_GRID_STYLE, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }} data-testid="cluster-food-drink-subcategory-chips" role="group" aria-label="Drink subcategories">
+      {chips.map((chip) => (
+        <ClusterMksCategoryBlock
+          key={chip.id}
+          compact
+          category={{ code: `drink-${chip.id}`, label: chip.label }}
+          look={CLUSTER_DRINK_BOX_LOOKS[chip.id] || DEFAULT_LOOK}
+          selected={selectedId === chip.id}
+          onSelect={() => onSelect(chip.id)}
+        />
       ))}
     </div>
   );

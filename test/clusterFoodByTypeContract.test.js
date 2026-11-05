@@ -26,7 +26,10 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => readFileSync(join(root, rel), "utf8");
-const pageSrc = read("src/pages/ClusterFoodByTypePage.jsx");
+// 2026-11-05: the chips live on the cluster page (app look); the old screen redirects there.
+const oldPageSrc = read("src/pages/ClusterFoodByTypePage.jsx");
+const pageSrc = read("src/components/cluster/ClusterFoodByTypeParts.jsx") + read("src/hooks/useFoodTypeChips.js");
+const boxSrc = read("src/components/cluster/ClusterMksCategoryBlock.jsx");
 const cssSrc = read("src/styles/clusterFoodByType.css");
 const libSrc = read("src/lib/clusterFoodByType.js");
 const apiSrc = read("src/lib/clusterApi.js");
@@ -109,34 +112,40 @@ test("dish list page size 40 (server caps at 60)", () => {
   assert.equal(FOOD_BY_TYPE_PAGE_SIZE, 40);
 });
 
-test("flag-gated: route + entry link only render behind VITE_ENABLE_FOOD_BY_TYPE", () => {
+test("flag-gated chips on the cluster page; the old /food-by-type route redirects there with ?category=", () => {
   assert.match(read("src/lib/featureFlags.js"), /VITE_ENABLE_FOOD_BY_TYPE/);
-  assert.match(pageSrc, /isClusterFoodByTypeEnabled\(\)/);
-  assert.match(pageSrc, /if \(!enabled\) return <Navigate/);
+  assert.match(clusterPageSrc, /useFoodTypeChips\(clusterSlug, \{ enabled: enabled && isClusterFoodByTypeEnabled\(\) \}\)/);
   assert.match(appSrc, /\/clusters\/:stateSlug\/:citySlug\/:clusterSlug\/food-by-type/);
-  assert.match(clusterPageSrc, /isClusterFoodByTypeEnabled\(\) && clusterSlug \?/);
+  assert.match(oldPageSrc, /<Navigate to=\{`\/clusters\/\$\{stateSlug\}\/\$\{citySlug\}\/\$\{clusterSlug\}\$\{qs\}`\} replace \/>/);
+  assert.match(oldPageSrc, /CLUSTER_CATEGORY_QUERY_KEY/);
+  assert.doesNotMatch(clusterPageSrc, /cluster-food-by-type-link/);
 });
 
-test("grid fetches counts only; dish rows come from the dishes endpoint with chips carried", () => {
+test("chips only where the cluster has food-by-type tiles (USC today); other clusters keep plain boxes", () => {
+  assert.match(pageSrc, /const has = tiles\.length > 0 && list\.length > 0/);
+  assert.match(pageSrc, /availableChips: supported \? availableChips : \[\]/);
+  assert.match(pageSrc, /if \(!availableChips\.length\) return null/);
+});
+
+test("box counts come from the counts endpoint; dish rows from the dishes endpoint with chips carried", () => {
   assert.match(apiSrc, /food-by-type\/counts/);
   assert.match(apiSrc, /food-by-type\/\$\{encodeURIComponent\(category\)\}\/dishes/);
-  const gridSrc = pageSrc.slice(pageSrc.indexOf("function FoodByTypeGrid"), pageSrc.indexOf("function FoodByTypeTile"));
-  assert.match(gridSrc, /fetchClusterFoodByTypeCounts/);
-  assert.doesNotMatch(gridSrc, /fetchClusterFoodByTypeDishes/);
+  assert.match(pageSrc, /fetchClusterFoodByTypeCounts\(clusterSlug, \{ chips, signal \}\)/);
   assert.match(pageSrc, /fetchClusterFoodByTypeDishes\(clusterSlug, category, \{ chips/);
   assert.match(pageSrc, /next_cursor/);
+  assert.match(clusterPageSrc, /counts=\{chipsOn \? foodChips\.counts : null\}/);
 });
 
-test("loading: skeleton tiles first, then previous counts stay (dimmed) while refreshing; retry on error", () => {
-  assert.match(pageSrc, /fbt-tile--skeleton/);
+test("loading: previous counts stay (dimmed) while refreshing; retry on dish error", () => {
+  assert.match(boxSrc, /opacity: refreshing && counts \? 0\.6 : 1/);
   assert.match(pageSrc, /fbt-grid--refreshing/);
   assert.match(cssSrc, /\.fbt-grid--refreshing\s*\{\s*opacity/);
   assert.match(pageSrc, /Try again/);
 });
 
-test("empty tiles: dimmed, disabled, still in place, show 0 dishes", () => {
-  assert.match(pageSrc, /disabled=\{empty\}/);
-  assert.match(cssSrc, /\.fbt-tile--empty\s*\{\s*opacity/);
+test("empty boxes with chips on: dimmed, disabled, still in place, show 0 dishes", () => {
+  assert.match(boxSrc, /disabled=\{empty\}/);
+  assert.match(boxSrc, /opacity: empty \? 0\.4 : 1/);
   assert.equal(formatDishCount(0), "0 dishes");
 });
 
@@ -166,8 +175,7 @@ test("chips come from the server config, not hard-coded thresholds on the client
   assert.doesNotMatch(pageSrc, /Filters/);
 });
 
-test("reuses the existing cluster search unchanged (hands q to the Food tab)", () => {
-  assert.match(pageSrc, /import \{ ClusterFoodSearchForm \} from "\.\/ClusterPage\.jsx"/);
-  assert.match(pageSrc, /new URLSearchParams\(\{ view: "menu", q \}\)/);
+test("one search: the cluster page's own search form (no second Food by type search)", () => {
   assert.match(clusterPageSrc, /export function ClusterFoodSearchForm\(/);
+  assert.doesNotMatch(pageSrc, /ClusterFoodSearchForm/);
 });

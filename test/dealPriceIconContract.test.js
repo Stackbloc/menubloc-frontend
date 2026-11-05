@@ -35,7 +35,7 @@ test("menu card, cluster lists and Food by type use the deal price + highlight",
   const explorer = read("src/components/cluster/ClusterMenuExplorer.jsx");
   assert.match(explorer, /<DealPriceTag deal=\{itemDeal\}/);
   assert.match(explorer, /liveItemDeal\(item\) \? DEAL_ROW_HIGHLIGHT/);
-  const fbt = read("src/pages/ClusterFoodByTypePage.jsx");
+  const fbt = read("src/components/cluster/ClusterFoodByTypeParts.jsx");
   assert.match(fbt, /<DealPriceTag deal=\{itemDeal\}/);
   assert.match(fbt, /itemDeal \? DEAL_ROW_HIGHLIGHT/);
 });

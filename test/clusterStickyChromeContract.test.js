@@ -13,12 +13,12 @@ test("ClusterPage keeps legal H1 via getClusterPageHeading", () => {
   assert.match(pageSrc, /<h1/);
 });
 
-test("ClusterPage mounts sticky product title + Food/Restaurants chrome", () => {
+test("ClusterPage mounts sticky product title chrome (no Food/Restaurants toggle, 2026-11-05)", () => {
   assert.match(pageSrc, /getClusterProductTitle/);
   assert.match(pageSrc, /data-testid="cluster-sticky-chrome"/);
   assert.match(pageSrc, /data-testid="cluster-sticky-title"/);
   assert.match(pageSrc, /position:\s*"sticky"/);
-  assert.match(pageSrc, /<ClusterViewToggle/);
+  assert.doesNotMatch(pageSrc, /<ClusterViewToggle/);
   assert.match(pageSrc, /renderStickyLead/);
   assert.match(pageSrc, /overflowX:\s*"clip"/);
 });

@@ -104,12 +104,13 @@ test("BEVERAGES category detection", () => {
   assert.equal(isClusterBeveragesCategory({ code: "BURGERS" }), false);
 });
 
-test("ClusterPage mounts drink subcategory ChipRail only for non-empty visible chips", () => {
+test("ClusterPage mounts drink-kind boxes only for non-empty visible chips (app look, 2026-11-05)", () => {
   assert.match(pageSrc, /visibleClusterDrinkSubcategoryChips/);
   assert.match(pageSrc, /availableDrinkCategories/);
-  assert.match(pageSrc, /data-testid="cluster-food-drink-subcategory-chips"/);
+  assert.match(readFileSync(join(root, "src/components/cluster/ClusterMksCategoryBlock.jsx"), "utf8"), /data-testid="cluster-food-drink-subcategory-chips"/);
   assert.match(pageSrc, /visibleDrinkChips\.length > 0/);
-  assert.match(pageSrc, /ChipRail/);
+  assert.match(pageSrc, /<ClusterDrinkBoxGrid/);
+  assert.match(pageSrc, /label: "All drinks"/);
   assert.match(pageSrc, /drinkCategory/);
 });
 
