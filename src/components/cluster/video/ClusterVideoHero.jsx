@@ -302,7 +302,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
   const ctaAttrs = sponsoredAd ? adEngagementAttrs(sponsoredAd, delivery) : {};
   const eyebrow = sponsoredAd
     ? sponsoredAd.advertiser_name || queue[0]?.restaurant_name || "Sponsored"
-    : "Sponsored Clips";
+    : "Featured Clips"; // no advertisers yet (Andre 2026-11-05); a sold ad still says Sponsored
 
   const cta = ctaHref ? (
     ctaHref.startsWith("/") && !ctaHref.startsWith("//") ? (
@@ -366,7 +366,7 @@ function VideoHero({ cluster, clips, sponsoredAd = null, delivery = null }) {
         data-testid="cluster-video-hero"
         data-mode={sponsoredAd ? "sponsored" : "featured"}
         data-state={playing ? "playing" : "strip"}
-        aria-label={sponsoredAd ? "Sponsored clip" : "Sponsored Clips"}
+        aria-label={sponsoredAd ? "Sponsored clip" : "Featured Clips"}
         style={styles.root}
       >
         {!playing ? (
@@ -563,9 +563,9 @@ function ReelThumb({ clip, index, active, large = false, onSelect }) {
 function ClusterVideoReelRow({ clips }) {
   const { openVideo } = useClusterVideos();
   return (
-    <section aria-label="Sponsored Clips" data-testid="cluster-video-reel-row" style={styles.rowRoot}>
+    <section aria-label="Featured Clips" data-testid="cluster-video-reel-row" style={styles.rowRoot}>
       <span style={styles.rowTitle}>
-        <PlayGlyph size={10} /> Sponsored Clips
+        <PlayGlyph size={10} /> Featured Clips
       </span>
       <div style={styles.reel} role="list">
         {clips.map((c, i) => (
