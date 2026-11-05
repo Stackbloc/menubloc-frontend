@@ -78,7 +78,7 @@ test("ClusterPage keeps the tapped category in ?category= and restores it", asyn
   const page = readFileSync(new URL("../src/pages/ClusterPage.jsx", import.meta.url), "utf8");
   assert.match(page, /params\.set\(CLUSTER_CATEGORY_QUERY_KEY, category\.code\)/);
   assert.match(page, /onSelect=\{\(category\) => selectCategory\(category\)\}/);
-  assert.match(page, /if \(match\) setSelectedCategory\(match\)/);
+  assert.match(page, /if \(match\) \{\s*appliedUrlCategoryRef\.current = urlCategoryCode;\s*setSelectedCategory\(match\);/);
   assert.match(page, /filters: shareFilters/);
 });
 

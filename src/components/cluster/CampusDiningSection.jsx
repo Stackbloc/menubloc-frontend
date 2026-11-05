@@ -156,6 +156,11 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
     return map;
   }, [live]);
 
+  const statusUpdates = locations.filter((loc) => {
+    const status = venueById.get(Number(loc.restaurant_id));
+    return Boolean(status?.line || status?.food);
+  }).length;
+
   const updateVenue = updateVenueId != null ? venueById.get(Number(updateVenueId)) : null;
   const updateLocation =
     updateVenueId != null
@@ -178,7 +183,7 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
     <section
       id="campus-dining"
       data-testid="campus-dining"
-      aria-label="On campus"
+      aria-label="Dining halls"
       style={styles.section}
     >
       <button
@@ -190,10 +195,11 @@ export default function CampusDiningSection({ cluster, showGlance = true, onSele
         style={styles.toggle}
       >
         <span className="cluster-feed-section-label" style={{ ...styles.sectionTitle, marginBottom: 0 }}>
-          On campus
+          Dining halls
         </span>
-        <span style={styles.toggleMeta}>
-          {locations.length ? `${locations.length} dining spots · ` : ""}
+        <span style={styles.toggleMeta} data-testid="campus-dining-summary">
+          {/* App wording (2026-10-26): "8 · 3 status updates" = halls with a line or food report. */}
+          {locations.length ? `${locations.length} · ${statusUpdates} status ${statusUpdates === 1 ? "update" : "updates"} · ` : ""}
           {expanded ? "Hide" : "Show"}
           <span aria-hidden="true" style={{ ...styles.chevron, transform: expanded ? "rotate(180deg)" : "none" }}>
             ▾

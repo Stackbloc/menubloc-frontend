@@ -46,7 +46,7 @@ function EventRow({ event }) {
   );
 }
 
-export default function ClusterNearbyEvents({ cluster }) {
+export default function ClusterNearbyEvents({ cluster, onCount = null }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const slug = cluster?.slug;
@@ -67,10 +67,14 @@ export default function ClusterNearbyEvents({ cluster }) {
     fetchClusterNearbyEvents(slug, { radiusMiles: 30, limit: 16 })
       .then((data) => {
         if (cancelled) return;
-        setEvents(Array.isArray(data?.events) ? data.events : []);
+        const list = Array.isArray(data?.events) ? data.events : [];
+        setEvents(list);
+        onCount?.(list.length);
       })
       .catch(() => {
-        if (!cancelled) setEvents([]);
+        if (cancelled) return;
+        setEvents([]);
+        onCount?.(0);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -78,6 +82,7 @@ export default function ClusterNearbyEvents({ cluster }) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onCount is a display callback
   }, [slug]);
 
   if (!slug) return null;

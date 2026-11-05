@@ -67,7 +67,7 @@ test("dining halls skip restaurant upcoming eating-plan counts", () => {
 
 test("campus dining section is experience-only (no menu framing)", () => {
   const src = read("src/components/cluster/CampusDiningSection.jsx");
-  assert.match(src, /On campus/);
+  assert.match(src, /Dining halls/);
   assert.match(src, /tap a name for what/);
   assert.match(src, /CampusLiveUpdateSheet/);
   assert.match(src, /fetchClusterCampusLive/);

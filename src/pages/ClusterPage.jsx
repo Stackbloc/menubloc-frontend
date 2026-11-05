@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
 import useMatchMedia from "../hooks/useMatchMedia.js";
 import useClusterFavs from "../hooks/useClusterFavs.js";
-import FavHeartIcon from "../components/icons/FavHeartIcon.jsx";
-import { FAV_ACCENT } from "../lib/likeButtonStyles.js";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
@@ -18,7 +16,9 @@ import {
   ClusterPlaceholderFoodCard,
 } from "../components/cluster/ClusterMenuExplorer.jsx";
 import SearchResultCard from "../components/SearchResultCard.jsx";
-import { ClusterMksCategoryGrid } from "../components/cluster/ClusterMksCategoryBlock.jsx";
+import { ClusterDrinkBoxGrid, ClusterMksCategoryGrid, clusterBoxLook } from "../components/cluster/ClusterMksCategoryBlock.jsx";
+import { FoodByTypeChipRow, FoodByTypeDishList } from "../components/cluster/ClusterFoodByTypeParts.jsx";
+import useFoodTypeChips from "../hooks/useFoodTypeChips.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import {
   CLUSTER_CATEGORY_QUERY_KEY,
@@ -35,7 +35,6 @@ import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, s
 import { liveItemDeal } from "../lib/itemDeal.js";
 import { isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
 import { EXIT_CLUSTER_LABEL, clearClusterExit, resolveClusterExitTo } from "../lib/clusterNavigation.js";
-import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
   getClusterPageHeading,
@@ -76,7 +75,6 @@ import {
 import { rememberMenuBrowserVenueSession } from "../lib/menuBrowserVenueContext.js";
 import { INDIO_FESTIVAL_GROUNDS_SLUG } from "../lib/clusterSlugAliases.js";
 import { clusterShowsDishExcerpt } from "../lib/clusterDishExcerpt.js";
-import ChipRail from "../components/chips/ChipRail.jsx";
 import CampusDiningSection from "../components/cluster/CampusDiningSection.jsx";
 import ClusterSubscribeButton from "../components/cluster/ClusterSubscribeButton.jsx";
 import ClusterPublicFeed from "../components/cluster/ClusterPublicFeed.jsx";
@@ -90,6 +88,45 @@ const CLUSTER_VIEW_MODES = Object.freeze({
   MENU: "menu",
   RESTAURANTS: "restaurants",
 });
+
+/** A folded section: one tappable line, like the app's dining halls. Children mount on first open. */
+function ClusterFold({ title, meta = null, testId, eager = false, hidden = false, children }) {
+  const [open, setOpen] = useState(false);
+  const [opened, setOpened] = useState(eager);
+  return (
+    <section data-testid={testId} hidden={hidden} style={{ display: hidden ? "none" : "grid", gap: "0.6rem" }}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((v) => !v);
+          setOpened(true);
+        }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          width: "100%",
+          padding: "0.75rem 0.85rem",
+          borderRadius: 12,
+          border: "1px solid #e5e7eb",
+          background: "#fff",
+          cursor: "pointer",
+          font: "inherit",
+          textAlign: "left",
+          color: "#111827",
+        }}
+      >
+        <span style={{ fontWeight: 700, fontSize: "1rem" }}>{title}</span>
+        <span style={{ flex: 1, color: "#6b7280", fontSize: "0.85rem" }}>{meta}</span>
+        <span aria-hidden="true" style={{ color: "#6b7280", transform: open ? "rotate(180deg)" : "none" }}>
+          ▾
+        </span>
+      </button>
+      {opened ? <div hidden={!open}>{children}</div> : null}
+    </section>
+  );
+}
 
 function ClusterDescription({ cluster }) {
   if (!cluster) return null;
@@ -107,79 +144,6 @@ function ClusterDescription({ cluster }) {
     >
       {intro}
     </p>
-  );
-}
-
-function ClusterViewToggle({ viewMode, onChange, disabled }) {
-  const options = [
-    { id: CLUSTER_VIEW_MODES.MENU, label: "Food" },
-    { id: CLUSTER_VIEW_MODES.RESTAURANTS, label: "Restaurants" },
-  ];
-
-  function selectView(nextView) {
-    if (disabled || nextView === viewMode) return;
-    onChange(nextView);
-  }
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Cluster view"
-      data-testid="cluster-view-toggle"
-      style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", position: "relative", zIndex: 2 }}
-    >
-        {options.map((option) => {
-          const selected = viewMode === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              aria-pressed={selected}
-              data-testid={`cluster-view-${option.id}`}
-              className={`cluster-view-toggle${selected ? " is-selected" : ""}`}
-              disabled={disabled}
-              // pointerdown commits before a view-branch remount can swallow the click
-              onPointerDown={(event) => {
-                if (disabled || event.button !== 0) return;
-                event.preventDefault();
-                selectView(option.id);
-              }}
-              onClick={() => selectView(option.id)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.45rem",
-                padding: "0.55rem 0.9rem",
-                borderRadius: 999,
-                border: selected ? "1px solid #111827" : "1px solid #d1d5db",
-                background: selected ? "#111827" : "#fff",
-                color: disabled ? "#9ca3af" : selected ? "#fff" : "#111827",
-                cursor: disabled ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-                touchAction: "manipulation",
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className="cluster-view-toggle-dot"
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  border: selected ? "3px solid #fff" : "1px solid #9ca3af",
-                  boxSizing: "border-box",
-                  background: selected ? "#111827" : "#fff",
-                }}
-              />
-              {option.label}
-            </button>
-          );
-        })}
-    </div>
   );
 }
 
@@ -211,7 +175,9 @@ async function fetchAllClusterRestaurantPages(clusterSlug, pageSize, signal) {
   return { ...first, restaurants: rows, pagination };
 }
 
-function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath, placeReturnLabel }) {
+const RESTAURANTS_PREVIEW_COUNT = 8;
+
+function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath, placeReturnLabel, onCount }) {
   // Match BE MAX_CLUSTER_RESTAURANTS_LIMIT so district lists (e.g. LACC ~31) fit one page.
   const PAGE_SIZE = 36;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
@@ -221,7 +187,8 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
   const [placeholderIntro, setPlaceholderIntro] = useState("");
   const [drinksPlaceholderIntro, setDrinksPlaceholderIntro] = useState("");
   const [drinksFilter, setDrinksFilter] = useState("all");
-  const { isAuthenticated, favIds, busyIds, toggleFav } = useClusterFavs();
+  const { favIds, busyIds, toggleFav } = useClusterFavs();
+  const [showAll, setShowAll] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
 
@@ -231,6 +198,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
     const controller = new AbortController();
     setStatus("loading");
     setError("");
+    setShowAll(false);
     setRestaurants([]);
     setPlaceholders([]);
     setDrinksPlaceholders([]);
@@ -249,6 +217,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
         setDrinksPlaceholderIntro(data.drinks_placeholder_intro || "");
         setPagination(data.pagination || null);
         setStatus("ok");
+        onCount?.(Array.isArray(data.restaurants) ? data.restaurants.length : 0);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
@@ -257,6 +226,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
       });
 
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onCount is a display callback
   }, [clusterSlug, enabled]);
 
   async function loadMore() {
@@ -303,12 +273,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
     );
   }
 
-  const cuisineGroups = groupClusterRestaurantsByCuisine(restaurants);
   const diningByZoneHeading = getClusterDiningByZoneHeading(cluster);
-  // Signed-in diners see their Favs here first; the cards also stay in their cuisine groups.
-  const favRestaurants = isAuthenticated
-    ? restaurants.filter((row) => favIds.has(Number(row.restaurant_id)))
-    : [];
+  // A–Z only, first 8 then "Show all", as the app (Andre 2026-10-25/26).
+  const sorted = [...restaurants].sort((a, b) =>
+    String(a.name || a.restaurant_name || "").localeCompare(String(b.name || b.restaurant_name || ""), "en", { sensitivity: "base" })
+  );
+  const shownRestaurants = showAll ? sorted : sorted.slice(0, RESTAURANTS_PREVIEW_COUNT);
   const renderRestaurantCard = (restaurant) => {
     const id = Number(restaurant.restaurant_id);
     return (
@@ -328,28 +298,29 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath,
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {restaurants.length > 0 ? (
         <>
-          {favRestaurants.length > 0 ? (
-            <section style={{ display: "grid", gap: "0.65rem" }} data-testid="cluster-my-favs">
-              <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
-                <FavHeartIcon size={16} filled color={FAV_ACCENT} />
-                My Favs
-              </h3>
-              <div style={CLUSTER_DIRECTORY_GRID_STYLE}>{favRestaurants.map(renderRestaurantCard)}</div>
-            </section>
+          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>{shownRestaurants.map(renderRestaurantCard)}</div>
+          {sorted.length > RESTAURANTS_PREVIEW_COUNT ? (
+            <button
+              type="button"
+              data-testid="cluster-restaurants-toggle"
+              onClick={() => setShowAll((v) => !v)}
+              style={{
+                justifySelf: "center",
+                padding: "0.45rem 0.9rem",
+                borderRadius: 999,
+                border: "1px solid var(--mp-accent, #0f7a24)",
+                background: "#fff",
+                color: "var(--mp-accent, #0f7a24)",
+                fontWeight: 700,
+                fontSize: "0.88rem",
+                cursor: "pointer",
+              }}
+            >
+              {showAll ? "Show fewer" : `Show all ${sorted.length}`}
+            </button>
           ) : null}
-          {cuisineGroups.map((group, index) => (
-            <React.Fragment key={group.id}>
-              <section style={{ display: "grid", gap: "0.65rem" }}>
-                <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>{group.label}</h3>
-                <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
-                  {group.restaurants.map(renderRestaurantCard)}
-                </div>
-              </section>
-              {index === 1 ? (
-                <SpacedClusterAdSlot clusterSlug={clusterSlug} pageRegion="cluster_events_top" />
-              ) : null}
-            </React.Fragment>
-          ))}
+          {/* Sellable slot (ad marketplace); it sat between cuisine groups before the A–Z list. */}
+          <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_events_top" />
         </>
       ) : null}
       {placeholders.length > 0 ? (
@@ -482,6 +453,57 @@ const CLUSTER_STICKY_CHROME_STYLE = {
   minWidth: 0,
 };
 
+const CLUSTER_SECTION_TITLE_STYLE = { margin: 0, fontSize: "1.15rem", lineHeight: 1.25, color: "#111827" };
+
+const CLUSTER_BACK_ROW_STYLE = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.6rem",
+  padding: "0.2rem 0",
+  border: "none",
+  background: "none",
+  cursor: "pointer",
+  font: "inherit",
+  textAlign: "left",
+  minWidth: 0,
+};
+
+const CLUSTER_BACK_CIRCLE_STYLE = {
+  width: 32,
+  height: 32,
+  flexShrink: 0,
+  borderRadius: "50%",
+  border: "1.5px solid var(--mp-accent, #0f7a24)",
+  color: "var(--mp-accent, #0f7a24)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 22,
+  lineHeight: 1,
+  paddingBottom: 2,
+  boxSizing: "border-box",
+};
+
+/** While a food type or search is open (app 2026-11-04): compact pill, bottom left, above the tab bar. */
+const CLUSTER_FLOAT_BACK_STYLE = {
+  position: "fixed",
+  left: 16,
+  bottom: "calc(84px + env(safe-area-inset-bottom, 0px))",
+  zIndex: 40,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: "0.5rem 1rem 0.5rem 0.6rem",
+  borderRadius: 999,
+  border: "none",
+  background: "var(--mp-accent, #0f7a24)",
+  color: "#fff",
+  fontSize: 14,
+  fontWeight: 700,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+  cursor: "pointer",
+};
+
 /** Shared with the Food by type screen (same search, same behavior). */
 export function ClusterFoodSearchForm({
   searchInput,
@@ -567,7 +589,6 @@ function ClusterMenuExplorerTab({
   postContent = null,
 }) {
   const PAGE_SIZE = 40;
-  const location = useLocation();
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -597,6 +618,9 @@ function ClusterMenuExplorerTab({
     normalizeClusterDrinkSubcategory(searchParams.get(CLUSTER_DRINK_QUERY_KEY))
   );
   const [availableDrinkCategories, setAvailableDrinkCategories] = useState([]);
+  // Nutrition chips above the boxes, as in the app (clusters with food-by-type data only: USC today).
+  const foodChips = useFoodTypeChips(clusterSlug, { enabled: enabled && isClusterFoodByTypeEnabled() });
+  const chipsOn = foodChips.chips.length > 0;
 
   function updateFoodParams(mutate) {
     const params = new URLSearchParams(searchParams);
@@ -612,6 +636,22 @@ function ClusterMenuExplorerTab({
       else params.delete(CLUSTER_CATEGORY_QUERY_KEY);
       params.delete(CLUSTER_DRINK_QUERY_KEY);
     });
+  }
+
+  /** Back to every food type (the back circle, the floating "All types" pill, a cleared search). */
+  function backToAllTypes() {
+    if (searchActive) {
+      setSearchInput("");
+      const params = new URLSearchParams(searchParams);
+      params.delete(CLUSTER_SEARCH_QUERY_KEY);
+      params.delete(CLUSTER_CATEGORY_QUERY_KEY);
+      params.delete(CLUSTER_DRINK_QUERY_KEY);
+      setSearchParams(params, { replace: true });
+      setSelectedCategory(null);
+    } else {
+      selectCategory(null);
+    }
+    document.getElementById("cluster-food")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }
 
   function selectDrinkSubcategory(id) {
@@ -642,10 +682,24 @@ function ClusterMenuExplorerTab({
   }, [selectedZone, availableZones]);
 
   // Shared/reloaded ?category= link: open that category once the cluster's categories load.
+  // Applied once per URL code: going back clears the selection a render before the URL catches up,
+  // and re-applying the stale code then reopened the type (seen 2026-11-05).
+  const appliedUrlCategoryRef = useRef(null);
   useEffect(() => {
-    if (!urlCategoryCode || searchActive || selectedCategory?.code === urlCategoryCode) return;
+    if (!urlCategoryCode) {
+      appliedUrlCategoryRef.current = null;
+      return;
+    }
+    if (searchActive || appliedUrlCategoryRef.current === urlCategoryCode) return;
+    if (selectedCategory?.code === urlCategoryCode) {
+      appliedUrlCategoryRef.current = urlCategoryCode;
+      return;
+    }
     const match = mksCategories.find((category) => String(category?.code || "").toUpperCase() === urlCategoryCode);
-    if (match) setSelectedCategory(match);
+    if (match) {
+      appliedUrlCategoryRef.current = urlCategoryCode;
+      setSelectedCategory(match);
+    }
   }, [urlCategoryCode, mksCategories, searchActive, selectedCategory?.code]);
 
   useEffect(() => {
@@ -778,7 +832,8 @@ function ClusterMenuExplorerTab({
   }, [clusterSlug, enabled, searchActive]);
 
   useEffect(() => {
-    if (!enabled || !clusterSlug || !selectedCategory?.code || searchActive) return undefined;
+    // Chips on: the matching dishes come from FoodByTypeDishList instead.
+    if (!enabled || !clusterSlug || !selectedCategory?.code || searchActive || chipsOn) return undefined;
 
     const controller = new AbortController();
     setStatus("loading");
@@ -821,7 +876,7 @@ function ClusterMenuExplorerTab({
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, selectedCategory?.code, drinkSubcategory, searchActive, priceSort]);
+  }, [clusterSlug, enabled, selectedCategory?.code, drinkSubcategory, searchActive, priceSort, chipsOn]);
 
   useEffect(() => {
     if (!enabled || !clusterSlug || !searchActive) {
@@ -952,8 +1007,17 @@ function ClusterMenuExplorerTab({
   }
 
   const categoryTitle = selectedCategory?.label || null;
+  const typeOpen = searchActive || Boolean(selectedCategory);
   const results = (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div style={{ display: "grid", gap: "1rem" }} id="cluster-food" data-testid="cluster-food">
+      <h2 style={CLUSTER_SECTION_TITLE_STYLE}>Food by type</h2>
+      {!searchActive ? (
+        <FoodByTypeChipRow
+          chips={foodChips.chips}
+          availableChips={foodChips.availableChips}
+          onToggle={foodChips.onToggle}
+        />
+      ) : null}
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
@@ -1065,23 +1129,19 @@ function ClusterMenuExplorerTab({
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => selectCategory(null)}
-              style={{
-                padding: "0.45rem 0.75rem",
-                borderRadius: 8,
-                border: "1px solid #d1d5db",
-                background: "#fff",
-                cursor: "pointer",
-              }}
+              onClick={backToAllTypes}
+              aria-label="All food types"
+              data-testid="cluster-types-back"
+              style={CLUSTER_BACK_ROW_STYLE}
             >
-              ← All food
+              <span aria-hidden="true" style={CLUSTER_BACK_CIRCLE_STYLE}>‹</span>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#111827" }}>
+                {`${clusterBoxLook(selectedCategory.code).emoji} ${categoryTitle}`}
+              </h2>
             </button>
-            <h2 style={{ margin: 0, fontSize: "1.15rem" }}>
-              {categoryTitle}
-            </h2>
-            {renderClusterFoodPriceSortControls()}
+            {chipsOn ? null : renderClusterFoodPriceSortControls()}
           </div>
-          {availableZones.length > 0 ? (
+          {!chipsOn && availableZones.length > 0 ? (
             <div
               role="group"
               aria-label={`Filter by ${zoneNoun.toLowerCase()}`}
@@ -1131,40 +1191,26 @@ function ClusterMenuExplorerTab({
               })}
             </div>
           ) : null}
-          {drinksCategorySelected && visibleDrinkChips.length > 0 ? (
-            <ChipRail
-              data-testid="cluster-food-drink-subcategory-chips"
-              aria-label="Drink subcategories"
-              style={{ paddingTop: 2, paddingBottom: 2 }}
-            >
-              {visibleDrinkChips.map((chip) => {
-                const selected = drinkSubcategory === chip.id;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    data-testid={`cluster-food-drink-${chip.id}`}
-                    aria-pressed={selected}
-                    onClick={() => selectDrinkSubcategory(chip.id)}
-                    style={{
-                      flexShrink: 0,
-                      padding: "7px 16px",
-                      borderRadius: 999,
-                      border: selected ? "1px solid #111827" : "1px solid #d1d5db",
-                      background: selected ? "#111827" : "transparent",
-                      color: selected ? "#fff" : "#374151",
-                      fontWeight: 500,
-                      fontSize: 14,
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {chip.label}
-                  </button>
-                );
-              })}
-            </ChipRail>
+          {drinksCategorySelected && !chipsOn && visibleDrinkChips.length > 0 ? (
+            <ClusterDrinkBoxGrid
+              chips={visibleDrinkChips.map((chip) =>
+                chip.id === CLUSTER_DRINK_SUBCATEGORY_ALL ? { ...chip, label: "All drinks" } : chip
+              )}
+              selectedId={drinkSubcategory}
+              onSelect={selectDrinkSubcategory}
+            />
           ) : null}
+          {chipsOn ? (
+            <FoodByTypeDishList
+              clusterSlug={clusterSlug}
+              category={selectedCategory.code}
+              chips={foodChips.chips}
+              activeKey={foodChips.activeKey}
+              returnTo={clusterReturnTo}
+              listAd={<SpacedClusterAdSlot slim clusterSlug={clusterSlug} pageRegion="cluster_search_top" />}
+            />
+          ) : (
+          <>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {status === "ok" && items.length === 0 ? (
@@ -1217,6 +1263,8 @@ function ClusterMenuExplorerTab({
             </button>
           ) : null}
           {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
+          </>
+          )}
         </div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
@@ -1225,29 +1273,11 @@ function ClusterMenuExplorerTab({
           {mksCategories.length === 0 && status === "ok" ? (
             <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
           ) : null}
-          {isClusterFoodByTypeEnabled() && clusterSlug ? (
-            <Link
-              to={`${location.pathname.replace(/\/$/, "")}/food-by-type`}
-              data-testid="cluster-food-by-type-link"
-              style={{
-                display: "inline-flex",
-                alignSelf: "start",
-                justifySelf: "start",
-                padding: "0.55rem 0.9rem",
-                borderRadius: 999,
-                border: "1px solid #e5e7eb",
-                background: "#fff",
-                color: "#111827",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Food by type · filter by calories, protein, diet →
-            </Link>
-          ) : null}
           <ClusterMksCategoryGrid
             categories={mksCategories}
             onSelect={(category) => selectCategory(category)}
+            counts={chipsOn ? foodChips.counts : null}
+            refreshing={foodChips.refreshing}
           />
           <SpacedClusterAdSlot compact clusterSlug={clusterSlug} pageRegion="cluster_landing_footer" />
         </div>
@@ -1284,6 +1314,18 @@ function ClusterMenuExplorerTab({
         >
           {results}
         </main>
+        {typeOpen ? (
+          <button
+            type="button"
+            onClick={backToAllTypes}
+            aria-label="Back to all food types"
+            data-testid="cluster-types-float-back"
+            style={CLUSTER_FLOAT_BACK_STYLE}
+          >
+            <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1 }}>‹</span>
+            All types
+          </button>
+        ) : null}
         {postContent}
       </div>
     </>
@@ -1292,21 +1334,17 @@ function ClusterMenuExplorerTab({
 
 export default function ClusterPage() {
   const { stateSlug, citySlug, clusterSlug } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("loading");
   const [cluster, setCluster] = useState(null);
   /** Campus live: venue filter shared by glance tiles, On campus rows and posts. */
   const [campusVenueFilter, setCampusVenueFilter] = useState(null);
   const [error, setError] = useState("");
 
-  const viewMode = useMemo(() => {
-    const raw = String(searchParams.get("view") || "").trim().toLowerCase();
-    if (raw === CLUSTER_VIEW_MODES.RESTAURANTS) return CLUSTER_VIEW_MODES.RESTAURANTS;
-    if (raw === CLUSTER_VIEW_MODES.MENU || raw === "menu-items") return CLUSTER_VIEW_MODES.MENU;
-    return null;
-  }, [searchParams]);
-
-  const resolvedViewMode = viewMode || CLUSTER_VIEW_MODES.MENU;
+  // Old ?view=restaurants links (the Food/Restaurants toggle is gone): open at Restaurants A–Z.
+  const wantsRestaurants = String(searchParams.get("view") || "").trim().toLowerCase() === CLUSTER_VIEW_MODES.RESTAURANTS;
+  const [restaurantCount, setRestaurantCount] = useState(null);
+  const [eventCount, setEventCount] = useState(0);
 
   // Set only when the cluster was opened from the search page pill / location panel.
   const exitTo = useMemo(() => resolveClusterExitTo(searchParams, clusterSlug), [searchParams, clusterSlug]);
@@ -1324,12 +1362,6 @@ export default function ClusterPage() {
         : shareData,
     [cluster, shareFilters, shareData]
   );
-
-  function setViewMode(nextView) {
-    const params = new URLSearchParams(searchParams);
-    params.set("view", nextView);
-    setSearchParams(params, { replace: true });
-  }
 
   useEffect(() => {
     if (!clusterSlug) return undefined;
@@ -1358,6 +1390,11 @@ export default function ClusterPage() {
 
     return () => controller.abort();
   }, [clusterSlug, stateSlug, citySlug]);
+
+  useEffect(() => {
+    if (!wantsRestaurants || restaurantCount == null) return;
+    document.getElementById("cluster-restaurants")?.scrollIntoView?.({ block: "start" });
+  }, [wantsRestaurants, restaurantCount]);
 
   useEffect(() => {
     if (!shareData) return undefined;
@@ -1470,7 +1507,6 @@ export default function ClusterPage() {
             minWidth: 0,
           }}
         >
-          <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
           {shareData ? (
             <ShareButton
               shareData={shareButtonData}
@@ -1521,24 +1557,10 @@ export default function ClusterPage() {
     </>
   );
 
-  const clusterRestaurantsTail = (
-    <>
-      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-      {clusterDisclaimer}
-    </>
-  );
-
-  const clusterContext = (
-    <>
-      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
-      {cluster.slug ? (
-        <ClusterPublicFeed
-          cluster={cluster}
-          venueFilter={campusVenueFilter}
-          onVenueFilterChange={setCampusVenueFilter}
-        />
-      ) : null}
-
+  // Web-only cluster info, folded at the bottom like the app's dining halls (Andre 2026-11-05):
+  // dining halls, today's reports, events. Restaurants are what Menuply sells, so they come first.
+  const clusterExtras = (
+    <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.5rem" }} data-testid="cluster-extras">
       {/* University clusters only — hidden when no campus dining members. */}
       <CampusDiningSection
         cluster={cluster}
@@ -1552,8 +1574,51 @@ export default function ClusterPage() {
         }}
       />
 
-      {cluster.slug ? <ClusterNearbyEvents cluster={cluster} /> : null}
-    </>
+      {/* Public cluster dashboard — clock, hotspots, popular, comments. */}
+      {cluster.slug ? (
+        <ClusterFold title={`Today at ${clusterLabel}`} meta="Reports, comments" testId="cluster-today-fold">
+          <ClusterPublicFeed
+            cluster={cluster}
+            venueFilter={campusVenueFilter}
+            onVenueFilterChange={setCampusVenueFilter}
+          />
+        </ClusterFold>
+      ) : null}
+
+      {cluster.slug ? (
+        // Mounted closed so it can report its count; no events = no fold line.
+        <ClusterFold
+          title="Events nearby"
+          meta={eventCount ? String(eventCount) : null}
+          testId="cluster-events-fold"
+          eager
+          hidden={!eventCount}
+        >
+          <ClusterNearbyEvents cluster={cluster} onCount={setEventCount} />
+        </ClusterFold>
+      ) : null}
+    </div>
+  );
+
+  const clusterRestaurantsSection = (
+    <section
+      id="cluster-restaurants"
+      data-testid="cluster-restaurants"
+      style={{ display: "grid", gap: "0.65rem", marginTop: "0.5rem", scrollMarginTop: 180 }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+        <h2 style={CLUSTER_SECTION_TITLE_STYLE}>Restaurants A–Z</h2>
+        {restaurantCount ? <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>{restaurantCount}</span> : null}
+      </div>
+      <ClusterRestaurantsTab
+        clusterSlug={cluster.slug}
+        cluster={cluster}
+        enabled
+        placeReturnPath={restaurantsReturnPath}
+        placeReturnLabel={clusterLabel}
+        onCount={setRestaurantCount}
+      />
+    </section>
   );
 
   const themeSlug = String(cluster.slug || "").toLowerCase();
@@ -1635,8 +1700,8 @@ export default function ClusterPage() {
             {/* USC: the hero line is the page H1 (generic heading + intro were duplicative). */}
             <h1 className="cluster-campus-kicker">Food around University Park</h1>
             <p className="cluster-campus-sub">
-              Dining halls, nearby spots, and what Trojans are saying about food right now —
-              without digging through venue menus.
+              Nearby spots, dining halls, and what Trojans are eating right now, without digging
+              through menus.
             </p>
           </div>
         ) : null}
@@ -1675,52 +1740,23 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {clusterContext}
-
-      {/* Keep both views mounted so the Food/Restaurants toggle is not destroyed mid-tap. */}
-      <div
-        data-testid="cluster-view-panel-menu"
-        hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.MENU}
-        aria-hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.MENU}
-      >
+      {/* One page, the app's order (Andre 2026-11-05): clips, food by type, restaurants A–Z, then the
+          folded cluster info. The old Food/Restaurants toggle is gone. */}
+      <div data-testid="cluster-view-panel-menu">
         <ClusterMenuExplorerTab
           clusterSlug={cluster.slug}
           cluster={cluster}
           enabled
           stickyLead={renderStickyLead()}
           preContent={clusterFoodHero}
-          postContent={clusterFoodTail}
+          postContent={
+            <>
+              {clusterRestaurantsSection}
+              {clusterExtras}
+              {clusterFoodTail}
+            </>
+          }
         />
-      </div>
-      <div
-        data-testid="cluster-view-panel-restaurants"
-        hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.RESTAURANTS}
-        aria-hidden={resolvedViewMode !== CLUSTER_VIEW_MODES.RESTAURANTS}
-      >
-        <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
-          {renderStickyLead()}
-        </div>
-        <div style={{ overflowX: "clip", minWidth: 0 }}>
-          <main
-            aria-label="Cluster restaurants"
-            style={{
-              display: "grid",
-              gap: "0.75rem",
-              minWidth: 0,
-              paddingTop: "0.25rem",
-              paddingBottom: "1.5rem",
-            }}
-          >
-            <ClusterRestaurantsTab
-              clusterSlug={cluster.slug}
-              cluster={cluster}
-              enabled
-              placeReturnPath={restaurantsReturnPath}
-              placeReturnLabel={clusterLabel}
-            />
-          </main>
-          {clusterRestaurantsTail}
-        </div>
       </div>
 
       <BottomNav />
