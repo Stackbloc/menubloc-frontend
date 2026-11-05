@@ -92,6 +92,7 @@ export default function SiteFooter() {
               {t("discovery.footer.creators", "Creators")}
             </Link>
             <br />
+            <Link to="/advertise?cluster=usc" style={footerLinkStyle}>Advertise</Link><br />
             <Link to="/distributors" style={footerLinkStyle}>
               {t("discovery.footer.foodDistributors", "Food Distributors")}
             </Link>
