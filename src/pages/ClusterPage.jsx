@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
@@ -488,6 +488,9 @@ const CLUSTER_STICKY_CHROME_STYLE = {
   minWidth: 0,
 };
 
+/** history state key: this entry is a food type/search step opened from the boxes (Back closes it). */
+const CLUSTER_FOOD_STEP_STATE = "clusterFoodStep";
+
 const CLUSTER_FOOD_STICKY_STYLE = {
   position: "sticky",
   zIndex: 14, // under a playing clip (15) and the search (20), so it slides away beneath them
@@ -646,6 +649,8 @@ function ClusterMenuExplorerTab({
   // Search (?q=), tapped category (?category=) and drink chip (?drink=) live in the URL
   // so Share / reload reproduce the same results.
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const submittedSearch = String(searchParams.get(CLUSTER_SEARCH_QUERY_KEY) || "").trim();
   const urlCategoryCode = normalizeClusterCategoryCode(searchParams.get(CLUSTER_CATEGORY_QUERY_KEY));
   const [searchInput, setSearchInput] = useState(submittedSearch);
@@ -670,25 +675,36 @@ function ClusterMenuExplorerTab({
   const foodChips = useFoodTypeChips(clusterSlug, { enabled: enabled && isClusterFoodByTypeEnabled() });
   const chipsOn = foodChips.chips.length > 0;
 
-  function updateFoodParams(mutate) {
+  function updateFoodParams(mutate, { push = false } = {}) {
     const params = new URLSearchParams(searchParams);
     mutate(params);
-    setSearchParams(params, { replace: true });
+    // A pushed step (opening a type or a search from the boxes) is marked, so Back closes it.
+    if (push) setSearchParams(params, { state: { [CLUSTER_FOOD_STEP_STATE]: true } });
+    else setSearchParams(params, { replace: true, state: location.state });
   }
 
   function selectCategory(category) {
     setDrinkSubcategory(CLUSTER_DRINK_SUBCATEGORY_ALL);
     setSelectedCategory(category);
-    updateFoodParams((params) => {
-      if (category?.code) params.set(CLUSTER_CATEGORY_QUERY_KEY, category.code);
-      else params.delete(CLUSTER_CATEGORY_QUERY_KEY);
-      params.delete(CLUSTER_DRINK_QUERY_KEY);
-    });
+    // Andre 2026-11-05: Back from a food type returns to this cluster's boxes, not the page before.
+    const push = Boolean(category?.code) && !selectedCategory && !searchActive;
+    updateFoodParams(
+      (params) => {
+        if (category?.code) params.set(CLUSTER_CATEGORY_QUERY_KEY, category.code);
+        else params.delete(CLUSTER_CATEGORY_QUERY_KEY);
+        params.delete(CLUSTER_DRINK_QUERY_KEY);
+      },
+      { push },
+    );
   }
 
   /** Back to every food type (the back circle, the floating "All types" pill, a cleared search). */
   function backToAllTypes() {
-    if (searchActive) {
+    if (location.state?.[CLUSTER_FOOD_STEP_STATE]) {
+      // This type/search was a step we added: going back pops it, so browser Back stays in step.
+      setSearchInput("");
+      navigate(-1);
+    } else if (searchActive) {
       setSearchInput("");
       const params = new URLSearchParams(searchParams);
       params.delete(CLUSTER_SEARCH_QUERY_KEY);
@@ -733,6 +749,10 @@ function ClusterMenuExplorerTab({
   // Applied once per URL code: going back clears the selection a render before the URL catches up,
   // and re-applying the stale code then reopened the type (seen 2026-11-05).
   const appliedUrlCategoryRef = useRef(null);
+  // Browser Back took ?q= away: empty the search box too.
+  useEffect(() => {
+    if (!submittedSearch) setSearchInput("");
+  }, [submittedSearch]);
   // The food filters pin just under the sticky search — and under a playing clip, which pins there
   // too — so track both heights (the search wraps on phones; the clip band comes and goes).
   const [chromeNode, chromeRef] = useState(null);
@@ -778,6 +798,8 @@ function ClusterMenuExplorerTab({
   useEffect(() => {
     if (!urlCategoryCode) {
       appliedUrlCategoryRef.current = null;
+      // Browser Back took ?category= away: show the boxes again.
+      if (selectedCategory && !searchActive) setSelectedCategory(null);
       return;
     }
     if (searchActive || appliedUrlCategoryRef.current === urlCategoryCode) return;
@@ -1081,12 +1103,21 @@ function ClusterMenuExplorerTab({
     params.set(CLUSTER_SEARCH_QUERY_KEY, trimmed);
     params.delete(CLUSTER_CATEGORY_QUERY_KEY);
     params.delete(CLUSTER_DRINK_QUERY_KEY);
-    setSearchParams(params, { replace: true });
+    // From the boxes, a search is a step Back closes; a new search over one replaces it.
+    if (!searchActive && !selectedCategory) {
+      setSearchParams(params, { state: { [CLUSTER_FOOD_STEP_STATE]: true } });
+    } else {
+      setSearchParams(params, { replace: true, state: location.state });
+    }
     setSelectedCategory(null);
   }
 
   function clearSearch() {
     setSearchInput("");
+    if (location.state?.[CLUSTER_FOOD_STEP_STATE]) {
+      navigate(-1);
+      return;
+    }
     const params = new URLSearchParams(searchParams);
     params.delete(CLUSTER_SEARCH_QUERY_KEY);
     setSearchParams(params, { replace: true });
