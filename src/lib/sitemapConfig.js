@@ -30,3 +30,13 @@ export const INDEXABLE_STATIC_PAGES = [
 export const INDEXABLE_STATIC_META = Object.fromEntries(
   INDEXABLE_STATIC_PAGES.map((entry) => [entry.path, entry])
 );
+
+/**
+ * Permanent redirects from vercel.json ("redirects"), path → destination.
+ * The sitemap lists the destination instead (a sitemap URL that 308s is a Search
+ * Console "Page with redirect"). test/sitemapRedirectsContract.test.js keeps this
+ * in step with vercel.json.
+ */
+export const SITEMAP_PATH_REDIRECTS = Object.freeze({
+  "/clusters/california/indio/coachella-2027": "/clusters/california/indio/indio-festival-grounds",
+});

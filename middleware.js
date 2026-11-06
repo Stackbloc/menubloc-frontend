@@ -13,7 +13,7 @@ import {
 import { clusterPath } from "./src/lib/clusterUrl.js";
 import { clusterShareSearch, readClusterShareFilters } from "./src/lib/clusterShareFilters.js";
 import { getClusterSeoContent } from "./src/lib/clusterSeoContent.js";
-import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
+import { INDEXABLE_STATIC_PAGES, SITEMAP_PATH_REDIRECTS } from "./src/lib/sitemapConfig.js";
 import {
   destinationVenuePageJsonLd,
   menuItemPageJsonLd,
@@ -141,6 +141,9 @@ async function fetchMeta(path, timeoutMs = 3000) {
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   try {
     const res = await fetch(`${BACKEND}${path}`, { signal: ac.signal });
+    // A definite "no such page" (vs. a timeout/5xx) lets routes answer 404 instead of a
+    // soft-404 home shell. Callers that only check meta.ok keep falling through.
+    if (res.status === 404) return { ok: false, notFound: true };
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -336,6 +339,13 @@ async function buildSitemapEntries() {
     }
   }
 
+  // Never list a URL that redirects (vercel.json "redirects"): list where it lands.
+  for (const entry of entries) {
+    const path = entry.url && entry.url.startsWith(ORIGIN) ? entry.url.slice(ORIGIN.length) : null;
+    const target = path && SITEMAP_PATH_REDIRECTS[path];
+    if (target) entry.url = `${ORIGIN}${target}`;
+  }
+
   const seen = new Set();
   return entries.filter((entry) => entry.url && !seen.has(entry.url) && seen.add(entry.url));
 }
@@ -354,37 +364,46 @@ function buildCanonicalRestaurantPath(data, suffix = "") {
   return absoluteCanonicalUrl(path);
 }
 
+// Titles/descriptions are plain text: injectMeta() HTML-escapes them once. Escaping here
+// too showed "McDonald&#39;s" in Google results (SEO Bot finding, 2026-11-06).
+// City + state keep thousands of chain stores from sharing one title.
+function placeLabel(data) {
+  return data.city && data.state ? `${data.city}, ${data.state}` : "";
+}
+
 function buildRestaurantMenuMeta(data) {
-  const name = escapeHtml(data.name);
-  const title = `${name} — Menu | Menuply`;
-  const hasLocation = data.city && data.state;
+  const name = data.name;
+  const place = placeLabel(data);
+  const title = place ? `${name} Menu — ${place} | Menuply` : `${name} Menu | Menuply`;
+  const hasLocation = Boolean(place);
   const description = hasLocation
-    ? `Browse the full ${name} menu in ${escapeHtml(data.city)}, ${escapeHtml(data.state)}. View dishes, nutrition insights, and deals on Menuply.`
+    ? `Browse the full ${name} menu in ${place}. View dishes, prices, nutrition insights, and deals on Menuply.`
     : `Browse the full ${name} menu. View dishes, nutrition insights, and deals on Menuply.`;
   const canonical = buildCanonicalRestaurantPath(data, "/menu");
   return { title, description, canonical };
 }
 
 function buildRestaurantProfileMeta(data) {
-  const name = escapeHtml(data.name);
-  const title = `${name} | Menuply`;
-  const hasLocation = data.city && data.state;
+  const name = data.name;
+  const place = placeLabel(data);
+  const title = place ? `${name} — ${place} | Menuply` : `${name} | Menuply`;
+  const hasLocation = Boolean(place);
   const description = hasLocation
-    ? `Explore ${name} in ${escapeHtml(data.city)}, ${escapeHtml(data.state)}. View the full menu, nutrition insights, and deals on Menuply.`
+    ? `Explore ${name} in ${place}. View the full menu, hours, nutrition insights, and deals on Menuply.`
     : `Explore ${name}. View the full menu, nutrition insights, and deals on Menuply.`;
   const canonical = buildCanonicalRestaurantPath(data);
   return { title, description, canonical };
 }
 
 function buildMenuItemMeta(data, itemId) {
-  const itemName = escapeHtml(data.name);
+  const itemName = data.name;
   const hasRestaurant = data.restaurant_name != null;
   const hasLocation = data.city && data.state;
   const title = hasRestaurant
-    ? `${itemName} at ${escapeHtml(data.restaurant_name)} | Menuply`
+    ? `${itemName} at ${data.restaurant_name} | Menuply`
     : `${itemName} | Menuply`;
   const description = hasRestaurant && hasLocation
-    ? `See price, nutrition breakdown, and menu details for ${itemName} at ${escapeHtml(data.restaurant_name)} in ${escapeHtml(data.city)}, ${escapeHtml(data.state)} on Menuply.`
+    ? `See price, nutrition breakdown, and menu details for ${itemName} at ${data.restaurant_name} in ${data.city}, ${data.state} on Menuply.`
     : `View nutrition facts and menu details for ${itemName} on Menuply.`;
   const canonical = `${ORIGIN}/menu-items/${itemId}`;
   return { title, description, canonical };
@@ -520,6 +539,24 @@ async function wallPageResponse(request, rawSlug) {
   );
 }
 
+// Removed restaurants / menu items: a real 404 + noindex instead of a 200 home shell
+// (Search Console "Soft 404" and "Google chose different canonical" = "/").
+function notFoundResponse(shell) {
+  const html = injectRobots(
+    injectMeta(shell, "Page not found | Menuply", "This page is no longer on Menuply.", null)
+      .replace(/<link rel="canonical" href="[^"]*"[^>]*>\n?/, ""),
+    "noindex, follow"
+  );
+  return new Response(html, {
+    status: 404,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=600",
+      "X-SEO-Middleware": "not-found",
+    },
+  });
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -577,6 +614,7 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(`/public/meta/menu-items/${encodeURIComponent(itemId)}`),
     ]);
+    if (shell && meta?.notFound) return notFoundResponse(shell);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildMenuItemMeta(meta.data, itemId);
     const restaurant = meta.data.restaurant_id
@@ -602,6 +640,7 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
+    if (shell && meta?.notFound) return notFoundResponse(shell);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
     // Geographic validation: URL state/city must match DB data — redirect if not
@@ -631,6 +670,7 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
+    if (shell && meta?.notFound) return notFoundResponse(shell);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantProfileMeta(meta.data);
     // Geographic validation: URL state/city must match DB data — redirect if not
@@ -785,6 +825,7 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(`/public/meta/menu-items/${id}`),
     ]);
+    if (shell && meta?.notFound) return notFoundResponse(shell);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildMenuItemMeta(meta.data, id);
     const restaurant = meta.data.restaurant_id
