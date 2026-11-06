@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { peekEduVerification, confirmEduVerification } from "../../lib/consumerApi.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
@@ -14,7 +14,6 @@ import {
 import { formatEduVerificationBadge } from "../../lib/eduVerificationDisplay.js";
 
 export default function ConsumerEduVerify() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { refreshSession } = useConsumer();
   const token = searchParams.get("token") || "";
@@ -52,8 +51,9 @@ export default function ConsumerEduVerify() {
           })
       );
       await refreshSession().catch(() => {});
+      // Stay here (Andre 2026-11-06): the link is usually opened from the app, where the phone browser
+      // has no Menuply session, so /account would show sign-in and look like it failed.
       setState("done");
-      setTimeout(() => navigate("/account", { replace: true }), 1800);
     } catch (err) {
       setError(err.message || "Unable to verify .edu address");
     } finally {
@@ -84,8 +84,12 @@ export default function ConsumerEduVerify() {
     return (
       <AuthPageFrame title="School verified" subtitle="">
         <p style={{ ...styles.subheading, textAlign: "center" }}>{badge}</p>
-        <p style={{ ...styles.subheading, textAlign: "center", fontSize: 13 }}>
-          Affiliation signal only — not proof of current enrollment.
+        <p style={{ ...styles.subheading, textAlign: "center" }}>
+          Your profile now shows Verified student. Go back to the Menuply app, or{" "}
+          <Link to="/account" style={styles.link}>
+            open your account
+          </Link>
+          .
         </p>
       </AuthPageFrame>
     );
