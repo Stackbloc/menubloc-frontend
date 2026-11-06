@@ -43,7 +43,9 @@ export default function WallBlockPage() {
   const wallHome = block
     ? clusterPath({ state: block.cluster_state, city: block.cluster_city, slug: block.cluster_slug }) || "/clusters"
     : "/clusters";
-  const writeTarget = `${wallHome}?wall=write`;
+  // The full Wall has its own page now (menuply.com/clusters/walls/usc).
+  const wallPage = block ? `/clusters/walls/${block.cluster_slug}` : null;
+  const writeTarget = wallPage ? `${wallPage}?wall=write` : `${wallHome}?wall=write`;
   const writeHref = isAuthenticated ? writeTarget : withConsumerAuthNext("/account/signup", writeTarget);
 
   return (
@@ -93,7 +95,7 @@ export default function WallBlockPage() {
               <Link className="cw-btn cw-btn-primary" to={writeHref} data-testid="wall-block-write">
                 Write yours
               </Link>
-              <Link className="cw-btn" to={`${wallHome}?wall=1`} data-testid="wall-block-explore">
+              <Link className="cw-btn" to={wallPage} state={{ wallEntry: "shared_post" }} data-testid="wall-block-explore">
                 Explore the {block.cluster_label} Wall
               </Link>
             </div>

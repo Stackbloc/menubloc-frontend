@@ -3,6 +3,7 @@ import OwnerLayout, { EmptyState, PageCard } from "./OwnerLayout.jsx";
 import { getOwnerContentReports, resolveOwnerContentReport } from "../../lib/ownerContentReportsApi.js";
 import { formatApiErrorForDisplay } from "../../lib/apiErrorDisplay.js";
 import OwnerWallReview from "./OwnerWallReview.jsx";
+import OwnerWallHouseBrick from "./OwnerWallHouseBrick.jsx";
 
 /**
  * Owner → Reports (Play Store safety, Andre approved 2026-11-02, plan 18). Diners report a clip or a dish
@@ -59,6 +60,7 @@ export default function OwnerContentReports() {
       )}
     >
       {status === "open" ? <OwnerWallReview /> : null}
+      {status === "open" ? <OwnerWallHouseBrick slug="usc" /> : null}
       {error ? <p role="alert" style={{ color: "#b42318" }}>{error}</p> : null}
       {data?.migration_pending ? <p>Reports aren&apos;t set up in the database yet (migration 0382).</p> : null}
       {data && !reports.length ? (

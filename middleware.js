@@ -495,6 +495,31 @@ async function wallPostResponse(request, publicId) {
   });
 }
 
+// --- Full cluster Wall (/clusters/walls/:slug, Andre 2026-11-06) ---
+// Must run before CLUSTER_CITY_RE, which would read "walls/usc" as state/city.
+const WALL_PAGE_RE = /^\/clusters\/walls\/([A-Za-z0-9-]+)\/?$/i;
+const WALL_PAGE_LABELS = { usc: { short: "USC", place: "USC" } };
+
+async function wallPageResponse(request, rawSlug) {
+  const url = new URL(request.url);
+  const slug = rawSlug.toLowerCase();
+  const canonicalPath = `/clusters/walls/${slug}`;
+  if (url.pathname !== canonicalPath) return Response.redirect(`${ORIGIN}${canonicalPath}${url.search}`, 301);
+  const label = WALL_PAGE_LABELS[slug];
+  if (!label) return undefined;
+  const shell = await fetchShell(request.url);
+  if (!shell) return undefined;
+  const canonical = `${ORIGIN}${canonicalPath}`;
+  return injectedResponse(
+    injectMeta(
+      shell,
+      `${label.short} Wall | Menuply`,
+      `See what's happening around ${label.place}. Read messages, discover campus activities, and leave your mark on the ${label.short} Wall.`,
+      canonical
+    )
+  );
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -510,6 +535,9 @@ export default async function middleware(request) {
 
   const wallMatch = WALL_POST_RE.exec(pathname);
   if (wallMatch) return wallPostResponse(request, wallMatch[1]);
+
+  const wallPageMatch = WALL_PAGE_RE.exec(pathname);
+  if (wallPageMatch) return wallPageResponse(request, wallPageMatch[1]);
 
   if (pathname === "/search") {
     const searchMeta = buildSearchShareMeta(new URL(request.url));

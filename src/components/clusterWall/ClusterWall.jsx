@@ -5,6 +5,8 @@ import useClusterWall from "../../hooks/useClusterWall.js";
 import { fetchClusterWallWeeks } from "../../lib/clusterWallApi.js";
 import { withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { wallWeekLabel } from "../../lib/clusterWallStyles.js";
+import { trackEngagement } from "../../lib/engagementTracking.js";
+import { houseSlot } from "../../lib/clusterWallHouse.js";
 import WallBlockTile from "./WallBlockTile.jsx";
 import WallBlockViewer from "./WallBlockViewer.jsx";
 import WallComposerSheet from "./WallComposerSheet.jsx";
@@ -15,13 +17,16 @@ import "./clusterWall.css";
  * Cluster Wall on the cluster page (USC first). One provider holds the data and the sheets;
  * ClusterWallPanel (desktop side column, own scroll) and ClusterWallBand (phone, sideways strip)
  * render from it. ?wall=1 opens the full Wall, ?wall=write opens the composer (after sign-up too).
+ *
+ * standalone (menuply.com/clusters/walls/:slug): the page IS the full Wall, so ?wall=1 does nothing
+ * and the official Menuply brick shows once among the posts (showHouse).
  */
 
 function isWide() {
   return typeof window !== "undefined" && window.matchMedia?.("(min-width: 960px)")?.matches;
 }
 
-export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", children }) {
+export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standalone = false, showHouse = false, children }) {
   const [week, setWeek] = useState(null);
   const wall = useClusterWall(clusterSlug, { week });
   const { isAuthenticated, loading: authLoading } = useConsumer();
@@ -32,6 +37,8 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", childre
   const [composing, setComposing] = useState(false);
   const [fullOpen, setFullOpen] = useState(false);
   const [weeks, setWeeks] = useState(null);
+  // One random number per visit: the Menuply brick keeps its spot while new posts arrive.
+  const [houseRand] = useState(() => Math.random());
 
   const active = wall.enabled && wall.status !== "unavailable";
 
@@ -57,6 +64,8 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", childre
       if (wallParam === "write") {
         if (isAuthenticated) setComposing(true);
         else startWriting();
+      } else if (standalone) {
+        // Already the full Wall.
       } else if (isWide()) {
         document.getElementById("cluster-wall")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
@@ -64,7 +73,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", childre
       }
     }, 0);
     return () => clearTimeout(t);
-  }, [active, wallParam, authLoading, isAuthenticated, params, setParams, startWriting]);
+  }, [active, wallParam, authLoading, isAuthenticated, params, setParams, startWriting, standalone]);
 
   const openWeeks = useCallback(async () => {
     if (weeks) return weeks;
@@ -78,6 +87,15 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", childre
     }
   }, [clusterSlug, weeks]);
 
+  const openHouse = useCallback(
+    (block) => {
+      const to = block?.link_path || "/clusters";
+      trackEngagement("wall_house_click", { placement: "wall_house" }, { href: to });
+      navigate(to);
+    },
+    [navigate]
+  );
+
   const value = useMemo(
     () => ({
       clusterSlug,
@@ -89,10 +107,18 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", childre
       weeks,
       openWeeks,
       openBlock: setViewing,
+      openHouse,
+      showHouse: showHouse && !week,
+      houseRand,
+      standalone,
       startWriting,
-      openFull: () => setFullOpen(true),
+      openFull: () => {
+        // From the cluster page = from inside Menuply (counted on the cluster page view).
+        trackEngagement("wall_open", { subtype: "menuply" });
+        setFullOpen(true);
+      },
     }),
-    [clusterSlug, clusterLabel, wall, active, week, weeks, openWeeks, startWriting]
+    [clusterSlug, clusterLabel, wall, active, week, weeks, openWeeks, openHouse, showHouse, houseRand, standalone, startWriting]
   );
 
   return (
@@ -163,8 +189,11 @@ function WeekPicker() {
 }
 
 function WallBody({ band = false }) {
-  const { wall, openBlock, startWriting, clusterLabel, week, setWeek } = useClusterWallContext();
+  const { wall, openBlock, openHouse, showHouse, houseRand, startWriting, clusterLabel, week, setWeek } = useClusterWallContext();
   if (wall.status === "loading") return <p className="cw-sub" style={{ padding: 8 }}>Loading the Wall…</p>;
+  const house = !band && showHouse && wall.isCurrentWeek ? wall.houseBlock : null;
+  const houseAt = house ? houseSlot(wall.blocks.length, houseRand) : -1;
+  const houseTile = house ? <WallBlockTile key={house.public_id} block={house} onOpen={openHouse} /> : null;
   if (!wall.blocks.length) {
     return (
       <div style={{ padding: band ? "6px 2px" : 12, display: "grid", gap: 8, justifyItems: "start" }}>
@@ -176,15 +205,19 @@ function WallBody({ band = false }) {
         ) : (
           <button type="button" className="cw-btn cw-btn-primary" onClick={startWriting}>Write on the Wall</button>
         )}
+        {houseTile ? <div className="cw-mosaic" style={{ width: "100%" }}>{houseTile}</div> : null}
       </div>
     );
   }
   return (
     <>
       <div className={`cw-mosaic${band ? " cw-band" : ""}`} data-testid={band ? "cluster-wall-band-mosaic" : "cluster-wall-mosaic"}>
-        {wall.blocks.map((b) => (
-          <WallBlockTile key={b.public_id} block={b} onOpen={openBlock} />
+        {wall.blocks.map((b, i) => (
+          <WallBlockTileWithHouse key={b.public_id} at={i} houseAt={houseAt} houseTile={houseTile}>
+            <WallBlockTile block={b} onOpen={openBlock} />
+          </WallBlockTileWithHouse>
         ))}
+        {houseAt === wall.blocks.length ? houseTile : null}
       </div>
       {!band && wall.hasMore ? (
         <div style={{ display: "flex", justifyContent: "center", padding: 10 }}>
@@ -197,7 +230,18 @@ function WallBody({ band = false }) {
   );
 }
 
-function Header({ compact = false, onClose = null }) {
+/** A post, with the Menuply brick in front of it when this is the brick's spot. */
+function WallBlockTileWithHouse({ at, houseAt, houseTile, children }) {
+  if (at !== houseAt || !houseTile) return children;
+  return (
+    <>
+      {houseTile}
+      {children}
+    </>
+  );
+}
+
+function Header({ compact = false }) {
   const { clusterLabel, startWriting, week, setWeek, openFull } = useClusterWallContext();
   return (
     <div className="cw-panel-head">
@@ -220,13 +264,17 @@ function Header({ compact = false, onClose = null }) {
             Write
           </button>
         )}
-        {onClose ? (
-          <button type="button" className="cw-btn cw-btn-quiet" onClick={onClose} aria-label="Close the Wall">
-            Close
-          </button>
-        ) : null}
       </div>
     </div>
+  );
+}
+
+/** Small way back into Menuply, only when the Wall was opened from inside Menuply. */
+export function BackToMenuply({ onBack }) {
+  return (
+    <button type="button" className="cw-back" onClick={onBack} data-testid="wall-back-to-menuply">
+      ← Back to Menuply
+    </button>
   );
 }
 
@@ -277,10 +325,43 @@ function ClusterWallFullScreen({ onClose }) {
   }, [onClose]);
   return (
     <div className="cw-full" role="dialog" aria-modal="true" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-full">
-      <Header onClose={onClose} />
+      <div className="cw-back-row">
+        <BackToMenuply onBack={onClose} />
+      </div>
+      <Header />
       <div className="cw-panel-scroll">
         <WallBody />
       </div>
     </div>
+  );
+}
+
+/**
+ * menuply.com/clusters/walls/:slug — the full Wall as its own page (QR codes, shares, social).
+ * Header with past weeks + Write, every post, the Menuply brick once. `onBack` only when the visitor
+ * came from inside Menuply.
+ */
+export function ClusterWallStandalone({ onBack = null }) {
+  const ctx = useClusterWallContext();
+  if (!ctx) return null;
+  if (!ctx.active) {
+    return ctx.wall.status === "loading" ? (
+      <p className="cw-sub" style={{ padding: 12 }}>Loading the Wall…</p>
+    ) : (
+      <p className="cw-sub" style={{ padding: 12 }} data-testid="cluster-wall-standalone-missing">This place has no Wall yet.</p>
+    );
+  }
+  return (
+    <section className="cw-standalone" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-standalone">
+      {onBack ? (
+        <div className="cw-back-row">
+          <BackToMenuply onBack={onBack} />
+        </div>
+      ) : null}
+      <Header />
+      <div className="cw-standalone-body">
+        <WallBody />
+      </div>
+    </section>
   );
 }

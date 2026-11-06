@@ -18,6 +18,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
     weekStart: null,
     isCurrentWeek: true,
     cluster: null,
+    houseBlock: null,
   }));
   const [loadingMore, setLoadingMore] = useState(false);
   const seen = useRef(new Set());
@@ -39,6 +40,8 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
           weekStart: data.week_start || null,
           isCurrentWeek: Boolean(data.is_current_week),
           cluster: data.cluster || null,
+          // The official Menuply brick (first page only; null when off or before the backend has it).
+          houseBlock: data.house_block && data.house_block.house ? data.house_block : null,
         });
       })
       .catch((err) => {

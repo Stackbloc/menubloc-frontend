@@ -40,3 +40,22 @@ export async function actOnOwnerWallBlock(id, action) {
   if (!res.ok) throw await apiErrorFromResponse(res);
   return res.json();
 }
+
+// The official Menuply brick on a Wall (mig 0395). GET works before the migration (default copy).
+export async function getOwnerWallHouse(slug = "usc") {
+  const res = await fetch(`${BASE}/wall/house/${encodeURIComponent(slug)}`, { credentials: "include" });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}
+
+/** settings: { body, size, style, link_path, active } */
+export async function saveOwnerWallHouse(slug = "usc", settings = {}) {
+  const res = await fetch(`${BASE}/wall/house/${encodeURIComponent(slug)}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}

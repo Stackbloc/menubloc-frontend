@@ -34,7 +34,8 @@ const IMPRESSION_DWELL_MS = 1000;
 const FLUSH_DELAY_MS = 1500;
 const BATCH_MAX = 25;
 
-const NAVIGATING_EVENTS = new Set(["restaurant_click", "deal_click", "ad_click", "menu_item_click"]);
+// wall_house_click: the Menuply brick on the Wall → cluster food page (src_page_type "wall").
+const NAVIGATING_EVENTS = new Set(["restaurant_click", "deal_click", "ad_click", "menu_item_click", "wall_house_click"]);
 
 let queue = [];
 let deferredPageView = null; // page_view waiting for the page to become visible
@@ -255,7 +256,7 @@ export function beginPageView({ pageType, restaurantId = null, clusterId = null,
       page_type: pageType,
       page_path: pagePath,
       restaurant_id: pageType === "menu" || pageType === "profile" ? rid : null,
-      cluster_id: pageType === "cluster" ? cid : null,
+      cluster_id: pageType === "cluster" || pageType === "wall" ? cid : null,
       deal_id: pageType === "deal" ? did : null,
     };
     lastPageViewKey = { key: viewKey, ts: now };

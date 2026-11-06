@@ -99,16 +99,20 @@ export default function WallBlockTile({ block, onOpen }) {
   const theme = WALL_THEMES[s.theme];
   useVisibleAutoplay(videoRef, isClip && Boolean(block.video_url));
   const who = block.author?.first_name || "";
-  const label = isClip
-    ? `Clip${block.body ? `: ${block.body}` : ""}${who ? ` by ${who}` : ""}`
-    : `${block.body}${who ? ` — ${who}` : ""}`;
+  // The official Menuply brick (block.house): same look as a post, a MENUPLY tag, no share/author.
+  const isHouse = block.house === true;
+  const label = isHouse
+    ? `Menuply: ${block.body}`
+    : isClip
+      ? `Clip${block.body ? `: ${block.body}` : ""}${who ? ` by ${who}` : ""}`
+      : `${block.body}${who ? ` — ${who}` : ""}`;
 
   return (
     <div
       role="button"
       tabIndex={0}
-      className={`cw-tile cw-size-${block.size}`}
-      data-testid="cluster-wall-tile"
+      className={`cw-tile cw-size-${block.size}${isHouse ? " cw-tile-house" : ""}`}
+      data-testid={isHouse ? "cluster-wall-house-tile" : "cluster-wall-tile"}
       data-wall-id={block.public_id}
       aria-label={label}
       onClick={() => onOpen?.(block)}
@@ -160,7 +164,12 @@ export default function WallBlockTile({ block, onOpen }) {
           In review
         </span>
       ) : null}
-      <button
+      {isHouse ? (
+        <span className="cw-house-tag" style={{ color: theme.ink }} aria-hidden="true">
+          {block.tag || "MENUPLY"}
+        </span>
+      ) : null}
+      {isHouse ? null : <button
         type="button"
         className="cw-tile-share"
         aria-label="Share this post"
@@ -172,7 +181,7 @@ export default function WallBlockTile({ block, onOpen }) {
         style={{ color: isClip ? "#fff" : theme.ink }}
       >
         ↗
-      </button>
+      </button>}
     </div>
   );
 }

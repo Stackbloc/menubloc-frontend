@@ -61,6 +61,7 @@ import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import FindDinersPage from "./pages/consumer/FindDinersPage.jsx";
 import DiscoverableDinerProfilePage from "./pages/consumer/DiscoverableDinerProfilePage.jsx";
 import WallBlockPage from "./pages/WallBlockPage.jsx";
+import ClusterWallPage from "./pages/ClusterWallPage.jsx";
 import SocialEventJoinPage from "./pages/SocialEventJoinPage.jsx";
 // A Connect's profile follows the app (Andre 2026-10-30); ?hub=1 keeps ConsumerConnectionPeerPage.
 import ConnectProfilePage from "./pages/consumer/ConnectProfilePage.jsx";
@@ -884,6 +885,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         />
         <Route path="/join/:clusterLaunch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinClusterLaunchPage />} />
         <Route path="/join/:clusterLaunch/next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinClusterNextPage />} />
+        {/* The full cluster Wall as its own page (QR codes, shares). Static "walls" outranks :stateSlug. */}
+        <Route path="/clusters/walls/:wallSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterWallPage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug/food-by-type" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterFoodByTypePage />} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />

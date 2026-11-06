@@ -331,3 +331,30 @@
   position: absolute; left: 5px; bottom: 5px; padding: 2px 5px; border-radius: 2px;
   background: #b45309; color: #fff; font: 800 10px/1.2 system-ui, sans-serif;
 }
+
+/* Official Menuply brick (mig 0395): a normal brick with a small wordmark, no share button. */
+.cw-house-tag {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  font: 900 9px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ← Back to Menuply: small, quiet, only when the Wall was opened from inside Menuply. */
+.cw-back-row { padding: 6px 8px 0; }
+.cw-back {
+  border: 0;
+  background: transparent;
+  color: #374151;
+  font: 700 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+.cw-back:hover { color: #111827; text-decoration: underline; }
+
+/* menuply.com/clusters/walls/:slug — the full Wall as the page. */
+.cw-standalone { border: 1px solid #e5e7eb; border-radius: 4px; background: #fafaf9; min-width: 0; }
+.cw-standalone-body { padding: 8px 10px 16px; }
