@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
@@ -488,6 +488,19 @@ const CLUSTER_STICKY_CHROME_STYLE = {
   minWidth: 0,
 };
 
+const CLUSTER_FOOD_STICKY_STYLE = {
+  position: "sticky",
+  zIndex: 14, // under a playing clip (15) and the search (20), so it slides away beneath them
+  background: "#fff",
+  marginLeft: "-1rem",
+  marginRight: "-1rem",
+  padding: "0.5rem 1rem",
+  borderBottom: "1px solid #e5e7eb",
+  display: "grid",
+  gap: "0.5rem",
+  minWidth: 0,
+};
+
 const CLUSTER_SECTION_TITLE_STYLE = { margin: 0, fontSize: "1.15rem", lineHeight: 1.25, color: "#111827" };
 
 const CLUSTER_BACK_ROW_STYLE = {
@@ -720,6 +733,48 @@ function ClusterMenuExplorerTab({
   // Applied once per URL code: going back clears the selection a render before the URL catches up,
   // and re-applying the stale code then reopened the type (seen 2026-11-05).
   const appliedUrlCategoryRef = useRef(null);
+  // The food filters pin just under the sticky search — and under a playing clip, which pins there
+  // too — so track both heights (the search wraps on phones; the clip band comes and goes).
+  const [chromeNode, chromeRef] = useState(null);
+  const [filtersTop, setFiltersTop] = useState(0);
+  const measureFiltersTop = useRef(() => {});
+  measureFiltersTop.current = () => {
+    if (!chromeNode) return;
+    const panel = chromeNode.closest?.('[data-testid="cluster-view-panel-menu"]') || document;
+    const band = panel.querySelector?.('[data-testid="cluster-video-hero-band"][data-sticky="1"]');
+    const bandHeight = band ? band.getBoundingClientRect().height : 0;
+    setFiltersTop(Math.round(chromeNode.getBoundingClientRect().height + bandHeight));
+  };
+  useLayoutEffect(() => {
+    measureFiltersTop.current();
+  });
+  useEffect(() => {
+    if (!chromeNode) return undefined;
+    const measure = () => measureFiltersTop.current();
+    const panel = chromeNode.closest?.('[data-testid="cluster-view-panel-menu"]') || document.body;
+    window.addEventListener("resize", measure);
+    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    resize?.observe(chromeNode);
+    const observeBand = () => {
+      const band = panel.querySelector?.('[data-testid="cluster-video-hero-band"]');
+      if (band) resize?.observe(band);
+    };
+    observeBand();
+    // A clip starting or stopping flips the band's data-sticky; the band may also mount late.
+    const mutations =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(() => {
+            observeBand();
+            measure();
+          });
+    mutations?.observe(panel, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-sticky"] });
+    return () => {
+      window.removeEventListener("resize", measure);
+      resize?.disconnect();
+      mutations?.disconnect();
+    };
+  }, [chromeNode]);
   useEffect(() => {
     if (!urlCategoryCode) {
       appliedUrlCategoryRef.current = null;
@@ -1043,15 +1098,61 @@ function ClusterMenuExplorerTab({
 
   const categoryTitle = selectedCategory?.label || null;
   const typeOpen = searchActive || Boolean(selectedCategory);
+  // Nutrition chips + the open type's back/title/price sort (or the search result count/sort) pin
+  // under the sticky search while the dish list scrolls, and let go where Food by type ends.
+  let foodStickyRow = null;
+  if (searchActive) {
+    if (searchStatus === "ok" && searchMenuItems.length > 0) {
+      foodStickyRow = (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+          <p
+            data-testid="cluster-food-search-result-count"
+            style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
+            aria-live="polite"
+          >
+            Showing {displaySearchItems.length}{" "}
+            {displaySearchItems.length === 1 ? "result" : "results"}
+          </p>
+          {renderClusterFoodPriceSortControls()}
+        </div>
+      );
+    }
+  } else if (selectedCategory) {
+    foodStickyRow = (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+        <button
+          type="button"
+          onClick={backToAllTypes}
+          aria-label="All food types"
+          data-testid="cluster-types-back"
+          style={CLUSTER_BACK_ROW_STYLE}
+        >
+          <span aria-hidden="true" style={CLUSTER_BACK_CIRCLE_STYLE}>‹</span>
+          <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#111827" }}>
+            {`${clusterBoxLook(selectedCategory.code).emoji} ${categoryTitle}`}
+          </h2>
+        </button>
+        {chipsOn ? null : renderClusterFoodPriceSortControls()}
+      </div>
+    );
+  }
   const results = (
     <div style={{ display: "grid", gap: "1rem" }} id="cluster-food" data-testid="cluster-food">
       <h2 style={CLUSTER_SECTION_TITLE_STYLE}>Food by type</h2>
-      {!searchActive ? (
-        <FoodByTypeChipRow
-          chips={foodChips.chips}
-          availableChips={foodChips.availableChips}
-          onToggle={foodChips.onToggle}
-        />
+      {foodStickyRow || (!searchActive && foodChips.availableChips.length) ? (
+        <div
+          data-testid="cluster-food-sticky"
+          style={{ ...CLUSTER_FOOD_STICKY_STYLE, top: filtersTop }}
+        >
+          {!searchActive ? (
+            <FoodByTypeChipRow
+              chips={foodChips.chips}
+              availableChips={foodChips.availableChips}
+              onToggle={foodChips.onToggle}
+            />
+          ) : null}
+          {foodStickyRow}
+        </div>
       ) : null}
       {searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -1059,26 +1160,6 @@ function ClusterMenuExplorerTab({
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
           {searchStatus === "ok" && searchMenuItems.length === 0 ? (
             <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
-          ) : null}
-          {searchStatus === "ok" && searchMenuItems.length > 0 ? (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "0.5rem",
-                alignItems: "center",
-              }}
-            >
-              <p
-                data-testid="cluster-food-search-result-count"
-                style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
-                aria-live="polite"
-              >
-                Showing {displaySearchItems.length}{" "}
-                {displaySearchItems.length === 1 ? "result" : "results"}
-              </p>
-              {renderClusterFoodPriceSortControls()}
-            </div>
           ) : null}
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {displaySearchItems.map((row, index) => {
@@ -1161,21 +1242,6 @@ function ClusterMenuExplorerTab({
         </div>
       ) : selectedCategory ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={backToAllTypes}
-              aria-label="All food types"
-              data-testid="cluster-types-back"
-              style={CLUSTER_BACK_ROW_STYLE}
-            >
-              <span aria-hidden="true" style={CLUSTER_BACK_CIRCLE_STYLE}>‹</span>
-              <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#111827" }}>
-                {`${clusterBoxLook(selectedCategory.code).emoji} ${categoryTitle}`}
-              </h2>
-            </button>
-            {chipsOn ? null : renderClusterFoodPriceSortControls()}
-          </div>
           {!chipsOn && availableZones.length > 0 ? (
             <div
               role="group"
@@ -1322,7 +1388,7 @@ function ClusterMenuExplorerTab({
 
   return (
     <>
-      <div data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
+      <div ref={chromeRef} data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
         {stickyLead}
         <div data-testid="cluster-sticky-search">
           <ClusterFoodSearchForm
