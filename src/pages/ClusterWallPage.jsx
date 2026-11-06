@@ -15,9 +15,9 @@ const ENTRIES = new Set(["direct", "menuply", "shared_post"]);
 
 /**
  * menuply.com/clusters/walls/:wallSlug (Andre 2026-11-06) — the full Wall, straight away: no landing
- * page, no food page first. Anyone can read; writing needs an account (same rules as the cluster
- * page). "← Back to Menuply" shows only when a Menuply screen sent the visitor here with
- * state { fromMenuply: true }; direct visitors get the Menuply brick among the posts instead.
+ * page, no food page first. Anyone can read, and signed-out visitors can write words through the
+ * guest path (lib/clusterWallGuest). "← Back to Menuply" shows only when a Menuply screen sent the
+ * visitor here with state { fromMenuply: true }; direct visitors get the Menuply brick instead.
  */
 export default function ClusterWallPage() {
   const { wallSlug = "" } = useParams();

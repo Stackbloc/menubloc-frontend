@@ -42,15 +42,18 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
 
   const active = wall.enabled && wall.status !== "unavailable";
 
-  const startWriting = useCallback(() => {
-    if (isAuthenticated) {
-      setComposing(true);
-      return;
-    }
+  // Sign-up, then back here with the composer open (clips, or when the guest path is off).
+  const goSignUp = useCallback(() => {
+    setComposing(false);
     const next = new URLSearchParams(location.search);
     next.set("wall", "write");
     navigate(withConsumerAuthNext("/account/signup", `${location.pathname}?${next}`));
-  }, [isAuthenticated, location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, navigate]);
+
+  // Anyone can write (Andre 2026-11-06): signed out opens the composer as a guest (words only).
+  const startWriting = useCallback(() => {
+    setComposing(true);
+  }, []);
 
   // Deep links from shares and sign-up: ?wall=1 / ?wall=write
   const wallParam = params.get("wall");
@@ -62,8 +65,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
     // After this render: open what the link asked for.
     const t = setTimeout(() => {
       if (wallParam === "write") {
-        if (isAuthenticated) setComposing(true);
-        else startWriting();
+        startWriting();
       } else if (standalone) {
         // Already the full Wall.
       } else if (isWide()) {
@@ -133,6 +135,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
           clusterSlug={clusterSlug}
           clusterLabel={clusterLabel}
           onClose={() => setComposing(false)}
+          onNeedAccount={goSignUp}
           onPosted={(block) => {
             if (week) setWeek(null);
             wall.addMine(block);

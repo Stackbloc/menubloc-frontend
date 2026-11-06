@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchClusterWall } from "../lib/clusterWallApi.js";
 import { isClusterWallSlug } from "../lib/clusterWallStyles.js";
+import { markGuestOwn } from "../lib/clusterWallGuest.js";
 
 const POLL_MS = 45000;
 
@@ -35,7 +36,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
         seen.current = new Set((data.blocks || []).map((b) => b.public_id));
         setState({
           status: "ok",
-          blocks: data.blocks || [],
+          blocks: markGuestOwn(data.blocks || []),
           cursor: data.next_cursor || null,
           weekStart: data.week_start || null,
           isCurrentWeek: Boolean(data.is_current_week),

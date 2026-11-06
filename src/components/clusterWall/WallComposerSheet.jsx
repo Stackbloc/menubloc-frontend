@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { createWallBlock, uploadWallClip } from "../../lib/clusterWallApi.js";
+import { createGuestWallBlock } from "../../lib/clusterWallGuest.js";
 import {
   DEFAULT_WALL_STYLE,
   WALL_CAPTION_LIMIT,
@@ -77,16 +78,20 @@ function Seg({ label, value, options, onChange, className = "cw-seg" }) {
 
 /**
  * Write on the Wall. Words publish at once; clips go to review first (Andre decision 2).
+ * Signed out = guest (Andre 2026-11-06, clusterWallGuest.js): words only, no name shown; clips still
+ * need an account (onNeedAccount). If the guest path is off, the server says 401 → onNeedAccount.
  */
-export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", onClose, onPosted }) {
+export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", onClose, onPosted, onNeedAccount }) {
   const { consumer } = useConsumer();
+  const isGuest = !consumer?.id;
+  const ackId = consumer?.id || "guest";
   const [size, setSize] = useState("medium");
   const [kind, setKind] = useState("text");
   const [body, setBody] = useState("");
   const [style, setStyle] = useState(DEFAULT_WALL_STYLE);
   const [file, setFile] = useState(null);
   const [clipPreview, setClipPreview] = useState(null);
-  const [ack, setAck] = useState(() => (consumer?.id ? readAck(consumer.id) : false));
+  const [ack, setAck] = useState(() => readAck(ackId));
   const [ackChecked, setAckChecked] = useState(false);
   const [progress, setProgress] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -117,9 +122,9 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
       body: body.trim() || (kind === "text" ? "Your words here" : ""),
       style,
       video_url: kind === "video" ? clipPreview : null,
-      author: { first_name: "You" },
+      author: { first_name: isGuest ? null : "You" },
     }),
-    [size, kind, body, style, clipPreview]
+    [size, kind, body, style, clipPreview, isGuest]
   );
 
   const pickClip = async (f) => {
@@ -148,8 +153,8 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
     setBusy(true);
     setError("");
     try {
-      if (!ack && consumer?.id) {
-        writeAck(consumer.id);
+      if (!ack) {
+        writeAck(ackId);
         setAck(true);
       }
       let video_storage_key;
@@ -157,7 +162,7 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
         setProgress(0);
         video_storage_key = await uploadWallClip(file, { onProgress: setProgress });
       }
-      const out = await createWallBlock({
+      const out = await (isGuest ? createGuestWallBlock : createWallBlock)({
         cluster_slug: clusterSlug,
         size,
         kind,
@@ -169,6 +174,10 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
       setDone(out.block);
       onPosted?.(out.block);
     } catch (err) {
+      if (isGuest && err?.status === 401 && onNeedAccount) {
+        onNeedAccount();
+        return;
+      }
       setError(err?.message || "Couldn't post. Try again.");
       // A new token only after a definite refusal, so a network retry can't double-post.
       if (err?.status && err.status < 500) token.current = newToken();
@@ -213,12 +222,17 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
             label="Post"
             value={kind}
             onChange={(k) => {
+              if (k === "video" && isGuest) {
+                // Clips need an account (uploads + review); words don't.
+                onNeedAccount?.();
+                return;
+              }
               setKind(k);
               setError("");
             }}
             options={[
               { key: "text", label: "Words" },
-              { key: "video", label: "Clip" },
+              { key: "video", label: isGuest ? "Clip (sign up)" : "Clip" },
             ]}
           />
         </div>
@@ -346,7 +360,10 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
 
         <p className="cw-notice" data-testid="cluster-wall-public-notice">
           Posts on the Wall are public. Anyone can see them and share them outside Menuply, and they stay in past
-          weeks. Your first name shows, linked to your profile if it's public. You can delete yours anytime.
+          weeks.{" "}
+          {isGuest
+            ? "No account needed and no name shows. You can delete yours from this browser."
+            : "Your first name shows, linked to your profile if it's public. You can delete yours anytime."}
         </p>
         {!ack ? (
           <label style={{ display: "flex", gap: 8, alignItems: "center", font: "600 14px/1.3 system-ui" }}>

@@ -46,7 +46,8 @@ export default function WallBlockPage() {
   // The full Wall has its own page now (menuply.com/clusters/walls/usc).
   const wallPage = block ? `/clusters/walls/${block.cluster_slug}` : null;
   const writeTarget = wallPage ? `${wallPage}?wall=write` : `${wallHome}?wall=write`;
-  const writeHref = isAuthenticated ? writeTarget : withConsumerAuthNext("/account/signup", writeTarget);
+  // Anyone can write (Andre 2026-11-06): no sign-up first.
+  const writeHref = writeTarget;
 
   return (
     <main style={{ maxWidth: 560, margin: "0 auto", padding: "1.25rem 16px 4rem", boxSizing: "border-box" }} data-testid="wall-block-page">
@@ -89,7 +90,7 @@ export default function WallBlockPage() {
             <p className="cw-title">Write yours on Menuply</p>
             <p className="cw-sub" style={{ margin: 0 }}>
               The {block.cluster_label} Wall is where students leave words and clips. New every week.
-              {isAuthenticated ? "" : " Reading is free; writing takes a Menuply account."}
+              {isAuthenticated ? "" : " No account needed."}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               <Link className="cw-btn cw-btn-primary" to={writeHref} data-testid="wall-block-write">

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { WALL_REPORT_REASONS, deleteWallBlock, reportWallBlock } from "../../lib/clusterWallApi.js";
+import { deleteGuestWallBlock } from "../../lib/clusterWallGuest.js";
 import {
   canShareFiles,
   copyWallLink,
@@ -201,7 +202,7 @@ export default function WallBlockViewer({ block, onClose, onRemoved }) {
     setBusy(true);
     setErr("");
     try {
-      await deleteWallBlock(block.public_id);
+      await (block.guest ? deleteGuestWallBlock : deleteWallBlock)(block.public_id);
       onRemoved?.(block.public_id);
       onClose?.();
     } catch (e) {
