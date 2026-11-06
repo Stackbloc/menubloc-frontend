@@ -28,6 +28,9 @@ import { normalizeFavoriteFoods } from "../../lib/dinerFavoriteFoods.js";
 import DinerAvatar from "../../components/social/DinerAvatar.jsx";
 import WallProfileTile from "../../components/clusterWall/WallProfileTile.jsx";
 import { catchMeProfileLine } from "../../lib/dinerCatchMeDisplay.js";
+import { listWantToEat } from "../../lib/consumerApi.js";
+import { wishOverlap } from "../../lib/wishOverlap.js";
+import { ActionLabel, BothWant, StudentBadge } from "../../components/consumer/ProfileBits.jsx";
 
 const ABUSE_REASONS = [
   { value: "harassment", label: "Harassment" },
@@ -63,6 +66,18 @@ export default function DiscoverableDinerProfilePage() {
   const [reportReason, setReportReason] = useState("harassment");
   const [reportDetails, setReportDetails] = useState("");
   const [clips, setClips] = useState([]);
+  // My Wish List, for "You both want" (Andre 2026-11-06).
+  const [myWishes, setMyWishes] = useState([]);
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let alive = true;
+    listWantToEat()
+      .then((r) => alive && setMyWishes(Array.isArray(r?.items) ? r.items : []))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [isAuthenticated]);
   const [playing, setPlaying] = useState(null);
   const [connectsOpen, setConnectsOpen] = useState(false);
   const [connectsList, setConnectsList] = useState(null);
@@ -207,12 +222,12 @@ export default function DiscoverableDinerProfilePage() {
   const name = formatDinerPeerLabel(diner) || "Diner";
   const backTo = backTarget(from);
   const favorites = normalizeFavoriteFoods(diner?.favorite_foods);
-  const school =
-    diner?.school_affiliation ||
-    diner?.edu_verification_badge ||
-    diner?.edu_institution_short ||
-    null;
-  const tagline = [diner?.diner_occupation, school, diner?.location_label].filter(Boolean).join(" · ");
+  // School shows as the Verified student badge (Andre 2026-11-06), not in the tagline.
+  const school = diner?.school_affiliation || diner?.edu_institution_short || null;
+  const tagline = [diner?.diner_occupation, diner?.location_label].filter(Boolean).join(" · ");
+  const isSelf = viewerId != null && diner && Number(viewerId) === Number(diner.id);
+  const bothWant = isAuthenticated && !isSelf ? wishOverlap(activityWants, myWishes) : [];
+  const inviteTo = `/account/invite-to-eat?invitee_name=${encodeURIComponent(String(name).split(" ")[0])}`;
 
   return (
     <div style={styles.page} data-testid="discoverable-diner-profile">
@@ -229,6 +244,7 @@ export default function DiscoverableDinerProfilePage() {
               <DinerAvatar avatarUrl={diner.avatar_url} avatarMotionUrl={diner.avatar_motion_url} displayName={name} size={88} />
               <h1 style={styles.name}>{name}</h1>
               {tagline ? <p style={styles.meta}>{tagline}</p> : null}
+              <StudentBadge school={school} verifiedAt={diner.school_verified_at} />
               {catchMeProfileLine(diner.catch_me) ? (
                 <p style={styles.meta} data-testid="discoverable-catch-me">
                   ✈️ {catchMeProfileLine(diner.catch_me)}
@@ -244,18 +260,19 @@ export default function DiscoverableDinerProfilePage() {
                     aria-expanded={connectsOpen}
                     data-testid="discoverable-connects-count"
                   >
-                    <strong>{payload.connects.count}</strong> {payload.connects.count === 1 ? "Connect" : "Connects"}
+                    Connects <strong>{payload.connects.count}</strong> <span style={{ color: "#5c665f" }}>›</span>
                   </button>
                 ) : (
                   <span style={styles.stat} data-testid="discoverable-connects-count">
-                    <strong>{payload?.connects?.count ?? 0}</strong>{" "}
-                    {payload?.connects?.count === 1 ? "Connect" : "Connects"}
+                    Connects <strong>{payload?.connects?.count ?? 0}</strong>
                   </span>
                 )}
                 <span style={styles.stat}>
                   <strong>{clips.length}</strong> {clips.length === 1 ? "Clip" : "Clips"}
                 </span>
+                {isSelf ? null : <ActionLabel icon="invite" label="Invite" onClick={onInvite} testId="discoverable-invite" />}
               </div>
+              <BothWant items={bothWant} inviteTo={inviteTo} />
             </section>
 
             {connectsOpen ? (
@@ -303,9 +320,7 @@ export default function DiscoverableDinerProfilePage() {
 
             <div style={styles.actions} data-testid="discoverable-actions">
               {actions?.accept ? (
-                <button type="button" style={styles.primaryBtn} disabled={busy} onClick={() => runAction("accept")}>
-                  Accept
-                </button>
+                <ActionLabel icon="check" label="Accept" disabled={busy} onClick={() => runAction("accept")} />
               ) : null}
               {actions?.decline ? (
                 <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={() => runAction("decline")}>
@@ -313,23 +328,11 @@ export default function DiscoverableDinerProfilePage() {
                 </button>
               ) : null}
               {actions?.sign_in_to_connect ? (
-                <button
-                  type="button"
-                  style={styles.primaryBtn}
-                  onClick={signInToConnect}
-                  data-testid="discoverable-sign-in-to-connect"
-                >
-                  Sign in to Connect
-                </button>
+                <ActionLabel icon="profile" label="Sign in to Connect" onClick={signInToConnect} testId="discoverable-sign-in-to-connect" />
               ) : null}
               {actions?.connect ? (
-                <button type="button" style={styles.primaryBtn} disabled={busy} onClick={() => runAction("connect")}>
-                  Connect
-                </button>
+                <ActionLabel icon="profile" label="Connect" disabled={busy} onClick={() => runAction("connect")} />
               ) : null}
-              <button type="button" style={styles.secondaryBtn} onClick={onInvite} data-testid="discoverable-invite">
-                Invite to Eat
-              </button>
               {actions?.cancel_request ? (
                 <button
                   type="button"
@@ -371,7 +374,7 @@ export default function DiscoverableDinerProfilePage() {
 
             {clips.length ? (
               <section style={styles.section} data-testid="discoverable-clips">
-                <h2 style={styles.heading}>Clips</h2>
+                <h2 style={styles.heading}>Clips &amp; Media</h2>
                 <div style={styles.clipGrid}>
                   {clips.map((c) =>
                     c.source === "wall" ? (
@@ -465,7 +468,8 @@ export default function DiscoverableDinerProfilePage() {
 
 const styles = {
   head: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", marginBottom: 16 },
-  section: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 },
+  // White cards like the app (Andre 2026-11-06).
+  section: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16, background: "#fff", borderRadius: 16, padding: 16 },
   heading: { margin: 0, fontSize: 18, lineHeight: "24px", fontWeight: 700, color: "#111613" },
   row: { display: "flex", flexDirection: "column", gap: 2, background: "#fff", border: "1px solid #e1e6e1", borderRadius: 12, padding: 12, color: "#111613" },
   page: { minHeight: "100vh", background: "#f8fafc", paddingBottom: 88 },
@@ -493,15 +497,16 @@ const styles = {
     padding: "5px 10px",
     fontSize: 13,
     fontWeight: 600,
-    color: "#166534",
-    background: "#ecfdf3",
-    border: "1px solid #bbf7d0",
+    // Neutral chips, no green pills (Andre 2026-11-06).
+    color: "#111613",
+    background: "#f5f7f4",
+    border: "1px solid #e1e6e1",
   },
   lead: { margin: "0 0 14px", fontSize: 14, color: "#64748b", lineHeight: 1.5 },
   actions: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  stats: { display: "flex", gap: 18, justifyContent: "center", marginTop: 10, fontSize: 15, color: "#0f172a" },
+  stats: { display: "flex", gap: 18, justifyContent: "center", alignItems: "center", marginTop: 10, fontSize: 15, color: "#0f172a" },
   stat: { color: "#0f172a" },
-  statBtn: { background: "none", border: "none", padding: 0, font: "inherit", color: "#0f172a", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 },
+  statBtn: { background: "none", border: "none", padding: 0, font: "inherit", color: "#0f172a", cursor: "pointer" },
   connectRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 0", color: "#0f172a", textDecoration: "none", fontSize: 15 },
   clipGrid: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 },
   clipTile: { position: "relative", aspectRatio: "9 / 16", padding: 0, border: "none", borderRadius: 6, overflow: "hidden", background: "#111", cursor: "pointer" },
@@ -514,8 +519,9 @@ const styles = {
     padding: "10px 14px",
     borderRadius: 10,
     border: "none",
-    background: "linear-gradient(135deg, #16a34a, #15803d)",
-    color: "#fff",
+    // No green fills (Andre 2026-11-06): green text.
+    background: "transparent",
+    color: "#0f7a24",
     fontWeight: 700,
     cursor: "pointer",
     fontSize: 14,

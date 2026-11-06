@@ -1870,7 +1870,7 @@ const styles = {
     borderRadius: 999,
     border: "none",
     background:
-      "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+      "transparent",
     color: "#0B0F0C",
     fontWeight: 700,
     fontSize: 14,

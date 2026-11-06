@@ -213,7 +213,7 @@ export default function HomemadeDishDetailPage() {
       <StickyPageHeader title="@home" backTo="/search" />
 
       <div style={{ marginTop: 12 }}>
-        <span style={{ display: "inline-block", fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#15803d", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
+        <span style={{ display: "inline-block", fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#15803d", background: "#f5f7f4", padding: "4px 10px", borderRadius: 999, border: "1px solid #e1e6e1" }}>
           @home
         </span>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: "10px 0 4px", fontFamily: 'Georgia, "Times New Roman", serif' }}>

@@ -190,7 +190,7 @@ const styles = {
   label: { fontSize: 12, fontWeight: 800, color: "#475569", marginTop: 4 },
   chips: { display: "flex", flexWrap: "wrap", gap: 6 },
   chip: { padding: "5px 11px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" },
-  chipOn: { background: "#15803d", borderColor: "#15803d", color: "#fff" },
+  chipOn: { background: "#111613", borderColor: "#111613", color: "#fff" },
   input: { fontSize: 15, padding: "10px 12px", borderRadius: 10, border: "1px solid #cbd5e1" },
   result: { textAlign: "left", background: "none", border: "none", borderBottom: "1px solid #f1f5f9", padding: "8px 2px", fontSize: 14, cursor: "pointer", color: "#0f172a" },
   picked: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ecfdf3", border: "none", borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "#0f172a" },

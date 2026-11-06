@@ -232,7 +232,7 @@ const styles = {
     border: "none",
     borderRadius: 999,
     padding: "10px 16px",
-    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    background: "transparent",
     color: "#0B0F0C",
     fontWeight: 800,
     fontSize: 14,

@@ -39,6 +39,8 @@ import {
 import { getCurrentVibeEntry } from "../../lib/currentVibeDisplay.js";
 import AppIcon from "../../components/icons/AppIcon.jsx";
 import { PeerPlansSection } from "./myMenuply/SocialPlanSharing.jsx";
+import { wishOverlap } from "../../lib/wishOverlap.js";
+import { ActionLabel, BothWant, StudentBadge } from "../../components/consumer/ProfileBits.jsx";
 import ConsumerConnectionPeerPage from "./ConsumerConnectionPeerPage.jsx";
 import WallProfileTile from "../../components/clusterWall/WallProfileTile.jsx";
 
@@ -352,8 +354,23 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips: clipsIn =
   const first = name.split(" ")[0];
   const vibe = liveVibe(peer);
   const left = vibe ? timeLeft(vibe.expiresAt, now) : null;
-  const school = peer?.edu_verified === true ? peer.edu_verification_badge || null : null;
-  const tagline = [peer?.diner_occupation, school].filter(Boolean).join(" · ");
+  // Verified student badge with the date (Andre 2026-11-06), not in the tagline.
+  const school = peer?.edu_verified === true ? peer.edu_institution_short || peer.edu_institution_name || null : null;
+  const tagline = peer?.diner_occupation || "";
+  // My Wish List, for "You both want".
+  const [myWishes, setMyWishes] = useState([]);
+  useEffect(() => {
+    if (self) return undefined;
+    let alive = true;
+    listWantToEat()
+      .then((r) => alive && setMyWishes(Array.isArray(r?.items) ? r.items : []))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [self]);
+  const bothWant = self ? [] : wishOverlap(wishes || [], myWishes);
+  const inviteTo = `/account/invite-to-eat?invitee_name=${encodeURIComponent(first)}`;
   const foods = Array.isArray(peer?.favorite_foods) ? peer.favorite_foods.map((f) => f?.label).filter(Boolean) : [];
   const [allClips, setAllClips] = useState(false);
   const [peerPlans, setPeerPlans] = useState(null);
@@ -396,18 +413,16 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips: clipsIn =
             {tagline}
           </p>
         ) : null}
+        <StudentBadge school={school} verifiedAt={peer?.edu_verified_at} />
         {empty ? null : (
-          <p style={styles.vibe} data-testid="connect-profile-vibe">
+          <p style={vibe ? styles.vibe : styles.noVibe} data-testid="connect-profile-vibe">
             {vibe ? `${vibe.label}${left ? ` · ${left} left` : ""}` : "No vibe set right now"}
           </p>
         )}
         {peer.diner_about ? <p style={styles.about}>{peer.diner_about}</p> : null}
-        {/* A live vibe is a reason to eat together now (Andre 2026-10-28). */}
-        {vibe && left && !self ? (
-          <Link to="/account/invite-to-eat" style={styles.pill} data-testid="connect-profile-invite">
-            {`Invite ${first} to eat`}
-          </Link>
-        ) : null}
+        {/* Invite always (Andre 2026-11-06): icon + word, no green pill. */}
+        {self ? null : <ActionLabel icon="invite" label="Invite" to={inviteTo} testId="connect-profile-invite" />}
+        <BothWant items={bothWant} inviteTo={inviteTo} />
       </section>
 
       {empty ? <EmptyProfileCard name={name} self={self} /> : null}
@@ -728,8 +743,10 @@ const styles = {
   },
   title: { margin: "8px 0 0", fontSize: 24, lineHeight: "30px", fontWeight: 700, color: C.text },
   vibe: { margin: 0, fontSize: 16, fontWeight: 700, color: C.accent },
+  noVibe: { margin: 0, fontSize: 15, color: C.muted },
   about: { margin: 0, fontSize: 16, lineHeight: "22px", color: C.text },
-  section: { display: "flex", flexDirection: "column", gap: 8 },
+  // White cards like the app (Andre 2026-11-06).
+  section: { display: "flex", flexDirection: "column", gap: 8, background: C.background, borderRadius: 16, padding: 16 },
   clips: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 },
   clip: { aspectRatio: "3 / 4", border: "none", borderRadius: 6, padding: 0, overflow: "hidden", background: "#2e3d1c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   clipImg: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
@@ -740,7 +757,7 @@ const styles = {
   viewerMedia: { maxWidth: "100%", maxHeight: "85vh" },
   viewerClose: { position: "absolute", top: 16, right: 16, border: "none", borderRadius: 999, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
   chips: { display: "flex", flexWrap: "wrap", gap: 8 },
-  chip: { fontSize: 13, fontWeight: 500, color: C.accent, background: C.accentSoft, borderRadius: 999, padding: "4px 12px" },
+  chip: { fontSize: 13, fontWeight: 500, color: C.text, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 999, padding: "4px 12px" },
   more: { alignSelf: "flex-start", border: "none", background: "transparent", padding: "4px 0", fontSize: 13, fontWeight: 700, color: C.accent, cursor: "pointer", fontFamily: "inherit" },
   heading: { margin: 0, fontSize: 18, lineHeight: "24px", fontWeight: 700, color: C.text },
   row: {
@@ -763,8 +780,9 @@ const styles = {
   pill: {
     marginTop: 8,
     display: "inline-block",
-    background: C.accent,
-    color: "#fff",
+    // No green pills (Andre 2026-11-06): green text.
+    background: "transparent",
+    color: C.accent,
     borderRadius: 999,
     padding: "8px 16px",
     fontSize: 14,

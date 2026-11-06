@@ -359,7 +359,7 @@ const styles = {
     height: 32,
     borderRadius: 999,
     border: "none",
-    background: "#16a34a",
+    background: "rgba(0,0,0,0.55)",
     color: "#fff",
     fontSize: 13,
     fontWeight: 800,

@@ -192,7 +192,7 @@ const styles = {
   lead: { margin: "0 0 12px", fontSize: 13, color: "#5c665f" },
   searchRow: { display: "flex", gap: 8, marginBottom: 16 },
   searchInput: { flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 10, border: "1px solid #e1e6e1", fontSize: 15 },
-  primaryBtn: { padding: "8px 16px", borderRadius: 999, border: "none", background: "#0f7a24", color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" },
+  primaryBtn: { padding: "8px 16px", borderRadius: 999, border: "none", background: "transparent", color: "#0f7a24", fontWeight: 600, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" },
   secondaryBtn: { display: "inline-block", padding: "8px 12px", borderRadius: 999, border: "1px solid #e1e6e1", background: "#fff", color: "#111613", fontWeight: 600, cursor: "pointer", fontSize: 13, textDecoration: "none", whiteSpace: "nowrap" },
   error: { color: "#b42318", fontSize: 14, margin: "0 0 12px" },
   empty: { color: "#5c665f", fontSize: 14 },

@@ -204,6 +204,8 @@ export function PlanPanel({ plan, onSaved, onPickTime }) {
 /** `onPlans`: told what a Connect's calendar shows once it loads (the empty-profile check). */
 export function PeerPlansSection({ peerId, name, title = null, previewPlans = null, note = null, onPlans = null }) {
   const [loaded, setLoaded] = useState([]);
+  // They share it with me: an empty shared calendar says "No plans yet." (Andre 2026-11-06).
+  const [shared, setShared] = useState(false);
   const plans = previewPlans || loaded;
   const setPlans = setLoaded;
 
@@ -212,6 +214,7 @@ export function PeerPlansSection({ peerId, name, title = null, previewPlans = nu
     getPeerSocialCalendar(peerId)
       .then((r) => {
         const shown = r.shared ? (r.plans || []).filter((p) => p.action !== "none") : [];
+        setShared(r.shared === true);
         setPlans(shown);
         onPlans?.(shown);
       })
@@ -222,10 +225,15 @@ export function PeerPlansSection({ peerId, name, title = null, previewPlans = nu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onPlans is a state setter
   }, [peerId]);
 
-  if (!plans.length && !note) return null;
+  if (!plans.length && !note && !(peerId && shared)) return null;
   return (
     <section style={styles.card} data-testid="peer-social-plans">
       <strong style={styles.heading}>{title || `${name || "Their"}’s Social Calendar`}</strong>
+      {!plans.length && !note ? (
+        <span style={styles.muted} data-testid="peer-social-plans-empty">
+          No plans yet.
+        </span>
+      ) : null}
       {plans.map((p) => (
         <div key={p.key} style={styles.row} data-testid={`peer-plan-${p.key}`}>
           <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 1 }}>
@@ -265,7 +273,7 @@ function formatWhen(p) {
 }
 
 const styles = {
-  previewAction: { background: "#0f7a24", color: "#fff", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" },
+  previewAction: { background: "transparent", color: "#0f7a24", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" },
   card: { border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff", display: "grid", gap: 8, marginTop: 12 },
   heading: { fontSize: 15, color: "#0f172a" },
   chips: { display: "flex", flexWrap: "wrap", gap: 6 },
@@ -279,7 +287,7 @@ const styles = {
     fontSize: 13,
     cursor: "pointer",
   },
-  chipOn: { background: "#15803d", borderColor: "#15803d", color: "#fff" },
+  chipOn: { background: "#111613", borderColor: "#111613", color: "#fff" },
   controls: { display: "grid", gap: 8, padding: "8px 2px 6px" },
   radioRow: { display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" },
   primary: { padding: "8px 14px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontWeight: 700, cursor: "pointer" },

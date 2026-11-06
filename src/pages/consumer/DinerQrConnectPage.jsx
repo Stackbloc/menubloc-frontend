@@ -372,8 +372,8 @@ const styles = {
   pill: {
     border: "none",
     borderRadius: 999,
-    background: "#16a34a",
-    color: "#fff",
+    background: "transparent",
+    color: "#0f7a24",
     fontWeight: 800,
     fontSize: 15,
     padding: "10px 20px",

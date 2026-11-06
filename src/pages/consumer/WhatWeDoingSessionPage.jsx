@@ -460,11 +460,10 @@ const styles = {
   mine: {
     fontSize: 11,
     fontWeight: 800,
-    background: "#dcfce7",
+    background: "#f5f7f4",
     color: "#14532d",
     borderRadius: 999,
-    padding: "2px 8px",
-  },
+    padding: "2px 8px", border: "1px solid #e1e6e1" },
   cardTitle: { fontWeight: 800, fontSize: 16 },
   votes: { color: "#64748b", fontSize: 13, margin: "4px 0 10px" },
   voteBtn: {

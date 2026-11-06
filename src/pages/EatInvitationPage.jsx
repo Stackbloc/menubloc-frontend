@@ -1354,8 +1354,8 @@ const btnPrimary = {
   padding: "0 16px",
   borderRadius: 999,
   border: "none",
-  background: "#166534",
-  color: "#fff",
+  background: "transparent",
+  color: "#0f7a24",
   fontWeight: 800,
   cursor: "pointer",
 };

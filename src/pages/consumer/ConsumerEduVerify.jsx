@@ -44,8 +44,7 @@ export default function ConsumerEduVerify() {
     try {
       const result = await confirmEduVerification(token);
       setBadge(
-        result.edu_verification_badge ||
-          formatEduVerificationBadge({
+        formatEduVerificationBadge({
             institutionShort: result.edu_institution_short,
             institutionName: result.edu_institution_name,
           })

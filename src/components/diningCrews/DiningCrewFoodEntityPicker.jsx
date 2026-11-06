@@ -272,8 +272,8 @@ const styles = {
     color: "#334155",
   },
   typeActive: {
-    border: "1px solid #15803d",
-    background: "#dcfce7",
+    border: "1px solid #111613",
+    background: "#f5f7f4",
     borderRadius: 999,
     padding: "6px 10px",
     fontSize: 12,

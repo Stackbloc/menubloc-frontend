@@ -204,5 +204,5 @@ const styles = {
   when: { fontSize: 12, fontWeight: 700, color: "#15803d" },
   footer: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 8, borderTop: "1px solid #f1f5f9" },
   faces: { display: "flex", alignItems: "center", minWidth: 0, textDecoration: "none" },
-  find: { background: "#0f7a24", color: "#fff", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none", flexShrink: 0 },
+  find: { background: "transparent", color: "#0f7a24", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none", flexShrink: 0 },
 };

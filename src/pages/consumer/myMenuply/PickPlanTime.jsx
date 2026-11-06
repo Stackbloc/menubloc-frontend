@@ -81,6 +81,6 @@ const styles = {
   box: { display: "grid", gap: 8, padding: "8px 2px 4px" },
   chips: { display: "flex", flexWrap: "wrap", gap: 6 },
   chip: { padding: "5px 11px", borderRadius: 999, border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" },
-  chipOn: { background: "#15803d", borderColor: "#15803d", color: "#fff" },
+  chipOn: { background: "#111613", borderColor: "#111613", color: "#fff" },
   save: { padding: "9px 16px", borderRadius: 10, border: "none", background: "#0f172a", color: "#fff", fontWeight: 700, cursor: "pointer" },
 };

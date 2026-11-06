@@ -102,10 +102,9 @@ function CommentBody({
               fontSize: 11,
               fontWeight: 700,
               color: "#166534",
-              background: "#dcfce7",
+              background: "#f5f7f4",
               borderRadius: 999,
-              padding: "2px 8px",
-            }}
+              padding: "2px 8px", border: "1px solid #e1e6e1" }}
           >
             Featured
           </span>

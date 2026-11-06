@@ -9,11 +9,10 @@ export const CONNECT_PILL_STYLE = {
   fontWeight: 800,
   letterSpacing: 0.2,
   color: "#166534",
-  background: "#dcfce7",
+  background: "#f5f7f4",
   borderRadius: 999,
   padding: "1px 6px",
-  flex: "0 0 auto",
-};
+  flex: "0 0 auto", border: "1px solid #e1e6e1" };
 
 export default function ConnectPill({ "data-testid": testId = "connect-pill" }) {
   return (

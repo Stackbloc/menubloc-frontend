@@ -402,14 +402,13 @@ const styles = {
   buttonQuiet: {
     padding: "6px 14px",
     borderRadius: 999,
-    background: "#dcfce7",
+    background: "#f5f7f4",
     color: s.GREEN,
     fontWeight: 700,
     fontSize: 13,
     textDecoration: "none",
-    flexShrink: 0,
-  },
+    flexShrink: 0, border: "1px solid #e1e6e1" },
   footer: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  find: { background: "#0f7a24", color: "#fff", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" },
+  find: { background: "transparent", color: "#0f7a24", borderRadius: 999, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" },
   all: { fontSize: 13, fontWeight: 700, color: s.GREEN_BRIGHT, textDecoration: "none" },
 };

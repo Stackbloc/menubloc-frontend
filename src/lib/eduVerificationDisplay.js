@@ -2,10 +2,15 @@
  * Public-safe .edu verification display helpers (no email addresses).
  */
 
-export function formatEduVerificationBadge({ institutionShort, institutionName } = {}) {
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "✓ Verified USC student · since Nov 2026" (Andre 2026-11-06: any school, with the date). */
+export function formatEduVerificationBadge({ institutionShort, institutionName, verifiedAt = null } = {}) {
   const label = String(institutionShort || institutionName || "").trim();
-  if (!label) return "✓ Verified .edu address";
-  return `✓ Verified .edu address — ${label}`;
+  const d = verifiedAt ? new Date(verifiedAt) : null;
+  const since = d && Number.isFinite(d.getTime()) ? ` · since ${MONTHS[d.getMonth()]} ${d.getFullYear()}` : "";
+  if (!label) return `✓ Verified student${since}`;
+  return `✓ Verified ${label} student${since}`;
 }
 
 /** Short school line for diner profiles (affiliation, not enrollment proof). */
@@ -37,9 +42,8 @@ export function getEduVerificationFromConsumer(consumer) {
   const institutionShort = consumer.edu_institution_short || institutionName;
   return {
     edu_verified: true,
-    badge:
-      consumer.edu_verification_badge ||
-      formatEduVerificationBadge({ institutionShort, institutionName }),
+    // Our wording + date, not the server's "Verified .edu address — X" (Andre 2026-11-06).
+    badge: formatEduVerificationBadge({ institutionShort, institutionName, verifiedAt: consumer.edu_verified_at }),
     institution_name: institutionName,
     institution_short: institutionShort,
     email_domain: consumer.edu_email_domain || null,

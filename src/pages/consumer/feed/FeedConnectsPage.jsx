@@ -302,8 +302,8 @@ const styles = {
   chip: { alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 700, maxWidth: "100%" },
   dot: { width: 7, height: 7, borderRadius: 4, flexShrink: 0 },
   invite: { flexShrink: 0, borderRadius: 999, padding: "6px 14px", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" },
-  find: { flexShrink: 0, borderRadius: 999, padding: "6px 14px", background: C.accent, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" },
-  pillSolid: { flexShrink: 0, borderRadius: 999, border: "none", background: C.accent, padding: "6px 14px", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" },
+  find: { flexShrink: 0, borderRadius: 999, padding: "6px 14px", background: "transparent", color: "#0f7a24", fontSize: 13, fontWeight: 700, textDecoration: "none" },
+  pillSolid: { flexShrink: 0, borderRadius: 999, border: "none", background: "transparent", padding: "6px 14px", fontSize: 13, fontWeight: 700, color: "#0f7a24", cursor: "pointer" },
   heading: { margin: 0, fontSize: 18, lineHeight: "24px", fontWeight: 700, color: C.text },
   row: {
     display: "flex",

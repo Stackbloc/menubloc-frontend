@@ -53,8 +53,8 @@ function FavoriteFoodsReadonly({ favoriteFoods }) {
               fontSize: 13,
               fontWeight: 600,
               color: "#166534",
-              background: "#ecfdf3",
-              border: "1px solid #bbf7d0",
+              background: "#f5f7f4",
+              border: "1px solid #e1e6e1",
             }}
           >
             {labelWithFoodIcon(f.key, f.label)}
