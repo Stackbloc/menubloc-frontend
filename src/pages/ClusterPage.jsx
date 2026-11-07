@@ -639,6 +639,7 @@ function ClusterMenuExplorerTab({
   stickyLead = null,
   preContent = null,
   postContent = null,
+  onFoodShown = null,
 }) {
   const PAGE_SIZE = 40;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
@@ -1124,6 +1125,16 @@ function ClusterMenuExplorerTab({
     setSearchParams(params, { replace: true });
   }
 
+  // Tell the page once the food boxes (or search results / an open type) have had their first paint,
+  // so the Wall can come in after them.
+  const foodShownRef = useRef(false);
+  useEffect(() => {
+    if (foodShownRef.current || !onFoodShown) return;
+    if (status === "loading" && !searchActive) return;
+    foodShownRef.current = true;
+    onFoodShown();
+  }, [status, searchActive, onFoodShown]);
+
   if (!enabled) {
     return <p style={{ color: "#888" }}>Select Food to browse what you can eat here.</p>;
   }
@@ -1418,6 +1429,7 @@ function ClusterMenuExplorerTab({
     </div>
   );
 
+
   return (
     <>
       <div ref={chromeRef} data-testid="cluster-sticky-chrome" style={CLUSTER_STICKY_CHROME_STYLE}>
@@ -1465,6 +1477,10 @@ function ClusterMenuExplorerTab({
   );
 }
 
+/** Wall timing on the cluster page: a beat after the food boxes paint; never later than the cap. */
+const WALL_AFTER_FOOD_MS = 900;
+const WALL_MAX_WAIT_MS = 20000;
+
 export default function ClusterPage() {
   const { stateSlug, citySlug, clusterSlug } = useParams();
   const [searchParams] = useSearchParams();
@@ -1478,6 +1494,21 @@ export default function ClusterPage() {
   const wantsRestaurants = String(searchParams.get("view") || "").trim().toLowerCase() === CLUSTER_VIEW_MODES.RESTAURANTS;
   const [restaurantCount, setRestaurantCount] = useState(null);
   const [eventCount, setEventCount] = useState(0);
+  // Wall comes in last (Andre 2026-11-07): Food by type and the clips show first, then the Wall
+  // previews (phone strip / desktop column). A Wall link (?wall=1 / ?wall=write) skips the wait;
+  // a slow food load never keeps the Wall away for more than WALL_MAX_WAIT_MS.
+  const [wallReleased, setWallReleased] = useState(() => Boolean(searchParams.get("wall")));
+  const wallTimerRef = useRef(null);
+  const releaseWall = React.useCallback(() => {
+    if (wallTimerRef.current) return;
+    wallTimerRef.current = setTimeout(() => setWallReleased(true), WALL_AFTER_FOOD_MS);
+  }, []);
+  useEffect(() => {
+    if (wallReleased) return undefined;
+    const t = setTimeout(() => setWallReleased(true), WALL_MAX_WAIT_MS);
+    return () => clearTimeout(t);
+  }, [wallReleased]);
+  useEffect(() => () => clearTimeout(wallTimerRef.current), []);
 
   // Set only when the cluster was opened from the search page pill / location panel.
   const exitTo = useMemo(() => resolveClusterExitTo(searchParams, clusterSlug), [searchParams, clusterSlug]);
@@ -1773,7 +1804,11 @@ export default function ClusterPage() {
 
   return (
     <ClusterVideoProvider cluster={cluster}>
-    <ClusterWallProvider clusterSlug={cluster.slug} clusterLabel={isUsc ? "USC" : cluster.name || pageHeading}>
+    <ClusterWallProvider
+      clusterSlug={cluster.slug}
+      clusterLabel={isUsc ? "USC" : cluster.name || pageHeading}
+      hold={!wallReleased}
+    >
     <ClusterWallFrame
       rootRef={engagementRootRef}
       className={themeClass}
@@ -1886,6 +1921,7 @@ export default function ClusterPage() {
           enabled
           stickyLead={renderStickyLead()}
           preContent={clusterFoodHero}
+          onFoodShown={releaseWall}
           postContent={
             <>
               {/* Phone: the Wall as a sideways strip right after the food boxes (desktop shows the side column). */}

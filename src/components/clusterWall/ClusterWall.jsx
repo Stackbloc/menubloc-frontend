@@ -26,9 +26,18 @@ function isWide() {
   return typeof window !== "undefined" && window.matchMedia?.("(min-width: 960px)")?.matches;
 }
 
-export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standalone = false, showHouse = false, children }) {
+export function ClusterWallProvider({
+  clusterSlug,
+  clusterLabel = "USC",
+  standalone = false,
+  showHouse = false,
+  hold = false,
+  children,
+}) {
   const [week, setWeek] = useState(null);
-  const wall = useClusterWall(clusterSlug, { week });
+  // hold (cluster page, Andre 2026-11-07): the Wall waits until Food by type and the clips have
+  // shown, so nobody taps into the Wall before seeing the food types. Layout stays reserved.
+  const wall = useClusterWall(clusterSlug, { week, paused: hold });
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,6 +100,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
       clusterLabel,
       wall,
       active,
+      held: hold,
       week,
       setWeek,
       openBlock: setViewing,
@@ -105,7 +115,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
         setFullOpen(true);
       },
     }),
-    [clusterSlug, clusterLabel, wall, active, week, openHouse, showHouse, houseRand, standalone, startWriting]
+    [clusterSlug, clusterLabel, wall, active, hold, week, openHouse, showHouse, houseRand, standalone, startWriting]
   );
 
   return (
@@ -217,7 +227,7 @@ export function BackToMenuply({ onBack }) {
 /** Desktop: sticky side column with its own scroll. Hidden below 960 px by the layout CSS. */
 export function ClusterWallPanel() {
   const ctx = useClusterWallContext();
-  if (!ctx?.active) return null;
+  if (!ctx?.active || ctx.held) return null;
   return (
     <section id="cluster-wall" className="cw-panel" aria-label={wallName(ctx.clusterLabel)} data-testid="cluster-wall-panel">
       <Header />
@@ -231,7 +241,7 @@ export function ClusterWallPanel() {
 /** Phone: a sideways strip after the food boxes; "See all" opens the full Wall. */
 export function ClusterWallBand() {
   const ctx = useClusterWallContext();
-  if (!ctx?.active) return null;
+  if (!ctx?.active || ctx.held) return null;
   return (
     <section
       className="cw-band-only"

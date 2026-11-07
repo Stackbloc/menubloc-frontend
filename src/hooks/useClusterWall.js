@@ -26,7 +26,7 @@ async function fetchLatest(clusterSlug, { week, cursor, signal } = {}) {
  * while the tab is visible ("new blocks appear continuously"). If the Wall API isn't there
  * (backend not deployed / Wall off), status = "unavailable" and the page keeps its old layout.
  */
-export default function useClusterWall(clusterSlug, { week = null } = {}) {
+export default function useClusterWall(clusterSlug, { week = null, paused = false } = {}) {
   const enabled = isClusterWallSlug(clusterSlug);
   const [state, setState] = useState(() => ({
     status: enabled ? "loading" : "unavailable",
@@ -45,6 +45,8 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
       setState((s) => ({ ...s, status: "unavailable" }));
       return undefined;
     }
+    // Cluster page: wait until Food by type + clips are on screen (status stays "loading").
+    if (paused) return undefined;
     const ctrl = new AbortController();
     setState((s) => ({ ...s, status: "loading", blocks: [] }));
     fetchLatest(clusterSlug, { week, signal: ctrl.signal })
@@ -66,7 +68,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
         setState((s) => ({ ...s, status: "unavailable" }));
       });
     return () => ctrl.abort();
-  }, [clusterSlug, enabled, week]);
+  }, [clusterSlug, enabled, week, paused]);
 
   // Live: pull the newest page and put unseen posts on top.
   useEffect(() => {
