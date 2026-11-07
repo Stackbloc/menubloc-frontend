@@ -50,6 +50,8 @@ export const fiApi = {
   mealtimeAddSuggestions: (draftId, { confirmBulk = false, categories } = {}) =>
     call("POST", `/mealtime/drafts/${draftId}/suggestions`, { confirm_bulk: confirmBulk, categories: categories && categories.length ? categories : null }),
   mealtimeRankingPreview: (params) => call("GET", `/mealtime/ranking-preview${q(params)}`),
+  mealtimeLive: () => call("GET", "/mealtime/live"),
+  mealtimeSetLive: (settings) => call("POST", "/mealtime/live", { settings }),
   restore: (system, { target, keys, expectedCurrent, note }) =>
     call("POST", `/${system}/restore`, {
       target_revision_id: target,

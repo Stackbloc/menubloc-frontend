@@ -17,7 +17,7 @@ import {
  */
 
 const BASE = "/owner/food-intelligence";
-const PHASE1_NOTE = "Publishing records the official version. Live Search, clusters and Similar keep using today's data until a separate go-live is approved.";
+const PHASE1_NOTE = "Publishing records the official version. For MKS and the Food Ontology, live Search, clusters and Similar keep using today's data. Official mealtimes nudge live order only where you turn them on (Mealtimes → Live use).";
 
 function errText(err) {
   return err ? err.message || String(err) : "";
@@ -506,6 +506,7 @@ const ACTION_LABELS = {
   suggestions_previewed: "Looked at mealtime suggestions",
   suggestions_added: "Added mealtime suggestions to a draft",
   ranking_previewed: "Ran a ranking preview",
+  live_switch_changed: "Changed live use",
 };
 
 function History() {
@@ -546,6 +547,7 @@ function auditDetail(e) {
   if (e.action === "baseline_saved") return `${d.records} records · ${String(d.sha256 || "").slice(0, 12)}`;
   if (e.action === "versions_compared") return `ids ${d.from} → ${d.to}`;
   if (e.action === "suggestions_added" || e.action === "suggestions_previewed") return `${d.suggestions} suggestions · ${d.needs_a_look} need a look · ${d.kept_owner_choices} owner choices kept`;
+  if (e.action === "live_switch_changed") return (d.changed || []).map((k) => `${k.replace("use_clock", "time of day")} ${d.after && d.after[k] ? "on" : "off"}`).join(", ");
   if (e.action === "ranking_previewed") return `“${d.q}” · ${d.mealtime} · ${d.moved_up} up, ${d.removed} removed`;
   return e.revision_id ? `version id ${e.revision_id}` : "";
 }
@@ -601,7 +603,7 @@ function Checks() {
                     <div>{s.baseline_intact ? "✓" : "✕"} Original (version 0) is {s.baseline_intact ? "intact" : "DAMAGED"} <span style={{ color: OWNER_COLORS.muted }}>· {String(s.baseline_sha256).slice(0, 12)}</span></div>
                     <div>{s.all_versions_intact ? "✓" : "✕"} All {s.published_versions} published versions {s.all_versions_intact ? "intact" : "— some are damaged"}</div>
                     <div>Official version: {s.current_number}</div>
-                    <div>{s.live_status === "live_differs" ? "⚠" : "✓"} {s.system === "mealtime" ? "Live results don't use mealtimes yet (Stage A)." : LIVE_TEXT[s.live_status]}</div>
+                    <div>{s.live_status === "live_differs" ? "⚠" : "✓"} {s.system === "mealtime" ? <>Live results use the official mealtimes only where a switch is on. <Link to={`${BASE}/mealtime`}>Live use</Link></> : LIVE_TEXT[s.live_status]}</div>
                     {s.live_vs_original ? <div style={{ color: OWNER_COLORS.muted }}>Live vs original: <SummaryLine summary={s.live_vs_original} /></div> : null}
                     {s.live_error ? <Banner tone="error">{s.live_error}</Banner> : null}
                     {baseline ? (

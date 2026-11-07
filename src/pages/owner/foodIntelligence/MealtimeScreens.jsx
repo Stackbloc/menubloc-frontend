@@ -8,13 +8,13 @@ import {
 } from "./fiUi.jsx";
 
 /**
- * Owner → Food Intelligence → Mealtimes (Phase 2, Stage A).
+ * Owner → Food Intelligence → Mealtimes (Phase 2: Stage A screens + Stage B Live use switches).
  * Codes attach to MKS food types; a food type without its own codes takes its category's.
  * Menu dishes take their food type's codes. Nothing here changes live results.
  */
 
 const BASE = "/owner/food-intelligence";
-const STAGE_A_NOTE = "Mealtimes only ever change the order of results; they never hide a food. Publishing records the official mealtimes. Live Search, clusters, Similar and Post don't use them until a separate go-live is approved.";
+const STAGE_A_NOTE = "Mealtimes only ever change the order of results; they never hide a food. Live places use the official version only where you turn them on below.";
 const PAGE_MAX = 50;
 
 function errText(err) {
@@ -173,6 +173,77 @@ function SourceList({ sources }) {
 // Browse (official version)
 // ---------------------------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------------------------
+// Live use (Stage B): where the official mealtimes nudge live order. Every switch starts off.
+// ---------------------------------------------------------------------------------------------
+
+const CLOCK_WORD = { B: "Breakfast", L: "Lunch", D: "Dinner", LN: "Late Night" };
+
+function LiveUse() {
+  const live = useLoad(() => fiApi.mealtimeLive(), []);
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const d = data || live.data;
+  async function flip(key) {
+    setBusy(key);
+    setMsg(null);
+    try {
+      const out = await fiApi.mealtimeSetLive({ [key]: !d.settings[key] });
+      setData(out);
+    } catch (e) {
+      setMsg(errText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+  if (live.loading) return null;
+  if (live.error) return <Banner tone="error">{errText(live.error)}</Banner>;
+  if (!d.installed) {
+    return <Banner tone="warn">Live use switches arrive with migration 0404. Until then, mealtimes don't change any live results.</Banner>;
+  }
+  const anyOn = d.surfaces.some((s) => d.settings[s.key]);
+  const row = (key, label, sub) => (
+    <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "8px 0", borderTop: `1px solid ${OWNER_COLORS.line}`, flexWrap: "wrap" }}>
+      <div style={{ flex: "1 1 220px" }}>
+        <div style={{ fontWeight: 700, fontSize: 13 }}>{label}</div>
+        {sub ? <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{sub}</div> : null}
+      </div>
+      <Btn small kind={d.settings[key] ? "primary" : "plain"} onClick={() => flip(key)} disabled={busy !== null} title={d.settings[key] ? "Turn off" : "Turn on"}>
+        {busy === key ? "Saving…" : d.settings[key] ? "● On" : "○ Off"}
+      </Btn>
+    </div>
+  );
+  return (
+    <PageCard style={{ padding: 16, marginBottom: 14 }}>
+      <SectionTitle title="Live use" subtitle="Where the official mealtimes nudge live order. Everything starts off." />
+      <div style={{ fontSize: 13, marginTop: -10, marginBottom: 6 }}>
+        {d.official_version == null
+          ? "No official version yet."
+          : !d.classified
+            ? `Official version ${d.official_version} has nothing classified, so nothing live changes even when a switch is on.`
+            : `Uses official version ${d.official_version}. Publishing a new version takes effect within a minute.`}{" "}
+        Same results every time, only a small nudge in order. Turn a switch off to undo it right away.
+      </div>
+      {msg ? <Banner tone="error">{msg}</Banner> : null}
+      {d.surfaces.map((s) => row(s.key, s.label, SURFACE_SUB[s.key]))}
+      {row(
+        "use_clock",
+        "Use the time of day when the diner hasn't picked a mealtime",
+        `Los Angeles time. Right now that's ${CLOCK_WORD[d.clock_now] || d.clock_now}. The diner's own pick always wins.`
+      )}
+      {anyOn ? null : <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 6 }}>Everything is off: live results ignore mealtimes.</div>}
+    </PageCard>
+  );
+}
+
+const SURFACE_SUB = {
+  search: "When a diner picks a mealtime (or the time of day, if on).",
+  cluster: "Food tiles and the dishes inside each tile.",
+  similar: "The order of similar dishes.",
+  post: "The order of \"What are you eating?\" suggestions.",
+};
+
 export function MealtimeBrowse() {
   const navigate = useNavigate();
   const view = useLoad(() => fiApi.mealtimeView(), []);
@@ -203,6 +274,7 @@ export function MealtimeBrowse() {
     <>
       <Banner tone="info">{STAGE_A_NOTE}</Banner>
       {msg ? <Banner tone="error">{msg}</Banner> : null}
+      <LiveUse />
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         <div style={{ fontSize: 13 }}>
           Official version <strong>{v.revision.number}</strong> ({v.revision.title}) · {v.summary.classified} of {v.summary.food_types} food types classified ({v.summary.own_codes} own, {v.summary.from_category} from category) · {v.summary.unclassified} unclassified
