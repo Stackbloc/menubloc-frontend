@@ -9,6 +9,8 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
+import UnlistedPlaceLocation from "../../components/UnlistedPlaceLocation.jsx";
+import { cleanPlaceLocation } from "../../lib/unlistedPlace.js";
 import QuickInviteWhoStep from "./QuickInviteWhoStep.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { resolveEatingPrefill } from "../../lib/foodActivityApi.js";
@@ -144,6 +146,8 @@ export default function InviteToEatStartPage() {
     ? String(selected?.unlisted ? selected?.restaurant_name || "" : "").trim()
     : "";
   const hasPlace = Boolean(selected?.restaurant_id || selected?.id || unlistedPlaceName);
+  // City/state (+ optional street) for that typed place; goes on the invitation (mig 0400).
+  const [placeLocation, setPlaceLocation] = useState({ city: "", state: "", address: "" });
 
   function openFromPicker() {
     const restaurantId = selected?.restaurant_id || selected?.id;
@@ -154,6 +158,7 @@ export default function InviteToEatStartPage() {
       menuItemId: selected?.menu_item_id || null,
       menuItemName: selected?.item_name || null,
       attachedMenuId: isLgdQuickInvite ? attachedMenuId || null : null,
+      placeLocation: restaurantId ? null : cleanPlaceLocation(placeLocation),
     });
     setModalOpen(true);
   }
@@ -188,6 +193,9 @@ export default function InviteToEatStartPage() {
           allowUnlisted
           hideNote
         />
+        {unlistedPlaceName ? (
+          <UnlistedPlaceLocation placeName={unlistedPlaceName} value={placeLocation} onChange={setPlaceLocation} />
+        ) : null}
         {isLgdQuickInvite && (selected?.restaurant_id || selected?.id) ? (
           <fieldset
             data-testid="lgd-attached-menu-fieldset"
@@ -233,11 +241,12 @@ export default function InviteToEatStartPage() {
         ) : null}
         <button
           type="button"
-          style={styles.primary}
+          style={hasPlace ? styles.primary : { ...styles.primary, color: "#a8a29e", cursor: "default" }}
           disabled={!hasPlace}
           onClick={openFromPicker}
+          data-testid="invite-start-continue"
         >
-          Continue
+          Continue ›
         </button>
         </>
         )}
@@ -250,6 +259,7 @@ export default function InviteToEatStartPage() {
         menuItemId={resolved.menuItemId}
         menuItemName={resolved.menuItemName}
         attachedMenuId={resolved.attachedMenuId}
+        placeLocation={resolved.placeLocation || null}
         initialSeedCode={seedCode || null}
         initialInviteeName={to?.name || String(searchParams.get("invitee_name") || "").trim()}
         initialInviteKind={
@@ -316,14 +326,15 @@ const styles = {
     cursor: "pointer",
   },
   menuError: { margin: 0, fontSize: 13, color: "#b91c1c" },
+  // Compact text action, no full-width bar or green pill (Andre 2026-10-29 / 2026-11-06).
   primary: {
+    display: "block",
     marginTop: 16,
-    width: "100%",
-    minHeight: 48,
-    borderRadius: 12,
+    marginLeft: "auto",
+    padding: "8px 4px",
     border: "none",
-    background: "#16a34a",
-    color: "#fff",
+    background: "none",
+    color: "#15803d",
     fontWeight: 800,
     fontSize: 16,
     cursor: "pointer",

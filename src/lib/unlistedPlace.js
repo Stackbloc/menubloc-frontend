@@ -23,3 +23,20 @@ export function unlistedPlaceName(restaurant) {
   if (!restaurant || (Number.isFinite(id) && id > 0)) return null;
   return cleanTypedName(restaurant.restaurant_name || restaurant.name, 120) || null;
 }
+
+/**
+ * Where an Invite to Eat place not on Menuply is (Andre 2026-11-07): city + state, optional street.
+ * Limits match backend mig 0400. Blank → null.
+ */
+export const PLACE_CITY_MAX = 80;
+export const PLACE_STATE_MAX = 40;
+export const PLACE_ADDRESS_MAX = 200;
+
+export function cleanPlaceLocation(value) {
+  const clean = (v, max) => String(v || "").trim().replace(/\s+/g, " ").slice(0, max) || null;
+  return {
+    city: clean(value?.city, PLACE_CITY_MAX),
+    state: clean(value?.state, PLACE_STATE_MAX),
+    address: clean(value?.address, PLACE_ADDRESS_MAX),
+  };
+}

@@ -46,6 +46,8 @@ export default function InviteToEatModal({
   onClose,
   restaurantId,
   restaurantName = "",
+  // A place not on Menuply yet: { city, state, address } the diner typed (any may be null).
+  placeLocation = null,
   menuItemId = null,
   menuItemName = null,
   attachedMenuId = null,
@@ -230,6 +232,9 @@ export default function InviteToEatModal({
         // A place not on Menuply yet has no id: send the typed name instead (like posts).
         restaurant_id: restaurantId || undefined,
         place_name: restaurantId ? undefined : unlistedPlaceNameFor(restaurantName) || undefined,
+        place_city: restaurantId ? undefined : placeLocation?.city || undefined,
+        place_state: restaurantId ? undefined : placeLocation?.state || undefined,
+        place_address: restaurantId ? undefined : placeLocation?.address || undefined,
         menu_item_id: menuItemId || undefined,
         attached_menu_id: attachedMenuId || undefined,
         schedule_mode: scheduleMode,
