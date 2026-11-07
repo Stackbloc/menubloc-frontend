@@ -3,14 +3,16 @@ import { Link, Route, Routes, useNavigate, useParams, useSearchParams } from "re
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "../OwnerLayout.jsx";
 import { fiApi, SYSTEM_LABELS, SYSTEMS } from "../../../lib/ownerFoodIntelligenceApi.js";
 import RecordEditor, { AddRecordForm } from "./RecordEditor.jsx";
+import { MealtimeBrowse, MealtimeDraft, MealtimeRankingPreview } from "./MealtimeScreens.jsx";
 import {
   Banner, Btn, ConfirmDialog, DiffList, IssueList, Loading, SummaryLine, Tag,
   inputStyle, linkStyle, recordSub, recordTitle, useLoad, when,
 } from "./fiUi.jsx";
 
 /**
- * Owner → Food Intelligence (Phase 1).
- * Versioned editing of the Food Ontology (MKS v2 keys) and MKS (Common Knowledge food types).
+ * Owner → Food Intelligence (Phases 1–2).
+ * Versioned editing of the Food Ontology (MKS v2 keys), MKS (Common Knowledge food types) and,
+ * from Phase 2, mealtime classifications (MealtimeScreens.jsx).
  * Publishing records the official version; it does not change live Search/clusters/Similar yet.
  */
 
@@ -35,6 +37,12 @@ function SystemTabs({ value, onChange }) {
 // Overview
 // ---------------------------------------------------------------------------------------------
 
+const SUBTITLES = {
+  mks: "Common Knowledge food types (Search, clusters, Post)",
+  food_ontology: "MKS v2 numbered keys (Similar and Compare)",
+  mealtime: "Breakfast, lunch, dinner… on MKS food types (ranking only)",
+};
+
 function Overview() {
   const { data, loading, error } = useLoad(() => fiApi.overview(), []);
   return (
@@ -42,10 +50,10 @@ function Overview() {
       <Banner tone="info">{PHASE1_NOTE}</Banner>
       {error ? <Banner tone="error">{errText(error)}</Banner> : null}
       {loading ? <Loading /> : (
-        <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 16 }}>
+        <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
           {(data?.systems || []).map((s) => (
             <PageCard key={s.system} style={{ padding: 20 }}>
-              <SectionTitle title={s.label} subtitle={s.system === "mks" ? "Common Knowledge food types (Search, clusters, Post)" : "MKS v2 numbered keys (Similar and Compare)"} />
+              <SectionTitle title={s.label} subtitle={SUBTITLES[s.system]} />
               {!s.baseline ? (
                 <Banner tone="warn">The original isn't saved yet. <Link to={`${BASE}/checks`}>Save it as version 0</Link> to start.</Banner>
               ) : (
@@ -164,7 +172,8 @@ function Browse() {
 
 function DraftsList() {
   const navigate = useNavigate();
-  const lists = useLoad(() => Promise.all(SYSTEMS.map((s) => fiApi.revisions(s).then((r) => r.revisions))), []);
+  // A system that isn't set up yet (mealtime before migration 0402) just shows no drafts.
+  const lists = useLoad(() => Promise.all(SYSTEMS.map((s) => fiApi.revisions(s).then((r) => r.revisions).catch(() => []))), []);
   const [msg, setMsg] = useState(null);
   const drafts = (lists.data || []).flat().filter((r) => r.status === "draft");
   async function start(system) {
@@ -494,6 +503,9 @@ const ACTION_LABELS = {
   versions_compared: "Compared versions",
   restore_previewed: "Previewed a restore",
   restored: "Restored",
+  suggestions_previewed: "Looked at mealtime suggestions",
+  suggestions_added: "Added mealtime suggestions to a draft",
+  ranking_previewed: "Ran a ranking preview",
 };
 
 function History() {
@@ -533,6 +545,8 @@ function auditDetail(e) {
   if (e.action === "published" || e.action === "restored") return d.summary ? `${d.summary.total} record(s)` : "";
   if (e.action === "baseline_saved") return `${d.records} records · ${String(d.sha256 || "").slice(0, 12)}`;
   if (e.action === "versions_compared") return `ids ${d.from} → ${d.to}`;
+  if (e.action === "suggestions_added" || e.action === "suggestions_previewed") return `${d.suggestions} suggestions · ${d.needs_a_look} need a look · ${d.kept_owner_choices} owner choices kept`;
+  if (e.action === "ranking_previewed") return `“${d.q}” · ${d.mealtime} · ${d.moved_up} up, ${d.removed} removed`;
   return e.revision_id ? `version id ${e.revision_id}` : "";
 }
 
@@ -569,7 +583,7 @@ function Checks() {
     <>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       {c.loading ? <Loading /> : c.error ? <Banner tone="error">{errText(c.error)}</Banner> : (
-        <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 16 }}>
+        <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
           {c.data.systems.map((s) => {
             const baseline = ov.data?.systems?.find((x) => x.system === s.system)?.baseline;
             return (
@@ -577,15 +591,17 @@ function Checks() {
                 <SectionTitle title={s.label} />
                 {!s.baseline_saved ? (
                   <>
-                    <Banner tone="warn">The original hasn't been saved yet. Saving it makes a locked copy (version 0) that can never be changed or deleted.</Banner>
-                    <Btn kind="primary" disabled={busy === s.system} onClick={() => saveBaseline(s.system)}>🔒 Save original as version 0</Btn>
+                    <Banner tone="warn">{s.system === "mealtime"
+                      ? "Mealtimes start empty. Saving version 0 locks “nothing classified” as the starting point, so you can always go back to it."
+                      : "The original hasn't been saved yet. Saving it makes a locked copy (version 0) that can never be changed or deleted."}</Banner>
+                    <Btn kind="primary" disabled={busy === s.system} onClick={() => saveBaseline(s.system)}>🔒 {s.system === "mealtime" ? "Save version 0 (nothing classified)" : "Save original as version 0"}</Btn>
                   </>
                 ) : (
                   <div style={{ fontSize: 13, lineHeight: 1.8 }}>
                     <div>{s.baseline_intact ? "✓" : "✕"} Original (version 0) is {s.baseline_intact ? "intact" : "DAMAGED"} <span style={{ color: OWNER_COLORS.muted }}>· {String(s.baseline_sha256).slice(0, 12)}</span></div>
                     <div>{s.all_versions_intact ? "✓" : "✕"} All {s.published_versions} published versions {s.all_versions_intact ? "intact" : "— some are damaged"}</div>
                     <div>Official version: {s.current_number}</div>
-                    <div>{s.live_status === "live_differs" ? "⚠" : "✓"} {LIVE_TEXT[s.live_status]}</div>
+                    <div>{s.live_status === "live_differs" ? "⚠" : "✓"} {s.system === "mealtime" ? "Live results don't use mealtimes yet (Stage A)." : LIVE_TEXT[s.live_status]}</div>
                     {s.live_vs_original ? <div style={{ color: OWNER_COLORS.muted }}>Live vs original: <SummaryLine summary={s.live_vs_original} /></div> : null}
                     {s.live_error ? <Banner tone="error">{s.live_error}</Banner> : null}
                     {baseline ? (
@@ -614,6 +630,7 @@ const TITLES = {
   "": "Food Intelligence",
   food_ontology: "Food Ontology",
   mks: "MKS",
+  mealtime: "Mealtimes",
   drafts: "Draft revisions",
   versions: "Published versions",
   history: "Change history",
@@ -623,7 +640,8 @@ const TITLES = {
 export default function FoodIntelligence() {
   const params = useParams();
   const first = (params["*"] || "").split("/")[0];
-  const title = first && params["*"].includes("/drafts/") ? `${TITLES[first] || ""} draft` : TITLES[first] ?? "Food Intelligence";
+  const rest = params["*"] || "";
+  const title = rest === "mealtime/preview" ? "Mealtime ranking preview" : first && rest.includes("/drafts/") ? `${TITLES[first] || ""} draft` : TITLES[first] ?? "Food Intelligence";
   return (
     <OwnerLayout title={title}>
       <Routes>
@@ -632,6 +650,9 @@ export default function FoodIntelligence() {
         <Route path="versions" element={<Versions />} />
         <Route path="history" element={<History />} />
         <Route path="checks" element={<Checks />} />
+        <Route path="mealtime" element={<MealtimeBrowse />} />
+        <Route path="mealtime/preview" element={<MealtimeRankingPreview />} />
+        <Route path="mealtime/drafts/:id" element={<MealtimeDraft />} />
         <Route path=":system" element={<Browse />} />
         <Route path=":system/drafts/:id" element={<DraftEditor />} />
       </Routes>

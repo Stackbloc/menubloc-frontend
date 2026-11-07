@@ -83,9 +83,18 @@ export function when(ts) {
   return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+/** "B 95 · L · D 80" — mealtime codes in standard order (no score shown when there isn't one). */
+const CODE_ORDER = ["B", "BR", "L", "D", "S", "DS", "LN", "A"];
+export function codesText(codes) {
+  if (!codes || typeof codes !== "object") return "—";
+  const parts = CODE_ORDER.filter((c) => codes[c]).map((c) => (codes[c].score == null ? c : `${c} ${codes[c].score}`));
+  return parts.length ? parts.join(" · ") : "—";
+}
+
 export function recordTitle(system, key, rec) {
   if (!rec) return key;
   if (system === "mks") return rec.canonical_name || key;
+  if (system === "mealtime") return rec.scope === "category" ? `${rec.target} (category)` : rec.label || rec.target;
   if (key.startsWith("K")) return rec.label || key;
   return `Rule ${rec.anchor_key} → ${rec.candidate_key}`;
 }
@@ -93,13 +102,14 @@ export function recordTitle(system, key, rec) {
 export function recordSub(system, key, rec) {
   if (!rec) return "";
   if (system === "mks") return `${key} · ${rec.parent_category}`;
+  if (system === "mealtime") return `${rec.scope === "category" ? "category" : rec.target} · ${codesText(rec.codes)}${rec.proposal ? " · suggestion waiting" : ""}`;
   if (key.startsWith("K")) return `${rec.key} · level ${rec.level}${rec.parent_key ? ` · in ${rec.parent_key}` : ""}`;
   return rec.ruling;
 }
 
 export function isActive(system, key, rec) {
   if (!rec) return false;
-  if (system === "mks") return rec.active !== false;
+  if (system === "mks" || system === "mealtime") return rec.active !== false;
   if (key.startsWith("K")) return rec.status !== "deprecated";
   return rec.enabled !== false;
 }
@@ -135,7 +145,10 @@ export function DiffList({ system, changes, max = 200 }) {
     <div style={{ display: "grid", gap: 8 }}>
       {changes.slice(0, max).map((c) => {
         const rec = c.after || c.before;
-        const fields = c.op === "add" ? [] : (c.fields || []).filter((f) => !["superseded_by", "deprecated_at"].includes(f) || c.op === "change");
+        const hidden = system === "mealtime" ? ["proposal", "source", "confidence", "label", "scope", "target"] : [];
+        const fields = c.op === "add"
+          ? (system === "mealtime" ? ["codes"] : [])
+          : (c.fields || []).filter((f) => (!["superseded_by", "deprecated_at"].includes(f) || c.op === "change") && !hidden.includes(f));
         return (
           <div key={c.record_key} style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 10, padding: "9px 12px", background: "#fff" }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -164,6 +177,15 @@ function itemLabel(x) {
 /** One changed field. Lists show only what was added / removed; everything else shows before → after. */
 function FieldChange({ field, before, after }) {
   const label = <span style={{ color: OWNER_COLORS.muted }}>{field.replace(/_/g, " ")}: </span>;
+  if (field === "codes") {
+    return (
+      <div style={{ fontSize: 12, lineHeight: 1.45 }}>
+        {label}
+        {before ? <><span style={{ textDecoration: "line-through", color: "#912018" }}>{codesText(before)}</span>{" → "}</> : null}
+        <span style={{ color: "#05603a" }}>{codesText(after)}</span>
+      </div>
+    );
+  }
   if (Array.isArray(before) && Array.isArray(after)) {
     const b = new Set(before.map(itemLabel));
     const a = new Set(after.map(itemLabel));

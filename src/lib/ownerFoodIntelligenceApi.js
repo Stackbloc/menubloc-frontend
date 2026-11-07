@@ -44,6 +44,12 @@ export const fiApi = {
   publish: (system, id, note) => call("POST", `/${system}/drafts/${id}/publish`, { confirm: "PUBLISH", note }),
   abandon: (system, id) => call("POST", `/${system}/drafts/${id}/abandon`),
   restorePreview: (system, target, keys) => call("GET", `/${system}/restore-preview${q({ target, keys: keys && keys.length ? keys.join(",") : "" })}`),
+  // Phase 2 — mealtimes (Stage A: nothing here changes live results)
+  mealtimeView: (revision) => call("GET", `/mealtime/view${q({ revision })}`),
+  mealtimeSuggestions: (draftId, categories) => call("GET", `/mealtime/drafts/${draftId}/suggestions${q({ categories: categories && categories.length ? categories.join(",") : "" })}`),
+  mealtimeAddSuggestions: (draftId, { confirmBulk = false, categories } = {}) =>
+    call("POST", `/mealtime/drafts/${draftId}/suggestions`, { confirm_bulk: confirmBulk, categories: categories && categories.length ? categories : null }),
+  mealtimeRankingPreview: (params) => call("GET", `/mealtime/ranking-preview${q(params)}`),
   restore: (system, { target, keys, expectedCurrent, note }) =>
     call("POST", `/${system}/restore`, {
       target_revision_id: target,
@@ -54,5 +60,16 @@ export const fiApi = {
     }),
 };
 
-export const SYSTEM_LABELS = { food_ontology: "Food Ontology", mks: "MKS" };
-export const SYSTEMS = ["food_ontology", "mks"];
+export const SYSTEM_LABELS = { food_ontology: "Food Ontology", mks: "MKS", mealtime: "Mealtimes" };
+export const SYSTEMS = ["food_ontology", "mks", "mealtime"];
+export const MEALTIME_CODES = [
+  { code: "B", label: "Breakfast" },
+  { code: "BR", label: "Brunch" },
+  { code: "L", label: "Lunch" },
+  { code: "D", label: "Dinner" },
+  { code: "S", label: "Snack" },
+  { code: "DS", label: "Dessert" },
+  { code: "LN", label: "Late Night" },
+  { code: "A", label: "Anytime" },
+];
+export const MEALTIME_LABEL = Object.fromEntries(MEALTIME_CODES.map((c) => [c.code, c.label]));

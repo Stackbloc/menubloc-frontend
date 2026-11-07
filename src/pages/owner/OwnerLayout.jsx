@@ -161,6 +161,9 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/food-intelligence", label: "Overview", end: true },
           { to: "/owner/food-intelligence/food_ontology", label: "Food Ontology" },
           { to: "/owner/food-intelligence/mks", label: "MKS" },
+          // Phase 2 (Andre 2026-11-07): mealtime codes on MKS food types; ranking preview only (Stage A).
+          { to: "/owner/food-intelligence/mealtime", label: "Mealtimes", end: true },
+          { to: "/owner/food-intelligence/mealtime/preview", label: "Mealtime preview" },
           { to: "/owner/food-intelligence/drafts", label: "Draft revisions" },
           { to: "/owner/food-intelligence/versions", label: "Published versions" },
           { to: "/owner/food-intelligence/history", label: "Change history" },
