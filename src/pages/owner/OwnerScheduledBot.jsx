@@ -828,7 +828,7 @@ export default function OwnerScheduledBot({ botKey }) {
               ) : null}
               {bot.migrated === false ? (
                 <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 }}>
-                  {meta.name}&apos;s database tables aren&apos;t set up yet ({botKey === "seo_bot" ? "migration 0396" : "migration 0355"}), so it can&apos;t run. Nothing else is affected.
+                  {meta.name}&apos;s database tables aren&apos;t set up yet ({botKey === "seo_bot" ? "migration 0397" : "migration 0355"}), so it can&apos;t run. Nothing else is affected.
                 </div>
               ) : null}
               {runMessage ? <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700 }}>{runMessage}</div> : null}
