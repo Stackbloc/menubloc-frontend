@@ -133,3 +133,22 @@ test("destination venue + video titles are escaped once", async () => {
     assert.ok(!/&amp;(#39|amp);/.test(venue + video));
   } finally { globalThis.fetch = realFetch; }
 });
+
+test("video sitemap has no player_loc equal to the page (Google rejects that)", async () => {
+  mockBackend([["/public/sitemap-inventory", () => json(200, {
+    ok: true,
+    video_sitemap: [{
+      path: "/videos/managed/61",
+      title: "Crispy Fish at IHOP",
+      content_loc: "https://cdn.example/v.mp4",
+      thumbnail_loc: "https://cdn.example/t.jpg",
+      updated_at: "2026-11-03T10:00:00Z",
+    }],
+  })]]);
+  try {
+    const xml = await (await get("/sitemap-videos.xml")).text();
+    assert.match(xml, /<loc>https:\/\/menuply\.com\/videos\/managed\/61<\/loc>/);
+    assert.match(xml, /<video:content_loc>https:\/\/cdn\.example\/v\.mp4<\/video:content_loc>/);
+    assert.ok(!xml.includes("<video:player_loc>"), "no player_loc when the only player is the page itself");
+  } finally { globalThis.fetch = realFetch; }
+});

@@ -273,7 +273,10 @@ export function buildVideoObjectJsonLd(video, refs = {}) {
   const thumbnailUrl = absoluteUrl(video.photo_url || video.thumbnailUrl);
   const name = trimStr(video.title) || "Menuply video";
   const description = trimStr(video.description || video.comment);
-  const embedUrl = absoluteUrl(video.embed_path || video.embedUrl || path);
+  // embedUrl is for a separate player (an iframe page). Our watch page is not one, and
+  // Google flags an embedUrl equal to the page itself, so only send a real player URL.
+  const embedRaw = absoluteUrl(video.embed_path || video.embedUrl);
+  const embedUrl = embedRaw && embedRaw !== url ? embedRaw : null;
   const keywordsRaw = video.keywords;
   const keywords = Array.isArray(keywordsRaw)
     ? keywordsRaw.map((k) => trimStr(k)).filter(Boolean).slice(0, 8)
@@ -294,7 +297,10 @@ export function buildVideoObjectJsonLd(video, refs = {}) {
   if (description) node.description = description;
   if (thumbnailUrl) node.thumbnailUrl = thumbnailUrl;
   if (video.created_at || video.uploadDate) {
-    node.uploadDate = String(video.created_at || video.uploadDate).slice(0, 10);
+    // Full ISO 8601 with a time zone (Google warns on a bare date: "missing timezone").
+    const raw = String(video.created_at || video.uploadDate);
+    const t = Date.parse(raw);
+    node.uploadDate = Number.isFinite(t) ? new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z") : raw.slice(0, 10);
   }
   const duration = isoDurationFromMs(video.duration_ms ?? video.durationMs);
   if (duration) node.duration = duration;

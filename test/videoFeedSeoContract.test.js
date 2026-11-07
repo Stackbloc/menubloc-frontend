@@ -94,7 +94,8 @@ test("VideoObject includes restaurant and menu item about refs together", () => 
   });
   assert.equal(built.video["@type"], "VideoObject");
   assert.equal(built.video.duration, "PT15S");
-  assert.equal(built.video.embedUrl, "https://menuply.com/videos/ate/9");
+  assert.equal(built.video.embedUrl, undefined, "no embedUrl: the watch page isn't a separate player");
+  assert.equal(built.video.uploadDate, "2026-09-01T12:00:00Z", "uploadDate carries a time zone");
   assert.deepEqual(built.video.keywords, ["cheese pull", "late night"]);
   assert.equal(built.video.contentLocation["@type"], "Place");
   assert.ok(Array.isArray(built.video.about));
@@ -162,7 +163,7 @@ test("restaurantPageJsonLd includes VideoObject nodes linked by @id", () => {
   const videoNode = page["@graph"].find((n) => n["@type"] === "VideoObject");
   assert.ok(restaurantNode);
   assert.ok(videoNode);
-  assert.equal(videoNode.embedUrl, "https://menuply.com/videos/managed/34");
+  assert.equal(videoNode.embedUrl, undefined);
   assert.equal(videoNode.about["@id"], restaurantNode["@id"]);
 });
 

@@ -23,3 +23,10 @@ test("SEO Bot: run summary and status read in plain words", () => {
     "80 pages checked · 1 problem · 26 warnings"
   );
 });
+
+test("SEO Bot report: page types + clips boxes; duplicate titles count every page", () => {
+  const src = read("src/pages/owner/SeoBotReport.jsx");
+  assert.match(src, /<PageTypes types=\{report\?\.page_types\} \/>/);
+  assert.match(src, /<Clips clips=\{report\?\.clips\} \/>/);
+  assert.match(src, /group\.code === "duplicate_title"[\s\S]*detail\?\.urls/);
+});

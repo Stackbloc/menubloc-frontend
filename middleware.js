@@ -247,7 +247,9 @@ function googleVideoSitemapUrlset(entries) {
     const pageLoc = absoluteCanonicalUrl(entry.loc || entry.path);
     const contentLoc = entry.content_loc || entry.contentUrl;
     const thumbLoc = entry.thumbnail_loc || entry.thumbnailUrl;
-    const playerLoc = absoluteCanonicalUrl(entry.player_loc || entry.path || entry.loc);
+    // player_loc must not equal the page (<loc>) — Google rejects that; content_loc is enough.
+    const playerRaw = entry.player_loc ? absoluteCanonicalUrl(entry.player_loc) : null;
+    const playerLoc = playerRaw && playerRaw !== pageLoc ? playerRaw : null;
     const title = entry.title || "Menuply video";
     const description = entry.description || title;
     if (!pageLoc || !contentLoc || !thumbLoc) return "";
@@ -260,7 +262,7 @@ function googleVideoSitemapUrlset(entries) {
       `<video:title>${escapeXml(title)}</video:title>` +
       `<video:description>${escapeXml(description)}</video:description>` +
       `<video:content_loc>${escapeXml(contentLoc)}</video:content_loc>` +
-      `<video:player_loc>${escapeXml(playerLoc)}</video:player_loc>` +
+      (playerLoc ? `<video:player_loc>${escapeXml(playerLoc)}</video:player_loc>` : "") +
       `</video:video>` +
       `</url>`
     );

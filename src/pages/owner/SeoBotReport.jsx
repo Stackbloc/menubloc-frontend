@@ -6,6 +6,8 @@ import { formatDateTime } from "./ownerBotFormat.js";
  * Owner → Bots → SEO Bot: the latest run's report.
  *   - Search Console: connected or how to connect; clicks/impressions vs the 28 days before; top searches
  *   - What to fix: findings grouped by kind, worst first, with example pages
+ *   - Page types: every kind of page on the site (seo-pages.json) and whether Google gets the right thing
+ *   - Clips: the clip sitemap, clip files, clip pages Google indexed, Google Videos traffic
  *   - Pages checked: what Google's crawler got back for each sampled page
  * Data: GET /api/owner/bots/seo_bot → latest_report, search_console.
  */
@@ -116,13 +118,17 @@ function SearchConsoleCard({ connection, summary, status }) {
 function FindingGroup({ group }) {
   const [open, setOpen] = useState(false);
   const sev = SEVERITY[group.severity] || SEVERITY.note;
-  const examples = group.examples.filter((e) => e.url);
+  // duplicate_title is one finding per shared title; list every page that shares it.
+  const examples = group.code === "duplicate_title"
+    ? group.examples.flatMap((e) => (e.detail?.urls || [e.url]).map((url) => ({ ...e, url })))
+    : group.examples.filter((e) => e.url);
+  const pageCount = group.code === "duplicate_title" ? examples.length : group.count;
   return (
     <div style={{ padding: "14px 0", borderTop: `1px solid ${OWNER_COLORS.line}` }}>
       <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
         <span style={{ color: sev.color, fontWeight: 700, fontSize: 13, minWidth: 64 }}>{sev.label}</span>
         <span style={{ flex: 1, minWidth: 220, fontSize: 14, color: OWNER_COLORS.ink }}>
-          {group.count > 1 && examples.length ? group.message.replace(/^This (sitemap )?page/, "Pages") : group.message}
+          {pageCount > 1 && examples.length ? group.message.replace(/^This (sitemap )?page/, "Pages") : group.message}
         </span>
         {examples.length ? (
           <button
@@ -130,14 +136,14 @@ function FindingGroup({ group }) {
             onClick={() => setOpen((v) => !v)}
             style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13 }}
           >
-            {group.count} page{group.count === 1 ? "" : "s"} {open ? "▲" : "▼"}
+            {pageCount} page{pageCount === 1 ? "" : "s"} {open ? "▲" : "▼"}
           </button>
         ) : null}
       </div>
       {open ? (
         <ul style={{ margin: "8px 0 0 74px", padding: 0, listStyle: "none", display: "grid", gap: 6, fontSize: 13 }}>
           {examples.map((e) => (
-            <li key={e.url}>
+            <li key={`${e.url}-${e.message}`}>
               <a href={e.url} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.accent }}>{shortUrl(e.url)}</a>
               {e.detail?.link ? (
                 <>
@@ -148,10 +154,127 @@ function FindingGroup({ group }) {
               {e.message !== group.message ? <div style={mutedStyle}>{e.message}</div> : null}
             </li>
           ))}
-          {group.count > examples.length ? <li style={mutedStyle}>…and {group.count - examples.length} more.</li> : null}
+          {pageCount > examples.length ? <li style={mutedStyle}>…and {pageCount - examples.length} more.</li> : null}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+const KIND_GROUPS = [
+  ["index", "Should be in Google", "Own title, own canonical, no noindex."],
+  ["private", "Kept out of Google", "Accounts, tools, checkout and private links: should say noindex."],
+  ["alias", "Old addresses", "Should redirect to the main page."],
+  ["either", "Other public pages", "Not search landing pages; should at least have their own title."],
+];
+
+function PageTypes({ types }) {
+  const [open, setOpen] = useState(false);
+  if (!types?.length) return null;
+  const bad = types.filter((t) => !t.ok);
+  return (
+    <PageCard style={{ padding: 24 }}>
+      <SectionTitle
+        title="Page types"
+        subtitle={`Every kind of page on menuply.com, sitemap or not: ${types.length} types, ${bad.length ? `${bad.length} not right for Google` : "all right for Google"}. One example of each is fetched the way Google fetches it.`}
+        action={
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13 }}
+          >
+            {open ? "Show only what's wrong" : "Show all"}
+          </button>
+        }
+      />
+      {KIND_GROUPS.map(([kind, title, hint]) => {
+        const rows = types.filter((t) => t.kind === kind && (open || !t.ok));
+        if (!rows.length) return null;
+        return (
+          <div key={kind} style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: OWNER_COLORS.ink }}>{title}</div>
+            <div style={{ ...mutedStyle, marginBottom: 6 }}>{hint}</div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <tbody>
+                  {rows.map((t) => (
+                    <tr key={t.route} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, verticalAlign: "top" }}>
+                      <td style={{ padding: "6px 8px 6px 0", width: "34%" }}>
+                        <div style={{ color: OWNER_COLORS.ink, fontWeight: 600 }}>{t.label}</div>
+                        <div style={{ ...mutedStyle, fontSize: 12, wordBreak: "break-all" }}>{t.route}</div>
+                      </td>
+                      <td style={{ padding: "6px 0" }}>
+                        {t.examples.map((e, i) => (
+                          <div key={e.url || e.from_sample || i} style={{ color: e.ok === false ? "#b91c1c" : OWNER_COLORS.ink }}>
+                            {e.verdict}
+                            {e.url ? (
+                              <>
+                                {" · "}
+                                <a href={e.url} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.muted }}>
+                                  {e.made_up ? "made-up address" : shortUrl(e.url)}
+                                </a>
+                              </>
+                            ) : null}
+                          </div>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </PageCard>
+  );
+}
+
+function Clips({ clips }) {
+  if (!clips) return null;
+  const traffic = clips.video_traffic;
+  const rows = [
+    ["Clips in the clip sitemap", clips.video_sitemap ? Number(clips.in_video_sitemap || 0).toLocaleString() : "No clip sitemap"],
+    ["Clip pages in the sitemap", Number(clips.clip_pages_in_sitemap || 0).toLocaleString()],
+    ["Clip pages missing from the clip sitemap", Number(clips.missing_from_video_sitemap || 0).toLocaleString(), clips.missing_from_video_sitemap > 0],
+    ["Clip files checked (video + thumbnail)", clips.media ? `${clips.media.checked}${clips.media.broken ? ` · ${clips.media.broken} broken` : " · all load"}` : "—", clips.media?.broken > 0],
+    ["Clip pages checked", `${clips.pages_checked}${clips.pages_with_video_data_issues ? ` · ${clips.pages_with_video_data_issues} with video data problems` : ""}`, clips.pages_with_video_data_issues > 0],
+    ["Asked Google about", clips.inspected ? `${clips.inspected} clip page${clips.inspected === 1 ? "" : "s"} · ${clips.indexed} indexed` : "—", clips.inspected > clips.indexed],
+  ];
+  if (clips.console_sitemap) {
+    rows.push(["Clip sitemap in Search Console", `Read ${clips.console_sitemap.last_downloaded ? formatDateTime(clips.console_sitemap.last_downloaded) : "not yet"}${clips.console_sitemap.errors ? ` · ${clips.console_sitemap.errors} errors` : ""}`, clips.console_sitemap.errors > 0]);
+  }
+  return (
+    <PageCard style={{ padding: 24 }}>
+      <SectionTitle title="Clips" subtitle="Whether Google can find, play and show Menuply clips as videos." />
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <tbody>
+          {rows.map(([label, value, bad]) => (
+            <tr key={label} style={{ borderTop: `1px solid ${OWNER_COLORS.line}` }}>
+              <td style={{ padding: "7px 8px 7px 0", color: OWNER_COLORS.muted }}>{label}</td>
+              <td style={{ padding: "7px 0", color: bad ? "#b91c1c" : OWNER_COLORS.ink, fontWeight: 600 }}>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {traffic ? (
+        <div style={{ ...mutedStyle, marginTop: 10 }}>
+          Google Videos, {traffic.period.start} to {traffic.period.end}: {Number(traffic.last_28_days.impressions || 0).toLocaleString()} times shown,{" "}
+          {Number(traffic.last_28_days.clicks || 0).toLocaleString()} clicks
+          <Change now={traffic.last_28_days.impressions} before={traffic.previous_28_days?.impressions} suffix=" shown" />.
+        </div>
+      ) : null}
+      {clips.not_indexed?.length ? (
+        <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 13, display: "grid", gap: 4 }}>
+          {clips.not_indexed.map((c) => (
+            <li key={c.url}>
+              <a href={c.url} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.accent }}>{shortUrl(c.url)}</a>
+              <span style={mutedStyle}> — {c.state || "not indexed"}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </PageCard>
   );
 }
 
@@ -227,6 +350,8 @@ export default function SeoBotReport({ bot }) {
         {report && !groups.length ? <EmptyState>Everything checked looks right to Google.</EmptyState> : null}
         {groups.map((g) => <FindingGroup key={g.code} group={g} />)}
       </PageCard>
+      <PageTypes types={report?.page_types} />
+      <Clips clips={report?.clips} />
       <PagesChecked pages={report?.pages} />
     </>
   );
