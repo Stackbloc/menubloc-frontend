@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import useClusterWall from "../../hooks/useClusterWall.js";
-import { fetchClusterWallWeeks } from "../../lib/clusterWallApi.js";
 import { withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
-import { wallWeekLabel } from "../../lib/clusterWallStyles.js";
 import { trackEngagement } from "../../lib/engagementTracking.js";
 import { houseSlot } from "../../lib/clusterWallHouse.js";
 import WallBlockTile from "./WallBlockTile.jsx";
 import WallBlockViewer from "./WallBlockViewer.jsx";
-import WallComposerSheet from "./WallComposerSheet.jsx";
+import BrickComposer from "./BrickComposer.jsx";
+import BrickWall from "./BrickWall.jsx";
 import { WallContext, useClusterWallContext } from "./clusterWallContext.js";
 import "./clusterWall.css";
 
@@ -36,7 +35,6 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
   const [viewing, setViewing] = useState(null);
   const [composing, setComposing] = useState(false);
   const [fullOpen, setFullOpen] = useState(false);
-  const [weeks, setWeeks] = useState(null);
   // One random number per visit: the Menuply brick keeps its spot while new posts arrive.
   const [houseRand] = useState(() => Math.random());
 
@@ -77,18 +75,6 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
     return () => clearTimeout(t);
   }, [active, wallParam, authLoading, isAuthenticated, params, setParams, startWriting, standalone]);
 
-  const openWeeks = useCallback(async () => {
-    if (weeks) return weeks;
-    try {
-      const data = await fetchClusterWallWeeks(clusterSlug);
-      setWeeks(data.weeks || []);
-      return data.weeks || [];
-    } catch {
-      setWeeks([]);
-      return [];
-    }
-  }, [clusterSlug, weeks]);
-
   const openHouse = useCallback(
     (block) => {
       const to = block?.link_path || "/clusters";
@@ -106,8 +92,6 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
       active,
       week,
       setWeek,
-      weeks,
-      openWeeks,
       openBlock: setViewing,
       openHouse,
       showHouse: showHouse && !week,
@@ -120,7 +104,7 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
         setFullOpen(true);
       },
     }),
-    [clusterSlug, clusterLabel, wall, active, week, weeks, openWeeks, openHouse, showHouse, houseRand, standalone, startWriting]
+    [clusterSlug, clusterLabel, wall, active, week, openHouse, showHouse, houseRand, standalone, startWriting]
   );
 
   return (
@@ -131,9 +115,10 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
         <WallBlockViewer block={viewing} onClose={() => setViewing(null)} onRemoved={(id) => wall.removeLocal(id)} />
       ) : null}
       {composing ? (
-        <WallComposerSheet
+        <BrickComposer
           clusterSlug={clusterSlug}
           clusterLabel={clusterLabel}
+          isSignedIn={isAuthenticated}
           onClose={() => setComposing(false)}
           onNeedAccount={goSignUp}
           onPosted={(block) => {
@@ -143,51 +128,6 @@ export function ClusterWallProvider({ clusterSlug, clusterLabel = "USC", standal
         />
       ) : null}
     </WallContext.Provider>
-  );
-}
-
-function WeekPicker() {
-  const ctx = useClusterWallContext();
-  const [open, setOpen] = useState(false);
-  const { wall, week, setWeek, weeks, openWeeks } = ctx;
-  return (
-    <span style={{ position: "relative" }}>
-      <button
-        type="button"
-        className="cw-btn cw-btn-quiet"
-        aria-expanded={open}
-        onClick={async () => {
-          await openWeeks();
-          setOpen((o) => !o);
-        }}
-      >
-        {week ? wallWeekLabel(wall.weekStart) : "This week"} ▾
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          style={{ position: "absolute", right: 0, top: "100%", zIndex: 5, background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, minWidth: 170, maxHeight: 260, overflowY: "auto", boxShadow: "0 6px 18px rgba(0,0,0,.12)" }}
-        >
-          {(weeks || []).length === 0 ? <p className="cw-sub" style={{ padding: 10 }}>No past weeks yet.</p> : null}
-          {(weeks || []).map((w) => (
-            <button
-              key={w.week_start}
-              type="button"
-              role="menuitem"
-              className="cw-btn cw-btn-quiet"
-              style={{ display: "flex", width: "100%", justifyContent: "space-between", borderRadius: 0 }}
-              onClick={() => {
-                setWeek(w.is_current ? null : w.week_start);
-                setOpen(false);
-              }}
-            >
-              <span>{w.is_current ? "This week" : wallWeekLabel(w.week_start)}</span>
-              <span style={{ color: "#6b7280" }}>{w.block_count}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </span>
   );
 }
 
@@ -201,7 +141,7 @@ function WallBody({ band = false }) {
     return (
       <div style={{ padding: band ? "6px 2px" : 12, display: "grid", gap: 8, justifyItems: "start" }}>
         <p className="cw-sub" style={{ margin: 0 }}>
-          {week ? "Nothing from that week." : `Nothing on the ${clusterLabel} Wall this week yet. Be the first.`}
+          {week ? "Nothing from that week." : `Nothing on the ${clusterLabel} Wall yet. Be the first.`}
         </p>
         {week ? (
           <button type="button" className="cw-btn" onClick={() => setWeek(null)}>Back to this week</button>
@@ -244,29 +184,21 @@ function WallBlockTileWithHouse({ at, houseAt, houseTile, children }) {
   );
 }
 
-function Header({ compact = false }) {
-  const { clusterLabel, startWriting, week, setWeek, openFull } = useClusterWallContext();
+function Header() {
+  const { clusterLabel, startWriting, openFull } = useClusterWallContext();
   return (
     <div className="cw-panel-head">
       <div style={{ minWidth: 0 }}>
         <h2 className="cw-title">{clusterLabel} Wall</h2>
-        <p className="cw-sub">{week ? "Past week · read only" : "Anyone can read · new posts every week"}</p>
+        <p className="cw-sub">Written by {clusterLabel} students · anyone can add a brick</p>
       </div>
       <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
-        {compact ? (
-          <button type="button" className="cw-btn cw-btn-quiet" onClick={openFull} data-testid="cluster-wall-see-all">
-            See all
-          </button>
-        ) : (
-          <WeekPicker />
-        )}
-        {week ? (
-          <button type="button" className="cw-btn" onClick={() => setWeek(null)}>This week</button>
-        ) : (
-          <button type="button" className="cw-btn cw-btn-primary" onClick={startWriting} data-testid="cluster-wall-write">
-            Write
-          </button>
-        )}
+        <button type="button" className="cw-btn cw-btn-quiet" onClick={openFull} data-testid="cluster-wall-see-all">
+          See all
+        </button>
+        <button type="button" className="cw-btn cw-btn-primary" onClick={startWriting} data-testid="cluster-wall-write">
+          Write a Brick
+        </button>
       </div>
     </div>
   );
@@ -306,7 +238,7 @@ export function ClusterWallBand() {
       data-testid="cluster-wall-band"
       style={{ border: "1px solid #e5e7eb", borderRadius: 4, background: "#fafaf9", marginTop: "0.5rem", minWidth: 0 }}
     >
-      <Header compact />
+      <Header />
       <div style={{ padding: 8 }}>
         <WallBody band />
       </div>
@@ -314,6 +246,7 @@ export function ClusterWallBand() {
   );
 }
 
+/** The full Wall over the cluster page: the brick wall with "← Back to Menuply" (the page keeps its place). */
 function ClusterWallFullScreen({ onClose }) {
   const ctx = useClusterWallContext();
   useEffect(() => {
@@ -326,7 +259,7 @@ function ClusterWallFullScreen({ onClose }) {
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
-  return (
+  const legacy = (
     <div className="cw-full" role="dialog" aria-modal="true" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-full">
       <div className="cw-back-row">
         <BackToMenuply onBack={onClose} />
@@ -337,11 +270,16 @@ function ClusterWallFullScreen({ onClose }) {
       </div>
     </div>
   );
+  return (
+    <div data-testid="cluster-wall-full">
+      <BrickWall overlay clusterSlug={ctx.clusterSlug} clusterLabel={ctx.clusterLabel} onBack={onClose} onExit={onClose} legacy={legacy} />
+    </div>
+  );
 }
 
 /**
  * menuply.com/clusters/walls/:slug — the full Wall as its own page (QR codes, shares, social).
- * Header with past weeks + Write, every post, the Menuply brick once. `onBack` only when the visitor
+ * Header + Write, every post, the Menuply brick once. `onBack` only when the visitor
  * came from inside Menuply.
  */
 export function ClusterWallStandalone({ onBack = null }) {

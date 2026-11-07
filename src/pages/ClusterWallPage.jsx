@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import BrickWall from "../components/clusterWall/BrickWall.jsx";
 import { ClusterWallProvider, ClusterWallStandalone } from "../components/clusterWall/ClusterWall.jsx";
-import { useClusterWallContext } from "../components/clusterWall/clusterWallContext.js";
 import useEngagementPage from "../hooks/useEngagementPage.js";
 import { trackEngagement } from "../lib/engagementTracking.js";
 import "../components/clusterWall/clusterWall.css";
@@ -14,10 +14,10 @@ const WALL_LABELS = Object.freeze({ usc: "USC" });
 const ENTRIES = new Set(["direct", "menuply", "shared_post"]);
 
 /**
- * menuply.com/clusters/walls/:wallSlug (Andre 2026-11-06) — the full Wall, straight away: no landing
- * page, no food page first. Anyone can read, and signed-out visitors can write words through the
- * guest path (lib/clusterWallGuest). "← Back to Menuply" shows only when a Menuply screen sent the
- * visitor here with state { fromMenuply: true }; direct visitors get the Menuply brick instead.
+ * menuply.com/clusters/walls/:wallSlug — the full Wall, straight away (2026-11-06), drawn as one
+ * continuous brick wall (BrickWall). "← Back to Menuply" only when a Menuply screen sent the visitor
+ * here with state { fromMenuply: true }. Before mig 0397 the backend has no stored layout and the
+ * previous Wall shows instead.
  */
 export default function ClusterWallPage() {
   const { wallSlug = "" } = useParams();
@@ -28,50 +28,54 @@ export default function ClusterWallPage() {
   if (location.pathname.replace(/\/+$/, "") !== canonical) {
     return <Navigate to={`${canonical}${location.search}`} replace state={location.state} />;
   }
-  const label = WALL_LABELS[slug] || slug.toUpperCase();
-  return (
-    <ClusterWallProvider clusterSlug={slug} clusterLabel={label} standalone showHouse>
-      <WallPageBody label={label} />
-    </ClusterWallProvider>
-  );
+  return <WallPageBody slug={slug} label={WALL_LABELS[slug] || slug.toUpperCase()} />;
 }
 
-function WallPageBody({ label }) {
-  const ctx = useClusterWallContext();
+function WallPageBody({ slug, label }) {
   const navigate = useNavigate();
   const location = useLocation();
   const rootRef = useRef(null);
-  const clusterId = ctx?.wall?.cluster?.id || null;
-  const ready = ctx?.wall?.status === "ok" && Boolean(clusterId);
+  const [clusterId, setClusterId] = useState(null);
   const fromMenuply = location.state?.fromMenuply === true && location.key !== "default";
   const entry = ENTRIES.has(location.state?.wallEntry) ? location.state.wallEntry : fromMenuply ? "menuply" : "direct";
+  const onCluster = useCallback((c) => setClusterId(c?.id || null), []);
 
   useEffect(() => {
     document.title = `${label} Wall | Menuply`;
   }, [label]);
 
-  useEngagementPage(rootRef, { pageType: "wall", ready, clusterId });
+  useEngagementPage(rootRef, { pageType: "wall", ready: Boolean(clusterId), clusterId });
 
   // One wall_open per visit, after its page view.
   const opened = useRef(false);
   useEffect(() => {
-    if (!ready || opened.current) return;
+    if (!clusterId || opened.current) return;
     opened.current = true;
     const t = setTimeout(() => trackEngagement("wall_open", { subtype: entry }), 0);
     return () => clearTimeout(t);
-  }, [ready, entry]);
+  }, [clusterId, entry]);
+
+  const legacy = (
+    <ClusterWallProvider clusterSlug={slug} clusterLabel={label} standalone showHouse>
+      <main style={{ maxWidth: 1080, margin: "0 auto", padding: "0.75rem 10px 4rem", boxSizing: "border-box" }}>
+        <p style={{ margin: "0 0 10px", font: "700 13px/1.2 system-ui", color: "#6b7280" }}>
+          <Link to="/" style={{ color: "#111827", font: "700 18px/1 Georgia, serif", textDecoration: "none" }}>Menuply</Link>
+          {` · ${label} Wall`}
+        </p>
+        <ClusterWallStandalone onBack={fromMenuply ? () => navigate(-1) : null} />
+      </main>
+    </ClusterWallProvider>
+  );
 
   return (
-    <main
-      ref={rootRef}
-      style={{ maxWidth: 1080, margin: "0 auto", padding: "0.75rem 10px 4rem", boxSizing: "border-box" }}
-      data-testid="cluster-wall-page"
-    >
-      <p style={{ margin: "0 0 10px", font: "700 13px/1.2 system-ui", color: "#6b7280" }}>
-        <Link to="/" style={{ color: "#111827", font: "700 18px/1 Georgia, serif", textDecoration: "none" }}>Menuply</Link>
-        {` · ${label} Wall`}
-      </p>
-      <ClusterWallStandalone onBack={fromMenuply ? () => navigate(-1) : null} />
-    </main>
+    <div ref={rootRef} data-testid="cluster-wall-page">
+      <BrickWall
+        clusterSlug={slug}
+        clusterLabel={label}
+        onBack={fromMenuply ? () => navigate(-1) : null}
+        onCluster={onCluster}
+        legacy={legacy}
+      />
+    </div>
   );
 }

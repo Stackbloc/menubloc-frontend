@@ -1,4 +1,4 @@
-import { API_BASE, apiDelete, apiGet, apiPost } from "./api.js";
+import { API_BASE, apiDelete, apiGet, apiPost, apiPostForm } from "./api.js";
 
 /** Cluster Wall API (backend src/routes/clusterWall.js). Reads work signed out. */
 
@@ -8,6 +8,20 @@ export function fetchClusterWall(clusterSlug, { week = null, cursor = null, limi
   if (cursor) params.set("cursor", cursor);
   if (limit) params.set("limit", String(limit));
   return apiGet(`/api/cluster-wall/clusters/${encodeURIComponent(clusterSlug)}?${params}`, { signal });
+}
+
+/** The continuous Wall (2026-11-06): rows newest first + pinned bricks. cursor = last row number. */
+export function fetchWallBricks(clusterSlug, { cursor = null, signal } = {}) {
+  const params = new URLSearchParams();
+  if (cursor) params.set("cursor", String(cursor));
+  return apiGet(`/api/cluster-wall/clusters/${encodeURIComponent(clusterSlug)}/bricks?${params}`, { signal });
+}
+
+/** Photo brick upload (re-encoded by the backend, no location data kept). → { storage_key, preview_url } */
+export function uploadWallPhoto(file, { onProgress } = {}) {
+  const form = new FormData();
+  form.append("photo", file);
+  return apiPostForm(`/api/cluster-wall/photo`, form, { onProgress });
 }
 
 export function fetchClusterWallWeeks(clusterSlug, { signal } = {}) {

@@ -31,7 +31,52 @@ export const WALL_THEMES = Object.freeze({
   teal: { label: "Worn teal", ink: "#0E2420", shadow: "#CFEFE9", paper: "#4FA99C", texture: "teal.jpg" },
   wood: { label: "Wood", ink: "#FFF1DC", shadow: "#1A0C04", paper: "#5B3520", texture: "wood.jpg" },
   concrete: { label: "Concrete", ink: "#1B1B1B", shadow: "#FFFFFF", paper: "#CBC8C1", texture: "concrete.jpg" },
+  // 2026-11-06 redesign materials.
+  chalkboard: { label: "Chalkboard", ink: "#F4F7F2", shadow: "#000000", paper: "#1F2A24", texture: "chalkboard.jpg" },
+  stucco: { label: "Yellow stucco", ink: "#2A1A00", shadow: "#FFF1B8", paper: "#E2B744", texture: "stucco.jpg" },
 });
+
+/** The six materials a student picks from when writing a brick (2026-11-06; never random). */
+export const WALL_MATERIALS = Object.freeze(["brick", "marble", "chalkboard", "stucco", "teal", "wood"]);
+
+/** Marker underline colours (none / yellow / red). */
+export const WALL_UNDERLINES = Object.freeze({
+  none: { label: "None", color: null },
+  yellow: { label: "Yellow", color: "#FFCC00" },
+  red: { label: "Red", color: "#E5202E" },
+});
+
+/** Quick picks for the one optional emoji (any single emoji is accepted by the backend). */
+export const WALL_EMOJI_PICKS = Object.freeze(["🔥", "✌️", "❤️", "😂", "🎉", "🍕", "☕", "📚", "🏈", "😭", "✨", "💯"]);
+
+const EMOJI_RE = /^\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?$/u;
+export function cleanWallEmoji(value) {
+  const e = String(value || "").trim();
+  return e && e.length <= 16 && EMOJI_RE.test(e) ? e : null;
+}
+
+/** A whole-degree tilt in ±3 (never 0); picked once when the composer opens and stored with the brick. */
+export function randomWallTilt() {
+  const n = 1 + Math.floor(Math.random() * 3);
+  return Math.random() < 0.5 ? -n : n;
+}
+
+/** "now", "5m", "3h", "2d", "3w", "4mo", "1y" — subtle age next to "— Name". */
+export function wallAgo(iso, now = Date.now()) {
+  const t = new Date(iso || "").getTime();
+  if (!Number.isFinite(t)) return "";
+  const s = Math.max(0, Math.round((now - t) / 1000));
+  if (s < 60) return "now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  if (d < 35) return `${Math.floor(d / 7)}w`;
+  if (d < 365) return `${Math.max(1, Math.floor(d / 30))}mo`;
+  return `${Math.floor(d / 365)}y`;
+}
 
 // Paint colours (Andre 2026-11-05: "a spray paint font, with color pick?"). Same keys as the backend.
 // "auto" = the surface's own ink. The spray font adds a soft overspray halo in the paint colour.
@@ -110,6 +155,9 @@ export function wallStyle(style) {
     align: s.align === "left" ? "left" : "center",
     ink: Object.prototype.hasOwnProperty.call(WALL_INKS, s.ink) ? s.ink : "auto",
     angle: WALL_ANGLES.some((a) => a.key === Number(s.angle)) ? Number(s.angle) : 0,
+    tilt: Number.isInteger(Number(s.tilt)) && Math.abs(Number(s.tilt)) <= 3 ? Number(s.tilt) : 0,
+    underline: Object.prototype.hasOwnProperty.call(WALL_UNDERLINES, s.underline) ? s.underline : "none",
+    emoji: cleanWallEmoji(s.emoji),
   };
 }
 

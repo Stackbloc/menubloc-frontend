@@ -5,7 +5,7 @@ import { fetchWallBlock } from "../lib/clusterWallApi.js";
 import { clusterPath } from "../lib/clusterUrl.js";
 import { withConsumerAuthNext } from "../lib/consumerAuthNext.js";
 import WallBlockViewer, { WallBlockLarge, WallShareControls } from "../components/clusterWall/WallBlockViewer.jsx";
-import { wallWeekLabel } from "../lib/clusterWallStyles.js";
+import { wallAgo } from "../lib/clusterWallStyles.js";
 import "../components/clusterWall/clusterWall.css";
 
 /**
@@ -80,7 +80,8 @@ export default function WallBlockPage() {
               )
             ) : null}
             {block.author?.first_name ? " · " : ""}
-            On the {block.cluster_label} Wall · {wallWeekLabel(block.week_start)}
+            On the {block.cluster_label} Wall
+            {wallAgo(block.published_at) ? ` · ${wallAgo(block.published_at) === "now" ? "just now" : `${wallAgo(block.published_at)} ago`}` : ""}
           </p>
 
           <section

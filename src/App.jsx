@@ -809,6 +809,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
     location.pathname.startsWith("/restaurant/onboarding/");
   const operatorTabletRoute = location.pathname === "/operator/tablet";
   const presentationRoute = location.pathname === "/demo";
+  // The USC Wall page is a full-screen brick wall (2026-11-06): no footer / cart chrome under it.
+  const wallPageRoute = /^\/clusters\/walls\/[^/]+\/?$/i.test(location.pathname);
   const hidePublicChrome =
     crmHost ||
     joinLandingRoute ||
@@ -816,7 +818,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
     joinSignupRoute ||
     restaurantOnboardingRoute ||
     operatorTabletRoute ||
-    presentationRoute;
+    presentationRoute ||
+    wallPageRoute;
 
   return (
     <>

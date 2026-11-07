@@ -59,3 +59,31 @@ export async function saveOwnerWallHouse(slug = "usc", settings = {}) {
   if (!res.ok) throw await apiErrorFromResponse(res);
   return res.json();
 }
+
+// Wall bricks admin (mig 0397): recent bricks (pinned first), pin / unpin / remove any brick, and a
+// "— Menuply" brick (pinned by default) for announcements.
+export async function getOwnerWallBricks(slug = "usc", q = "") {
+  const qs = q ? `?q=${encodeURIComponent(q)}` : "";
+  const res = await fetch(`${BASE}/wall/bricks/${encodeURIComponent(slug)}${qs}`, { credentials: "include" });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}
+
+/** action: "pin" | "unpin" | "remove" */
+export async function actOnOwnerWallBrick(publicId, action) {
+  const ok = ["pin", "unpin", "remove"].includes(action) ? action : "remove";
+  const res = await fetch(`${BASE}/wall/bricks/${encodeURIComponent(publicId)}/${ok}`, { method: "POST", credentials: "include" });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}
+
+export async function createOwnerOfficialBrick(slug = "usc", { body, style, pin = true } = {}) {
+  const res = await fetch(`${BASE}/wall/official/${encodeURIComponent(slug)}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body, style, pin }),
+  });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return res.json();
+}

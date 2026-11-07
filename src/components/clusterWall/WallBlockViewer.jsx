@@ -13,14 +13,28 @@ import {
   trackWallShare,
   wallSmsHref,
 } from "../../lib/clusterWallShare.js";
-import { WALL_THEMES, wallStyle, wallSurfaceStyle, wallWeekLabel } from "../../lib/clusterWallStyles.js";
-import { WallInscription } from "./WallBlockTile.jsx";
+import { wallAgo } from "../../lib/clusterWallStyles.js";
+import Brick from "./Brick.jsx";
+import "./brickWall.css";
 import "./clusterWall.css";
 
 /** The block, big — words on their paper, or the clip with sound. Used by the viewer and /wall/:id. */
 export function WallBlockLarge({ block }) {
-  const s = wallStyle(block.style);
-  const theme = WALL_THEMES[s.theme];
+  if (block.kind === "photo") {
+    return (
+      <div style={{ background: "#111", borderRadius: 4, overflow: "hidden", position: "relative", margin: "0 auto" }}>
+        {block.photo_url ? (
+          <img src={block.photo_url} alt={block.body || "Photo on the Wall"} style={{ width: "100%", maxHeight: "62vh", objectFit: "contain", display: "block" }} />
+        ) : null}
+        {block.body || block.author?.first_name ? (
+          <p style={{ position: "absolute", left: 0, right: 0, bottom: 0, margin: 0, padding: "18px 12px 10px", color: "#fff", background: "linear-gradient(transparent, rgba(0,0,0,.7))", font: "700 15px/1.3 system-ui", pointerEvents: "none" }}>
+            {block.body}
+            {block.author?.first_name ? <span style={{ float: "right", fontWeight: 600 }}>— {block.author.first_name}</span> : null}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
   if (block.kind === "video") {
     return (
       <div style={{ background: "#111827", borderRadius: 4, overflow: "hidden", aspectRatio: "9 / 16", maxHeight: "62vh", margin: "0 auto", position: "relative" }}>
@@ -49,26 +63,18 @@ export function WallBlockLarge({ block }) {
       </div>
     );
   }
-  const aspect = block.size === "medium" ? "2 / 1" : "1 / 1";
+  // Words: the same brick as on the Wall (material, tilt, underline, emoji, "— Name · age"), big.
   return (
-    <div style={{ ...wallSurfaceStyle(s.theme), borderRadius: 4, aspectRatio: aspect, position: "relative", overflow: "hidden" }}>
-      <WallInscription
-        block={block}
-        scale={block.size === "large" ? 1.25 : block.size === "medium" ? 1.5 : 2.1}
-        style={{ inset: "18px 20px 30px" }}
-      />
-      {block.author?.first_name ? (
-        <span style={{ position: "absolute", right: 14, bottom: 10, color: theme.ink, opacity: 0.85, font: "700 13px/1 Arial, sans-serif" }}>
-          — {block.author.first_name}
-        </span>
-      ) : null}
+    <div className="bw-large" style={{ position: "relative", aspectRatio: "12 / 7", borderRadius: 4, overflow: "hidden" }}>
+      <Brick block={block} onOpen={() => {}} />
     </div>
   );
 }
 
 function AuthorLine({ block }) {
-  const name = block.author?.first_name;
-  const week = wallWeekLabel(block.week_start);
+  // The Wall is one continuous wall (2026-11-06): age instead of "Week of …". Guests show as Guest.
+  const name = block.official ? "Menuply" : block.author?.first_name || (block.public_id ? "Guest" : null);
+  const ago = wallAgo(block.published_at || block.created_at);
   return (
     <p className="cw-sub" style={{ margin: "8px 0 0" }}>
       {name ? (
@@ -81,7 +87,7 @@ function AuthorLine({ block }) {
         )
       ) : null}
       {name ? " · " : ""}
-      {block.cluster_label} Wall{week ? ` · ${week}` : ""}
+      {block.cluster_label} Wall{ago ? ` · ${ago === "now" ? "just now" : `${ago} ago`}` : ""}
     </p>
   );
 }

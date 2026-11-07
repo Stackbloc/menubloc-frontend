@@ -1,33 +1,7 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import useFitText from "../../hooks/useWallFitText.js";
 import { WALL_FONTS, WALL_THEMES, wallInk, wallStyle, wallSurfaceStyle, wallTextFontSize } from "../../lib/clusterWallStyles.js";
 import "./clusterWall.css";
-
-/** Shrinks the text until it fits its rectangle (and again when the rectangle resizes). */
-function useFitText(boxRef, textRef, startSize, deps) {
-  useLayoutEffect(() => {
-    const box = boxRef.current;
-    const inner = textRef.current;
-    if (!box || !inner) return undefined;
-    const fit = () => {
-      let size = startSize;
-      box.style.fontSize = `${size}px`;
-      box.style.overflowWrap = "normal";
-      const tooBig = () => inner.offsetHeight > box.clientHeight + 1 || inner.scrollWidth > box.clientWidth + 1;
-      while (size > 9 && tooBig()) {
-        size -= 1;
-        box.style.fontSize = `${size}px`;
-      }
-      // Still a word too long for the tile at the smallest size: let it break.
-      if (tooBig()) box.style.overflowWrap = "anywhere";
-    };
-    fit();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(fit);
-    ro.observe(box);
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-}
 
 /** Frame the words are fitted into: whole box, a smaller tilted box, or the box turned sideways. */
 function frameStyle(angle) {
@@ -95,6 +69,9 @@ function useVisibleAutoplay(ref, enabled) {
 export default function WallBlockTile({ block, onOpen }) {
   const videoRef = useRef(null);
   const isClip = block.kind === "video";
+  // Photo bricks (2026-11-06) draw like a clip's still picture.
+  const isPhoto = block.kind === "photo";
+  const isMedia = isClip || isPhoto;
   const s = wallStyle(block.style);
   const theme = WALL_THEMES[s.theme];
   useVisibleAutoplay(videoRef, isClip && Boolean(block.video_url));
@@ -122,11 +99,13 @@ export default function WallBlockTile({ block, onOpen }) {
           onOpen?.(block);
         }
       }}
-      style={isClip ? { background: "#111827" } : wallSurfaceStyle(s.theme)}
+      style={isMedia ? { background: "#111827" } : wallSurfaceStyle(s.theme)}
     >
-      {isClip ? (
+      {isMedia ? (
         <>
-          {block.video_url ? (
+          {isPhoto ? (
+            block.photo_url ? <img src={block.photo_url} alt="" loading="lazy" /> : null
+          ) : block.video_url ? (
             <video
               ref={videoRef}
               src={block.video_url}
@@ -140,7 +119,7 @@ export default function WallBlockTile({ block, onOpen }) {
           ) : block.poster_url ? (
             <img src={block.poster_url} alt="" loading="lazy" />
           ) : null}
-          <span className="cw-tile-badge">Clip</span>
+          <span className="cw-tile-badge">{isPhoto ? "Photo" : "Clip"}</span>
           {block.body || who ? (
             <span className="cw-tile-caption">
               {block.body || ""}
@@ -178,7 +157,7 @@ export default function WallBlockTile({ block, onOpen }) {
           e.stopPropagation();
           onOpen?.(block);
         }}
-        style={{ color: isClip ? "#fff" : theme.ink }}
+        style={{ color: isMedia ? "#fff" : theme.ink }}
       >
         ↗
       </button>}

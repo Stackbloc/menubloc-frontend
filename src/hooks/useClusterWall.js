@@ -1,9 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchClusterWall } from "../lib/clusterWallApi.js";
+import { fetchClusterWall, fetchWallBricks } from "../lib/clusterWallApi.js";
 import { isClusterWallSlug } from "../lib/clusterWallStyles.js";
 import { markGuestOwn } from "../lib/clusterWallGuest.js";
 
 const POLL_MS = 45000;
+
+/** Continuous wall (mig 0397) as a flat list for the cluster page previews: pinned, then newest rows. */
+const flatBricks = (data) => [...(data.pinned || []), ...(data.rows || []).flatMap((r) => r.bricks)];
+
+/** Newest bricks (continuous wall) when the backend has it; else this week's posts (before mig 0397). */
+async function fetchLatest(clusterSlug, { week, cursor, signal } = {}) {
+  // Row cursors are numbers; the weekly list's cursors are "<time>|<id>".
+  if (!week && !String(cursor || "").includes("|")) {
+    const data = await fetchWallBricks(clusterSlug, { cursor, signal });
+    if (data?.layout_ready) {
+      return { blocks: flatBricks(data), next_cursor: data.next_cursor, cluster: data.cluster, is_current_week: true, continuous: true };
+    }
+    if (cursor) return { blocks: [], next_cursor: null };
+  }
+  return fetchClusterWall(clusterSlug, { week, cursor, signal });
+}
 
 /**
  * One cluster's Wall for one week (default: this week). New posts by others show up every ~45 s
@@ -31,7 +47,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
     }
     const ctrl = new AbortController();
     setState((s) => ({ ...s, status: "loading", blocks: [] }));
-    fetchClusterWall(clusterSlug, { week, signal: ctrl.signal })
+    fetchLatest(clusterSlug, { week, signal: ctrl.signal })
       .then((data) => {
         seen.current = new Set((data.blocks || []).map((b) => b.public_id));
         setState({
@@ -57,7 +73,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
     if (state.status !== "ok" || !state.isCurrentWeek) return undefined;
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
-      fetchClusterWall(clusterSlug, { limit: 40 })
+      fetchLatest(clusterSlug)
         .then((data) => {
           const fresh = (data.blocks || []).filter((b) => !seen.current.has(b.public_id));
           if (!fresh.length) return;
@@ -74,7 +90,7 @@ export default function useClusterWall(clusterSlug, { week = null } = {}) {
     if (!state.cursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const data = await fetchClusterWall(clusterSlug, { week, cursor: state.cursor });
+      const data = await fetchLatest(clusterSlug, { week, cursor: state.cursor });
       const more = (data.blocks || []).filter((b) => !seen.current.has(b.public_id));
       more.forEach((b) => seen.current.add(b.public_id));
       setState((s) => ({ ...s, blocks: [...s.blocks, ...more], cursor: data.next_cursor || null }));
