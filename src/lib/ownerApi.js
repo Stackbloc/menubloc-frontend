@@ -719,6 +719,9 @@ export const runAddressBotForRestaurant = (restaurantId) =>
   post(`/api/owner/bots/address_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
 
 /** Address Bot: one run with per-restaurant results. */
+/** SEO Bot: one run's report (grouped findings, pages checked, Search Console summary). */
+export const getSeoBotRun = (runId) => get(`/api/owner/bots/seo_bot/runs/${encodeURIComponent(runId)}`);
+
 export const getAddressBotRun = (runId) => get(`/api/owner/bots/address_bot/runs/${encodeURIComponent(runId)}`);
 
 /** Address Bot: publish one candidate from the review list. */

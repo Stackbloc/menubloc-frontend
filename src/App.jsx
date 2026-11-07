@@ -1195,6 +1195,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/bots/language-bot" element={<Navigate to="/owner/bots" replace />} />
         <Route path="/owner/bots/hours-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="hours_bot" botKey="hours_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/address-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="address_bot" botKey="address_bot" /></OwnerRoute>} />
+        <Route path="/owner/bots/seo-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerScheduledBot key="seo_bot" botKey="seo_bot" /></OwnerRoute>} />
         <Route path="/owner/bots/franchise-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerFranchiseBot /></OwnerRoute>} />
         <Route path="/owner/bots/location-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerLocationBot /></OwnerRoute>} />
         <Route path="/owner/bots/health-dept-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHealthDeptBot /></OwnerRoute>} />

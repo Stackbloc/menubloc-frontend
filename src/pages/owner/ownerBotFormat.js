@@ -23,6 +23,12 @@ export const SCHEDULED_BOTS = {
     path: "/owner/bots/address-bot",
     blurb: "Finds street addresses for Los Angeles–area restaurants that don't have one, so they show in store pickers and on Google. Addresses already on a profile are never changed.",
   },
+  seo_bot: {
+    key: "seo_bot",
+    name: "SEO Bot",
+    path: "/owner/bots/seo-bot",
+    blurb: "Checks how Google sees menuply.com: the sitemap, a fresh sample of pages, and (once connected) Search Console's index status and search traffic. Lists what to fix.",
+  },
 };
 
 export const ADDRESS_OUTCOME_LABELS = {
@@ -114,6 +120,7 @@ export const STATUS_LABELS = {
   error: "Failed",
   stale: "Stopped (timed out)",
   dry_run: "Test run",
+  issues_found: "Finished — issues found",
 };
 
 export const STATUS_TONES = {
@@ -123,6 +130,7 @@ export const STATUS_TONES = {
   error: { bg: "#fef2f2", fg: "#b91c1c" },
   stale: { bg: "#fff7ed", fg: "#c2410c" },
   dry_run: { bg: "#f4f4f5", fg: "#52525b" },
+  issues_found: { bg: "#fff7ed", fg: "#c2410c" },
 };
 
 export function formatTime12(hhmm) {
@@ -181,6 +189,13 @@ export function runResultText(botKey, run) {
     const parts = [`${t.updated} of ${t.items} items updated`];
     if (t.no_template) parts.push(`${t.no_template} had no matching dish template`);
     if (t.failed) parts.push(`${t.failed} failed`);
+    return parts.join(" · ");
+  }
+  if (botKey === "seo_bot") {
+    const parts = [`${t.checked || 0} pages checked`];
+    if (t.problems) parts.push(`${t.problems} problem${t.problems === 1 ? "" : "s"}`);
+    if (t.warnings) parts.push(`${t.warnings} warning${t.warnings === 1 ? "" : "s"}`);
+    if (t.inspected) parts.push(`${t.inspected} asked Google about`);
     return parts.join(" · ");
   }
   if (botKey === "address_bot") {

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import NutribotTemplatesPanel from "./NutribotTemplatesPanel.jsx";
+import SeoBotReport from "./SeoBotReport.jsx";
 import {
   acceptAddressBotCandidate,
   getAddressBotRun,
@@ -48,6 +49,8 @@ import {
  *     recent per-restaurant results, coverage of restaurants with menus
  *   - Address Bot only: same per-restaurant / market tools, LA street-address
  *     coverage, and a review list of matches the bot wasn't sure of
+ *   - SEO Bot only: Search Console connection + traffic, "what to fix" from the
+ *     latest run, pages checked (SeoBotReport.jsx)
  */
 
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`);
@@ -825,7 +828,7 @@ export default function OwnerScheduledBot({ botKey }) {
               ) : null}
               {bot.migrated === false ? (
                 <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 }}>
-                  Address Bot&apos;s database tables aren&apos;t set up yet (migration 0355), so it can&apos;t run. Nothing else is affected.
+                  {meta.name}&apos;s database tables aren&apos;t set up yet ({botKey === "seo_bot" ? "migration 0396" : "migration 0355"}), so it can&apos;t run. Nothing else is affected.
                 </div>
               ) : null}
               {runMessage ? <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700 }}>{runMessage}</div> : null}
@@ -842,6 +845,8 @@ export default function OwnerScheduledBot({ botKey }) {
             ) : null}
 
             {botKey === "nutribot" ? <NutribotTemplatesPanel /> : null}
+
+            {botKey === "seo_bot" ? <SeoBotReport bot={bot} /> : null}
 
             {botKey === "hours_bot" ? (
               <>
