@@ -33,9 +33,13 @@ test("login keeps phone verification only for unverified accounts", () => {
 });
 
 test("email signup does not load an authenticated session before verification", () => {
-  assert.match(consumerContext, /return signupConsumer\(signupData\)/);
-  assert.doesNotMatch(
-    consumerContext,
-    /await signupConsumer\(signupData\);\s*const data = await loadMe\(\)/
+  // 2026-11-07: a signed-in 201 is applied right away; verify-first replies are not.
+  const block = consumerContext.slice(
+    consumerContext.indexOf("const signup = useCallback"),
+    consumerContext.indexOf("const logout = useCallback")
   );
+  assert.match(block, /const result = await signupConsumer\(signupData\)/);
+  assert.match(block, /!result\?\.requires_phone_verification/);
+  assert.match(block, /!needsEmailVerification\(result\)/);
+  assert.doesNotMatch(block, /await signupConsumer\(signupData\);\s*const data = await loadMe\(\)/);
 });

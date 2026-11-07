@@ -10,6 +10,8 @@ import BottomNav from "../../components/BottomNav.jsx";
 import WhatPeopleAreEating from "../../components/cluster/WhatPeopleAreEating.jsx";
 import ImEatingComposer from "../../components/foodActivity/ImEatingComposer.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
+import QrConnectConfirmStep from "../../components/consumer/QrConnectConfirmStep.jsx";
+import { loadPendingQrConnect } from "../../lib/pendingQrConnect.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   listDiningCrews,
@@ -131,6 +133,10 @@ export default function SocialOnboardingPage() {
   const [waiterPreview, setWaiterPreview] = useState(null);
 
   const stepId = useMemo(() => nextPendingStep(state), [state]);
+
+  // Signed up from someone's Diner QR → ask about their connection request first (2026-11-07).
+  const [pendingQr, setPendingQr] = useState(() => loadPendingQrConnect());
+  const finishPendingQr = useCallback(() => setPendingQr(null), []);
 
   const persist = useCallback(
     async (next) => {
@@ -340,6 +346,18 @@ export default function SocialOnboardingPage() {
         <StickyPageHeader title="Getting started" />
         <div style={styles.page}>
           <p style={styles.muted}>Loading…</p>
+        </div>
+        <BottomNav />
+      </>
+    );
+  }
+
+  if (pendingQr?.token && userId) {
+    return (
+      <>
+        <StickyPageHeader title="Getting started" />
+        <div style={styles.page} data-testid="social-onboarding" data-step="qr_connect">
+          <QrConnectConfirmStep token={pendingQr.token} onDone={finishPendingQr} />
         </div>
         <BottomNav />
       </>

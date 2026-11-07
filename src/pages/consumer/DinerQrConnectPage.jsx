@@ -3,7 +3,8 @@
  * Route: /connect/d/:token
  * Copy is for the person being invited to connect (not the QR owner).
  * Scanning never sends a request by itself: signed-in scanners are asked first
- * (Send request / Not now), including after signup returns them here (Andre 2026-10-30).
+ * (Send request / Not now) (Andre 2026-10-30). New diners who sign up from here go through
+ * onboarding, whose first screen asks them to confirm the request (pendingQrConnect, 2026-11-07).
  * Lunch / restaurant proposals use Meet Me Here → /invite/:token (separate).
  */
 
@@ -20,6 +21,7 @@ import {
 } from "../../lib/consumerApi.js";
 import { formatDinerInviteName } from "../../lib/dinerQrShare.js";
 import { resolveConsumerConnectErrorMessage } from "../../lib/consumerAuthErrors.js";
+import { clearPendingQrConnect } from "../../lib/pendingQrConnect.js";
 
 function initialsFromName(name) {
   const parts = String(name || "")
@@ -99,6 +101,7 @@ export default function DinerQrConnectPage() {
         await refreshSession();
       }
       await connectViaDinerQr(token);
+      clearPendingQrConnect(token);
       setRequestSent(true);
       setNotice(
         `Connect request sent to ${inviteName}. They'll see it on their Profile under Pending connect requests.`
@@ -196,7 +199,7 @@ export default function DinerQrConnectPage() {
                     <li>
                       {isAuthenticated
                         ? `${inviteName} accepts it on their Profile.`
-                        : `After signup, you come back here and choose whether to send ${inviteName} a connect request.`}
+                        : `After signup, Menuply asks you to confirm ${inviteName}'s connection request.`}
                     </li>
                     <li>
                       After you are connected, you can invite each other to eat (Invite to Eat /
@@ -227,7 +230,7 @@ export default function DinerQrConnectPage() {
                     <button type="button" style={styles.pill} disabled={busy} onClick={handleConnect}>
                       {busy ? "Sending…" : "Send request"}
                     </button>
-                    <button type="button" style={styles.pillQuiet} disabled={busy} onClick={() => setNotNow(true)}>
+                    <button type="button" style={styles.pillQuiet} disabled={busy} onClick={() => { clearPendingQrConnect(token); setNotNow(true); }}>
                       Not now
                     </button>
                   </div>

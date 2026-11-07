@@ -93,10 +93,31 @@ test("scanning asks before sending a connect request (Andre 2026-10-30)", () => 
   assert.match(page, /onClick=\{handleConnect\}/);
 });
 
-test("signup skips welcome when returning to diner QR connect invite", () => {
+test("QR sign-up goes through onboarding, which asks to confirm the connection (Andre 2026-11-07)", () => {
   const signup = read("src/pages/consumer/ConsumerSignup.jsx");
   assert.match(signup, /isDinerQrConnectPath/);
   assert.match(signup, /navigateAfterAuth/);
+  assert.match(signup, /savePendingQrConnect\(redirectTo\)/);
+  assert.match(signup, /redirectTo: SOCIAL_ONBOARDING_ROUTE/);
+  const onboarding = read("src/pages/consumer/SocialOnboardingPage.jsx");
+  assert.match(onboarding, /loadPendingQrConnect\(\)/);
+  assert.match(onboarding, /<QrConnectConfirmStep/);
+  const step = read("src/components/consumer/QrConnectConfirmStep.jsx");
+  assert.match(step, /Connect with \{name\}\?/);
+  assert.match(step, /Confirm/);
+  assert.match(step, /Not now/);
+  // Only the Confirm button sends anything.
+  assert.equal((step.match(/connectViaDinerQr\(/g) || []).length, 1);
+  assert.match(step, /onClick=\{handleConfirm\}/);
+});
+
+test("signup signs the new diner in right away (no stale signed-out QR page)", () => {
+  const ctx = read("src/context/ConsumerContext.jsx");
+  const block = ctx.slice(ctx.indexOf("const signup = useCallback"), ctx.indexOf("const logout = useCallback"));
+  assert.match(block, /hydrateSessionAfterAuth\(result\)/);
+  assert.match(block, /result\?\.consumer\?\.id/);
+  assert.match(block, /requires_phone_verification/);
+  assert.match(block, /needsEmailVerification\(result\)/);
 });
 
 test("SMS verify hydrates session after auth without clearing optimistic login", () => {

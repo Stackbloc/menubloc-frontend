@@ -29,6 +29,7 @@ import {
   maybeBuildAllergenExclusionSessionToast,
 } from "../lib/allergenExclusionSessionToast.js";
 import { resetMenuPreferenceSessionForLogin } from "../lib/menuCatalogBrowsePreferences.js";
+import { needsEmailVerification } from "../lib/emailVerification.js";
 
 const ConsumerContext = createContext(null);
 
@@ -199,9 +200,25 @@ export function ConsumerProvider({ children }) {
     return hydrateSessionAfterAuth(result);
   }, [hydrateSessionAfterAuth]);
 
+  // The server signs a new diner in on 201 (cookie + account in the body). Apply it here so the
+  // page they land on knows they're signed in — before 2026-11-07 a QR sign-up landed back on
+  // "Create a diner account" and no connect request was ever sent.
+  // Skip the honeypot reply (consumer.id null) and the verify-first replies (no session yet).
   const signup = useCallback(async (signupData) => {
-    return signupConsumer(signupData);
-  }, []);
+    const result = await signupConsumer(signupData);
+    if (
+      result?.consumer?.id &&
+      !result?.requires_phone_verification &&
+      !needsEmailVerification(result)
+    ) {
+      try {
+        await hydrateSessionAfterAuth(result);
+      } catch {
+        // The account exists; the next page load re-checks the session cookie.
+      }
+    }
+    return result;
+  }, [hydrateSessionAfterAuth]);
 
   const logout = useCallback(async () => {
     await logoutConsumer().catch(() => {});

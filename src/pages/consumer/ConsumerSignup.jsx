@@ -8,6 +8,8 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import { resolveConsumerAuthNext, withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { isDinerQrConnectPath } from "../../lib/dinerQrShare.js";
+import { savePendingQrConnect } from "../../lib/pendingQrConnect.js";
+import { SOCIAL_ONBOARDING_ROUTE } from "../../lib/socialOnboardingState.js";
 import { resolveConsumerLoginErrorMessage, CONSUMER_AUTH_ERRORS } from "../../lib/consumerAuthErrors.js";
 import { buildDinerSignupAttribution } from "../../lib/dinerSignupAttribution.js";
 import {
@@ -40,9 +42,11 @@ export default function ConsumerSignup() {
   // Set when signup answers email_verification_required (gate on): { email, token }.
   const [pendingEmail, setPendingEmail] = useState(null);
 
+  // A sign-up from someone's Diner QR goes through onboarding like every new diner; its first
+  // screen asks "Confirm <name>'s connection request?" (pendingQrConnect, Andre 2026-11-07).
   function navigateAfterAuth() {
     if (isDinerQrConnectPath(redirectTo)) {
-      navigate(redirectTo, { replace: true });
+      navigate("/account/welcome", { replace: true, state: { redirectTo: SOCIAL_ONBOARDING_ROUTE } });
       return;
     }
     navigate("/account/welcome", { replace: true, state: { redirectTo } });
@@ -65,6 +69,7 @@ export default function ConsumerSignup() {
     }
 
     setLoading(true);
+    if (isDinerQrConnectPath(redirectTo)) savePendingQrConnect(redirectTo);
     try {
       const trimmedScreenName = screenName.trim();
       const result = await signup({
