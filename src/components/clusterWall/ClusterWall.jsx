@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { wallName } from "../../lib/clusterWallStyles.js";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import useClusterWall from "../../hooks/useClusterWall.js";
@@ -141,7 +142,7 @@ function WallBody({ band = false }) {
     return (
       <div style={{ padding: band ? "6px 2px" : 12, display: "grid", gap: 8, justifyItems: "start" }}>
         <p className="cw-sub" style={{ margin: 0 }}>
-          {week ? "Nothing from that week." : `Nothing on the ${clusterLabel} Wall yet. Be the first.`}
+          {week ? "Nothing from that week." : `Nothing on the ${wallName(clusterLabel)} yet. Be the first.`}
         </p>
         {week ? (
           <button type="button" className="cw-btn" onClick={() => setWeek(null)}>Back to this week</button>
@@ -189,7 +190,7 @@ function Header() {
   return (
     <div className="cw-panel-head">
       <div style={{ minWidth: 0 }}>
-        <h2 className="cw-title">{clusterLabel} Wall</h2>
+        <h2 className="cw-title">{wallName(clusterLabel)}</h2>
         <p className="cw-sub">Written by {clusterLabel} students · anyone can add a brick</p>
       </div>
       <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
@@ -218,7 +219,7 @@ export function ClusterWallPanel() {
   const ctx = useClusterWallContext();
   if (!ctx?.active) return null;
   return (
-    <section id="cluster-wall" className="cw-panel" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-panel">
+    <section id="cluster-wall" className="cw-panel" aria-label={wallName(ctx.clusterLabel)} data-testid="cluster-wall-panel">
       <Header />
       <div className="cw-panel-scroll">
         <WallBody />
@@ -234,7 +235,7 @@ export function ClusterWallBand() {
   return (
     <section
       className="cw-band-only"
-      aria-label={`${ctx.clusterLabel} Wall`}
+      aria-label={wallName(ctx.clusterLabel)}
       data-testid="cluster-wall-band"
       style={{ border: "1px solid #e5e7eb", borderRadius: 4, background: "#fafaf9", marginTop: "0.5rem", minWidth: 0 }}
     >
@@ -260,7 +261,7 @@ function ClusterWallFullScreen({ onClose }) {
     };
   }, [onClose]);
   const legacy = (
-    <div className="cw-full" role="dialog" aria-modal="true" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-full">
+    <div className="cw-full" role="dialog" aria-modal="true" aria-label={wallName(ctx.clusterLabel)} data-testid="cluster-wall-full">
       <div className="cw-back-row">
         <BackToMenuply onBack={onClose} />
       </div>
@@ -293,7 +294,7 @@ export function ClusterWallStandalone({ onBack = null }) {
     );
   }
   return (
-    <section className="cw-standalone" aria-label={`${ctx.clusterLabel} Wall`} data-testid="cluster-wall-standalone">
+    <section className="cw-standalone" aria-label={wallName(ctx.clusterLabel)} data-testid="cluster-wall-standalone">
       {onBack ? (
         <div className="cw-back-row">
           <BackToMenuply onBack={onBack} />

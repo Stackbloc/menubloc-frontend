@@ -57,6 +57,7 @@ import "../styles/clusterIndioFestivalTheme.css";
 import "../styles/clusterLaLiveTheme.css";
 import "../styles/clusterUscTheme.css";
 import "../styles/clusterUclaTheme.css";
+import { wallName } from "../lib/clusterWallStyles.js";
 import {
   buildClusterReturnPath,
   buildClusterRestaurantsReturnPath,
@@ -112,7 +113,7 @@ function ClusterWallColumns({ children }) {
   return (
     <div className="cw-layout">
       <div style={{ minWidth: 0 }}>{children}</div>
-      <aside className="cw-layout-aside" aria-label={`${wallCtx.clusterLabel} Wall`}>
+      <aside className="cw-layout-aside" aria-label={wallName(wallCtx.clusterLabel)}>
         <ClusterWallPanel />
       </aside>
     </div>

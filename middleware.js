@@ -532,8 +532,8 @@ async function wallPageResponse(request, rawSlug) {
   return injectedResponse(
     injectMeta(
       shell,
-      `${label.short} Wall | Menuply`,
-      `See what's happening around ${label.place}. Read messages, discover campus activities, and leave your mark on the ${label.short} Wall.`,
+      `Menuply Wall @ ${label.short}`,
+      `See what's happening around ${label.place}. Read messages, discover campus activities, and leave your mark on the Menuply Wall @ ${label.short}.`,
       canonical
     )
   );

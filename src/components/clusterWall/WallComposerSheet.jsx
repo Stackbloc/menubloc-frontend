@@ -3,6 +3,7 @@ import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { createWallBlock, uploadWallClip } from "../../lib/clusterWallApi.js";
 import { createGuestWallBlock } from "../../lib/clusterWallGuest.js";
 import {
+  wallName,
   DEFAULT_WALL_STYLE,
   WALL_CAPTION_LIMIT,
   WALL_CLIP_MAX_BYTES,
@@ -192,7 +193,7 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
     return (
       <div className="cw-overlay" role="dialog" aria-modal="true" aria-label="Posted" onClick={onClose}>
         <div className="cw-sheet" onClick={(e) => e.stopPropagation()} data-testid="cluster-wall-posted">
-          <p className="cw-title">{inReview ? "Thanks — it's in review" : `It's on the ${clusterLabel} Wall`}</p>
+          <p className="cw-title">{inReview ? "Thanks — it's in review" : `It's on the ${wallName(clusterLabel)}`}</p>
           <p className="cw-sub" style={{ margin: "6px 0 14px" }}>
             {inReview
               ? done.kind === "video"
@@ -209,10 +210,10 @@ export default function WallComposerSheet({ clusterSlug, clusterLabel = "USC", o
   }
 
   return (
-    <div className="cw-overlay" role="dialog" aria-modal="true" aria-label={`Write on the ${clusterLabel} Wall`} onClick={() => !busy && onClose?.()}>
+    <div className="cw-overlay" role="dialog" aria-modal="true" aria-label={`Write on the ${wallName(clusterLabel)}`} onClick={() => !busy && onClose?.()}>
       <div className="cw-sheet" onClick={(e) => e.stopPropagation()} data-testid="cluster-wall-composer" style={{ display: "grid", gap: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p className="cw-title">Write on the {clusterLabel} Wall</p>
+          <p className="cw-title">Write on the {wallName(clusterLabel)}</p>
           <button type="button" className="cw-btn cw-btn-quiet" onClick={onClose} disabled={busy}>Cancel</button>
         </div>
 

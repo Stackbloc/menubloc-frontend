@@ -191,3 +191,11 @@ export function wallTextFontSize(size, length, { scale = 1 } = {}) {
   return Math.round(base * shrink * scale);
 }
 
+
+/**
+ * The Wall's public name (Andre 2026-11-06, trade-name concerns): "Menuply Wall @ USC" — Menuply's
+ * wall at a place, never "the USC Wall".
+ */
+export function wallName(label) {
+  return `Menuply Wall @ ${label || "USC"}`;
+}

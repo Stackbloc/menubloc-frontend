@@ -26,16 +26,16 @@ function mockFetch(t) {
 
 const meta = (html, attr, name) => new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`).exec(html)?.[1];
 
-test("/clusters/walls/usc gets the USC Wall title, description and canonical", async (t) => {
+test("/clusters/walls/usc gets the Menuply Wall @ USC title, description and canonical", async (t) => {
   mockFetch(t);
   const res = await middleware(new Request("https://menuply.com/clusters/walls/usc"));
   const html = await res.text();
   assert.equal(res.headers.get("X-SEO-Middleware"), "injected");
-  assert.match(html, /<title>USC Wall \| Menuply<\/title>/);
-  assert.equal(meta(html, "property", "og:title"), "USC Wall | Menuply");
+  assert.match(html, /<title>Menuply Wall @ USC<\/title>/);
+  assert.equal(meta(html, "property", "og:title"), "Menuply Wall @ USC");
   assert.equal(
     meta(html, "name", "description"),
-    "See what&#39;s happening around USC. Read messages, discover campus activities, and leave your mark on the USC Wall."
+    "See what&#39;s happening around USC. Read messages, discover campus activities, and leave your mark on the Menuply Wall @ USC."
   );
   assert.equal(meta(html, "property", "og:url"), "https://menuply.com/clusters/walls/usc");
   assert.match(html, /<link rel="canonical" href="https:\/\/menuply.com\/clusters\/walls\/usc">/);

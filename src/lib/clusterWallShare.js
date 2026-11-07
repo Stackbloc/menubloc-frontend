@@ -1,5 +1,6 @@
 import { copyText, toConsumerShareAbsolute } from "../components/share/shareUtils.js";
 import { wallShareImageUrl } from "./clusterWallApi.js";
+import { wallName } from "./clusterWallStyles.js";
 
 /**
  * Sharing one Wall block outside Menuply.
@@ -13,11 +14,9 @@ export function wallShareUrl(block) {
 }
 
 export function wallShareText(block) {
-  const where = `the ${block.cluster_label || "Menuply"} Wall`;
+  const where = `the ${wallName(block.cluster_label)}`;
   const url = wallShareUrl(block);
-  return block.is_mine
-    ? `I wrote on ${where} on Menuply ✍️ ${url}`
-    : `Saw this on ${where} on Menuply 👀 ${url}`;
+  return block.is_mine ? `I wrote on ${where} ✍️ ${url}` : `Saw this on ${where} 👀 ${url}`;
 }
 
 function fileName(block, ext) {

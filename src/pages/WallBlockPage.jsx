@@ -5,7 +5,7 @@ import { fetchWallBlock } from "../lib/clusterWallApi.js";
 import { clusterPath } from "../lib/clusterUrl.js";
 import { withConsumerAuthNext } from "../lib/consumerAuthNext.js";
 import WallBlockViewer, { WallBlockLarge, WallShareControls } from "../components/clusterWall/WallBlockViewer.jsx";
-import { wallAgo } from "../lib/clusterWallStyles.js";
+import { wallAgo, wallName } from "../lib/clusterWallStyles.js";
 import "../components/clusterWall/clusterWall.css";
 
 /**
@@ -36,7 +36,7 @@ export default function WallBlockPage() {
 
   useEffect(() => {
     const b = state.block;
-    document.title = b ? `${b.author?.first_name ? `${b.author.first_name} on the` : "On the"} ${b.cluster_label} Wall | Menuply` : "Menuply Wall";
+    document.title = b ? `${b.author?.first_name ? `${b.author.first_name} on the` : "On the"} ${wallName(b.cluster_label)}` : "Menuply Wall";
   }, [state.block]);
 
   const block = state.block;
@@ -53,7 +53,7 @@ export default function WallBlockPage() {
     <main style={{ maxWidth: 560, margin: "0 auto", padding: "1.25rem 16px 4rem", boxSizing: "border-box" }} data-testid="wall-block-page">
       <p style={{ margin: "0 0 12px", font: "700 13px/1.2 system-ui", color: "#6b7280" }}>
         <Link to="/" style={{ color: "#111827", font: "700 18px/1 Georgia, serif", textDecoration: "none" }}>Menuply</Link>
-        {block ? ` · ${block.cluster_label} Wall` : ""}
+        {block ? ` · Wall @ ${block.cluster_label}` : ""}
       </p>
 
       {state.status === "loading" ? <p className="cw-sub">Loading…</p> : null}
@@ -80,7 +80,7 @@ export default function WallBlockPage() {
               )
             ) : null}
             {block.author?.first_name ? " · " : ""}
-            On the {block.cluster_label} Wall
+            On the {wallName(block.cluster_label)}
             {wallAgo(block.published_at) ? ` · ${wallAgo(block.published_at) === "now" ? "just now" : `${wallAgo(block.published_at)} ago`}` : ""}
           </p>
 
@@ -90,7 +90,7 @@ export default function WallBlockPage() {
           >
             <p className="cw-title">Write yours on Menuply</p>
             <p className="cw-sub" style={{ margin: 0 }}>
-              The {block.cluster_label} Wall is where students leave words and clips. New every week.
+              The {wallName(block.cluster_label)} is where students leave words and clips. New every week.
               {isAuthenticated ? "" : " No account needed."}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -98,7 +98,7 @@ export default function WallBlockPage() {
                 Write yours
               </Link>
               <Link className="cw-btn" to={wallPage} state={{ wallEntry: "shared_post" }} data-testid="wall-block-explore">
-                Explore the {block.cluster_label} Wall
+                Explore the {wallName(block.cluster_label)}
               </Link>
             </div>
           </section>

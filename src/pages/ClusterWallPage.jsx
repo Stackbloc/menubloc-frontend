@@ -5,6 +5,7 @@ import { ClusterWallProvider, ClusterWallStandalone } from "../components/cluste
 import useEngagementPage from "../hooks/useEngagementPage.js";
 import { trackEngagement } from "../lib/engagementTracking.js";
 import "../components/clusterWall/clusterWall.css";
+import { wallName } from "../lib/clusterWallStyles.js";
 
 // Short names for titles ("USC Wall"), same as the backend's CLUSTER_SHORT_LABELS.
 const WALL_LABELS = Object.freeze({ usc: "USC" });
@@ -41,7 +42,7 @@ function WallPageBody({ slug, label }) {
   const onCluster = useCallback((c) => setClusterId(c?.id || null), []);
 
   useEffect(() => {
-    document.title = `${label} Wall | Menuply`;
+    document.title = wallName(label);
   }, [label]);
 
   useEngagementPage(rootRef, { pageType: "wall", ready: Boolean(clusterId), clusterId });
@@ -60,7 +61,7 @@ function WallPageBody({ slug, label }) {
       <main style={{ maxWidth: 1080, margin: "0 auto", padding: "0.75rem 10px 4rem", boxSizing: "border-box" }}>
         <p style={{ margin: "0 0 10px", font: "700 13px/1.2 system-ui", color: "#6b7280" }}>
           <Link to="/" style={{ color: "#111827", font: "700 18px/1 Georgia, serif", textDecoration: "none" }}>Menuply</Link>
-          {` · ${label} Wall`}
+          {` · Wall @ ${label}`}
         </p>
         <ClusterWallStandalone onBack={fromMenuply ? () => navigate(-1) : null} />
       </main>

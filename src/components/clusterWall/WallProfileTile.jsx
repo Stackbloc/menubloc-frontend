@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { WALL_THEMES, wallStyle, wallSurfaceStyle } from "../../lib/clusterWallStyles.js";
+import { WALL_THEMES, wallStyle, wallSurfaceStyle, wallName } from "../../lib/clusterWallStyles.js";
 import { WallInscription } from "./WallBlockTile.jsx";
 import "./clusterWall.css";
 
@@ -14,7 +14,7 @@ export default function WallProfileTile({ item, style }) {
   const s = wallStyle(block.style);
   const isClip = block.kind === "video";
   const inReview = block.is_mine && block.status && block.status !== "published";
-  const tag = `${block.cluster_label || "Menuply"} Wall`;
+  const tag = wallName(block.cluster_label);
   const label = isClip ? `${tag} clip${block.body ? `: ${block.body}` : ""}` : `${tag}: ${block.body}`;
   return (
     <Link

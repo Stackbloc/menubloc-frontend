@@ -10,6 +10,7 @@ import WallBlockViewer from "./WallBlockViewer.jsx";
 import BrickComposer from "./BrickComposer.jsx";
 import "./clusterWall.css";
 import "./brickWall.css";
+import { wallName } from "../../lib/clusterWallStyles.js";
 
 /**
  * The USC Wall as one continuous brick wall (Andre 2026-11-06 redesign).
@@ -62,7 +63,7 @@ function WallRow({ row, onOpen, onShare, onWrite }) {
 }
 
 function wallShareText(label, url) {
-  return `The ${label} Wall on Menuply — written by ${label} students 🧱 Add a brick: ${url}`;
+  return `The ${wallName(label)} — written by ${label} students 🧱 Add a brick: ${url}`;
 }
 
 /**
@@ -177,14 +178,13 @@ export default function BrickWall({ clusterSlug, clusterLabel = "USC", onBack = 
   const empty = wall.status === "ok" && !wall.rows.length && !wall.pinned.length && !wall.waiting.length;
 
   return (
-    <div className={`bw-root${overlay ? " bw-overlay" : ""}`} ref={rootRef} data-testid="brick-wall" role={overlay ? "dialog" : undefined} aria-modal={overlay || undefined} aria-label={overlay ? `${clusterLabel} Wall` : undefined}>
+    <div className={`bw-root${overlay ? " bw-overlay" : ""}`} ref={rootRef} data-testid="brick-wall" role={overlay ? "dialog" : undefined} aria-modal={overlay || undefined} aria-label={overlay ? wallName(clusterLabel) : undefined}>
       <header className="bw-head">
         <button type="button" className="bw-icon" onClick={back} aria-label="Back" data-testid="wall-back">
           ‹
         </button>
         <div className="bw-title-wrap">
-          <h1 className="bw-title">{clusterLabel} Wall</h1>
-          <span className="bw-by">on Menuply</span>
+          <h1 className="bw-title">{wallName(clusterLabel)}</h1>
         </div>
         <button type="button" className="bw-head-share" onClick={shareWall} data-testid="wall-share">
           <span aria-hidden="true">↗</span> Share
@@ -210,7 +210,7 @@ export default function BrickWall({ clusterSlug, clusterLabel = "USC", onBack = 
         </button>
       ) : null}
 
-      <main className="bw-wall" aria-label={`${clusterLabel} Wall`}>
+      <main className="bw-wall" aria-label={wallName(clusterLabel)}>
         {wall.status === "loading" ? <p className="bw-note">Loading the Wall…</p> : null}
         {wall.status === "unavailable" ? <p className="bw-note">The Wall didn't load. Pull to refresh or try again soon.</p> : null}
         {wall.waiting.map((b) => (

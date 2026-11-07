@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createWallBlock, uploadWallClip, uploadWallPhoto } from "../../lib/clusterWallApi.js";
 import { createGuestWallBlock } from "../../lib/clusterWallGuest.js";
 import {
+  wallName,
   WALL_CAPTION_LIMIT,
   WALL_CLIP_MAX_BYTES,
   WALL_CLIP_MAX_SECONDS,
@@ -185,7 +186,7 @@ export default function BrickComposer({ clusterSlug, clusterLabel = "USC", isSig
     return (
       <div className="bc-overlay" role="dialog" aria-modal="true" aria-label="Posted" onClick={onClose}>
         <div className="bc-sheet" onClick={(e) => e.stopPropagation()} data-testid="cluster-wall-posted">
-          <p className="bc-title">{inReview ? "Thanks — it's in review" : `Your brick is on the ${clusterLabel} Wall`}</p>
+          <p className="bc-title">{inReview ? "Thanks — it's in review" : `Your brick is on the ${wallName(clusterLabel)}`}</p>
           <p className="bc-sub">
             {inReview
               ? `${done.kind === "photo" ? "Photos" : done.kind === "video" ? "Clips" : "This one"} show once we've had a quick look. Usually soon.`

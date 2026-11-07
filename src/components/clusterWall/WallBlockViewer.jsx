@@ -13,7 +13,7 @@ import {
   trackWallShare,
   wallSmsHref,
 } from "../../lib/clusterWallShare.js";
-import { wallAgo } from "../../lib/clusterWallStyles.js";
+import { wallAgo, wallName } from "../../lib/clusterWallStyles.js";
 import Brick from "./Brick.jsx";
 import "./brickWall.css";
 import "./clusterWall.css";
@@ -87,7 +87,7 @@ function AuthorLine({ block }) {
         )
       ) : null}
       {name ? " · " : ""}
-      {block.cluster_label} Wall{ago ? ` · ${ago === "now" ? "just now" : `${ago} ago`}` : ""}
+      {wallName(block.cluster_label)}{ago ? ` · ${ago === "now" ? "just now" : `${ago} ago`}` : ""}
     </p>
   );
 }
