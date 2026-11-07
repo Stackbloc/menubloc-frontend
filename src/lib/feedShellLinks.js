@@ -122,6 +122,12 @@ export const FEED_MORE_SECTIONS = [
       { to: "/privacy", label: "Privacy Policy", testId: "feed-more-privacy" },
     ],
   },
+  // Its own topic after Menuply (Andre 2026-11-07). withFrom: the page they were on goes along.
+  {
+    id: "feedback",
+    title: "Feedback",
+    links: [{ to: "/feedback", label: "Send Feedback", testId: "feed-more-feedback", withFrom: true }],
+  },
 ];
 
 export function resolveFeedMoreSections({ isAuthenticated = false } = {}) {

@@ -32,6 +32,7 @@ const sheet = {
 export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerName = "", onHidden, buttonStyle, label = "More", children = null }) {
   const { isAuthenticated, consumer } = useConsumer();
   const location = useLocation();
+  const feedbackTo = `/feedback?from=${encodeURIComponent(location.pathname)}`;
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState("menu"); // menu | reasons | block | done
   const [reason, setReason] = useState("");
@@ -96,6 +97,8 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
               <>
                 <p style={sheet.title}>Sign in to report or block</p>
                 <Link to={`/account/login?next=${encodeURIComponent(location.pathname + location.search)}`} style={sheet.link}>Sign in</Link>
+                {/* Feedback needs no sign-in (Andre 2026-11-07). */}
+                <Link to={feedbackTo} style={sheet.link} data-testid="clip-safety-feedback">Send Feedback about Menuply</Link>
               </>
             ) : step === "menu" ? (
               <>
@@ -110,7 +113,11 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
                     Block {name}
                   </button>
                 ) : null}
-                <button type="button" style={{ ...sheet.row, borderBottom: 0 }} onClick={close}>Cancel</button>
+                {/* Not about this clip? Send Feedback (Andre 2026-11-07): same form as ☰ → Feedback. */}
+                <Link to={feedbackTo} style={{ ...sheet.row, textDecoration: "none" }} data-testid="clip-safety-feedback">
+                  Send Feedback about Menuply
+                </Link>
+                                <button type="button" style={{ ...sheet.row, borderBottom: 0 }} onClick={close}>Cancel</button>
               </>
             ) : step === "reasons" ? (
               <>

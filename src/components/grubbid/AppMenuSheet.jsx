@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
   { label: "Deals",               href: "/feed/deals",           icon: "🏷️" },
@@ -14,6 +14,7 @@ const META_ITEMS = [
   { label: "Privacy Policy",      href: "/privacy",           icon: "🔒" },
   { label: "About Menuply",       href: "/about",             icon: "ℹ️" },
   { label: "Contact Us",          href: "/contact",           icon: "💬" },
+  { label: "Send Feedback",       href: "/feedback",          icon: "📝", withFrom: true },
 ];
 
 function SheetRow({ icon, label, href, onClick }) {
@@ -45,6 +46,7 @@ function Divider() {
 
 export default function AppMenuSheet({ open, onClose }) {
   const { t } = useLanguage();
+  const { pathname } = useLocation();
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -89,8 +91,13 @@ export default function AppMenuSheet({ open, onClose }) {
         <div style={{ padding: "10px 20px 2px", fontSize: 11, fontWeight: 900, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           More
         </div>
-        {META_ITEMS.map((item) => (
-          <SheetRow key={item.href} {...item} onClick={onClose} />
+        {META_ITEMS.map(({ withFrom, ...item }) => (
+          <SheetRow
+            key={item.href}
+            {...item}
+            href={withFrom ? `${item.href}?from=${encodeURIComponent(pathname)}` : item.href}
+            onClick={onClose}
+          />
         ))}
       </div>
     </>

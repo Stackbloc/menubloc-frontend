@@ -3,17 +3,18 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
 import { FEED_DESKTOP_RAIL_WIDTH, FEED_MENU_CAPTURE_HINT, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
 import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function FeedMoreLink({ link, onClose }) {
+  const { pathname } = useLocation();
   const showMenuCaptureIcon = link.testId === "feed-more-add-menu";
   return (
     <Link
-      to={link.to}
+      to={link.withFrom ? `${link.to}?from=${encodeURIComponent(pathname)}` : link.to}
       style={showMenuCaptureIcon ? styles.linkWithIcon : styles.link}
       data-testid={link.testId}
       title={showMenuCaptureIcon ? FEED_MENU_CAPTURE_HINT : undefined}
