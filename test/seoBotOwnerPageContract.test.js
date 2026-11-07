@@ -30,3 +30,8 @@ test("SEO Bot report: page types + clips boxes; duplicate titles count every pag
   assert.match(src, /<Clips clips=\{report\?\.clips\} \/>/);
   assert.match(src, /group\.code === "duplicate_title"[\s\S]*detail\?\.urls/);
 });
+
+test("SEO Bot report: new page types the build added show first, asking for a decision", () => {
+  const src = read("src/pages/owner/SeoBotReport.jsx");
+  assert.match(src, /KIND_GROUPS = \[\s*\["new", "New — not decided yet"/);
+});

@@ -162,6 +162,7 @@ function FindingGroup({ group }) {
 }
 
 const KIND_GROUPS = [
+  ["new", "New — not decided yet", "Pages added to the site since the list was last updated. Decide for each: in Google, or kept out (seo-pages.json)."],
   ["index", "Should be in Google", "Own title, own canonical, no noindex."],
   ["private", "Kept out of Google", "Accounts, tools, checkout and private links: should say noindex."],
   ["alias", "Old addresses", "Should redirect to the main page."],
