@@ -153,6 +153,20 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/bots/agent", label: "Agent" },
         ],
       },
+      {
+        id: "food-intelligence",
+        label: "Food Intelligence",
+        // Phase 1 (Andre 2026-11-07): versioned Food Ontology (MKS v2 keys) + MKS food types.
+        items: [
+          { to: "/owner/food-intelligence", label: "Overview", end: true },
+          { to: "/owner/food-intelligence/food_ontology", label: "Food Ontology" },
+          { to: "/owner/food-intelligence/mks", label: "MKS" },
+          { to: "/owner/food-intelligence/drafts", label: "Draft revisions" },
+          { to: "/owner/food-intelligence/versions", label: "Published versions" },
+          { to: "/owner/food-intelligence/history", label: "Change history" },
+          { to: "/owner/food-intelligence/checks", label: "Checks & recovery" },
+        ],
+      },
       NAV_SECTIONS_STATIC[1],
       NAV_SECTIONS_STATIC[2],
     ],
