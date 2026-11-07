@@ -5,7 +5,8 @@
  *  - a restaurant / menu item the backend says doesn't exist answers 404 + noindex
  *    (not a 200 home shell with canonical "/" = Search Console soft 404);
  *  - the sitemap never lists a vercel.json redirect source;
- *  - a backend timeout still falls through (no 404 for a slow backend).
+ *  - a backend timeout is never a 404: people fall through to the app, crawlers get
+ *    503 + Retry-After instead of the bare home shell.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -79,10 +80,10 @@ test("missing restaurant answers 404 + noindex with no home canonical", async ()
   } finally { globalThis.fetch = realFetch; }
 });
 
-test("backend timeout / 5xx still falls through (never a 404 for a slow backend)", async () => {
+test("backend 5xx is never a 404 (people fall through)", async () => {
   mockBackend([["/public/meta/restaurants/", () => json(503, { ok: false })]]);
   try {
-    const res = await get("/restaurants/california/los-angeles/in-n-out-burger");
+    const res = await get("/restaurants/california/los-angeles/in-n-out-burger", "Mozilla/5.0 (Macintosh) Safari/605.1.15");
     assert.equal(res, undefined);
   } finally { globalThis.fetch = realFetch; }
 });
@@ -106,4 +107,29 @@ test("SITEMAP_PATH_REDIRECTS matches every path redirect in vercel.json", () => 
   const pathRedirects = (vercel.redirects || []).filter((r) => r.source.startsWith("/") && !r.source.includes("(") && !r.has);
   const expected = Object.fromEntries(pathRedirects.map((r) => [r.source, r.destination]));
   assert.deepEqual({ ...SITEMAP_PATH_REDIRECTS }, expected);
+});
+
+test("backend timeout on a restaurant page: crawler gets 503 Retry-After, people fall through", async () => {
+  mockBackend([["/public/meta/restaurants/", () => json(503, { ok: false })]]);
+  try {
+    const bot = await get("/restaurants/california/los-angeles/in-n-out-burger");
+    assert.equal(bot.status, 503);
+    assert.equal(bot.headers.get("retry-after"), "120");
+    const person = await get("/restaurants/california/los-angeles/in-n-out-burger", "Mozilla/5.0 (Macintosh) Safari/605.1.15");
+    assert.equal(person, undefined, "people still get the app");
+  } finally { globalThis.fetch = realFetch; }
+});
+
+test("destination venue + video titles are escaped once", async () => {
+  mockBackend([
+    ["/public/meta/destination-venues/", () => json(200, { ok: true, data: { slug: "rock-and-reillys-usc", name: "Rock & Reilly's", city: "Los Angeles", state: "CA" } })],
+    ["/public/meta/videos/", () => json(200, { ok: true, data: { title: "Jimmy John's Club", path: "/videos/managed/61", indexable: false } })],
+  ]);
+  try {
+    const venue = await (await get("/destination-venues/rock-and-reillys-usc")).text();
+    assert.equal(venue.match(/<title>([^<]*)<\/title>/)[1], "Rock &amp; Reilly&#39;s | Menuply");
+    const video = await (await get("/videos/managed/61")).text();
+    assert.equal(video.match(/<title>([^<]*)<\/title>/)[1], "Jimmy John&#39;s Club | Menuply");
+    assert.ok(!/&amp;(#39|amp);/.test(venue + video));
+  } finally { globalThis.fetch = realFetch; }
 });

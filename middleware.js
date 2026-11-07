@@ -557,6 +557,18 @@ function notFoundResponse(shell) {
   });
 }
 
+// Backend meta timed out / 5xx on a content page. People still fall through to the app,
+// but a search crawler falling through gets the bare shell (home title, canonical "/")
+// and files the page as a copy of the home page. Tell crawlers to come back instead:
+// Google treats 503 + Retry-After as temporary and keeps the indexed version.
+function crawlerRetryLater(request, meta) {
+  if (meta || !isSearchCrawler(request)) return undefined;
+  return new Response("Temporarily unavailable", {
+    status: 503,
+    headers: { "Retry-After": "120", "Cache-Control": "no-store", "X-SEO-Middleware": "retry-later" },
+  });
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -615,7 +627,7 @@ export default async function middleware(request) {
       fetchMeta(`/public/meta/menu-items/${encodeURIComponent(itemId)}`),
     ]);
     if (shell && meta?.notFound) return notFoundResponse(shell);
-    if (!shell || !meta || !meta.ok) return;
+    if (!shell || !meta || !meta.ok) return crawlerRetryLater(request, meta);
     const { title, description, canonical } = buildMenuItemMeta(meta.data, itemId);
     const restaurant = meta.data.restaurant_id
       ? {
@@ -641,7 +653,7 @@ export default async function middleware(request) {
       fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
     if (shell && meta?.notFound) return notFoundResponse(shell);
-    if (!shell || !meta || !meta.ok) return;
+    if (!shell || !meta || !meta.ok) return crawlerRetryLater(request, meta);
     const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
     // Geographic validation: URL state/city must match DB data — redirect if not
     if (canonical !== `${ORIGIN}${pathname}`) {
@@ -671,7 +683,7 @@ export default async function middleware(request) {
       fetchMeta(canonicalRestaurantMetaPath(m[1], m[2], m[3])),
     ]);
     if (shell && meta?.notFound) return notFoundResponse(shell);
-    if (!shell || !meta || !meta.ok) return;
+    if (!shell || !meta || !meta.ok) return crawlerRetryLater(request, meta);
     const { title, description, canonical } = buildRestaurantProfileMeta(meta.data);
     // Geographic validation: URL state/city must match DB data — redirect if not
     if (canonical !== `${ORIGIN}${pathname}`) {
@@ -717,8 +729,8 @@ export default async function middleware(request) {
       const shell = await fetchShell(request.url);
       if (!shell) return;
       const canonical = absoluteCanonicalUrl(cityPath(city));
-      const title = `Restaurants in ${escapeHtml(city.city)}, ${escapeHtml(city.state)} | Menuply`;
-      const description = `Browse published restaurant menus in ${escapeHtml(city.city)}, ${escapeHtml(city.state)} on Menuply.`;
+      const title = `Restaurants in ${city.city}, ${city.state} | Menuply`;
+      const description = `Browse published restaurant menus in ${city.city}, ${city.state} on Menuply.`;
       const cityRestaurants = (inventory.restaurants || []).filter(
         (entry) => cityPath(entry) === pathname
       );
@@ -826,7 +838,7 @@ export default async function middleware(request) {
       fetchMeta(`/public/meta/menu-items/${id}`),
     ]);
     if (shell && meta?.notFound) return notFoundResponse(shell);
-    if (!shell || !meta || !meta.ok) return;
+    if (!shell || !meta || !meta.ok) return crawlerRetryLater(request, meta);
     const { title, description, canonical } = buildMenuItemMeta(meta.data, id);
     const restaurant = meta.data.restaurant_id
       ? {
@@ -853,17 +865,16 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(`/public/meta/videos/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`),
     ]);
-    if (!shell || !meta?.ok || !meta.data) return;
+    if (!shell || !meta?.ok || !meta.data) return crawlerRetryLater(request, meta);
     const data = meta.data;
     const canonical = `${ORIGIN}${data.path || `/videos/${kind}/${id}`}`;
     const titleBase = data.title || "Menuply video";
-    const title = `${escapeHtml(titleBase)} | Menuply`;
-    const description = escapeHtml(
+    const title = `${titleBase} | Menuply`;
+    const description =
       data.description ||
-        (data.restaurant?.name
-          ? `Watch ${titleBase} from ${data.restaurant.name} on Menuply.`
-          : `Watch ${titleBase} on Menuply.`)
-    );
+      (data.restaurant?.name
+        ? `Watch ${titleBase} from ${data.restaurant.name} on Menuply.`
+        : `Watch ${titleBase} on Menuply.`);
     let html = injectMeta(shell, title, description, canonical, data.photo_url || null);
     if (!data.indexable) {
       html = injectRobots(html, "noindex, follow");
@@ -905,14 +916,14 @@ export default async function middleware(request) {
       fetchShell(request.url),
       fetchMeta(`/public/meta/destination-venues/${encodeURIComponent(slug)}`),
     ]);
-    if (!shell || !meta?.ok || !meta.data) return;
+    if (!shell || !meta?.ok || !meta.data) return crawlerRetryLater(request, meta);
     const data = meta.data;
     const name = data.official_name || data.name || slug;
     const hasLocation = data.city && data.state;
-    const title = `${escapeHtml(name)} | Menuply`;
+    const title = `${name} | Menuply`;
     const description = hasLocation
-      ? `Explore food and venue details for ${escapeHtml(name)} in ${escapeHtml(data.city)}, ${escapeHtml(data.state)} on Menuply.`
-      : `Explore food and venue details for ${escapeHtml(name)} on Menuply.`;
+      ? `Explore food and venue details for ${name} in ${data.city}, ${data.state} on Menuply.`
+      : `Explore food and venue details for ${name} on Menuply.`;
     const canonical = `${ORIGIN}/destination-venues/${encodeURIComponent(data.slug || slug)}`;
     const html = injectJsonLd(
       injectMeta(shell, title, description, canonical),
