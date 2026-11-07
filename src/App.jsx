@@ -308,6 +308,8 @@ import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx
 import PhotoStandards from "./pages/PhotoStandards.jsx";
 import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
+import SendFeedback from "./pages/SendFeedback.jsx";
+import OwnerFeedback from "./pages/owner/OwnerFeedback.jsx";
 import CreativeProsPage from "./pages/CreativeProsPage.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
@@ -1006,6 +1008,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/photo-standards" element={<PhotoStandards />} />
         <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutMenuply />} />
         <Route path="/contact" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Contact />} />
+        <Route path="/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SendFeedback />} />
         <Route path="/creative-pros" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CreativeProsPage />} />
 
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
@@ -1186,6 +1189,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/ads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAdsPage /></OwnerRoute>} />
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/errors" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerErrors /></OwnerRoute>} />
+        <Route path="/owner/feedback" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerFeedback /></OwnerRoute>} />
         <Route path="/owner/food-intelligence/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><FoodIntelligence /></OwnerRoute>} />
         <Route path="/owner/reports" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerContentReports /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />

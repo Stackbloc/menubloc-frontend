@@ -106,6 +106,9 @@ export default function SiteFooter() {
             <Link to="/contact" style={footerLinkStyle}>
               {t("discovery.footer.contact", "Contact Us")}
             </Link><br />
+            <Link to={`/feedback?from=${encodeURIComponent(location.pathname)}`} style={footerLinkStyle}>
+              Send Feedback
+            </Link><br />
             <Link to="/terms" style={footerLinkStyle}>
               {t("discovery.footer.terms", "Terms of Use")}
             </Link><br />
