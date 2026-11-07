@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { searchDiningCrewEntities } from "../../lib/consumerApi.js";
+import { unlistedRestaurantPlace } from "../../lib/unlistedPlace.js";
 
 const TYPE_OPTIONS = [
   { value: "text", label: "Text only" },
@@ -23,6 +24,8 @@ export default function DiningCrewFoodEntityPicker({
   disabled = false,
   hideNote = false,
   forceRestaurantOnly = false,
+  // Invite to Eat only: offer "Use what I typed" for a restaurant not on Menuply yet.
+  allowUnlisted = false,
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -82,6 +85,25 @@ export default function DiningCrewFoodEntityPicker({
     setQuery("");
     setResults([]);
   }
+
+  function pickTypedRestaurant() {
+    const next = unlistedRestaurantPlace(query);
+    if (!next) return;
+    onSelectedChange({ ...next, type: "restaurant", label: next.restaurant_name });
+    setQuery("");
+    setResults([]);
+  }
+
+  const typedRestaurant = query.trim();
+  const showUseTyped =
+    allowUnlisted &&
+    messageType === "restaurant" &&
+    !selected &&
+    typedRestaurant.length >= 2 &&
+    !loading &&
+    !results.some(
+      (r) => String(r.label || r.restaurant_name || "").trim().toLowerCase() === typedRestaurant.toLowerCase()
+    );
 
   function clearSelection() {
     onSelectedChange(null);
@@ -230,6 +252,18 @@ export default function DiningCrewFoodEntityPicker({
         </ul>
       ) : null}
 
+      {showUseTyped ? (
+        <button
+          type="button"
+          style={styles.useTyped}
+          disabled={disabled}
+          onClick={pickTypedRestaurant}
+          data-testid="invite-restaurant-use-typed"
+        >
+          Use “{typedRestaurant}” <span style={styles.subtitle}>· not on Menuply yet</span>
+        </button>
+      ) : null}
+
       {selected ? (
         <div style={styles.selected}>
           <div>
@@ -325,6 +359,17 @@ const styles = {
     borderRadius: 10,
   },
   selectedLabel: { fontSize: 11, color: "#166534", fontWeight: 700, textTransform: "uppercase" },
+  useTyped: {
+    width: "100%",
+    textAlign: "left",
+    border: "1px dashed #cbd5e1",
+    borderRadius: 10,
+    background: "#fff",
+    padding: "10px 12px",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 700,
+  },
   linkBtn: {
     border: "none",
     background: "transparent",

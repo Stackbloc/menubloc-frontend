@@ -139,12 +139,18 @@ export default function InviteToEatStartPage() {
     };
   }, [isLgdQuickInvite, selected]);
 
+  // A place the diner typed that is not on Menuply yet: no id, just a name.
+  const unlistedPlaceName = !(selected?.restaurant_id || selected?.id)
+    ? String(selected?.unlisted ? selected?.restaurant_name || "" : "").trim()
+    : "";
+  const hasPlace = Boolean(selected?.restaurant_id || selected?.id || unlistedPlaceName);
+
   function openFromPicker() {
     const restaurantId = selected?.restaurant_id || selected?.id;
-    if (!restaurantId) return;
+    if (!restaurantId && !unlistedPlaceName) return;
     setResolved({
-      restaurantId,
-      restaurantName: selected?.restaurant_name || selected?.name || "",
+      restaurantId: restaurantId || null,
+      restaurantName: restaurantId ? selected?.restaurant_name || selected?.name || "" : unlistedPlaceName,
       menuItemId: selected?.menu_item_id || null,
       menuItemName: selected?.item_name || null,
       attachedMenuId: isLgdQuickInvite ? attachedMenuId || null : null,
@@ -179,6 +185,7 @@ export default function InviteToEatStartPage() {
           selected={selected}
           onSelectedChange={setSelected}
           forceRestaurantOnly
+          allowUnlisted
           hideNote
         />
         {isLgdQuickInvite && (selected?.restaurant_id || selected?.id) ? (
@@ -227,7 +234,7 @@ export default function InviteToEatStartPage() {
         <button
           type="button"
           style={styles.primary}
-          disabled={!(selected?.restaurant_id || selected?.id)}
+          disabled={!hasPlace}
           onClick={openFromPicker}
         >
           Continue

@@ -20,6 +20,7 @@ import {
   listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
+import { unlistedPlaceName } from "../lib/unlistedPlace.js";
 import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function tomorrowIsoDate() {
@@ -36,6 +37,10 @@ function tomorrowIsoDate() {
  * invite_kind: private (1:1) | group (shared outing).
  * No Menuply account required — guests provide a short display name.
  */
+function unlistedPlaceNameFor(name) {
+  return unlistedPlaceName({ restaurant_id: null, restaurant_name: name });
+}
+
 export default function InviteToEatModal({
   open,
   onClose,
@@ -222,7 +227,9 @@ export default function InviteToEatModal({
         resolvedMessage = lead;
       }
       const body = {
-        restaurant_id: restaurantId,
+        // A place not on Menuply yet has no id: send the typed name instead (like posts).
+        restaurant_id: restaurantId || undefined,
+        place_name: restaurantId ? undefined : unlistedPlaceNameFor(restaurantName) || undefined,
         menu_item_id: menuItemId || undefined,
         attached_menu_id: attachedMenuId || undefined,
         schedule_mode: scheduleMode,
@@ -775,7 +782,7 @@ export default function InviteToEatModal({
               ) : null}
               <button
                 type="submit"
-                disabled={busy || !restaurantId}
+                disabled={busy || !(restaurantId || unlistedPlaceNameFor(restaurantName))}
                 data-testid="invite-create"
                 style={{
                   marginTop: 4,
