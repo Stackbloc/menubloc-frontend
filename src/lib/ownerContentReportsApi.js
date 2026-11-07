@@ -60,7 +60,7 @@ export async function saveOwnerWallHouse(slug = "usc", settings = {}) {
   return res.json();
 }
 
-// Wall bricks admin (mig 0397): recent bricks (pinned first), pin / unpin / remove any brick, and a
+// Wall bricks admin (mig 0398): recent bricks (pinned first), pin / unpin / remove any brick, and a
 // "— Menuply" brick (pinned by default) for announcements.
 export async function getOwnerWallBricks(slug = "usc", q = "") {
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";

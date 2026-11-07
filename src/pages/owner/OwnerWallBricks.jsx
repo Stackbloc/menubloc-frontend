@@ -4,7 +4,7 @@ import { formatApiErrorForDisplay } from "../../lib/apiErrorDisplay.js";
 import { WALL_MATERIALS, WALL_THEMES, wallAgo } from "../../lib/clusterWallStyles.js";
 
 /**
- * Owner → Reports → Wall bricks (2026-11-06 redesign, mig 0397). Bricks are permanent, so admins can:
+ * Owner → Reports → Wall bricks (2026-11-06 redesign, mig 0398). Bricks are permanent, so admins can:
  * - pin a brick to the top (stays there regardless of age) and unpin it (it goes back to its place),
  * - remove any brick (its slot becomes a plain brick; the row doesn't move),
  * - write a "— Menuply" brick, pinned by default (e.g. "Menuply is coming to USC – January 2027!").

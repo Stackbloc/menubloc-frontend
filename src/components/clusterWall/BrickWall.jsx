@@ -171,7 +171,7 @@ export default function BrickWall({ clusterSlug, clusterLabel = "USC", onBack = 
 
   const writer = useMemo(() => () => setComposing(true), []);
 
-  // Backend without the stored layout yet (before mig 0397): the previous Wall.
+  // Backend without the stored layout yet (before mig 0398): the previous Wall.
   if (wall.status === "legacy" && legacy) return legacy;
 
   const empty = wall.status === "ok" && !wall.rows.length && !wall.pinned.length && !wall.waiting.length;

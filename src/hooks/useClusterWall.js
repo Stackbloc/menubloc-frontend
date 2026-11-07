@@ -5,10 +5,10 @@ import { markGuestOwn } from "../lib/clusterWallGuest.js";
 
 const POLL_MS = 45000;
 
-/** Continuous wall (mig 0397) as a flat list for the cluster page previews: pinned, then newest rows. */
+/** Continuous wall (mig 0398) as a flat list for the cluster page previews: pinned, then newest rows. */
 const flatBricks = (data) => [...(data.pinned || []), ...(data.rows || []).flatMap((r) => r.bricks)];
 
-/** Newest bricks (continuous wall) when the backend has it; else this week's posts (before mig 0397). */
+/** Newest bricks (continuous wall) when the backend has it; else this week's posts (before mig 0398). */
 async function fetchLatest(clusterSlug, { week, cursor, signal } = {}) {
   // Row cursors are numbers; the weekly list's cursors are "<time>|<id>".
   if (!week && !String(cursor || "").includes("|")) {

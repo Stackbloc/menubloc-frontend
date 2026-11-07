@@ -23,7 +23,7 @@ function mergeRows(current, incoming) {
  * - New bricks from others are fetched every ~45 s but NOT put on screen: `fresh` counts them for the
  *   "New bricks" pill, and showFresh() puts them in (the caller scrolls to the top first).
  * - My own post goes in at once (refreshTop), or, while it waits for review, into `waiting`.
- * - status "legacy" = backend without the layout (before mig 0397): the caller shows the old Wall.
+ * - status "legacy" = backend without the layout (before mig 0398): the caller shows the old Wall.
  */
 export default function useBrickWall(clusterSlug, { enabled = true } = {}) {
   const [state, setState] = useState({ status: enabled ? "loading" : "off", rows: [], pinned: [], cursor: null, cluster: null });

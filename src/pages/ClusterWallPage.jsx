@@ -16,7 +16,7 @@ const ENTRIES = new Set(["direct", "menuply", "shared_post"]);
 /**
  * menuply.com/clusters/walls/:wallSlug — the full Wall, straight away (2026-11-06), drawn as one
  * continuous brick wall (BrickWall). "← Back to Menuply" only when a Menuply screen sent the visitor
- * here with state { fromMenuply: true }. Before mig 0397 the backend has no stored layout and the
+ * here with state { fromMenuply: true }. Before mig 0398 the backend has no stored layout and the
  * previous Wall shows instead.
  */
 export default function ClusterWallPage() {
