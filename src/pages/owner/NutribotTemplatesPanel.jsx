@@ -8,6 +8,14 @@ import {
   searchNutribotIngredients,
 } from "../../lib/ownerApi.js";
 import { formatDateTime } from "./ownerBotFormat.js";
+import { buildUnprocessedCsv, unprocessedCsvFilename } from "./nutribotUnprocessedCsv.js";
+import {
+  buildTemplateAiPrompt,
+  draftProblems,
+  parseTemplateSuggestions,
+  pickIngredientMatch,
+  templateBodyFromDraft,
+} from "./nutribotTemplateImport.js";
 
 /**
  * Owner → Bots → Nutribot: items Nutribot could not process (no dish template),
@@ -57,6 +65,8 @@ const cellStyle = { padding: "8px 10px", verticalAlign: "top", borderTop: `1px s
 const noticeStyle = { padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 };
 
 const PAGE_SIZE = 50;
+const EXPORT_PAGE_SIZE = 200; // server max per page
+const EXPORT_MAX_ITEMS = 20000;
 const TEMPLATE_OPTIONS_ID = "nutribot-template-options";
 
 const REASON_LABELS = {
@@ -173,6 +183,45 @@ function UnprocessedItems({ templates, templatesReady }) {
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState(null);
   const [message, setMessage] = useState("");
+  const [exporting, setExporting] = useState("");
+
+  // Every unprocessed item matching the current filters → CSV download (for AI template ideas).
+  async function exportSpreadsheet() {
+    if (exporting) return;
+    setExporting("Exporting…");
+    setMessage("");
+    try {
+      const all = [];
+      let expected = null;
+      for (let off = 0; off < EXPORT_MAX_ITEMS; off += EXPORT_PAGE_SIZE) {
+        const page = await listNutribotUnprocessed({ restaurantId, q: query, limit: EXPORT_PAGE_SIZE, offset: off });
+        const pageItems = page?.items || [];
+        if (expected == null) expected = page?.total || 0;
+        all.push(...pageItems);
+        setExporting(`Exporting… ${all.length.toLocaleString()} of ${expected.toLocaleString()}`);
+        if (pageItems.length < EXPORT_PAGE_SIZE || all.length >= expected) break;
+      }
+      if (!all.length) {
+        setMessage("Nothing to export.");
+        return;
+      }
+      const blob = new Blob([buildUnprocessedCsv(all, REASON_LABELS)], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = unprocessedCsvFilename({ restaurantId, query });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const capped = expected > all.length ? ` (first ${all.length.toLocaleString()} of ${expected.toLocaleString()})` : "";
+      setMessage(`Exported ${all.length.toLocaleString()} item${all.length === 1 ? "" : "s"}${capped}.`);
+    } catch (err) {
+      setMessage(err?.message || "Could not export unprocessed items");
+    } finally {
+      setExporting("");
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -288,6 +337,15 @@ function UnprocessedItems({ templates, templatesReady }) {
           />
         </div>
         <button type="submit" style={secondaryButtonStyle}>Search</button>
+        <button
+          type="button"
+          style={{ ...secondaryButtonStyle, cursor: exporting ? "wait" : "pointer", opacity: exporting || !total ? 0.6 : 1 }}
+          disabled={!!exporting || !total}
+          onClick={exportSpreadsheet}
+          title="Download every item matching these filters as a spreadsheet (CSV), e.g. to ask an AI for new template ideas"
+        >
+          {exporting || "Export spreadsheet"}
+        </button>
       </form>
 
       {selected.size ? (
@@ -746,6 +804,267 @@ function CreateTemplateForm({ onCreated, onCancel }) {
   );
 }
 
+// ── Import templates from AI ────────────────────────────────────────────────
+
+function ImportDraftCard({ draft, state, onToggle, onAck, onIngredient, onRemove }) {
+  const problems = state?.problems || [];
+  const errors = state?.errors || [];
+  const preview = state?.preview || null;
+  const unprocessed = preview?.would_capture?.unprocessed?.count || 0;
+  const blocked = Boolean(errors.length || problems.length);
+  const created = state?.created;
+  return (
+    <div style={{ padding: 14, borderRadius: 12, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", display: "grid", gap: 8 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <input
+          type="checkbox"
+          aria-label={`Create ${draft.name || "this template"}`}
+          checked={Boolean(state?.include) && !blocked && !created}
+          disabled={blocked || Boolean(created) || !state?.checked}
+          onChange={(e) => onToggle(e.target.checked)}
+          style={{ marginTop: 3 }}
+        />
+        <div style={{ flex: "1 1 240px" }}>
+          <div style={{ fontWeight: 700 }}>{draft.name || "(no name)"}</div>
+          <div style={mutedStyle}>
+            {[draft.category, draft.cuisine].filter(Boolean).join(" · ") || "no category"}
+            {draft.portion_oz.typical != null ? ` · ${draft.portion_oz.min}–${draft.portion_oz.max} oz (typical ${draft.portion_oz.typical})` : ""}
+          </div>
+          <div style={mutedStyle}>Keywords: {draft.keywords.join(", ") || "—"}</div>
+          <div style={mutedStyle}>
+            Levels: {MACRO_FIELDS.map(([f, l]) => `${l.toLowerCase()} ${draft.macro_levels[f] || "?"}`).join(" · ")}
+          </div>
+          {draft.covers_items.length ? (
+            <div style={mutedStyle}>AI says it covers: {draft.covers_items.slice(0, 6).join(", ")}{draft.covers_items.length > 6 ? ", …" : ""}</div>
+          ) : null}
+        </div>
+        {created ? (
+          <Pill tone={RESULT_TONES.success}>Created</Pill>
+        ) : state?.checked ? (
+          blocked ? <Pill tone={RESULT_TONES.failed}>Needs fixing</Pill>
+            : <Pill tone={NEUTRAL_TONE}>{unprocessed} unprocessed item{unprocessed === 1 ? "" : "s"}</Pill>
+        ) : null}
+      </div>
+
+      <div style={{ display: "grid", gap: 4 }}>
+        <div style={{ ...labelStyle, marginBottom: 0 }}>Ingredients</div>
+        {draft.ingredients.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
+            <span style={{ flex: "0 1 180px" }}>{r.name || `#${r.ingredient_id}`} · {r.grams ?? "?"} g</span>
+            {state?.checked ? (
+              r.options?.length ? (
+                <select
+                  aria-label={`Ingredient for ${r.name}`}
+                  style={{ ...inputStyle, padding: "5px 8px", fontSize: 13, flex: "1 1 220px" }}
+                  value={r.ingredient_id || ""}
+                  disabled={Boolean(created)}
+                  onChange={(e) => onIngredient(i, Number(e.target.value) || null)}
+                >
+                  <option value="">Leave out</option>
+                  {r.options.map((o) => <option key={o.id} value={o.id}>{o.name} #{o.id}{o.category ? ` · ${o.category}` : ""}</option>)}
+                </select>
+              ) : r.ingredient_id && !r.options ? (
+                <span style={mutedStyle}>#{r.ingredient_id}</span>
+              ) : (
+                <span style={errorStyle}>Not found — left out</span>
+              )
+            ) : null}
+            {state?.checked && r.ingredient_id && !r.exact && r.options?.length ? <span style={{ ...mutedStyle, color: "#9a3412" }}>Check this match</span> : null}
+          </div>
+        ))}
+      </div>
+
+      {problems.map((p, i) => <div key={`p${i}`} style={errorStyle}>{p}</div>)}
+      {errors.map((p, i) => <div key={`e${i}`} style={errorStyle}>{p}</div>)}
+      {preview && !blocked ? <TemplatePreview preview={preview} /> : null}
+      {preview?.has_critical && !created ? (
+        <label style={{ fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}>
+          <input type="checkbox" checked={Boolean(state?.ack)} onChange={(e) => onAck(e.target.checked)} />
+          Create anyway despite the critical warning
+        </label>
+      ) : null}
+      {!created ? (
+        <div>
+          <button type="button" style={{ ...secondaryButtonStyle, padding: "5px 12px", fontSize: 13 }} onClick={onRemove}>Remove</button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ImportTemplates({ templates, onCreated, onClose }) {
+  const [text, setText] = useState("");
+  const [drafts, setDrafts] = useState([]);
+  const [states, setStates] = useState({});
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const prompt = useMemo(() => buildTemplateAiPrompt({ existingTemplates: templates }), [templates]);
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (_) {
+      setMessage("Couldn't copy. Select the prompt text below and copy it by hand.");
+    }
+  }
+
+  const setState = (key, patch) => setStates((cur) => ({ ...cur, [key]: { ...cur[key], ...patch } }));
+
+  // Server dry run for one draft → preview, errors, and whether to tick it.
+  async function dryRun(draft) {
+    const problems = draftProblems(draft);
+    if (!draft.ingredients.some((r) => r.ingredient_id)) problems.push("None of the ingredients were found");
+    if (problems.length) return { checked: true, problems, errors: [], preview: null, include: false };
+    try {
+      const res = await createNutribotTemplate({ ...templateBodyFromDraft(draft), dry_run: true });
+      const preview = res.preview || null;
+      return { checked: true, problems: [], errors: [], preview, include: !preview?.has_critical, ack: false };
+    } catch (err) {
+      const p = err?.payload || {};
+      return { checked: true, problems: [], errors: p.errors?.length ? p.errors : [err?.message || "Check failed"], preview: null, include: false };
+    }
+  }
+
+  async function check() {
+    const parsed = parseTemplateSuggestions(text);
+    setMessage(parsed.error);
+    if (!parsed.drafts.length) return;
+    setBusy("check");
+    setStates({});
+    const cache = new Map();
+    const resolved = [];
+    try {
+      for (const [i, draft] of parsed.drafts.entries()) {
+        setMessage(`Checking ${i + 1} of ${parsed.drafts.length}…`);
+        const ingredients = [];
+        for (const r of draft.ingredients) {
+          if (r.ingredient_id || !r.name) { ingredients.push(r); continue; }
+          const key = r.name.toLowerCase();
+          if (!cache.has(key)) {
+            try {
+              const data = await searchNutribotIngredients(r.name);
+              cache.set(key, (data.ingredients || []).slice(0, 8));
+            } catch (_) {
+              cache.set(key, []);
+            }
+          }
+          const options = cache.get(key);
+          const { match, exact } = pickIngredientMatch(r.name, options);
+          ingredients.push({ ...r, options, ingredient_id: match?.id || null, exact });
+        }
+        const next = { ...draft, ingredients };
+        resolved.push(next);
+        setDrafts([...resolved]);
+        setState(next.key, await dryRun(next));
+      }
+      setMessage(parsed.error || "");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function changeIngredient(draftKey, index, ingredientId) {
+    const draft = drafts.find((d) => d.key === draftKey);
+    if (!draft) return;
+    const next = {
+      ...draft,
+      ingredients: draft.ingredients.map((r, i) => (i === index ? { ...r, ingredient_id: ingredientId, exact: true } : r)),
+    };
+    setDrafts((cur) => cur.map((d) => (d.key === draftKey ? next : d)));
+    setState(draftKey, { checked: false });
+    setState(draftKey, await dryRun(next));
+  }
+
+  const chosen = drafts.filter((d) => {
+    const s = states[d.key];
+    return s?.checked && s.include && !s.created && !s.problems?.length && !s.errors?.length && (!s.preview?.has_critical || s.ack);
+  });
+
+  async function createChosen() {
+    if (!chosen.length) return;
+    setBusy("create");
+    let done = 0;
+    try {
+      for (const draft of chosen) {
+        setMessage(`Creating ${done + 1} of ${chosen.length}…`);
+        try {
+          const res = await createNutribotTemplate({
+            ...templateBodyFromDraft(draft),
+            acknowledge_warnings: Boolean(states[draft.key]?.ack),
+          });
+          setState(draft.key, { created: res.template, include: false });
+          done += 1;
+        } catch (err) {
+          const p = err?.payload || {};
+          setState(draft.key, { include: false, errors: p.errors?.length ? p.errors : [p.error || err?.message || "Could not create"] });
+        }
+      }
+      setMessage(
+        `Created ${done} of ${chosen.length} template${chosen.length === 1 ? "" : "s"}. ` +
+          "Nutribot uses them for unprocessed items on its next run."
+      );
+      if (done) onCreated?.();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 14, padding: 16, borderRadius: 12, border: `1px solid ${OWNER_COLORS.line}`, background: OWNER_COLORS.page }}>
+      <div style={{ fontSize: 14, display: "grid", gap: 4 }}>
+        <div><b>1.</b> Export the unprocessed items (button above the list).</div>
+        <div><b>2.</b> Copy the AI prompt, paste it into your AI with the spreadsheet attached.</div>
+        <div><b>3.</b> Paste the AI&apos;s answer here, check it, then create the templates you want.</div>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" style={secondaryButtonStyle} onClick={copyPrompt}>{copied ? "Copied" : "Copy AI prompt"}</button>
+        <details style={{ fontSize: 13 }}>
+          <summary style={{ cursor: "pointer", color: OWNER_COLORS.muted }}>Show prompt</summary>
+          <textarea readOnly rows={10} value={prompt} style={{ ...inputStyle, width: "100%", marginTop: 6, fontSize: 12, fontFamily: "ui-monospace, monospace" }} />
+        </details>
+      </div>
+      <div>
+        <label style={labelStyle} htmlFor="nutribot-import-text">AI answer (JSON)</label>
+        <textarea
+          id="nutribot-import-text"
+          rows={8}
+          style={{ ...inputStyle, width: "100%", resize: "vertical", fontFamily: "ui-monospace, monospace", fontSize: 12 }}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder='[ { "name": "Birria Taco", "category": "taco", ... } ]'
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" style={secondaryButtonStyle} disabled={Boolean(busy) || !text.trim()} onClick={check}>
+          {busy === "check" ? "Checking…" : drafts.length ? "Check again" : "Check"}
+        </button>
+        {drafts.length ? (
+          <button type="button" style={primaryButtonStyle({ busy: busy === "create", disabled: !chosen.length })} disabled={Boolean(busy) || !chosen.length} onClick={createChosen}>
+            {busy === "create" ? "Creating…" : `Create ${chosen.length} template${chosen.length === 1 ? "" : "s"}`}
+          </button>
+        ) : null}
+        <button type="button" style={secondaryButtonStyle} onClick={onClose}>Close</button>
+        {message ? <span style={{ fontSize: 13, fontWeight: 700 }}>{message}</span> : null}
+      </div>
+      {drafts.map((d) => (
+        <ImportDraftCard
+          key={d.key}
+          draft={d}
+          state={states[d.key]}
+          onToggle={(v) => setState(d.key, { include: v })}
+          onAck={(v) => setState(d.key, { ack: v, include: v || states[d.key]?.include })}
+          onIngredient={(i, id) => changeIngredient(d.key, i, id)}
+          onRemove={() => setDrafts((cur) => cur.filter((x) => x.key !== d.key))}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ── Section ─────────────────────────────────────────────────────────────────
 
 export default function NutribotTemplatesPanel() {
@@ -754,6 +1073,7 @@ export default function NutribotTemplatesPanel() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -782,13 +1102,27 @@ export default function NutribotTemplatesPanel() {
           title="Dish templates"
           subtitle="The templates Nutribot matches menu items to. New templates are used for new menu items on the next run."
           action={
-            creating ? null : (
-              <button type="button" style={primaryButtonStyle()} onClick={() => { setCreating(true); setCreated(null); }}>
-                Create template
-              </button>
+            creating || importing ? null : (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" style={secondaryButtonStyle} onClick={() => { setImporting(true); setCreated(null); }}>
+                  Import from AI
+                </button>
+                <button type="button" style={primaryButtonStyle()} onClick={() => { setCreating(true); setCreated(null); }}>
+                  Create template
+                </button>
+              </div>
             )
           }
         />
+        {importing ? (
+          <div style={{ marginBottom: 16 }}>
+            <ImportTemplates
+              templates={templates}
+              onCreated={() => setRefreshKey((k) => k + 1)}
+              onClose={() => setImporting(false)}
+            />
+          </div>
+        ) : null}
         {created ? (
           <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700 }}>
             Saved {created.name} ({created.slug}). It is now in the template picker.
