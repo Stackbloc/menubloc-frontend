@@ -120,6 +120,18 @@ function ClusterWallColumns({ children }) {
   );
 }
 
+/**
+ * True while a just-picked food type's first results are still loading. The phone Wall strip sits
+ * right under Food by type, so while the short "loading" placeholder is up it would rise into view;
+ * keep it back until the type's results are on screen (Andre 2026-11-08).
+ */
+const ClusterTypeResultsPendingContext = React.createContext(false);
+
+function ClusterWallBandAfterTypeResults() {
+  const pending = React.useContext(ClusterTypeResultsPendingContext);
+  return pending ? null : <ClusterWallBand />;
+}
+
 /** The Wall replaces the Dining halls section; hall data and endpoints are untouched. */
 function HiddenWhileWallLive({ children }) {
   const wallCtx = useClusterWallContext();
@@ -676,6 +688,8 @@ function ClusterMenuExplorerTab({
   // Nutrition chips above the boxes, as in the app (clusters with food-by-type data only: USC today).
   const foodChips = useFoodTypeChips(clusterSlug, { enabled: enabled && isClusterFoodByTypeEnabled() });
   const chipsOn = foodChips.chips.length > 0;
+  // Chips path: FoodByTypeDishList reports when its first page for the type is still loading.
+  const [dishListPending, setDishListPending] = useState(false);
 
   function updateFoodParams(mutate, { push = false } = {}) {
     const params = new URLSearchParams(searchParams);
@@ -1141,6 +1155,8 @@ function ClusterMenuExplorerTab({
 
   const categoryTitle = selectedCategory?.label || null;
   const typeOpen = searchActive || Boolean(selectedCategory);
+  const typeResultsPending =
+    Boolean(selectedCategory) && !searchActive && (chipsOn ? dishListPending : status === "loading");
   // Nutrition chips + the open type's back/title/price sort (or the search result count/sort) pin
   // under the sticky search while the dish list scrolls, and let go where Food by type ends.
   let foodStickyRow = null;
@@ -1352,6 +1368,7 @@ function ClusterMenuExplorerTab({
               activeKey={foodChips.activeKey}
               returnTo={clusterReturnTo}
               listAd={<SpacedClusterAdSlot slim clusterSlug={clusterSlug} pageRegion="cluster_search_top" />}
+              onPendingChange={setDishListPending}
             />
           ) : (
           <>
@@ -1471,7 +1488,9 @@ function ClusterMenuExplorerTab({
             All types
           </button>
         ) : null}
-        {postContent}
+        <ClusterTypeResultsPendingContext.Provider value={typeResultsPending}>
+          {postContent}
+        </ClusterTypeResultsPendingContext.Provider>
       </div>
     </>
   );
@@ -1925,7 +1944,7 @@ export default function ClusterPage() {
           postContent={
             <>
               {/* Phone: the Wall as a sideways strip right after the food boxes (desktop shows the side column). */}
-              <ClusterWallBand />
+              <ClusterWallBandAfterTypeResults />
               {clusterRestaurantsSection}
               {clusterExtras}
               {clusterFoodTail}
