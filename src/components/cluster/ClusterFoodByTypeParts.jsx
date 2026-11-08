@@ -35,7 +35,15 @@ export function FoodByTypeChipRow({ chips, availableChips, onToggle }) {
 }
 
 /** One food type's dishes that match the picked chips, with calories and macros ("est." on estimates). */
-export function FoodByTypeDishList({ clusterSlug, category, chips, activeKey, returnTo, listAd = null }) {
+export function FoodByTypeDishList({
+  clusterSlug,
+  category,
+  chips,
+  activeKey,
+  returnTo,
+  listAd = null,
+  onPendingChange = null,
+}) {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(null);
   const [cursor, setCursor] = useState(null);
@@ -102,6 +110,13 @@ export function FoodByTypeDishList({ clusterSlug, category, chips, activeKey, re
         if (!controller.signal.aborted) setLoadingMore(false);
       });
   }, [clusterSlug, category, chips, cursor, loadingMore, status]);
+
+  // First page for this type still on its way (skeleton showing): the page holds back what's below.
+  const firstPagePending = status === "loading" && items.length === 0;
+  useEffect(() => {
+    onPendingChange?.(firstPagePending);
+  }, [firstPagePending, onPendingChange]);
+  useEffect(() => () => onPendingChange?.(false), [onPendingChange]);
 
   const refreshing = status === "loading" && items.length > 0;
   const adAfter = Math.min(3, items.length) - 1;
