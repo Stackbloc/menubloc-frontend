@@ -129,7 +129,17 @@ const ClusterTypeResultsPendingContext = React.createContext(false);
 
 function ClusterWallBandAfterTypeResults() {
   const pending = React.useContext(ClusterTypeResultsPendingContext);
-  return pending ? null : <ClusterWallBand />;
+  const [shown, setShown] = useState(!pending);
+  // Same timing as the first page load (Andre 2026-11-07): the Wall comes in a beat after the food.
+  useEffect(() => {
+    if (pending) {
+      setShown(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setShown(true), WALL_AFTER_FOOD_MS);
+    return () => clearTimeout(t);
+  }, [pending]);
+  return shown && !pending ? <ClusterWallBand /> : null;
 }
 
 /** The Wall replaces the Dining halls section; hall data and endpoints are untouched. */

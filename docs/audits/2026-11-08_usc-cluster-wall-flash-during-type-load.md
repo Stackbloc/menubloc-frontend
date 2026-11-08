@@ -10,7 +10,7 @@ On a type tap the box grid is replaced by a short loading placeholder ("Loading 
 # Evidence Collected
 Headless Chromium at 390×844 with mocked API (results delayed 2.5 s), sampled every 250 ms after tapping a type:
 - Before (06bc518): `loading=1 band=1` for the whole load.
-- After: `loading=1 band=0` during load; band returns in the same sample the dishes appear. Checked for both the legacy category list and the chips `FoodByTypeDishList` path.
+- After: `loading=1 band=0` during load; band returns ~0.9–1.0 s after the dishes appear (matches first-load timing). Checked for both the legacy category list and the chips `FoodByTypeDishList` path.
 
 # Files Examined
 `src/pages/ClusterPage.jsx`, `src/components/cluster/ClusterFoodByTypeParts.jsx`, `src/components/clusterWall/ClusterWall.jsx`, `src/hooks/useClusterWall.js`, `src/hooks/useFoodTypeChips.js`, `src/lib/clusterApi.js`.
@@ -21,6 +21,7 @@ None (frontend-only).
 # Changes Made
 - `ClusterPage.jsx`: `ClusterTypeResultsPendingContext` + `ClusterWallBandAfterTypeResults` (renders `ClusterWallBand` only when no type's first page is pending); `typeResultsPending` computed in `ClusterMenuExplorerTab` and provided around `postContent`.
 - `ClusterFoodByTypeParts.jsx`: optional `onPendingChange` prop on `FoodByTypeDishList` (true while the first page is loading with no items; false on unmount).
+Follow-up (same day): the strip returns `WALL_AFTER_FOOD_MS` (0.9 s) after the type's results appear, the same beat as the first page load fix `fa3f097` (2026-11-07).
 Unchanged: Wall data/fetch timing, desktop side column, landing boxes, search, restaurants section, chip refreshes (results already showing stay showing, band stays).
 
 # Commits
