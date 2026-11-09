@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
 import { apiGet } from "../../lib/api.js";
-import { isUnclaimedProfile, menuReportMailto, menuTrustText } from "../../lib/menuTrust.js";
+import {
+  isUnclaimedProfile,
+  MENU_PRICE_NOTICE_AFTER_REPORT,
+  MENU_PRICE_NOTICE_BEFORE_REPORT,
+  menuReportMailto,
+  menuTrustText,
+} from "../../lib/menuTrust.js";
 
 /**
  * Menu header ⓘ = About this menu (Andre 2026-10-31): how fresh the menu is (owner review date,
@@ -54,6 +60,13 @@ export default function MenuInfoButton({ restaurantId, restaurantName, city, sta
                 <div style={styles.title}>About this menu</div>
                 <p style={styles.body} data-testid="menu-info-trust">
                   {menuTrustText({ reviewedAt, unclaimed, franchiseStore })}
+                </p>
+                <p style={styles.body} data-testid="menu-info-prices">
+                  {MENU_PRICE_NOTICE_BEFORE_REPORT}{" "}
+                  <a href={reportHref} style={styles.link} data-testid="menu-info-price-report">
+                    submit a report
+                  </a>
+                  . {MENU_PRICE_NOTICE_AFTER_REPORT}
                 </p>
                 <p style={styles.body}>
                   If you have any concerns about the menu content, please{" "}

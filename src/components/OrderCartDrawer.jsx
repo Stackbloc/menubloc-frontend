@@ -312,7 +312,7 @@ export default function OrderCartDrawer() {
             </span>
           </div>
           <p style={{ margin: "0 0 12px", fontSize: 11, lineHeight: 1.5, color: "#667085" }}>
-            {t("checkout.priceDisclosure", "Prices shown on Menuply may differ from in-store prices and may include Menuply's service component. Taxes and optional tips are shown separately before you place your order.")}
+            {t("checkout.priceDisclosure", "Restaurants agree to list their regular menu prices on Menuply. Taxes, any delivery fee and optional tips are shown separately before you place your order.")}
           </p>
           <button
             type="button"

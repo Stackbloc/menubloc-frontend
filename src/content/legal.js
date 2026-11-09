@@ -38,7 +38,8 @@ export const TERMS_DOCUMENT = {
     {
       "heading": "Menu Prices and Fees",
       "paragraphs": [
-        "Menuply displays consumer-facing menu prices that may differ from in-store prices. Prices shown on Menuply may include a service component retained by Menuply. We do not add hidden mandatory platform fees at checkout. Applicable taxes and any optional tips are shown separately before you place an order.",
+        "Restaurants that accept orders through Menuply agree to list food and beverages at no more than their regular menu price for that location and time, and may not add any fee to a Menuply order other than a delivery fee set by the restaurant. Menuply does not add a fee to your order. Applicable taxes, any delivery fee, and any optional tip are shown separately before you place an order.",
+        "You may report a suspected price discrepancy using the report link on any menu. Menuply may review reports at its discretion. To the extent permitted by law, Menuply does not guarantee that it will detect price discrepancies and has no obligation to monitor restaurant prices or to detect, investigate, or correct any discrepancy.",
         "Restaurants are responsible for providing accurate menu, pricing, and tax information where applicable. Menuply may calculate and display taxes based on restaurant-provided settings and applicable location data, but restaurants remain responsible for compliance with their tax obligations."
       ]
     },
@@ -686,6 +687,14 @@ export const MERCHANT_TERMS_DOCUMENT = {
         "Menuply may require replacement photos as a condition of approval or publication.",
         "Menuply's decisions regarding photo acceptance, rejection, removal, or replacement are final.",
         "Compliance with Menuply's Photo Standards does not guarantee that a photo will be published.",
+      ],
+    },
+    {
+      heading: "Menu pricing",
+      paragraphs: [
+        "Food and beverages you list on Menuply may not be priced above your regular menu price, meaning the highest price you currently charge for the same item at the same location and time for dine-in or counter service. Deals and promotions may be lower.",
+        "You may not add any fee to a Menuply order other than a delivery fee you set through Menuply. Taxes and optional tips are not fees.",
+        "Menuply may correct listed prices, limit features, or suspend ordering if it reasonably believes you have not complied.",
       ],
     },
     {
