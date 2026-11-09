@@ -883,6 +883,8 @@ export const getOwnerPhmsAuthHealth = () => get("/api/owner/phms/auth-health");
 export const captureOwnerPhmsDisplaySnapshot = (body) =>
   post("/api/owner/phms/display-audit/capture", body);
 export const getOwnerPhmsRepairTickets = () => get("/api/owner/phms/repair-tickets");
+export const reopenOwnerPhmsRepairTicket = (checkId) =>
+  post(`/api/owner/phms/repair-tickets/${encodeURIComponent(checkId)}/reopen`, {});
 export const getOwnerPhmsRepairTicket = (checkId) =>
   get(`/api/owner/phms/repair-tickets/${encodeURIComponent(checkId)}`);
 export const acknowledgeOwnerPhmsRepairTicket = (checkId) =>

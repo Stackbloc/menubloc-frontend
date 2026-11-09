@@ -12,6 +12,7 @@ import {
   captureOwnerPhmsDisplaySnapshot,
   getOwnerPhmsRepairTickets,
   acknowledgeOwnerPhmsRepairTicket,
+  reopenOwnerPhmsRepairTicket,
 } from "../../lib/ownerApi.js";
 
 // ── Status palette ────────────────────────────────────────────────────────────
@@ -609,22 +610,84 @@ function DeploymentHealthSection() {
 }
 
 // ── Section: Repair Tickets ───────────────────────────────────────────────────
+function RepairTicketClose({ ticket, run, busy, onFixed, onUndo }) {
+  const pill = {
+    fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 999,
+    border: `1px solid ${OWNER_COLORS.ink}`, background: OWNER_COLORS.ink, color: "#fff",
+    cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+  };
+  const link = {
+    fontSize: 12, fontWeight: 700, padding: 0, border: "none", background: "none",
+    color: OWNER_COLORS.muted, textDecoration: "underline", cursor: "pointer",
+  };
+  const runActive = Boolean(run?.running || run?.queued);
+  const box = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 12 };
+  const note = { fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.4 };
+
+  if (ticket.closeState === "checking" && runActive) {
+    return (
+      <div style={box}>
+        <span style={note}>Checking your fix now. This ticket closes by itself if the check passes.</span>
+        <button type="button" style={link} disabled={busy} onClick={onUndo}>Undo</button>
+      </div>
+    );
+  }
+  if (ticket.closeState === "checking") {
+    return (
+      <div style={box}>
+        <span style={note}>{run?.lastError ? "The check couldn't finish." : "Waiting for the check to start."}</span>
+        <button type="button" style={pill} disabled={busy} onClick={onFixed}>Check again</button>
+        <button type="button" style={link} disabled={busy} onClick={onUndo}>Undo</button>
+      </div>
+    );
+  }
+  if (ticket.closeState === "still_failing") {
+    return (
+      <div style={box}>
+        <span style={{ ...note, color: "#991b1b" }}>Still failing as of {fmtTime(ticket.lastConfirmed)}.</span>
+        <button type="button" style={pill} disabled={busy || runActive} onClick={onFixed}>
+          {runActive ? "Checking…" : "Check again"}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div style={box}>
+      <button type="button" style={pill} disabled={busy} onClick={onFixed}>
+        {busy ? "Starting check…" : "I fixed this"}
+      </button>
+      <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>We'll re-run the check and close this if it passes.</span>
+    </div>
+  );
+}
+
 function RepairTicketsSection() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copyMsg, setCopyMsg] = useState(null);
 
-  function load() {
-    setLoading(true);
+  const [busyCheckId, setBusyCheckId] = useState(null);
+
+  function load({ quiet = false } = {}) {
+    if (!quiet) setLoading(true);
     setError(null);
-    getOwnerPhmsRepairTickets()
+    return getOwnerPhmsRepairTickets()
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }
 
   useEffect(() => { load(); }, []);
+
+  const isChecking = (data?.tickets || []).some((t) => t.closeState === "checking");
+  const runActive = Boolean(data?.run?.running || data?.run?.queued);
+
+  useEffect(() => {
+    if (!isChecking && !runActive) return undefined;
+    const timer = setInterval(() => load({ quiet: true }), 20000);
+    return () => clearInterval(timer);
+  }, [isChecking, runActive]);
 
   async function copyText(text, label) {
     try {
@@ -645,13 +708,27 @@ function RepairTicketsSection() {
     URL.revokeObjectURL(a.href);
   }
 
-  async function markResolved(checkId) {
+  async function reportFixed(checkId) {
+    setBusyCheckId(checkId);
     try {
       await acknowledgeOwnerPhmsRepairTicket(checkId);
-      setCopyMsg(`Acknowledged ${checkId} — PHMS must pass to verify`);
-      load();
+      await load({ quiet: true });
     } catch (e) {
       setError(e.message);
+    } finally {
+      setBusyCheckId(null);
+    }
+  }
+
+  async function undoFixed(checkId) {
+    setBusyCheckId(checkId);
+    try {
+      await reopenOwnerPhmsRepairTicket(checkId);
+      await load({ quiet: true });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyCheckId(null);
     }
   }
 
@@ -717,6 +794,13 @@ function RepairTicketsSection() {
               <p style={{ fontSize: 13, color: OWNER_COLORS.ink, margin: "10px 0 12px", lineHeight: 1.45 }}>
                 {ticket.problemSummary?.slice(0, 280)}{ticket.problemSummary?.length > 280 ? "…" : ""}
               </p>
+              <RepairTicketClose
+                ticket={ticket}
+                run={data?.run}
+                busy={busyCheckId === ticket.checkId}
+                onFixed={() => reportFixed(ticket.checkId)}
+                onUndo={() => undoFixed(ticket.checkId)}
+              />
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <button type="button" onClick={() => copyText(ticket.markdown, "Repair ticket copied")} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: "pointer" }}>
                   Copy Repair Ticket
@@ -730,13 +814,26 @@ function RepairTicketsSection() {
                 <button type="button" disabled title="GitHub integration not yet implemented" style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb", cursor: "not-allowed", opacity: 0.6 }}>
                   Create GitHub Issue
                 </button>
-                <button type="button" onClick={() => markResolved(ticket.checkId)} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: "1px solid #86efac", background: "#f0fdf4", cursor: "pointer", color: "#166534" }}>
-                  Mark Resolved
-                </button>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {!loading && data?.recentlyClosed?.length > 0 && (
+        <details style={{ marginTop: 16 }}>
+          <summary style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted, cursor: "pointer" }}>
+            Closed recently ({data.recentlyClosed.length})
+          </summary>
+          <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+            {data.recentlyClosed.map((item) => (
+              <div key={item.checkId} style={{ fontSize: 12, color: OWNER_COLORS.ink }}>
+                {item.checkName || item.checkId}
+                <span style={{ color: OWNER_COLORS.muted }}> · passed and closed {fmtTime(item.closedAt)}</span>
+              </div>
+            ))}
+          </div>
+        </details>
       )}
     </PageCard>
   );
