@@ -142,16 +142,32 @@ export default function OwnerDeploymentOperations() {
       <div style={{ marginTop: 28 }}>
         <SectionTitle title="Release History" />
         <PageCard style={{ padding: 18 }}>
-          {data?.release_history?.length ? (
-            data.release_history.map((item) => (
-              <div key={item.deployment_number} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
-                <span>Deployment {item.deployment_number} · {item.environment}</span>
-                <Status value={item.certification || "NOT CERTIFIED"} />
+          {data?.production_releases?.length ? (
+            data.production_releases.map((item) => (
+              <div key={`${item.service}-${item.at}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0", flexWrap: "wrap", fontSize: 14 }}>
+                <span>
+                  <strong>{item.service === "backend" ? "Backend" : "Frontend"}</strong> · {item.commit}
+                  {item.note ? ` · ${item.note}` : ""}
+                </span>
+                <span style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>{new Date(item.at).toLocaleString()}</span>
               </div>
             ))
           ) : (
-            <EmptyState>No deployment records.</EmptyState>
+            <EmptyState>The next release will appear here.</EmptyState>
           )}
+          {data?.release_history?.length ? (
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted, cursor: "pointer" }}>
+                Staging drills ({data.release_history.length})
+              </summary>
+              {data.release_history.map((item) => (
+                <div key={item.deployment_number} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0" }}>
+                  <span>Deployment {item.deployment_number} · {item.environment}</span>
+                  <Status value={item.certification || "NOT CERTIFIED"} />
+                </div>
+              ))}
+            </details>
+          ) : null}
         </PageCard>
       </div>
 
