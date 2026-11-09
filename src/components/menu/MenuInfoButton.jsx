@@ -4,8 +4,9 @@ import { MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
 import { apiGet } from "../../lib/api.js";
 import {
   isUnclaimedProfile,
-  MENU_PRICE_NOTICE_AFTER_REPORT,
-  MENU_PRICE_NOTICE_BEFORE_REPORT,
+  MPI_NOTICE_INTRO,
+  MPI_NOTICE_POLICY,
+  MPI_PATH,
   menuReportMailto,
   menuTrustText,
 } from "../../lib/menuTrust.js";
@@ -62,14 +63,11 @@ export default function MenuInfoButton({ restaurantId, restaurantName, city, sta
                   {menuTrustText({ reviewedAt, unclaimed, franchiseStore })}
                 </p>
                 <p style={styles.body} data-testid="menu-info-prices">
-                  {MENU_PRICE_NOTICE_BEFORE_REPORT}{" "}
-                  <a href={reportHref} style={styles.link} data-testid="menu-info-price-report">
-                    submit a report
-                  </a>
-                  . {MENU_PRICE_NOTICE_AFTER_REPORT}
-                </p>
-                <p style={styles.body}>
-                  If you have any concerns about the menu content, please{" "}
+                  {MPI_NOTICE_INTRO}{" "}
+                  <a href={MPI_PATH} style={styles.link} data-testid="menu-info-mpi">
+                    Menu Price Integrity
+                  </a>{" "}
+                  {MPI_NOTICE_POLICY}{" "}
                   <a href={reportHref} style={styles.link} data-testid="menu-info-report">
                     submit a report
                   </a>

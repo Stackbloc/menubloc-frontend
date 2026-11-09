@@ -21,6 +21,7 @@ export const INDEXABLE_STATIC_PAGES = [
   page("/contact", "Contact Menuply | Get in Touch", "Contact the Menuply team for support, restaurant partnerships, or general inquiries.", "monthly", 0.4),
   page("/pricing", "Restaurant Pricing | Menuply", "Review Menuply restaurant plans and pricing.", "monthly", 0.4),
   page("/terms", "Terms of Service | Menuply", "Read the Menuply Terms of Service governing use of the platform.", "monthly", 0.3),
+  page("/menu-price-integrity", "Menu Price Integrity | Menuply", "How Menuply keeps restaurant prices at or below the regular menu price.", "monthly", 0.3),
   page("/privacy", "Privacy Policy | Menuply", "Read the Menuply Privacy Policy covering how your data is collected and used.", "monthly", 0.3),
   page("/restaurant/onboarding", "List Your Restaurant on Menuply | Get Found Online", "Join Menuply and get your restaurant menu in front of local customers searching for food."),
   page("/signup", "Restaurant Sign Up | Menuply", "Create your Menuply restaurant account and start managing your menu online.", "monthly", 0.4),

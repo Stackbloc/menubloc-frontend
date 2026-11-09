@@ -302,6 +302,7 @@ import RestaurantQrUpsell from "./pages/RestaurantQrUpsell.jsx";
 import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
 import MenuCapturePage from "./pages/MenuCapturePage.jsx";
 import Terms from "./pages/Terms.jsx";
+import MenuPriceIntegrity from "./pages/MenuPriceIntegrity.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
 import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
@@ -1002,6 +1003,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/menu-capture" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuCapturePage />} />
 
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
+        <Route path="/menu-price-integrity" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuPriceIntegrity />} />
         <Route path="/privacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PrivacyPolicy />} />
         <Route path="/restaurant/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMerchantTerms />} />
         <Route path="/restaurant/subscription-terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSubscriptionTerms />} />
