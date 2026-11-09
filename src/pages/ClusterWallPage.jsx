@@ -6,13 +6,10 @@ import useEngagementPage from "../hooks/useEngagementPage.js";
 import { trackEngagement } from "../lib/engagementTracking.js";
 import "../components/clusterWall/clusterWall.css";
 import { wallName } from "../lib/clusterWallStyles.js";
+import { wallOpenEntry } from "../lib/wallOpenEntry.js";
 
 // Short names for titles ("USC Wall"), same as the backend's CLUSTER_SHORT_LABELS.
 const WALL_LABELS = Object.freeze({ usc: "USC" });
-
-// How someone got here (location.state.wallEntry) → wall_open subtype. No state = direct
-// (typed URL, QR code, social link, refresh).
-const ENTRIES = new Set(["direct", "menuply", "shared_post"]);
 
 /**
  * menuply.com/clusters/walls/:wallSlug — the full Wall, straight away (2026-11-06), drawn as one
@@ -38,7 +35,7 @@ function WallPageBody({ slug, label }) {
   const rootRef = useRef(null);
   const [clusterId, setClusterId] = useState(null);
   const fromMenuply = location.state?.fromMenuply === true && location.key !== "default";
-  const entry = ENTRIES.has(location.state?.wallEntry) ? location.state.wallEntry : fromMenuply ? "menuply" : "direct";
+  const entry = wallOpenEntry({ wallEntry: location.state?.wallEntry, fromMenuply, search: location.search });
   const onCluster = useCallback((c) => setClusterId(c?.id || null), []);
 
   useEffect(() => {
