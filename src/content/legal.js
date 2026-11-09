@@ -615,6 +615,33 @@ export const PRIVACY_DOCUMENT = {
   ]
 };
 
+export const MENU_PRICE_INTEGRITY_DOCUMENT = {
+  title: "Menu Price Integrity (MPI)",
+  description: "How menu prices work for restaurants that accept orders through Menuply.",
+  effectiveDate: "November 8, 2026",
+  sections: [
+    {
+      heading: "The MPI policy",
+      paragraphs: ["Restaurant prices on Menuply must not exceed the restaurant's regular menu prices."],
+    },
+    {
+      heading: "What this means",
+      paragraphs: [
+        "Deals and promotions may be lower than the regular menu price.",
+        "The only fee a restaurant may add to a Menuply order is a delivery fee set by the restaurant.",
+        "Applicable taxes, including sales tax, and any tip you choose to leave are added at checkout. They are not fees.",
+      ],
+    },
+    {
+      heading: "Reporting a price",
+      paragraphs: [
+        "If a price looks higher than the restaurant's regular menu price, use the report link in the About this menu box on that menu.",
+        "To the extent permitted by law, Menuply is not responsible for price discrepancies, does not guarantee that it will detect them, and has no obligation to monitor restaurant prices or to detect, investigate, or correct any discrepancy. See our [Terms of Use](/terms).",
+      ],
+    },
+  ],
+};
+
 export const MERCHANT_TERMS_DOCUMENT = {
   title: "Merchant Terms of Service",
   effectiveDate: "November 8, 2026",
