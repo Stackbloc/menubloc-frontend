@@ -175,6 +175,7 @@ import OwnerVideoCuration from "./pages/owner/OwnerVideoCuration.jsx";
 import OwnerPlatformIntelligence from "./pages/owner/intelligence/OwnerPlatformIntelligence.jsx";
 import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
 import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
+import OwnerAnalytics from "./pages/owner/OwnerAnalytics.jsx";
 import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerErrors from "./pages/owner/OwnerErrors.jsx";
 import FoodIntelligence from "./pages/owner/foodIntelligence/FoodIntelligence.jsx";
@@ -1185,7 +1186,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDiners /></OwnerRoute>} />
         <Route path="/owner/videos" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVideoCuration /></OwnerRoute>} />
         <Route path="/owner/intelligence/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPlatformIntelligence /></OwnerRoute>} />
-        <Route path="/owner/analytics" element={<Navigate to="/owner/intelligence/site-activity" replace />} />
+        <Route path="/owner/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAnalytics /></OwnerRoute>} />
         <Route path="/owner/search-analytics" element={<Navigate to="/owner/intelligence/search-demand" replace />} />
         <Route path="/owner/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
         <Route path="/owner/venues" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerVenuesListPage /></OwnerRoute>} />

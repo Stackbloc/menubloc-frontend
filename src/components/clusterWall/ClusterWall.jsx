@@ -108,7 +108,10 @@ export function ClusterWallProvider({
       held: hold,
       week,
       setWeek,
-      openBlock: setViewing,
+      openBlock: (block) => {
+        trackEngagement("wall_interaction", { subtype: "post_open" });
+        setViewing(block);
+      },
       openHouse,
       showHouse: showHouse && !week,
       houseRand,

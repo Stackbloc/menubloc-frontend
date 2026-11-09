@@ -67,6 +67,7 @@ const NAV_SECTIONS_STATIC = [
     label: "Platform",
     items: [
       { to: "/owner", label: "Dashboard", end: true },
+      { to: "/owner/analytics", label: "Analytics" },
       { to: "/owner/diners", label: "Diner accounts" },
       { to: "/owner/videos", label: "Clip Manager" },
       { to: "/owner/phms", label: "Platform Health" },

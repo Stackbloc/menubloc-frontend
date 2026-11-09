@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { trackSearchResults, trackSearchResultTap } from "../lib/engagementTracking.js";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
@@ -684,6 +685,7 @@ function ClusterMenuExplorerTab({
   const [searchError, setSearchError] = useState("");
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchLoadingMore, setSearchLoadingMore] = useState(false);
+  const lastTrackedSearchRef = useRef(null);
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
   const { index: videoIndex } = useClusterVideos();
@@ -1042,6 +1044,12 @@ function ClusterMenuExplorerTab({
         setSearchQueryMeta(data.query || null);
         setSearchHasMore(Boolean(data.pagination?.has_more));
         setSearchStatus("ok");
+        // Owner Analytics: one finished search with its result count (sorting re-fetches aren't new searches).
+        const searchKey = submittedSearch.trim().toLowerCase();
+        if (lastTrackedSearchRef.current !== searchKey) {
+          lastTrackedSearchRef.current = searchKey;
+          trackSearchResults({ resultCount: (data.menu_items || []).filter((row) => !row?.placeholder_item).length });
+        }
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
@@ -1230,7 +1238,12 @@ function ClusterMenuExplorerTab({
           {searchStatus === "ok" && searchMenuItems.length === 0 ? (
             <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
           ) : null}
-          <div style={CLUSTER_SEARCH_GRID_STYLE}>
+          <div
+            style={CLUSTER_SEARCH_GRID_STYLE}
+            onClickCapture={(event) => {
+              if (event.target?.closest?.("a, button") && !event.target.closest("[data-ad-result]")) trackSearchResultTap("dish");
+            }}
+          >
             {displaySearchItems.map((row, index) => {
               const inlineSlot = shouldInsertClusterSearchAd(index, displaySearchItems.length) ? (
                 <div data-testid="cluster-ad-space" data-ad-result="true">

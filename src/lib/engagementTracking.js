@@ -35,6 +35,11 @@ const FLUSH_DELAY_MS = 1500;
 const BATCH_MAX = 25;
 
 // wall_house_click: the Menuply brick on the Wall → cluster food page (src_page_type "wall").
+const MENU_BROWSE_DWELL_MS = 10 * 1000;
+let browseTimer = null;
+let browsedPageViewId = null;
+let lastSearch = null; // { page_view_id, cluster_id, ts } for result taps
+const firedServed = new Set();
 const NAVIGATING_EVENTS = new Set(["restaurant_click", "deal_click", "ad_click", "menu_item_click", "wall_house_click"]);
 
 let queue = [];
@@ -156,6 +161,7 @@ export function flushEngagementEvents() {
           session_id: getAnalyticsSessionId() || null,
           visitor_id: getAnalyticsVisitorId() || null,
           device_type: classifyDeviceType(ua),
+          platform: "web",
           referrer: document.referrer || null,
           events,
         }),
@@ -192,8 +198,13 @@ function sendDeferredPageView() {
 
 export function handleVisibilityChange() {
   try {
-    if (document.visibilityState === "hidden") flushEngagementEvents();
-    else sendDeferredPageView();
+    if (document.visibilityState === "hidden") {
+      clearBrowseTimer();
+      flushEngagementEvents();
+    } else {
+      sendDeferredPageView();
+      startBrowseTimer();
+    }
   } catch {
     // ignore
   }
@@ -275,6 +286,8 @@ export function beginPageView({ pageType, restaurantId = null, clusterId = null,
     // Attribution and page context are captured now; the view itself is sent only once seen.
     if (isPageVisible()) enqueue(pageViewEvent);
     else deferredPageView = pageViewEvent;
+    clearBrowseTimer();
+    startBrowseTimer();
     return pageViewId;
   } catch {
     return null;
@@ -336,6 +349,7 @@ export function trackEngagement(eventName, fields = {}, navigation = null) {
       ...stripNulls(fields),
     };
     enqueue(withAttribution(event));
+    if (eventName === "menu_item_click" || eventName === "menu_category_select") trackMenuBrowse("tap");
 
     if (navigation && NAVIGATING_EVENTS.has(eventName)) {
       const targetPath = navigation.href ? pathOnly(navigation.href) : null;
@@ -350,6 +364,65 @@ export function trackEngagement(eventName, fields = {}, navigation = null) {
         ts: now,
       });
     }
+  } catch {
+    // never throw into the UI
+  }
+}
+
+// ── Owner Analytics (mig 0409) ────────────────────────────────────────────────
+function clearBrowseTimer() {
+  if (browseTimer) clearTimeout(browseTimer);
+  browseTimer = null;
+}
+
+/** 10 seconds of the menu on screen counts as browsing; hidden time doesn't count (the timer restarts). */
+function startBrowseTimer() {
+  if (browseTimer || !currentPage || currentPage.page_type !== "menu" || !isPageVisible()) return;
+  if (browsedPageViewId === currentPage.page_view_id) return;
+  browseTimer = setTimeout(() => {
+    browseTimer = null;
+    trackMenuBrowse("dwell");
+  }, MENU_BROWSE_DWELL_MS);
+}
+
+/** Once per menu page view: an item or category tap, or 10 seconds on screen. */
+export function trackMenuBrowse(subtype) {
+  if (!currentPage || currentPage.page_type !== "menu" || browsedPageViewId === currentPage.page_view_id) return;
+  browsedPageViewId = currentPage.page_view_id;
+  clearBrowseTimer();
+  trackEngagement("menu_browse", { subtype });
+}
+
+/**
+ * One finished cluster search. Each search gets its own id so its result taps can be matched to it.
+ * resultCount 0 = zero-result search. The query text is not sent (search_query_logs keeps that).
+ */
+export function trackSearchResults({ resultCount, subtype = "cluster" } = {}) {
+  try {
+    if (!currentPage?.cluster_id || !isEngagementTrackingAllowed()) return;
+    const pageViewId = newEventId();
+    if (!pageViewId) return;
+    lastSearch = { page_view_id: pageViewId, cluster_id: currentPage.cluster_id, ts: Date.now() };
+    enqueue({
+      event_id: newEventId(), event_name: "search_results", page_view_id: pageViewId, page_type: "search",
+      page_path: window.location.pathname, cluster_id: currentPage.cluster_id, subtype,
+      position: Math.max(0, Math.min(10000, Number(resultCount) || 0)),
+    });
+  } catch {
+    // never throw into the UI
+  }
+}
+
+export function trackSearchResultTap(subtype = "dish") {
+  try {
+    if (!lastSearch || Date.now() - lastSearch.ts > 30 * 60 * 1000 || !isEngagementTrackingAllowed()) return;
+    const { page_view_id, cluster_id } = lastSearch;
+    lastSearch = null; // the first tap is the one that counts
+    enqueue({
+      event_id: newEventId(), event_name: "search_result_tap", page_view_id, page_type: "search",
+      page_path: window.location.pathname, cluster_id, subtype,
+    });
+    flushEngagementEvents(); // a tap usually navigates away
   } catch {
     // never throw into the UI
   }
@@ -426,6 +499,14 @@ export function observeImpression(el, eventName, fields = {}) {
   try {
     if (!el || observed.has(el) || !currentPage || !isEngagementTrackingAllowed()) return;
     if (firedImpressions.has(impressionKey(eventName, fields))) return;
+    // Served = the ad was rendered on this page view; the impression below stays the viewable count.
+    if (eventName === "ad_impression") {
+      const servedKey = impressionKey("ad_served", fields);
+      if (!firedServed.has(servedKey)) {
+        firedServed.add(servedKey);
+        trackEngagement("ad_served", fields);
+      }
+    }
     const io = ensureObserver();
     if (!io) return;
     observed.set(el, { eventName, fields, timer: null });
@@ -449,6 +530,10 @@ export function unobserveImpression(el) {
 
 /** Test hook. */
 export function resetEngagementTrackingForTests() {
+  clearBrowseTimer();
+  browsedPageViewId = null;
+  lastSearch = null;
+  firedServed.clear();
   queue = [];
   deferredPageView = null;
   currentPage = null;

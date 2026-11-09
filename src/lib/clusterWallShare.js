@@ -1,6 +1,7 @@
 import { copyText, toConsumerShareAbsolute } from "../components/share/shareUtils.js";
 import { wallShareImageUrl } from "./clusterWallApi.js";
 import { wallName } from "./clusterWallStyles.js";
+import { trackEngagement } from "./engagementTracking.js";
 
 /**
  * Sharing one Wall block outside Menuply.
@@ -97,6 +98,7 @@ export function wallSmsHref(block) {
 
 export function trackWallShare(block, channel) {
   if (typeof window === "undefined") return;
+  trackEngagement("wall_interaction", { subtype: "post_share" });
   const payload = {
     page_type: "cluster_wall",
     share_target: channel,

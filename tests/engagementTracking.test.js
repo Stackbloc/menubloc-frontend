@@ -144,8 +144,9 @@ test("batch payload carries pseudonymous ids only and caps at 25 events", () => 
   tracker.flushEngagementEvents();
   assert.ok(sent.every((b) => b.body.events.length <= 25));
   const body = sent[0].body;
-  assert.deepEqual(Object.keys(body).sort(), ["device_type", "events", "referrer", "session_id", "visitor_id"]);
+  assert.deepEqual(Object.keys(body).sort(), ["device_type", "events", "platform", "referrer", "session_id", "visitor_id"]);
   assert.equal(body.device_type, "mobile");
+  assert.equal(body.platform, "web");
   assert.ok(!("user_id" in body));
 });
 
@@ -244,4 +245,42 @@ test("events are not recorded once the user has left the tracked page (e.g. feed
   tracker.trackShareEngagement("copy_link", { variant: "menu" });
   tracker.trackEngagement("outbound_click", { restaurant_id: 10, subtype: "phone" });
   assert.equal(flushed().length, 0);
+});
+
+test("menu_browse: once per menu view, on the first item or category tap", () => {
+  reset("/menu/9");
+  tracker.beginPageView({ pageType: "menu", restaurantId: 9, navigationKey: "m1" });
+  tracker.trackEngagement("menu_category_select", { restaurant_id: 9 });
+  tracker.trackEngagement("menu_item_click", { restaurant_id: 9, menu_item_id: 5 });
+  const browse = flushed().filter((e) => e.event_name === "menu_browse");
+  assert.equal(browse.length, 1);
+  assert.equal(browse[0].subtype, "tap");
+  tracker.beginPageView({ pageType: "menu", restaurantId: 9, navigationKey: "m2" });
+  tracker.trackMenuBrowse("tap");
+  assert.equal(flushed().filter((e) => e.event_name === "menu_browse").length, 1);
+});
+
+test("menu_browse is never sent from a non-menu page", () => {
+  reset();
+  tracker.beginPageView({ pageType: "cluster", clusterId: 1, navigationKey: "c" });
+  tracker.trackMenuBrowse("tap");
+  assert.equal(flushed().filter((e) => e.event_name === "menu_browse").length, 0);
+});
+
+test("search results: one event per search with its count; only the first tap counts", () => {
+  reset();
+  tracker.beginPageView({ pageType: "cluster", clusterId: 1, navigationKey: "c" });
+  tracker.trackSearchResults({ resultCount: 0 });
+  tracker.trackSearchResults({ resultCount: 12 });
+  tracker.trackSearchResultTap("dish");
+  tracker.trackSearchResultTap("dish");
+  const events = flushed();
+  const results = events.filter((e) => e.event_name === "search_results");
+  const taps = events.filter((e) => e.event_name === "search_result_tap");
+  assert.deepEqual(results.map((e) => e.position), [0, 12]);
+  assert.ok(results.every((e) => e.page_type === "search" && e.cluster_id === 1));
+  assert.notEqual(results[0].page_view_id, results[1].page_view_id);
+  assert.equal(taps.length, 1);
+  assert.equal(taps[0].page_view_id, results[1].page_view_id);
+  assert.ok(!events.some((e) => "query" in e || "q" in e));
 });

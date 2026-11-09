@@ -17,6 +17,16 @@ import { wallAgo, wallName } from "../../lib/clusterWallStyles.js";
 import Brick from "./Brick.jsx";
 import "./brickWall.css";
 import "./clusterWall.css";
+import { trackEngagement } from "../../lib/engagementTracking.js";
+
+// Owner Analytics: a Wall clip counts as played once per viewer screen (the clip loops).
+const playedClips = new Set();
+function onFirstClipPlay(event) {
+  const key = event?.currentTarget?.currentSrc || event?.currentTarget?.src;
+  if (!key || playedClips.has(key)) return;
+  playedClips.add(key);
+  trackEngagement("wall_interaction", { subtype: "clip_play" });
+}
 
 /** The block, big — words on their paper, or the clip with sound. Used by the viewer and /wall/:id. */
 export function WallBlockLarge({ block }) {
@@ -46,6 +56,7 @@ export function WallBlockLarge({ block }) {
             autoPlay
             playsInline
             loop
+            onPlay={onFirstClipPlay}
             style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
           />
         ) : (

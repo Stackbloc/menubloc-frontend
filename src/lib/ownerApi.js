@@ -225,6 +225,39 @@ export async function downloadOwnerRestaurantReportPdf(restaurantId, params = {}
   return res.blob();
 }
 
+// Owner Analytics hub (mig 0409). Ranges are America/Los_Angeles days; cluster_id 0 = Menuply-wide.
+function hubQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const key of ["from", "to", "cluster_id", "grain"]) {
+    if (params[key] != null && params[key] !== "") qs.set(key, String(params[key]));
+  }
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+export const getOwnerAnalyticsHub = (params = {}) => get(`/api/owner/analytics/hub${hubQuery(params)}`);
+export const getOwnerAnalyticsCampaigns = (params = {}) => get(`/api/owner/analytics/hub/campaigns${hubQuery(params)}`);
+
+async function ownerAnalyticsDownload(path) {
+  const res = await fetch(`${API}${path}`, { credentials: "include" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+}
+
+export const downloadOwnerAnalyticsDailyCsv = (params = {}) =>
+  ownerAnalyticsDownload(`/api/owner/analytics/hub/daily.csv${hubQuery(params)}`);
+export const downloadOwnerAnalyticsCampaignsCsv = (params = {}) =>
+  ownerAnalyticsDownload(`/api/owner/analytics/hub/campaigns.csv${hubQuery(params)}`);
+export const downloadOwnerAnalyticsCampaignPdf = (kind, id, params = {}) =>
+  ownerAnalyticsDownload(
+    `/api/owner/analytics/hub/campaigns/${encodeURIComponent(kind)}/${encodeURIComponent(String(id))}/report.pdf${hubQuery(params)}`
+  );
+
 function intelligenceQueryString(params = {}) {
   const qs = new URLSearchParams();
   if (params.start_date) qs.set("start_date", params.start_date);
