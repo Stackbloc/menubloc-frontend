@@ -3,6 +3,11 @@
   "installCommand": "npm ci",
   "redirects": [
     {
+      "source": "/wall/usc",
+      "destination": "/clusters/california/los-angeles/usc?wall=full",
+      "permanent": false
+    },
+    {
       "source": "/clusters/california/indio/coachella-2027",
       "destination": "/clusters/california/indio/indio-festival-grounds",
       "permanent": true

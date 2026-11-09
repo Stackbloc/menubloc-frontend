@@ -6,6 +6,7 @@ import useClusterWall from "../../hooks/useClusterWall.js";
 import { withConsumerAuthNext } from "../../lib/consumerAuthNext.js";
 import { trackEngagement } from "../../lib/engagementTracking.js";
 import { houseSlot } from "../../lib/clusterWallHouse.js";
+import { wallOpenEntry } from "../../lib/wallOpenEntry.js";
 import WallBlockTile from "./WallBlockTile.jsx";
 import WallBlockViewer from "./WallBlockViewer.jsx";
 import BrickComposer from "./BrickComposer.jsx";
@@ -63,7 +64,7 @@ export function ClusterWallProvider({
     setComposing(true);
   }, []);
 
-  // Deep links from shares and sign-up: ?wall=1 / ?wall=write
+  // Deep links from shares and sign-up: ?wall=1 / ?wall=write; /wall/usc: ?wall=full
   const wallParam = params.get("wall");
   useEffect(() => {
     if (!active || !wallParam || authLoading) return;
@@ -76,6 +77,10 @@ export function ClusterWallProvider({
         startWriting();
       } else if (standalone) {
         // Already the full Wall.
+      } else if (wallParam === "full") {
+        // menuply.com/wall/usc redirects here: the full-screen Wall on every screen size.
+        trackEngagement("wall_open", { subtype: wallOpenEntry({ search: params.toString() }) });
+        setFullOpen(true);
       } else if (isWide()) {
         document.getElementById("cluster-wall")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } else {
