@@ -175,7 +175,9 @@ function testTodayAndYourConnects() {
   assert.match(today, /placement="profile_today" badge/);
   const proof = read("src/components/social/ConnectionSocialProof.jsx");
   assert.match(proof, />Your Connects</);
-  assert.match(proof, /has this on their Wish List/);
+  assert.match(proof, /"Wish List"/);
+  assert.match(proof, /Others on Menuply/);
+  assert.match(proof, /\/diners\/\$\{person\.user_id\}/);
   assert.match(proof, /if \(!isAuthenticated\)/);
   const editor = read("src/pages/operator/OperatorProfileEditor.jsx");
   assert.match(editor, /Today at your restaurant/);

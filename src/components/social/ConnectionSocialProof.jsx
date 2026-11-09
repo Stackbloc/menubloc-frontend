@@ -3,9 +3,12 @@
  * Renders nothing when logged out, preference OFF, or no eligible signals.
  * Restaurant variant = profile "Your Connects" (2026-10-21): named lines (Wish List, Fav,
  * eaten, plans) + a few recent notes. Never on the public page — Connects-only API.
+ * Restaurant rows (Andre 2026-11-09, app layout): each Connect links to their profile and has
+ * Invite. Others on Menuply = Connects of Connects set to Anyone, linked to the profile preview.
  */
 
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   fetchRestaurantConnectionSocialProof,
   fetchMenuItemConnectionSocialProof,
@@ -42,35 +45,35 @@ function SignalLines({ counts, variant }) {
   ));
 }
 
-/** "Maya" · "Maya and Jordan" · "Maya and 2 other Connects" (total = real count from API). */
-function whoLabel(names, total) {
-  const shown = names.slice(0, 2);
-  if (!shown.length) return `${total} ${total === 1 ? "Connect" : "Connects"}`;
-  if (total <= shown.length) return shown.join(" and ");
-  const others = total - 1;
-  return `${shown[0]} and ${others} other ${others === 1 ? "Connect" : "Connects"}`;
+const SIGNAL_LABELS = [["like", "Fav"], ["wish", "Wish List"], ["eaten", "Been here"], ["plan", "Planning to go"]];
+
+function signalsLabel(signals) {
+  const list = Array.isArray(signals) ? signals : [];
+  return SIGNAL_LABELS.filter(([key]) => list.includes(key)).map(([, label]) => label).join(" · ");
 }
 
-function RestaurantConnectLines({ counts, avatars }) {
-  const namesFor = (signal) =>
-    avatars.filter((a) => Array.isArray(a.signals) && a.signals.includes(signal)).map((a) => a.display_name);
-  const line = (signal, icon, one, many) => {
-    const total = Number(counts[signal]) || 0;
-    if (total <= 0) return null;
-    const who = whoLabel(namesFor(signal), total);
-    return { key: signal, text: `${icon} ${who} ${total === 1 ? one : many}` };
-  };
-  const lines = [
-    line("wish", "🔖", "has this on their Wish List", "have this on their Wish List"),
-    line("like", "❤️", "has this as a Fav", "have this as a Fav"),
-    line("eaten", "🍽️", "has eaten here", "have eaten here"),
-    line("plan", "📅", "plans to eat here", "plan to eat here"),
-  ].filter(Boolean);
-  return lines.map((l) => (
-    <p key={l.key} data-testid={`your-connects-${l.key}`} style={styles.signalLine}>
-      {l.text}
-    </p>
-  ));
+function inviteHref(restaurantId, name) {
+  const params = new URLSearchParams({ restaurant_id: String(restaurantId), invitee_name: name });
+  return `/account/invite-to-eat?${params.toString()}`;
+}
+
+function PersonRow({ person, href, detail, restaurantId }) {
+  return (
+    <div data-testid={`social-proof-person-${person.user_id}`} style={styles.personRow}>
+      <Link to={href} style={styles.person}>
+        <DinerAvatar avatarUrl={person.avatar_url} displayName={person.display_name} />
+        <span style={styles.personText}>
+          <span style={styles.personName}>{person.display_name}</span>
+          <span style={styles.personDetail}>{detail}</span>
+        </span>
+      </Link>
+      {restaurantId ? (
+        <Link to={inviteHref(restaurantId, person.display_name)} style={styles.invite}>
+          Invite
+        </Link>
+      ) : null}
+    </div>
+  );
 }
 
 function RecentConnectNotes({ recent }) {
@@ -113,7 +116,8 @@ export default function ConnectionSocialProof({ restaurantId = null, menuItemId 
     load
       .then((data) => {
         if (cancelled) return;
-        if (!data?.enabled || !data?.has_signals) {
+        const hasOthers = Array.isArray(data?.others) && data.others.length > 0;
+        if (!data?.enabled || (!data?.has_signals && !hasOthers)) {
           setProof(null);
           return;
         }
@@ -128,40 +132,72 @@ export default function ConnectionSocialProof({ restaurantId = null, menuItemId 
     };
   }, [isAuthenticated, restaurantId, menuItemId]);
 
-  if (!proof?.has_signals) return null;
+  if (!proof) return null;
 
   const counts = proof.counts || {};
   const avatars = Array.isArray(proof.avatars) ? proof.avatars : [];
   const overflow = Number(proof.avatar_overflow) || 0;
   const variant = menuItemId ? "menuItem" : "restaurant";
+  const recent = Array.isArray(proof.recent) ? proof.recent : [];
+  const others = variant === "restaurant" && Array.isArray(proof.others) ? proof.others : [];
+  const othersOverflow = Number(proof.others_overflow) || 0;
 
   return (
-    <section
-      data-testid="connection-social-proof"
-      data-variant={variant}
-      aria-label="Your Connects"
-      style={styles.wrap}
-    >
-      <h3 style={styles.title}>Your Connects</h3>
-      <div style={styles.avatarRow} aria-hidden={avatars.length === 0}>
-        {avatars.map((peer) => (
-          <DinerAvatar
-            key={peer.user_id}
-            avatarUrl={peer.avatar_url}
-            displayName={peer.display_name}
-          />
-        ))}
-        {overflow > 0 ? <span style={styles.overflow}>+{overflow}</span> : null}
-      </div>
-      {variant === "restaurant" ? (
-        <>
-          <RestaurantConnectLines counts={counts} avatars={avatars} />
-          <RecentConnectNotes recent={Array.isArray(proof.recent) ? proof.recent : []} />
-        </>
-      ) : (
-        <SignalLines counts={counts} variant={variant} />
-      )}
-    </section>
+    <>
+      {proof.has_signals ? (
+        <section
+          data-testid="connection-social-proof"
+          data-variant={variant}
+          aria-label="Your Connects"
+          style={styles.wrap}
+        >
+          <h3 style={styles.title}>Your Connects</h3>
+          {variant === "restaurant" ? (
+            <>
+              {avatars.map((peer) => (
+                <PersonRow
+                  key={peer.user_id}
+                  person={peer}
+                  href={`/account/connections/${peer.user_id}`}
+                  detail={signalsLabel(peer.signals)}
+                  restaurantId={restaurantId}
+                />
+              ))}
+              {overflow > 0 ? <p style={styles.more}>+{overflow} more</p> : null}
+              <RecentConnectNotes recent={recent} />
+            </>
+          ) : (
+            <>
+              <div style={styles.avatarRow} aria-hidden={avatars.length === 0}>
+                {avatars.map((peer) => (
+                  <DinerAvatar
+                    key={peer.user_id}
+                    avatarUrl={peer.avatar_url}
+                    displayName={peer.display_name}
+                  />
+                ))}
+                {overflow > 0 ? <span style={styles.overflow}>+{overflow}</span> : null}
+              </div>
+              <SignalLines counts={counts} variant={variant} />
+            </>
+          )}
+        </section>
+      ) : null}
+      {others.length ? (
+        <section data-testid="social-proof-others" aria-label="Others on Menuply" style={styles.wrap}>
+          <h3 style={styles.title}>Others on Menuply</h3>
+          {others.map((person) => (
+            <PersonRow
+              key={person.user_id}
+              person={person}
+              href={`/diners/${person.user_id}`}
+              detail="Connect of a Connect · Fav"
+            />
+          ))}
+          {othersOverflow > 0 ? <p style={styles.more}>+{othersOverflow} more</p> : null}
+        </section>
+      ) : null}
+    </>
   );
 }
 
@@ -197,6 +233,24 @@ const styles = {
     fontSize: 13,
     color: "var(--gb-color-ink-soft, #333)",
   },
+  personRow: { display: "flex", alignItems: "center", gap: 10, padding: "4px 0" },
+  person: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" },
+  personText: { minWidth: 0, display: "grid" },
+  personName: { fontSize: 14, fontWeight: 700, color: "var(--gb-color-ink, #111)" },
+  personDetail: { fontSize: 12, color: "var(--gb-color-muted, #666)" },
+  // Outlined pill, same as the Invite on a search card's Connect line.
+  invite: {
+    flexShrink: 0,
+    borderRadius: 999,
+    padding: "4px 10px",
+    border: "1px solid var(--gb-color-accent)",
+    color: "var(--gb-color-accent)",
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    textDecoration: "none",
+  },
+  more: { margin: "4px 0 0", fontSize: 13, color: "var(--gb-color-muted, #666)" },
   recentList: {
     listStyle: "none",
     margin: "10px 0 0",
