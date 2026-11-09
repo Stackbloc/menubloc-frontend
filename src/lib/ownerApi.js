@@ -879,6 +879,7 @@ export const refreshOwnerPhmsHomeFeedCache = () => post("/api/owner/phms/home-fe
 export const getOwnerPhmsMenuStatus = () => get("/api/owner/phms/menu-status");
 export const getOwnerPhmsDisplayAudit = () => get("/api/owner/phms/display-audit");
 export const getOwnerPhmsDeploymentHealth = () => get("/api/owner/phms/deployment-health");
+export const getOwnerPhmsAuthHealth = () => get("/api/owner/phms/auth-health");
 export const captureOwnerPhmsDisplaySnapshot = (body) =>
   post("/api/owner/phms/display-audit/capture", body);
 export const getOwnerPhmsRepairTickets = () => get("/api/owner/phms/repair-tickets");

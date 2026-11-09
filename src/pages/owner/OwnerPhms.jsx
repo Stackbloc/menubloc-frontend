@@ -6,6 +6,7 @@ import {
   getOwnerPhmsMenuStatus,
   getOwnerPhmsDisplayAudit,
   getOwnerPhmsDeploymentHealth,
+  getOwnerPhmsAuthHealth,
   getOwnerPhmsHomeFeedCache,
   refreshOwnerPhmsHomeFeedCache,
   captureOwnerPhmsDisplaySnapshot,
@@ -74,6 +75,30 @@ function StatusBadge({ status, style = {} }) {
   );
 }
 
+function formatLastSuccess(value) {
+  if (!value) return "Not recorded since the last deploy";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+
+function HealthDiagnosis({ diagnosis }) {
+  const rows = [
+    [diagnosis.cause_confidence === "established" ? "Root cause" : "Suspected cause", diagnosis.cause],
+    ["Affected", diagnosis.affected],
+    ["Last success", formatLastSuccess(diagnosis.last_success_at)],
+    ["Next step", diagnosis.recommended_action],
+  ];
+  return (
+    <div style={{ display: "grid", gap: 4, marginTop: 4, paddingTop: 8, borderTop: "1px solid #e5e7eb" }}>
+      {rows.map(([label, value]) => (
+        <div key={label} style={{ fontSize: 12, lineHeight: 1.4, color: OWNER_COLORS.ink }}>
+          <strong>{label}:</strong> {value}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function HealthCard({ check }) {
   const navigate = useNavigate();
   const c = STATUS_COLORS[check.status] || STATUS_COLORS.UNKNOWN;
@@ -120,6 +145,7 @@ function HealthCard({ check }) {
       {check.latencyMs != null && (
         <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{check.latencyMs}ms</div>
       )}
+      {check.diagnosis ? <HealthDiagnosis diagnosis={check.diagnosis} /> : null}
       {nav ? (
         <div style={{
           marginTop: 4,
@@ -306,6 +332,15 @@ function MenuStatusSection() {
                 : `${data.published_missing_geo} published menu(s) missing geo — restaurants won't appear in distance results`}
             </span>
           </div>
+          {data.published_missing_geo > 0 && data.published_missing_geo_breakdown ? (
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 8 }}>
+              {data.published_missing_geo_breakdown.has_full_address} have a full address ·{" "}
+              {data.published_missing_geo_breakdown.venue_vendors} venue vendors ·{" "}
+              {data.published_missing_geo_breakdown.brand_catalog_records} brand catalog records ·{" "}
+              {data.published_missing_geo_breakdown.needs_review} need review ·{" "}
+              {data.published_missing_geo_breakdown.incomplete_address} incomplete address
+            </div>
+          ) : null}
 
           {data.recent_upload_statuses?.length > 0 && (
             <div style={{ marginTop: 18 }}>
@@ -949,6 +984,94 @@ function RecentIncidentsSection({ healthData }) {
   );
 }
 
+// ── Section: Authentication Health ──
+function deliveryText(channel, configured) {
+  if (!configured) return "Not configured";
+  if (!channel || channel.status === "idle") return "No alerts sent yet";
+  const when = channel.at ? ` · ${fmtTime(channel.at)}` : "";
+  return `${channel.status}${when}${channel.error ? ` · ${channel.error}` : ""}`;
+}
+
+function AuthHealthSection() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    getOwnerPhmsAuthHealth()
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const monitorNote = {
+    RUNNING: `Monitor running · last report ${data?.monitor_last_report_at ? fmtTime(data.monitor_last_report_at) : ""}`,
+    STALE: "Monitor has stopped reporting, so these results are out of date",
+    NOT_RUNNING: "Monitor has not reported yet",
+  }[data?.monitor_status] || "Continuous sign-in monitoring";
+
+  const textStyle = { fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 };
+
+  return (
+    <PageCard id="auth-health" style={{ padding: "24px 26px", marginBottom: 28 }}>
+      <SectionTitle
+        title="Authentication Health"
+        subtitle={monitorNote}
+        action={
+          <button onClick={load} disabled={loading} style={{ fontSize: 12, fontWeight: 700, border: `1px solid ${OWNER_COLORS.accent}`, background: "transparent", color: OWNER_COLORS.accent, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        }
+      />
+      {error ? <SectionError msg={error} /> : null}
+      {data?.monitor_warning ? <div style={{ ...textStyle, marginBottom: 12 }}>{data.monitor_warning}</div> : null}
+      {data ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 16 }}>
+            {data.account_types.map((row) => (
+              <div key={row.id} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                  <strong style={{ fontSize: 13 }}>{row.label}</strong>
+                  <StatusBadge status={row.status} />
+                </div>
+                {row.detail ? <div style={textStyle}>{row.detail}</div> : (
+                  <div style={textStyle}>
+                    Last good check: {row.last_pass_at ? fmtTime(row.last_pass_at) : "None yet"}<br />
+                    Test account: {!row.synthetic_configured ? "Not configured" : row.last_synthetic_at ? `${row.last_synthetic_result} · ${fmtTime(row.last_synthetic_at)}` : "No successful check yet"}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            <strong>Active incident:</strong>{" "}
+            {data.incident
+              ? `${Object.keys(data.incident.affected).join(", ")} · since ${fmtTime(data.incident.openedAt)} · escalation ${data.incident.level}`
+              : "None"}
+          </div>
+          <div style={{ ...textStyle, marginBottom: 10 }}>
+            Email alerts: {deliveryText(data.delivery?.email, data.email_configured)}<br />
+            Text alerts: {deliveryText(data.delivery?.sms, data.sms_configured)}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Recent technical failures</div>
+          {data.recent_failures.length ? (
+            <div style={textStyle}>
+              {data.recent_failures.slice(0, 8).map((f) => (
+                <div key={`${f.at}-${f.account_type}`}>{fmtTime(f.at)} · {f.account_type} · {f.error}</div>
+              ))}
+            </div>
+          ) : <div style={textStyle}>None recorded</div>}
+        </>
+      ) : null}
+    </PageCard>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function OwnerPhms() {
   const [healthData, setHealthData] = useState(null);
@@ -965,6 +1088,7 @@ export default function OwnerPhms() {
       </div>
 
       <CriticalHealthSection onHealthLoaded={setHealthData} onDataChange={setHealthData} />
+      <AuthHealthSection />
       <SearchHealthSection healthData={healthData} />
       <MenuStatusSection />
       <HomeFeedCacheSection />
