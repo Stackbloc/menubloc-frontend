@@ -35,6 +35,10 @@ describe("MenuInfoButton", () => {
     expect(href.startsWith("mailto:menus@menuply.com?subject=Menu report: Pasta Roma, Los Angeles, CA (#78184)")).toBe(true);
     expect(href).toContain("Menu: https://menuply.com/restaurants/california/los-angeles/pasta-roma/menu");
     expect(screen.queryByText("Get directions")).toBeNull();
+    const prices = screen.getByTestId("menu-info-prices").textContent;
+    expect(prices).toContain("list their regular menu prices and not to add any fee other than a delivery fee");
+    expect(prices).toContain("submit a report. Menuply may not catch every price difference and is not obligated to do so.");
+    expect(screen.getByTestId("menu-info-price-report").getAttribute("href")).toBe(screen.getByTestId("menu-info-report").getAttribute("href"));
   });
 
   it("owner-reviewed menu shows the date", () => {

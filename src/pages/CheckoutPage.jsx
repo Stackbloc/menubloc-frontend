@@ -35,7 +35,7 @@ const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : 
 const DEFAULT_BMT_SHARE_MESSAGE =
   "Dear friend or family member, I would greatly appreciate it if you would buy me this on Menuply!";
 const MENUPLY_PRICE_DISCLOSURE =
-  "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
+  "Restaurants agree to list their regular menu prices on Menuply. Taxes, any delivery fee and optional tips are shown separately before you place your order.";
 
 function useIsMobile(breakpoint = 900) {
   const getMatches = () => {

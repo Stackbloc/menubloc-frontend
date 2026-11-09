@@ -67,7 +67,7 @@ export const SITE_LABELS = {
     "checkout.total": "Total",
     "checkout.signInRequired": "Sign in to complete checkout",
     "checkout.priceDisclosure":
-      "Prices shown on Menuply may differ from in-store prices and may include Menuply's service component. Taxes and optional tips are shown separately before you place your order.",
+      "Restaurants agree to list their regular menu prices on Menuply. Taxes, any delivery fee and optional tips are shown separately before you place your order.",
     "order.confirmation.title": "Order confirmed",
     "order.confirmation.thanks": "Thanks for your order!",
     "order.confirmation.viewOrder": "View order details",
@@ -174,7 +174,7 @@ export const SITE_LABELS = {
     "checkout.total": "Total",
     "checkout.signInRequired": "Inicia sesión para completar el pago",
     "checkout.priceDisclosure":
-      "Los precios en Menuply pueden diferir de los del local e incluir el componente de servicio de Menuply. Impuestos y propinas opcionales se muestran por separado antes de pedir.",
+      "Los restaurantes se comprometen a publicar en Menuply sus precios habituales de menú. Los impuestos, cualquier cargo de entrega y las propinas opcionales se muestran por separado antes de pedir.",
     "order.confirmation.title": "Pedido confirmado",
     "order.confirmation.thanks": "¡Gracias por tu pedido!",
     "order.confirmation.viewOrder": "Ver detalles del pedido",
@@ -277,7 +277,7 @@ export const SITE_LABELS = {
     "checkout.total": "合计",
     "checkout.signInRequired": "请登录以完成结账",
     "checkout.priceDisclosure":
-      "Menuply 显示的价格可能与店内价格不同，并可能包含 Menuply 服务费。税费和可选小费会在下单前单独显示。",
+      "餐厅同意在 Menuply 上按常规菜单价格标价。税费、任何配送费和可选小费会在下单前单独显示。",
     "order.confirmation.title": "订单已确认",
     "order.confirmation.thanks": "感谢你的订单！",
     "order.confirmation.viewOrder": "查看订单详情",

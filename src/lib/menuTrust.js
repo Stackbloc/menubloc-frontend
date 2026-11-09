@@ -8,6 +8,10 @@ export const MENU_REPORT_EMAIL = "menus@menuply.com";
 
 const NO_GUARANTEE = "Menuply cannot guarantee the accuracy of the menu information.";
 
+/** Regular-price rule (Andre 2026-11-08). The report link sits between these two sentences. */
+export const MENU_PRICE_NOTICE_BEFORE_REPORT = "Restaurants that take orders through Menuply agree to list their regular menu prices and not to add any fee other than a delivery fee. Prices can change, and Menuply can't guarantee that every price matches the restaurant's. If a price looks different from the restaurant's regular price, please";
+export const MENU_PRICE_NOTICE_AFTER_REPORT = "Menuply may not catch every price difference and is not obligated to do so.";
+
 /** "2026-10-12T18:04:00Z" → "October 12, 2026"; null when missing or unreadable. */
 export function reviewDateLabel(iso) {
   if (!iso) return null;
