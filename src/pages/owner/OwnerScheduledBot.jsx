@@ -5,6 +5,7 @@ import NutribotTemplatesPanel from "./NutribotTemplatesPanel.jsx";
 import SeoBotReport from "./SeoBotReport.jsx";
 import {
   acceptAddressBotCandidate,
+  keepAddressBotCurrent,
   getAddressBotRun,
   getHoursBotRun,
   getNutribotRun,
@@ -621,6 +622,19 @@ function AddressReviewQueue({ checks, onChanged }) {
     }
   }
 
+  async function keepCurrent(restaurantId) {
+    setBusyKey(`${restaurantId}:keep`);
+    setError("");
+    try {
+      await keepAddressBotCurrent(restaurantId);
+      onChanged?.();
+    } catch (err) {
+      setError(err?.message || "Could not keep that address");
+    } finally {
+      setBusyKey("");
+    }
+  }
+
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
@@ -631,6 +645,19 @@ function AddressReviewQueue({ checks, onChanged }) {
           </a>
           <span style={mutedStyle}> #{c.restaurant_id}{c.city ? ` · ${c.city}${c.state ? `, ${c.state}` : ""}` : ""}</span>
           {c.notes?.length ? <div style={{ ...mutedStyle, fontSize: 12, marginTop: 2 }}>{c.notes.join(" ")}</div> : null}
+          {c.candidate?.verify ? (
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              <strong>On file:</strong> {c.address_line1 || "No address"}{" "}
+              <button
+                type="button"
+                style={{ ...secondaryButtonStyle, padding: "5px 12px", marginLeft: 6 }}
+                disabled={Boolean(busyKey)}
+                onClick={() => keepCurrent(c.restaurant_id)}
+              >
+                {busyKey === `${c.restaurant_id}:keep` ? "Saving…" : c.address_line1 ? "Keep current" : "Skip"}
+              </button>
+            </div>
+          ) : null}
           <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
             {candidatesOf(c).map((cand, i) => (
               <div key={`${cand.address_line1}-${i}`} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>

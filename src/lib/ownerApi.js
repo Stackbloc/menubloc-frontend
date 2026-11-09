@@ -725,6 +725,8 @@ export const getSeoBotRun = (runId) => get(`/api/owner/bots/seo_bot/runs/${encod
 export const getAddressBotRun = (runId) => get(`/api/owner/bots/address_bot/runs/${encodeURIComponent(runId)}`);
 
 /** Address Bot: publish one candidate from the review list. */
+export const keepAddressBotCurrent = (restaurantId) =>
+  post(`/api/owner/bots/address_bot/restaurants/${encodeURIComponent(restaurantId)}/keep`, {});
 export const acceptAddressBotCandidate = (restaurantId, index) =>
   post(`/api/owner/bots/address_bot/restaurants/${encodeURIComponent(restaurantId)}/accept`, { index });
 
