@@ -6,14 +6,14 @@ export const SOCIAL_VIDEO_IDEAL_WIDTH = 720;
 export const SOCIAL_VIDEO_IDEAL_HEIGHT = 1280;
 
 /**
- * TikTok-aligned length policy (Help / industry 2025–2026):
- * - In-app / live record: up to 10 minutes
- * - Upload finished clip from device: up to 60 minutes
+ * Length policy (Andre 2026-11-08; same as the app):
+ * - In-app / live record: up to 90 seconds
+ * - Upload finished clip from device: up to 10 minutes
  * Pair with MAX_UPLOAD_VIDEO_BYTES (~287 MB — TikTok iOS mobile ceiling).
  */
 export const SOCIAL_VIDEO_MIN_SECONDS = 1;
-export const SOCIAL_VIDEO_MAX_RECORD_SECONDS = 600;
-export const SOCIAL_VIDEO_MAX_UPLOAD_SECONDS = 3600;
+export const SOCIAL_VIDEO_MAX_RECORD_SECONDS = 90;
+export const SOCIAL_VIDEO_MAX_UPLOAD_SECONDS = 600;
 
 /** Human label for duration gates and camera hints. */
 export function formatVideoMaxDurationLabel(seconds = SOCIAL_VIDEO_MAX_RECORD_SECONDS) {
@@ -22,9 +22,9 @@ export function formatVideoMaxDurationLabel(seconds = SOCIAL_VIDEO_MAX_RECORD_SE
     const mins = n / 60;
     return mins === 1 ? "1 minute" : `${mins} minutes`;
   }
-  if (n >= 60) {
+  if (n >= 120) {
     const mins = Math.round(n / 60);
-    return mins === 1 ? "1 minute" : `${mins} minutes`;
+    return `${mins} minutes`;
   }
   return `${n} seconds`;
 }

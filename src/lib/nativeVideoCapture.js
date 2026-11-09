@@ -65,13 +65,14 @@ export function validateNativeVideoFile(file) {
 /**
  * Browser <video>.duration is often wrong for short phone camera / library clips
  * (bogus huge values, timescale mistakes). Only trust durations that could be real.
- * Trust ceiling follows TikTok upload max (60 minutes), not in-app record (10 minutes).
+ * Trust ceiling is a fixed 2 hours: beyond that, phone metadata is assumed wrong. Real clips under it obey the upload max.
  */
 export function isTrustedVideoDurationSeconds(durationSec, fileSizeBytes = 0) {
   const dur = Number(durationSec);
   if (!Number.isFinite(dur) || dur <= 0) return false;
-  // Untrustworthy: far beyond TikTok upload max (phone metadata lies — do not hard-reject).
-  if (dur > SOCIAL_VIDEO_MAX_UPLOAD_SECONDS * 2) return false;
+  // Untrustworthy: absurdly long (phone metadata lies — do not hard-reject). Fixed, so a tighter
+  // upload limit doesn't turn real 20-minute clips into "untrusted" ones that skip the limit.
+  if (dur > 7200) return false;
   const size = Number(fileSizeBytes) || 0;
   // Untrustworthy: claimed length needs far more bytes than the file has (~200 kbps floor).
   if (size > 0 && size < dur * 25_000) return false;
@@ -80,8 +81,8 @@ export function isTrustedVideoDurationSeconds(durationSec, fileSizeBytes = 0) {
 
 /**
  * Best-effort metadata probe. Prefer dimensions; duration may be Infinity/NaN.
- * Rejects only when duration is trusted and over the TikTok upload cap (60 minutes).
- * In-app MediaRecorder still auto-stops at SOCIAL_VIDEO_MAX_RECORD_SECONDS (10 minutes).
+ * Rejects only when duration is trusted and over the upload cap (10 minutes).
+ * In-app MediaRecorder still auto-stops at SOCIAL_VIDEO_MAX_RECORD_SECONDS (90 seconds).
  */
 export function probeNativeVideoFile(file) {
   validateNativeVideoFile(file);
