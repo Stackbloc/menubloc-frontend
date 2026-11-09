@@ -286,6 +286,7 @@ import DemoPresentation from "./presentation/DemoPresentation.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import EatInvitationPage from "./pages/EatInvitationPage.jsx";
+import OpenInvitePage from "./pages/consumer/OpenInvitePage.jsx";
 import JoinMeLandingPage from "./pages/JoinMeLandingPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
 import { buildMenuBrowserRedirectPath } from "./lib/searchShopMode.js";
@@ -1079,6 +1080,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/account/diner-qr" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DinerQrPage />} />
         <Route path="/account/diner-qr/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EditDinerQrPage />} />
         <Route path="/account/meet-me-here" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MeetMeHerePage />} />
+        <Route path="/account/open-invite" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OpenInvitePage />} />
         <Route path="/account/invite-to-eat" element={crmHost ? <HostRouteRedirect to="/crm" /> : <InviteToEatStartPage />} />
         <Route path="/account/social-plans" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SocialPlansPage />} />
         <Route path="/account/what-we-doing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <WhatWeDoingPage />} />

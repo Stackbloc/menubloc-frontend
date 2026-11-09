@@ -23,6 +23,7 @@ export default function DiningCrewFoodEntityPicker({
   onNoteChange,
   disabled = false,
   hideNote = false,
+  restaurantHint = "Search for a restaurant for this crew outing.",
   forceRestaurantOnly = false,
   // Invite to Eat only: offer "Use what I typed" for a restaurant not on Menuply yet.
   allowUnlisted = false,
@@ -140,7 +141,7 @@ export default function DiningCrewFoodEntityPicker({
           ))}
         </div>
       ) : (
-        <p style={styles.hint}>Search for a restaurant for this crew outing.</p>
+        <p style={styles.hint}>{restaurantHint}</p>
       )}
 
       {messageType === "menu" && !anchorRestaurant && !selected ? (

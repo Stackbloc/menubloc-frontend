@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import ShareModal from "../components/share/ShareModal.jsx";
+import OpenInviteDetail from "../components/openInvite/OpenInviteDetail.jsx";
 import MenuplyAccountInviteCard from "../components/consumer/MenuplyAccountInviteCard.jsx";
 import {
   fetchPublicEatInvitation,
@@ -178,6 +179,7 @@ export default function EatInvitationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [invitation, setInvitation] = useState(null);
+  const [openInvite, setOpenInvite] = useState(null);
   const [busy, setBusy] = useState(false);
   const [responded, setResponded] = useState(null);
   const [proposedDate, setProposedDate] = useState("");
@@ -202,6 +204,10 @@ export default function EatInvitationPage() {
     fetchPublicEatInvitation(token, { guestKey })
       .then((data) => {
         if (cancelled) return;
+        if (data?.open_invite) {
+          setOpenInvite(data.open_invite);
+          return;
+        }
         const inv = data?.invitation || null;
         if (!inv) throw new Error(data?.error || "Invitation not found");
         setInvitation(inv);
@@ -599,6 +605,8 @@ export default function EatInvitationPage() {
     );
   }
 
+  if (openInvite) return <OpenInviteDetail initial={openInvite} />;
+
   return (
     <div
       data-testid="eat-invitation-page"
@@ -631,6 +639,11 @@ export default function EatInvitationPage() {
         {error && !invitation ? (
           <div role="alert" style={{ marginTop: 16, color: "#b91c1c", fontSize: 14 }}>
             {error}
+            {!isAuthenticated ? (
+              <div style={{ marginTop: 8 }}>
+                <Link to="/account/login">Sign in ›</Link>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

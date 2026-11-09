@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
@@ -180,6 +180,7 @@ export default function InviteToEatStartPage() {
               : "Pick a restaurant, set a time, then share your invitation."}
         </p>
         {loadingPrefill ? <p style={styles.muted}>Loading restaurant…</p> : null}
+        {quickInvite && !to ? <Link to="/account/open-invite" data-testid="quick-invite-open-invite">Or post an Open Invite ›</Link> : null}
         {quickInvite ? <QuickInviteWhoStep value={to} onChange={setTo} signedIn={isAuthenticated} /> : null}
         {needsWho ? null : (
         <>

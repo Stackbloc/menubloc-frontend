@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import DinerAvatar from "../social/DinerAvatar.jsx";
+import OpenInvitesSection from "../openInvite/OpenInvitesSection.jsx";
 
 /**
  * Social on the search results switch (Andre 2026-11-01, same as the app): every social result for
@@ -55,6 +56,9 @@ export default function SearchSocialSummary({ summary }) {
           .filter(Boolean)
           .join(" · ")}
       </p>
+      {Array.isArray(summary.open_invites) && summary.open_invites.length ? (
+        <OpenInvitesSection invites={summary.open_invites} />
+      ) : null}
       {SECTIONS.map(([key, title]) => {
         const rows = Array.isArray(summary[key]) ? summary[key].filter((r) => r && String(r.line || "").trim()) : [];
         if (!rows.length) return null;
