@@ -16,7 +16,7 @@ export const LEGAL_CONTACT = {
 export const TERMS_DOCUMENT = {
   "title": "Menuply Terms of Use",
   "description": "Public website, app, consumer ordering, content, and social features for Menuply, operated by Stackbloc Corporation, a California corporation, doing business as Menuply (\"Menuply\").",
-  "effectiveDate": "September 20, 2026",
+  "effectiveDate": "November 8, 2026",
   "sections": [
     {
       "heading": "Overview",
@@ -617,6 +617,7 @@ export const PRIVACY_DOCUMENT = {
 
 export const MERCHANT_TERMS_DOCUMENT = {
   title: "Merchant Terms of Service",
+  effectiveDate: "November 8, 2026",
   description:
     "Restaurant-facing terms governing merchant use of Menuply's onboarding, listing, ordering, and account services.",
   sections: [
