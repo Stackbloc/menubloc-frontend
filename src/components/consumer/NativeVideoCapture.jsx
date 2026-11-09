@@ -65,7 +65,7 @@ export default function NativeVideoCapture({
       </label>
       {!compact ? (
         <p style={styles.hint} data-testid={`${testId}-hint`}>
-          Uses your phone camera · record up to {maxLabel} (TikTok). Library uploads up to 60 minutes.
+          Uses your phone camera · record up to {maxLabel}. Library uploads up to 10 minutes.
         </p>
       ) : null}
       {error ? (

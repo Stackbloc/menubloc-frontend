@@ -112,10 +112,10 @@ test("native video normalize soft-probes decode (does not hard-block Post)", () 
   assert.match(lib, /SOCIAL_VIDEO_MAX_UPLOAD_SECONDS/);
 });
 
-test("TikTok-aligned video length: record 10 minutes, upload 60 minutes", () => {
+test("Video length: record 90 seconds, upload 10 minutes", () => {
   assert.equal(SOCIAL_VIDEO_MIN_SECONDS, 1);
-  assert.equal(SOCIAL_VIDEO_MAX_RECORD_SECONDS, 600);
-  assert.equal(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS, 3600);
+  assert.equal(SOCIAL_VIDEO_MAX_RECORD_SECONDS, 90);
+  assert.equal(SOCIAL_VIDEO_MAX_UPLOAD_SECONDS, 600);
 });
 
 test("consumerApi video upload errors do not blame 15-second story cap", () => {
