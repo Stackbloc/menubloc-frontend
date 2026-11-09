@@ -8,6 +8,9 @@ import "./index.css";
 
 const ProfiledApp = Sentry.withProfiler(App, { name: "Menuply App" });
 
+// Release marker. Changing it gives the entry bundle a new filename, which gets past a stale CDN entry.
+document.documentElement.dataset.release = "2026-11-09-b";
+
 syncDemoOrderingFromUrl();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
