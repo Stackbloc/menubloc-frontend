@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-02-what-is-menuply.png";
+import graphic from "../assets/slide-02-what-is-menuply.webp";
 
 export default function Slide02WhatIsMenuply() {
   return (

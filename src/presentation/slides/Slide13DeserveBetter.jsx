@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-13-deserve-better.png";
+import graphic from "../assets/slide-13-deserve-better.webp";
 
 export default function Slide13DeserveBetter() {
   return (

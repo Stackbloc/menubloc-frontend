@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-08-customer-comment.png";
+import graphic from "../assets/slide-08-customer-comment.webp";
 
 export default function Slide08UserQuote() {
   return (

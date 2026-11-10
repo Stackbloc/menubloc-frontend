@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-14-marketing-costs.png";
+import graphic from "../assets/slide-14-marketing-costs.webp";
 
 export default function Slide14MarketingCosts() {
   return (
