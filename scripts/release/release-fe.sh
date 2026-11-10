@@ -219,6 +219,9 @@ for h in "${HOSTS[@]}"; do
   t=$(alias_target "$h"); log "${h} -> ${t}"
   [[ "$t" == "$DEP_ID" ]] || rollback "${h} did not move to the new deployment"
 done
+# Test hook: prove the automatic rollback on a real release (identical code only).
+[[ "${RELEASE_TEST_FAIL_AFTER_PROMOTE:-}" == "1" ]] && rollback "TEST: injected failure after promotion"
+
 NEW_BUNDLE=""
 for _ in $(seq 1 18); do
   NEW_BUNDLE=$(live_bundle); [[ -n "$NEW_BUNDLE" && "$NEW_BUNDLE" != "$PREV_BUNDLE" ]] && break; sleep 10
