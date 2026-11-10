@@ -1,0 +1,79 @@
+# Release the frontend to menuply.com from GitHub (no Mac needed).
+#
+# Pushes to main only BUILD a staged production deployment on Vercel. This workflow
+# promotes the build of one exact commit after the same checks cpd-fe.sh runs,
+# rolls back automatically if the live checks fail, and commits the tip lock.
+#
+# Start it (anyone with write access to the repo, including cloud sessions):
+#   gh workflow run release-frontend.yml --ref main -f sha=<commit on main> -f note="short note"
+#   gh workflow run release-frontend.yml --ref main -f dry_run=true      # checks only
+#
+# Needs the VERCEL_TOKEN secret (repo or "production" environment). Add required
+# reviewers to the "production" environment to make every release need an approval.
+name: Release frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit on main to release (empty = newest main)
+        required: false
+        default: ""
+      note:
+        description: Short release note for the tip lock
+        required: false
+        default: release
+      dry_run:
+        description: Run every check but do not promote
+        type: boolean
+        default: false
+
+concurrency:
+  group: frontend-production-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 45
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_BqxOYv5c4bXEomhAJxj25rCz
+      VERCEL_PROJECT_ID: prj_xvvxrY8NnlHMSTrQCMM4I4fNoUxu
+      VERCEL_TELEMETRY_DISABLED: "1"
+      IN_SHA: ${{ inputs.sha }}
+      IN_NOTE: ${{ inputs.note }}
+      IN_DRY: ${{ inputs.dry_run }}
+    steps:
+      - name: Require Vercel token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@54.6.1
+
+      - name: Release
+        run: |
+          git config user.name "menuply-release[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--note "${IN_NOTE:-release}")
+          [ -n "$IN_SHA" ] && args+=(--sha "$IN_SHA")
+          if [ "$IN_DRY" = "true" ]; then args+=(--dry-run); else args+=(--push-lock); fi
+          bash scripts/release/release-fe.sh "${args[@]}"

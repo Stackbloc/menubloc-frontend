@@ -7,6 +7,11 @@
 #   RESULT=UNHEALTHY   exit 2  — missing/broken tip or content identity failure
 #
 # CPD is incomplete until apex+www print RESULT=PASS after lock.
+#
+# Pre-promotion mode (staged release): TIP_GATE_DEPLOYMENT=<deployment id|url>
+#   runs the same content checks against that not-yet-live deployment through
+#   `vercel curl` (handles deployment protection). The lock comparison is skipped
+#   and a healthy result prints RESULT=CONTENT_OK (exit 0).
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
@@ -14,8 +19,20 @@ HOST="${1:-https://menuply.com}"
 LOCKED_BUNDLE="index-CkayMIzV.js"
 LOCKED_DEPLOY="menubloc-frontend-92ebb531e-menuply.vercel.app"
 
-html=$(curl -sSL -m 25 -H 'Cache-Control: no-cache' "${HOST}/?gate=$(date +%s)")
-bundle=$(printf '%s' "$html" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
+DEPLOYMENT="${TIP_GATE_DEPLOYMENT:-}"
+# fetch <path> <curl args…> — live host by default, a specific deployment in pre-promotion mode
+fetch() {
+  local path="$1"; shift
+  if [[ -n "$DEPLOYMENT" ]]; then
+    vercel curl "$path" --deployment "$DEPLOYMENT" -- "$@" 2>/dev/null
+  else
+    curl "$@" "${HOST}${path}"
+  fi
+}
+[[ -n "$DEPLOYMENT" ]] && HOST="deployment:${DEPLOYMENT}"
+
+html=$(fetch "/?gate=$(date +%s)" -sSL -m 25 -H 'Cache-Control: no-cache' || true)
+bundle=$(printf '%s' "$html" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1 || true)
 if [[ -z "$bundle" ]]; then
   echo "host=${HOST}"
   echo "bundle="
@@ -26,8 +43,8 @@ if [[ -z "$bundle" ]]; then
   exit 2
 fi
 
-curl -sSL -m 45 "${HOST}/assets/${bundle}" -o /tmp/menuply-tip-gate.js
-js=/tmp/menuply-tip-gate.js
+js=$(mktemp)
+fetch "/assets/${bundle}" -sSL -m 45 -o "$js" || true
 
 count() { grep -o "$1" "$js" 2>/dev/null | wc -l | tr -d ' ' || true; }
 
@@ -39,9 +56,9 @@ nonsub=$(count 'NONSUBSCRIBER')
 railway=$(count 'menubloc-backend-production')
 localn=$(count 'localhost:3001')
 
-door_ct=$(curl -sSL -m 15 -o /dev/null -w '%{content_type}' "${HOST}/marketplace/placeholders/mkt-door-hangers.svg" || true)
-tabl_ct=$(curl -sSL -m 15 -o /dev/null -w '%{content_type}' "${HOST}/billboards/tabl-m-la-billboard.jpg" || true)
-tabl_sz=$(curl -sSL -m 15 -o /dev/null -w '%{size_download}' "${HOST}/billboards/tabl-m-la-billboard.jpg" || true)
+door_ct=$(fetch "/marketplace/placeholders/mkt-door-hangers.svg" -sSL -m 15 -o /dev/null -w '%{content_type}' || true)
+tabl_ct=$(fetch "/billboards/tabl-m-la-billboard.jpg" -sSL -m 15 -o /dev/null -w '%{content_type}' || true)
+tabl_sz=$(fetch "/billboards/tabl-m-la-billboard.jpg" -sSL -m 15 -o /dev/null -w '%{size_download}' || true)
 
 echo "host=${HOST}"
 echo "bundle=${bundle}"
@@ -84,6 +101,11 @@ if [[ "$content_fail" -ne 0 ]]; then
   echo "  npx vercel alias set ${LOCKED_DEPLOY} menuply.com && same for www.menuply.com"
   echo "CONTRACT: docs/guardrails/2026-08-24_production-tip-lock-atomic-contract.md"
   exit 2
+fi
+
+if [[ -n "$DEPLOYMENT" ]]; then
+  echo "RESULT=CONTENT_OK — deployment ${DEPLOYMENT} passes content checks (bundle ${bundle})"
+  exit 0
 fi
 
 if [[ "$bundle_mismatch" -eq 1 ]]; then

@@ -1,0 +1,336 @@
+#!/usr/bin/env bash
+# Atomically lock the tip-gate script to a just-aliased production tip,
+# then sync CURRENT tip into the EXISTING LKG docs/rules/mirrors (no second state store).
+# See: docs/guardrails/2026-08-24_production-tip-lock-atomic-contract.md
+set -euo pipefail
+
+# In-repo copy of <workspace>/scripts/lock-menuply-production-tip.sh so a release can
+# lock from any checkout (Andre's Mac or GitHub Actions). The repo's own tip-gate and
+# LKG mirror are always updated; the Mac workspace copies are synced only when present.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+ROOT_WORKSPACE="${ROOT_WORKSPACE:-/Users/andrebarber/Desktop/menubloc}"
+GATE="${REPO}/scripts/assert-menuply-production-tip.sh"
+SYNC_GATES=("$GATE")
+for g in "${ROOT_WORKSPACE}/scripts/assert-menuply-production-tip.sh" \
+         "${ROOT_WORKSPACE}/menubloc-frontend-main/scripts/assert-menuply-production-tip.sh"; do
+  [[ -f "$g" && "$g" != "$GATE" ]] && SYNC_GATES+=("$g")
+done
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bash scripts/lock-menuply-production-tip.sh <DEPLOY_HOST> <BUNDLE.js> [options]
+
+Args:
+  DEPLOY_HOST   e.g. menubloc-frontend-fa0lpz0yi-menuply.vercel.app  (no https://)
+  BUNDLE        e.g. index-BKIe5jXc.js
+
+Options:
+  --fe-commit <sha>   short FE commit (optional, for comment + LKG)
+  --be-commit <sha>   short BE health SHA (optional, for comment)
+  --note <text>       short feature label (optional, for comment)
+  --skip-lkg-sync     update tip-gate only (emergency; CPD still incomplete)
+  --check             verify tip-gate LOCKED_* match live menuply.com (no write)
+  -h, --help
+
+After lock: tip-gate must PASS on apex+www. CPD is incomplete until then.
+EOF
+}
+
+CHECK_ONLY=0
+SKIP_LKG=0
+FE_COMMIT=""
+BE_COMMIT=""
+NOTE=""
+DEPLOY=""
+BUNDLE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) usage; exit 0 ;;
+    --check) CHECK_ONLY=1; shift ;;
+    --skip-lkg-sync) SKIP_LKG=1; shift ;;
+    --fe-commit) FE_COMMIT="${2:-}"; shift 2 ;;
+    --be-commit) BE_COMMIT="${2:-}"; shift 2 ;;
+    --note) NOTE="${2:-}"; shift 2 ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      if [[ -z "$DEPLOY" ]]; then
+        DEPLOY="$1"
+      elif [[ -z "$BUNDLE" ]]; then
+        BUNDLE="$1"
+      else
+        echo "Unexpected arg: $1" >&2
+        exit 2
+      fi
+      shift
+      ;;
+  esac
+done
+
+DEPLOY="${DEPLOY#https://}"
+DEPLOY="${DEPLOY%/}"
+
+if [[ "$CHECK_ONLY" -eq 1 ]]; then
+  locked_bundle=$(grep -E '^LOCKED_BUNDLE=' "$GATE" | head -1 | cut -d= -f2- | tr -d '"')
+  locked_deploy=$(grep -E '^LOCKED_DEPLOY=' "$GATE" | head -1 | cut -d= -f2- | tr -d '"')
+  live=$(curl -sSL -m 25 -H 'Cache-Control: no-cache' "https://menuply.com/?lockcheck=$(date +%s)" \
+    | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1 || true)
+  echo "locked_deploy=${locked_deploy}"
+  echo "locked_bundle=${locked_bundle}"
+  echo "live_bundle=${live}"
+  if [[ -n "$live" && "$live" == "$locked_bundle" ]]; then
+    echo "RESULT=PASS — tip-gate lock matches live menuply.com"
+    exit 0
+  fi
+  echo "RESULT=STALE_LOCK — tip-gate lock does not match live menuply.com"
+  echo "NEXT: bash scripts/lock-menuply-production-tip.sh <live-deploy> ${live:-<bundle>}"
+  echo "CONTRACT: docs/guardrails/2026-08-24_production-tip-lock-atomic-contract.md"
+  exit 3
+fi
+
+if [[ -z "$DEPLOY" || -z "$BUNDLE" ]]; then
+  usage >&2
+  exit 2
+fi
+
+if [[ "$DEPLOY" != menubloc-frontend-*-menuply.vercel.app ]]; then
+  echo "FAIL: DEPLOY must look like menubloc-frontend-<id>-menuply.vercel.app (got: $DEPLOY)" >&2
+  exit 2
+fi
+if [[ "$BUNDLE" != index-*.js ]]; then
+  echo "FAIL: BUNDLE must look like index-….js (got: $BUNDLE)" >&2
+  exit 2
+fi
+if [[ ! -f "$GATE" ]]; then
+  echo "FAIL: missing tip-gate script at $GATE" >&2
+  exit 2
+fi
+
+PREV_BUNDLE=$(grep -E '^LOCKED_BUNDLE=' "$GATE" | head -1 | cut -d= -f2- | tr -d '"')
+PREV_DEPLOY=$(grep -E '^LOCKED_DEPLOY=' "$GATE" | head -1 | cut -d= -f2- | tr -d '"')
+
+DATE_UTC=$(date -u +%Y-%m-%d)
+COMMENT="# Locked tip ${DATE_UTC}: ${DEPLOY} / ${BUNDLE}"
+extras=()
+[[ -n "$FE_COMMIT" ]] && extras+=("FE ${FE_COMMIT}")
+[[ -n "$BE_COMMIT" ]] && extras+=("BE ${BE_COMMIT}")
+[[ -n "$NOTE" ]] && extras+=("$NOTE")
+if [[ ${#extras[@]} -gt 0 ]]; then
+  joined=$(IFS='; '; echo "${extras[*]}")
+  COMMENT+=" (${joined})"
+fi
+
+tmp=$(mktemp)
+awk -v c="$COMMENT" -v b="$BUNDLE" -v d="$DEPLOY" '
+  BEGIN { done_c=0; done_b=0; done_d=0 }
+  /^# Locked tip / && !done_c { print c; done_c=1; next }
+  /^LOCKED_BUNDLE=/ && !done_b { print "LOCKED_BUNDLE=\"" b "\""; done_b=1; next }
+  /^LOCKED_DEPLOY=/ && !done_d { print "LOCKED_DEPLOY=\"" d "\""; done_d=1; next }
+  { print }
+  END {
+    if (!done_b || !done_d) {
+      print "FAIL: could not find LOCKED_BUNDLE/LOCKED_DEPLOY lines" > "/dev/stderr"
+      exit 1
+    }
+  }
+' "$GATE" > "$tmp"
+
+updated=0
+for g in "${SYNC_GATES[@]}"; do
+  if [[ -f "$g" ]]; then
+    cp "$tmp" "$g"
+    chmod +x "$g"
+    echo "updated=${g}"
+    updated=1
+  fi
+done
+if [[ ! " ${SYNC_GATES[*]} " =~ " ${GATE} " ]]; then
+  cp "$tmp" "$GATE"
+  chmod +x "$GATE"
+  echo "updated=${GATE}"
+  updated=1
+fi
+rm -f "$tmp"
+[[ "$updated" -eq 1 ]] || { echo "FAIL: no tip-gate files updated" >&2; exit 1; }
+
+echo "LOCKED tip-gate script(s):"
+echo "  deploy=${DEPLOY}"
+echo "  bundle=${BUNDLE}"
+echo "  previous_deploy=${PREV_DEPLOY:-}"
+echo "  previous_bundle=${PREV_BUNDLE:-}"
+
+if [[ "$SKIP_LKG" -eq 0 ]]; then
+  REPO="$REPO" ROOT_WORKSPACE="$ROOT_WORKSPACE" DEPLOY="$DEPLOY" BUNDLE="$BUNDLE" \
+  PREV_DEPLOY="${PREV_DEPLOY:-}" PREV_BUNDLE="${PREV_BUNDLE:-}" \
+  FE_COMMIT="$FE_COMMIT" BE_COMMIT="$BE_COMMIT" NOTE="$NOTE" DATE_UTC="$DATE_UTC" \
+  python3 <<'PY'
+import os, re, shutil
+
+root = os.environ["ROOT_WORKSPACE"]
+repo = os.environ["REPO"]
+deploy = os.environ["DEPLOY"]
+bundle = os.environ["BUNDLE"]
+prev_d = os.environ.get("PREV_DEPLOY") or ""
+prev_b = os.environ.get("PREV_BUNDLE") or ""
+fe = os.environ.get("FE_COMMIT") or ""
+be = os.environ.get("BE_COMMIT") or ""
+note = os.environ.get("NOTE") or ""
+date = os.environ.get("DATE_UTC") or ""
+
+LKG_REL = "docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md"
+root_lkg = os.path.join(root, LKG_REL)
+repo_lkg = os.path.join(repo, LKG_REL)
+# Source of truth: the workspace LKG on the Mac, else the repo mirror (CI).
+lkg = root_lkg if os.path.isfile(root_lkg) else repo_lkg
+fe_path = os.path.join(root, "docs/guardrails/2026-07-24_frontend-production-deploy-path-contract.md")
+rule_lkg = os.path.join(root, ".cursor/rules/production-deploy-and-lkg-contract.mdc")
+mirrors = []
+for repo_dir in (repo, os.path.join(root, "menubloc-frontend-main"), os.path.join(root, "menubloc-backend-main")):
+    m = os.path.join(repo_dir, LKG_REL)
+    # only mirror into checkouts that exist; never create stray directories
+    if os.path.isdir(os.path.join(repo_dir, ".git")) or os.path.isfile(os.path.join(repo_dir, ".git")):
+        if os.path.realpath(m) != os.path.realpath(lkg) and os.path.realpath(m) not in [os.path.realpath(x) for x in mirrors]:
+            mirrors.append(m)
+
+def repl_groups(template):
+    def _fn(m):
+        parts = []
+        for item in template:
+            if isinstance(item, int):
+                parts.append(m.group(item) or "")
+            else:
+                parts.append(str(item))
+        return "".join(parts)
+    return _fn
+
+def sub_first(text, pattern, template, flags=0):
+    return re.sub(pattern, repl_groups(template), text, count=1, flags=flags)
+
+def sync_lkg_body(text):
+    text = sub_first(text, r"(\| Vercel deployment \| `)[^`]+(`)", (1, deploy, 2))
+    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", (1, bundle, 2))
+    if fe:
+        text = sub_first(
+            text,
+            r"(\| Git commit \| `)[^`]+(`)",
+            (1, fe, 2, f" — {note}") if note else (1, fe, 2),
+        )
+    def alias_repl(m):
+        return m.group(1) + deploy + m.group(2)
+    text = re.sub(
+        r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( menuply\.com)",
+        alias_repl, text, count=1,
+    )
+    text = re.sub(
+        r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( www\.menuply\.com)",
+        alias_repl, text, count=1,
+    )
+    text = re.sub(
+        r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( crm\.menuply\.com)",
+        alias_repl, text, count=1,
+    )
+    text = re.sub(
+        r"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( venues\.menuply\.com)",
+        alias_repl, text, count=1,
+    )
+    if prev_d and prev_b and (prev_d != deploy or prev_b != bundle):
+        m = re.search(r"### Prior tip —[^\n]*\n\n\| Field \| Value \|\n\|[-| ]+\|\n(?:\|[^\n]+\n)+", text)
+        if m:
+            block = m.group(0)
+            block2 = sub_first(block, r"(\| Deployment \| `)[^`]+(`)", (1, prev_d, 2))
+            block2 = sub_first(block2, r"(\| Live bundle \| `)[^`]+(`)", (1, prev_b, 2))
+            text = text[: m.start()] + block2 + text[m.end() :]
+    text = sub_first(
+        text,
+        r"(## CURRENT LAST KNOWN GOOD \(live production — )[^)]+(\))",
+        (1, date, 2),
+    )
+    return text
+
+def sync_fe_path_contract(text):
+    text = sub_first(text, r"(\| Deployment \| `)[^`]+(`)", (1, deploy, 2))
+    text = sub_first(text, r"(\| Live bundle \| `)[^`]+(`)", (1, bundle, 2))
+    for host_suf in ("menuply.com", "www.menuply.com", "crm.menuply.com", "venues.menuply.com"):
+        text = re.sub(
+            rf"(npx vercel alias set )menubloc-frontend-[a-z0-9]+-menuply\.vercel\.app( {re.escape(host_suf)})",
+            lambda m, d=deploy: m.group(1) + d + m.group(2),
+            text,
+            count=1,
+        )
+    return text
+
+def sync_rule_lkg(text):
+    text = sub_first(
+        text,
+        r"(\| FE tip \| `)[^`]+(` / `)[^`]+(`)",
+        (1, deploy, 2, bundle, 3),
+    )
+    if fe:
+        text = sub_first(
+            text,
+            r"(\| FE commit \| `)[^`]+(`[^\n]*)",
+            (1, fe, 2),
+        )
+    if be:
+        text = sub_first(
+            text,
+            r"(\| BE commit / health \| `)[^`]+(`)",
+            (1, be, 2),
+        )
+    heading_tail = f"{date} — {note}" if note else date
+    text = sub_first(
+        text,
+        r"(## CURRENT LKG \()[^)]+(\))",
+        (1, heading_tail, 2),
+    )
+    return text
+
+changed = []
+if os.path.isfile(lkg):
+    body = open(lkg, encoding="utf-8").read()
+    new = sync_lkg_body(body)
+    if new != body:
+        open(lkg, "w", encoding="utf-8").write(new)
+        changed.append(lkg)
+    for mpath in mirrors:
+        if os.path.isdir(os.path.dirname(mpath)):
+            shutil.copy2(lkg, mpath)
+        changed.append(mpath)
+
+if os.path.isfile(fe_path):
+    body = open(fe_path, encoding="utf-8").read()
+    new = sync_fe_path_contract(body)
+    if new != body:
+        open(fe_path, "w", encoding="utf-8").write(new)
+        changed.append(fe_path)
+
+if os.path.isfile(rule_lkg):
+    body = open(rule_lkg, encoding="utf-8").read()
+    new = sync_rule_lkg(body)
+    if new != body:
+        open(rule_lkg, "w", encoding="utf-8").write(new)
+        changed.append(rule_lkg)
+
+for p in changed:
+    print(f"lkg_synced={p}")
+print("lkg_sync=done")
+PY
+else
+  echo "lkg_sync=skipped"
+fi
+
+echo
+echo "NEXT:"
+echo "  1) bash ${GATE} https://menuply.com"
+echo "  2) bash ${GATE} https://www.menuply.com"
+echo "  3) Both must print RESULT=PASS — otherwise CPD=INCOMPLETE"
+echo "  4) Commit tip-gate + LKG docs (docs-only: the Vercel ignore step skips the build)"
+echo
+echo "CONTRACT: docs/guardrails/2026-08-24_production-tip-lock-atomic-contract.md"
+echo "RESULT=LOCKED"

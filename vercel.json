@@ -1,6 +1,7 @@
 {
   "framework": "vite",
   "installCommand": "npm ci",
+  "ignoreCommand": "bash scripts/release/vercel-ignore-build.sh",
   "redirects": [
     {
       "source": "/wall/usc",

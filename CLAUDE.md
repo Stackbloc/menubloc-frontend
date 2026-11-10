@@ -257,28 +257,21 @@ Menuply is English only: no language box, no translated content, no Language Bot
 
 ---
 
-## 🚀 DEPLOYMENT — VERCEL
+## 🚀 DEPLOYMENT — VERCEL (staged release, since 2026-11-09)
 
-**Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `menuply.com`)
+**A push to `main` builds once but does NOT go live.** Vercel "Auto-assign Custom Production Domains" is OFF, so each GitHub build of `main` is a *staged* production deployment. Only the release script puts a build on menuply.com. Never run `vercel --prod` or `vercel alias set` for a release.
 
-**Git push alone does NOT deploy to production. `vercel --prod` alone is also NOT sufficient.**
-
-Always run BOTH commands from the `menubloc-frontend/` directory:
+Release (promotes the GitHub build of one exact commit, after checks; rolls back automatically on failure; locks the tip):
 ```bash
-npx vercel --prod
-# then, using the deployment URL printed in the "▲ Production" line above:
-npx vercel alias set <deployment-url> menuply.com
+git push origin main                         # GitHub builds the staged deployment
+bash scripts/cpd-fe.sh "short note"          # on the Mac (menubloc-frontend-main)
+gh workflow run release-frontend.yml --ref main -f sha=<commit> -f note="short note"   # anywhere, incl. cloud sessions
 ```
+Add `--dry-run` (or `-f dry_run=true`) to run every check without promoting.
 
-**Verify the alias took effect:**
-```bash
-curl -s "https://menuply.com/" | grep -o 'src="/assets/index-[^"]*"'
-# hash must match the filename printed in the vite build output
-```
-
-**Why:** `vercel --prod` creates a new deployment but does NOT move the `menuply.com` custom domain to it. The domain stays on whatever deployment it previously pointed to until the alias is explicitly updated.
-
-*Incident 2026-06-20: multiple commits deployed via `vercel --prod` but `menuply.com` continued serving an older bundle for hours because the alias step was omitted.*
+- Commits that only touch `docs/`, `.github/`, top-level `*.md`, `scripts/release/` or the tip-gate lock file are not built (`scripts/release/vercel-ignore-build.sh`). Anything else builds. Branch previews always build.
+- Rollback: `vercel rollback <previous deployment id> --scope menuply` (Hobby can roll back to the previous production deployment only). The release script prints the id and does this itself when live checks fail.
+- Full contract: `docs/guardrails/2026-11-09_staged-release.md`.
 
 ---
 
