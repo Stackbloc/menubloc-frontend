@@ -63,6 +63,19 @@ refuse() { echo "RESULT=REFUSED — $1 (production untouched)" >&2; exit 1; }
 api() { vercel api "$1" --scope "$SCOPE" 2>/dev/null; }
 jq_py() { python3 -c "import json,sys; d=json.load(sys.stdin); $1"; }
 
+# Keep GitHub builds staged: Vercel turns automatic production-domain assignment back on
+# after a promote, and off after a rollback. Force it off and confirm, every time.
+ensure_staged() {
+  vercel api "/v9/projects/${PROJECT}" -X PATCH --scope "$SCOPE" \
+    --input <(echo '{"autoAssignCustomDomains": false}') >/dev/null 2>&1
+  local v; v=$(api "/v9/projects/${PROJECT}" | jq_py "print(d.get('autoAssignCustomDomains'))")
+  if [[ "$v" != "False" ]]; then
+    echo "!!! WARNING: could not turn off Auto-assign Custom Production Domains (now ${v}). A push to main would go live without checks. Turn it off: Vercel → ${PROJECT} → Settings → Environments → Production." >&2
+    return 1
+  fi
+  log "auto-assign of production domains: off (pushes stay staged)"
+}
+
 alias_target() { api "/v4/aliases/$1" | jq_py "print(d.get('deploymentId') or '')" 2>/dev/null; }
 live_bundle() { curl -sSL -m 25 -H 'Cache-Control: no-cache' "https://menuply.com/?release=$(date +%s)" | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1; }
 
@@ -123,6 +136,8 @@ resolve() {
     sleep 20; waited=$((waited+20))
   done
 }
+
+ensure_staged || refuse "auto-assign of production domains is on"
 
 R=$(resolve "$TARGET") || refuse "could not resolve a Ready build for ${TARGET}"
 read -r BUILT_SHA DEP_ID DEP_STATE DEP_URL _ <<< "$R"
@@ -189,6 +204,7 @@ rollback() {
   for _ in $(seq 1 18); do
     [[ "$(alias_target menuply.com)" == "$PREV_ID" ]] && { ok=1; break; }; sleep 10
   done
+  ensure_staged || true
   if [[ "$ok" -ne 1 ]]; then
     echo "RESULT=ROLLBACK_FAILED — menuply.com does not serve ${PREV_ID}." >&2
     echo "ACT NOW: vercel rollback ${PREV_ID} --scope ${SCOPE}  (or the Vercel dashboard: Deployments -> ${PREV_URL} -> Instant Rollback)" >&2
@@ -219,6 +235,8 @@ for h in "${HOSTS[@]}"; do
   t=$(alias_target "$h"); log "${h} -> ${t}"
   [[ "$t" == "$DEP_ID" ]] || rollback "${h} did not move to the new deployment"
 done
+ensure_staged || rollback "could not keep GitHub builds staged after promote"
+
 # Test hook: prove the automatic rollback on a real release (identical code only).
 [[ "${RELEASE_TEST_FAIL_AFTER_PROMOTE:-}" == "1" ]] && rollback "TEST: injected failure after promotion"
 
