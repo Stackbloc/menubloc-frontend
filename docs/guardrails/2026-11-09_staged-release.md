@@ -32,5 +32,21 @@ The GitHub Action needs the `VERCEL_TOKEN` secret. Add required reviewers to the
 
 ## Limits (Vercel Hobby)
 
-- Instant Rollback on Hobby goes back one production deployment only. Older deployments can be re-released only if they were never live before (a deployment that has been promoted cannot be promoted again); otherwise push a revert and release that.
+- Instant Rollback on Hobby goes back one production deployment only (the release script always rolls back to the deployment that was live just before it). To go further back, release an older commit on main by SHA (`--sha`), or push a revert and release that.
+- Vercel's docs say a deployment that was live before cannot be promoted again; on this project it could (tested 2026-11-09: `dpl_8qMK…` was promoted, rolled back, then promoted and released).
+- Vercel switches automatic domain assignment back on after a promote. The release script switches it off again right after and refuses to continue if it cannot, so there are only seconds after each promote in which a push could go live unchecked.
 - Retention: production 14 days, preview 7 days, canceled/errored 1 day; the 10 newest production deployments and any deployment with a production alias are always kept.
+
+## Test record (2026-11-09)
+
+| Test | Result |
+|---|---|
+| `--skip-domain` staged build on Hobby, then `vercel promote` | all 5 hosts moved in 3 s |
+| `vercel rollback` to the previous deployment on Hobby | all hosts back in 2 s, tip-gate PASS |
+| Push to `main` with auto-assign off | built once, stayed staged (menuply.com unchanged) |
+| Release `ba705407` via `cpd-fe.sh` | PASS (pre-checks, promote, live checks, lock, apex+www PASS) |
+| Lock-only commit pushed | Vercel build CANCELED by the ignore step ("docs/release-lock only") |
+| Release `b12feb7b` with an injected failure after promotion | automatic rollback, exit 2, hosts back, lock restored |
+| Release `b12feb7b` again | PASS in 2 min 53 s |
+| Refusals | unpushed commit, branch-only commit, unknown SHA all refused, production untouched |
+| GitHub Action dry run without `VERCEL_TOKEN` | stops at the token check with a clear error |
