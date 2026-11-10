@@ -179,8 +179,12 @@ if [[ "$PREV_ID" == "$DEP_ID" ]]; then
 fi
 
 TIP_GATE_DEPLOYMENT="$DEP_ID" bash "$GATE" > /tmp/release-pregate.$$ 2>&1
-pre=$?; tail -3 /tmp/release-pregate.$$; rm -f /tmp/release-pregate.$$
+pre=$?; tail -3 /tmp/release-pregate.$$
+STAGED_BUNDLE=$(sed -n 's/^bundle=\(index-[A-Za-z0-9_-]*\.js\)$/\1/p' /tmp/release-pregate.$$ | head -1)
+rm -f /tmp/release-pregate.$$
 [[ "$pre" -eq 0 ]] || refuse "content checks failed on ${DEP_URL}"
+[[ -n "$STAGED_BUNDLE" ]] || refuse "could not read the staged deployment's bundle"
+log "staged bundle ${STAGED_BUNDLE}"
 
 for path in /demo /sitemap.xml /clusters/california/los-angeles/usc /search; do
   code=$(vercel curl "$path" --deployment "$DEP_ID" -- -s -o /dev/null -w '%{http_code}' 2>/dev/null)
@@ -211,7 +215,7 @@ rollback() {
     exit 4
   fi
   bash "$LOCK" "$PREV_URL" "$PREV_BUNDLE" --note "rollback after failed release of ${BUILT_SHA:0:8}" >/dev/null 2>&1 || true
-  git -C "$REPO" checkout -- scripts/assert-menuply-production-tip.sh docs/guardrails 2>/dev/null || true
+  git -C "$REPO" checkout -- scripts/assert-menuply-production-tip.sh docs/guardrails/2026-08-14_production-deploy-and-lkg-contract.md 2>/dev/null || true
   echo "RESULT=ROLLED_BACK — production is back on ${PREV_URL} (${PREV_BUNDLE}). Release of ${BUILT_SHA} failed: ${why}" >&2
   exit 2
 }
@@ -240,12 +244,12 @@ ensure_staged || rollback "could not keep GitHub builds staged after promote"
 # Test hook: prove the automatic rollback on a real release (identical code only).
 [[ "${RELEASE_TEST_FAIL_AFTER_PROMOTE:-}" == "1" ]] && rollback "TEST: injected failure after promotion"
 
+# The live HTML must serve exactly the bundle the staged deployment served.
 NEW_BUNDLE=""
 for _ in $(seq 1 18); do
-  NEW_BUNDLE=$(live_bundle); [[ -n "$NEW_BUNDLE" && "$NEW_BUNDLE" != "$PREV_BUNDLE" ]] && break; sleep 10
+  NEW_BUNDLE=$(live_bundle); [[ "$NEW_BUNDLE" == "$STAGED_BUNDLE" ]] && break; sleep 10
 done
-[[ -n "$NEW_BUNDLE" ]] || rollback "no bundle in live HTML"
-[[ "$NEW_BUNDLE" != "$PREV_BUNDLE" ]] || log "note: bundle name unchanged (${NEW_BUNDLE}); identical app build"
+[[ "$NEW_BUNDLE" == "$STAGED_BUNDLE" ]] || rollback "live HTML serves ${NEW_BUNDLE:-no bundle}, expected ${STAGED_BUNDLE}"
 log "live bundle ${NEW_BUNDLE}; waiting ${CDN_SETTLE_SECS}s before fetching it (Cloudflare)"
 sleep "$CDN_SETTLE_SECS"
 
