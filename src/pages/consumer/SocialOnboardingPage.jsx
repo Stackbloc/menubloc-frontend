@@ -30,6 +30,7 @@ import { fetchWaiterPeopleEating } from "../../lib/waiterApi.js";
 import { clusterPath } from "../../lib/clusterUrl.js";
 import { buildDiningCrewInviteShareData } from "../../lib/diningCrewInviteShare.js";
 import { buildMenuplyFriendInviteShareData } from "../../lib/menuplyAccountInvite.js";
+import { useMyInviteCode } from "../../hooks/useMyInviteCode.js";
 import {
   DEFAULT_ONBOARDING_CLUSTER,
   SOCIAL_ONBOARDING_STEPS,
@@ -110,7 +111,8 @@ export default function SocialOnboardingPage() {
 
   // Invite friends and family step
   const [friendInviteOpen, setFriendInviteOpen] = useState(false);
-  const friendInviteShareData = useMemo(() => buildMenuplyFriendInviteShareData(), []);
+  const myInviteCode = useMyInviteCode();
+  const friendInviteShareData = useMemo(() => buildMenuplyFriendInviteShareData(myInviteCode), [myInviteCode]);
 
   // Expand / share / I'm Eating optional reveals
   const [showFindPeople, setShowFindPeople] = useState(false);

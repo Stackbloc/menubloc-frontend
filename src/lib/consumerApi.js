@@ -375,6 +375,13 @@ export const getNetworkLink = (code) => get(`/api/consumer/network-links/${encod
 export const attachNetworkLink = (code, openedAt = null) =>
   post(`/api/consumer/network-links/${encodeURIComponent(String(code))}/attach`, { opened_at: openedAt });
 
+/** Invite friends link code (mig 0415). Attribution only: no connection, request or notification. */
+export const getMyInviteCode = () => get("/api/consumer/invite-code");
+export const recordInviteCodeOpen = (code, visitorId) =>
+  post(`/api/consumer/invite-codes/${encodeURIComponent(String(code))}/open`, { visitor_id: visitorId });
+export const creditInviteCode = (code, openedAt = null) =>
+  post(`/api/consumer/invite-codes/${encodeURIComponent(String(code))}/credit`, { opened_at: openedAt });
+
 /** Resolve scan landing for /d/:token (personal or Meet Me Here). Hits API host directly. */
 export async function resolveDinerQrScan(token) {
   const language = readStoredLanguage();

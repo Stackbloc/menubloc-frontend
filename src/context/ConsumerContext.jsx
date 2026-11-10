@@ -24,6 +24,7 @@ import {
   verifyPhoneChangeCode as verifyConsumerPhoneChangeCode,
 } from "../lib/consumerApi.js";
 import { attachPendingNetworkLink } from "../lib/pendingNetworkLink.js";
+import { creditPendingInviteCode } from "../lib/pendingInviteCode.js";
 import {
   clearAllergenExclusionSessionToastMarker,
   hasActiveAllergenExclusions,
@@ -120,6 +121,8 @@ export function ConsumerProvider({ children }) {
       const data = await loadMe({ clearOn401: false });
       // A network link opened before sign-up / sign-in is credited once (referral only, never membership).
       attachPendingNetworkLink();
+      // Same for a friend's Invite friends link (?r=code): credited once, attribution only.
+      creditPendingInviteCode();
       maybeResetMenuPreferenceSession(data, {
         dietary_preferences: data?.dietary_preferences,
         allergen_preferences: data?.allergen_preferences,

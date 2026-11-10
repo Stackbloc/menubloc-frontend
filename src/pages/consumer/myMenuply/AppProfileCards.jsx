@@ -30,6 +30,7 @@ import AppIcon from "../../../components/icons/AppIcon.jsx";
 import CompactSwitch from "../../../components/CompactSwitch.jsx";
 import ShareModal from "../../../components/share/ShareModal.jsx";
 import { buildMenuplyFriendInviteShareData } from "../../../lib/menuplyAccountInvite.js";
+import { useMyInviteCode } from "../../../hooks/useMyInviteCode.js";
 import { SETUP_MARKS_EVENT, markSetup, readSetupMarks } from "../../../lib/profileSetupMarks.js";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
@@ -765,7 +766,8 @@ export function AppProfileStarterCard({ avatarUrl }) {
   const [facts, setFacts] = useState(null);
   const [now, setNow] = useState(0);
   const [sharing, setSharing] = useState(false);
-  const friendShare = useMemo(() => buildMenuplyFriendInviteShareData(), []);
+  const myInviteCode = useMyInviteCode();
+  const friendShare = useMemo(() => buildMenuplyFriendInviteShareData(myInviteCode), [myInviteCode]);
 
   useEffect(() => {
     let alive = true;

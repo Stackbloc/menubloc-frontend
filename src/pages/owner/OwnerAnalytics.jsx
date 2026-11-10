@@ -8,6 +8,7 @@ import {
   getOwnerAnalyticsHub,
 } from "../../lib/ownerApi.js";
 import NetworksTab from "./OwnerAnalyticsNetworks.jsx";
+import NetworkValueTab from "./OwnerAnalyticsNetworkValue.jsx";
 
 // Owner Analytics: one page, aggregates only. Days are America/Los_Angeles; the backend owns every definition.
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   ["discovery", "Restaurant Discovery"],
   ["social", "Social & Wall"],
   ["networks", "Networks"],
+  ["network_value", "Network Value & Rewards"],
   ["advertising", "Advertising"],
   ["reports", "Reports & Exports"],
 ];
@@ -109,6 +111,7 @@ export default function OwnerAnalytics() {
           {tab === "discovery" ? <Discovery d={data.discovery} m={data.marketplace} grain={filters.grain} defs={data.definitions} /> : null}
           {tab === "social" ? <Social s={data.social} /> : null}
           {tab === "networks" ? <NetworksTab filters={filters} /> : null}
+          {tab === "network_value" ? <NetworkValueTab filters={filters} /> : null}
           {tab === "advertising" ? <Advertising ad={data.advertising} campaigns={campaigns} filters={filters} defs={data.definitions} /> : null}
           {tab === "reports" ? <Reports filters={filters} campaigns={campaigns} defs={data.definitions} /> : null}
         </div>
@@ -546,4 +549,4 @@ const tdStyle = { padding: "9px 10px", borderBottom: `1px solid #F0F1F3`, color:
 const srOnly = { position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 
 // Shared with the Networks tab (OwnerAnalyticsNetworks.jsx).
-export { Banner, Definitions, Grid, Kpi, Section, Segmented, Table, inputStyle, num, pct, smallButton, srOnly };
+export { Banner, Definitions, Grid, Kpi, Section, Segmented, Table, Trend, inputStyle, num, pct, smallButton, srOnly };

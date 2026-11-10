@@ -3,6 +3,7 @@
  */
 
 import { normalizeConsumerShareUrl } from "../components/share/shareUtils.js";
+import { withInviteCode } from "./inviteCodeLink.js";
 
 export const MENUPLY_ACCOUNT_INVITE_HEADLINE = "Open a free Menuply account";
 
@@ -25,10 +26,13 @@ export function menuplySignupUrl(nextPath = "/feed") {
 
 /**
  * Onboarding "invite friends and family" share — a friendly note with the signup link inside.
+ * With the sharer's invite code the link carries ?r=code, so a sign-up can be credited to them
+ * (Owner analytics only, mig 0415). Without one it's the plain link.
+ * @param {string|null} [inviteCode]
  * @returns {{ title: string, text: string, url: string } | null}
  */
-export function buildMenuplyFriendInviteShareData() {
-  const url = menuplySignupUrl("/feed");
+export function buildMenuplyFriendInviteShareData(inviteCode = null) {
+  const url = withInviteCode(menuplySignupUrl("/feed"), inviteCode);
   if (!url) return null;
   return {
     title: "Join me on Menuply",

@@ -248,6 +248,30 @@ export const getOwnerNetworkMembers = (id) => get(`${NETS}/${encodeURIComponent(
 export const addOwnerNetworkMember = (id, identifier) => post(`${NETS}/${encodeURIComponent(String(id))}/members`, { identifier });
 export const removeOwnerNetworkMember = (id, userId) =>
   del(`${NETS}/${encodeURIComponent(String(id))}/members/${encodeURIComponent(String(userId))}`);
+// Network Value & Rewards (mig 0415). Owner-only.
+const NV = "/api/owner/analytics/network-value";
+const nvQuery = (params = {}, keys = []) => {
+  const qs = new URLSearchParams();
+  for (const key of keys) if (params[key] != null && params[key] !== "" && params[key] !== false) qs.set(key, String(params[key]));
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+};
+export const getOwnerNetworkValueOverview = (p) => get(`${NV}/overview${nvQuery(p, ["cluster_id", "as_of"])}`);
+export const getOwnerNetworkValueLeaderboard = (p) =>
+  get(`${NV}/leaderboard${nvQuery(p, ["cluster_id", "as_of", "classification", "min_nvs", "max_nvs", "active", "sort", "dir", "limit", "offset"])}`);
+export const getOwnerNetworkValueClusters = (p) => get(`${NV}/clusters${nvQuery(p, ["as_of"])}`);
+export const getOwnerNetworkValueUser = (id) => get(`${NV}/users/${encodeURIComponent(String(id))}`);
+export const getOwnerNetworkValueSettings = () => get(`${NV}/settings`);
+export const saveOwnerNetworkValueSettings = (settings) => put(`${NV}/settings`, { settings });
+export const getOwnerRewardTypes = () => get(`${NV}/reward-types`);
+export const createOwnerRewardType = (body) => post(`${NV}/reward-types`, body);
+export const updateOwnerRewardType = (id, body) => patch(`${NV}/reward-types/${encodeURIComponent(String(id))}`, body);
+export const getOwnerRewardEligible = (id, p) => get(`${NV}/reward-types/${encodeURIComponent(String(id))}/eligible${nvQuery(p, ["cluster_id"])}`);
+export const getOwnerRewards = (p) => get(`${NV}/rewards${nvQuery(p, ["status"])}`);
+export const proposeOwnerReward = (body) => post(`${NV}/rewards`, body);
+export const actOnOwnerReward = (id, action, body = {}) =>
+  post(`${NV}/rewards/${encodeURIComponent(String(id))}/${encodeURIComponent(action)}`, body);
+
 export const getOwnerNetworkReport = (params = {}) => {
   const qs = new URLSearchParams();
   for (const key of ["from", "to", "cluster_id", "network_id"]) {
