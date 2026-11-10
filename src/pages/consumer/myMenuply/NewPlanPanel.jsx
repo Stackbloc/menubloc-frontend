@@ -175,7 +175,7 @@ export default function NewPlanPanel({ day, initialKind = "meal", onClose, onAdd
       </div>
 
       <span style={styles.label}>Who can come</span>
-      <WhoCanCome value={who} onChange={setWho} testId="new-plan-who" />
+      <WhoCanCome value={who} onChange={(v) => v !== "just_me" && setWho(v)} testId="new-plan-who" />
 
       {error ? <span style={{ color: "#b91c1c", fontSize: 13, fontWeight: 600 }}>{error}</span> : null}
       <button type="button" disabled={!ready || busy} onClick={add} style={{ ...styles.primary, opacity: !ready || busy ? 0.5 : 1 }} data-testid="new-plan-add">

@@ -106,8 +106,10 @@ export default function SocialPlansPage() {
 
   const shown = day ? calPlans.filter((p) => p.date === day) : data.plans;
   const today = data.today || ymdOf(new Date());
-  // My plan → its panel; an undated invite to me → pick a time; anything else → open it.
+  // An Open Invite → its own page (the link; the panel can't change it: 2026-11-10 "Plan not found");
+  // my plan → its panel; an undated invite to me → pick a time; anything else → open it.
   const onPlanClick = (e, p) => {
+    if (p.open_invite) return;
     if (p.is_organizer && p.source !== "venue_event") {
       e.preventDefault();
       setOpenKey((k) => (k === p.key ? null : p.key));
@@ -237,6 +239,12 @@ export default function SocialPlansPage() {
                     plan={p}
                     onSaved={replacePlan}
                     onPickTime={() => setPicking(p.key)}
+                    onRemove={() => {
+                      setOpenKey(null);
+                      setData((d) => ({ ...d, plans: d.plans.filter((x) => x.key !== p.key) }));
+                      setCalPlans((l) => l.filter((x) => x.key !== p.key));
+                      setReload((n) => n + 1);
+                    }}
                   />
                 ) : null}
               </li>

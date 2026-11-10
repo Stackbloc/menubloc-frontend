@@ -88,6 +88,15 @@ test("Phase B: calendar setting, plan sharing, Ask to Join, answer — website c
     assert.ok(sharing.includes(label), label);
   }
   assert.match(sharing, /Only your Connects, never anyone else\./);
+  // 2026-11-10 "Plan not found": Who can come is one radio group (no separate Just me checkbox),
+  // a gone plan offers only Remove from calendar, and Open Invites go to their own page.
+  assert.doesNotMatch(sharing, /type="checkbox"/);
+  assert.match(sharing, /option\("just_me", "Just me", "Only you see it\. Nobody can join\."\)/);
+  assert.match(sharing, /visibility: "only_me", join_mode: "invite_only"/);
+  assert.match(sharing, /This plan was cancelled or removed\./);
+  assert.match(sharing, /Remove from calendar/);
+  assert.match(sharing, /code === "open_invite"/);
+  assert.match(page, /if \(p\.open_invite\) return;/);
   const button = read("src/pages/consumer/myMenuply/SocialPlanActionButton.jsx");
   assert.match(button, /ask: "Ask to Join", asked: "Requested ✓", going: "Going ✓"/);
   const section = read("src/pages/consumer/myMenuply/ConnectsNowSection.jsx");

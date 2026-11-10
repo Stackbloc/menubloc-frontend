@@ -1,7 +1,7 @@
 /**
  * Social Plans Phase B sharing controls (Andre approved 2026-10-28, menuply-mobile docs/15).
  *   CalendarWhoCard — who sees my calendar: All my Connects · Only some Connects · Just me (behind ⚙︎).
- *   WhoCanCome / PlanPanel — on a plan I host: Only people I invite · Let my Connects ask, Just me.
+ *   WhoCanCome / PlanPanel — on a plan I host, one choice: Only people I invite · Let my Connects ask · Just me.
  *   PeerPlansSection — a Connect's plans I can act on (their page).
  * Plans are never shown to people you aren't connected with.
  */
@@ -109,11 +109,19 @@ export function CalendarWhoCard() {
 }
 
 /**
- * Who can come — two choices (Andre 2026-10-28): only people I invite, or my Connects can ask
- * (I say yes or no to each one). Older "anyone can join" plans keep working; not offered for new ones.
+ * Who can come — one radio group (Andre 2026-10-28; "Just me" joined the group 2026-11-10 so it can't
+ * be ticked next to another choice): only people I invite, my Connects can ask (I say yes or no to
+ * each one), or Just me (plan panel only: only I see it, nobody can join). Older "anyone can join"
+ * plans keep working; not offered for new ones.
  */
-export function WhoCanCome({ value, onChange, testId }) {
-  const current = value === "invite_only" || value === "invite" ? "invite" : value === "ask" ? "ask" : null;
+export function WhoCanCome({ value, onChange, testId, justMe }) {
+  const current = justMe
+    ? "just_me"
+    : value === "invite_only" || value === "invite"
+      ? "invite"
+      : value === "ask"
+        ? "ask"
+        : null;
   const option = (v, label, hint) => (
     <label key={v} style={styles.radioRow} data-testid={`${testId}-${v}`}>
       <input type="radio" name={testId} checked={current === v} onChange={() => onChange(v)} />
@@ -127,15 +135,28 @@ export function WhoCanCome({ value, onChange, testId }) {
     <div style={{ display: "grid", gap: 6 }} data-testid={testId}>
       {option("invite", "Only people I invite", null)}
       {option("ask", "Let my Connects ask", "You’ll say yes or no to each one.")}
-      {value === "open" ? <span style={styles.muted}>Right now any of your Connects can join this plan.</span> : null}
+      {justMe !== undefined ? option("just_me", "Just me", "Only you see it. Nobody can join.") : null}
+      {value === "open" && !justMe ? <span style={styles.muted}>Right now any of your Connects can join this plan.</span> : null}
     </div>
   );
 }
 
-/** One of my plans, clicked on the calendar: Who can come, Just me, Invite people, See the plan. */
-export function PlanPanel({ plan, onSaved, onPickTime }) {
+/** Why a save failed (2026-11-10): "gone" (404 plan_not_found), "open_invite" (409), else null. */
+function planProblem(err) {
+  const code = err?.payload?.code;
+  if (code === "open_invite") return "open_invite";
+  if (code === "plan_not_found" || err?.status === 404) return "gone";
+  return null;
+}
+
+/**
+ * One of my plans, clicked on the calendar: Who can come (one choice), Invite people, See the plan.
+ * If the plan is gone it says so and only offers Remove from calendar (2026-11-10 "Plan not found").
+ */
+export function PlanPanel({ plan, onSaved, onPickTime, onRemove }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [problem, setProblem] = useState(null);
   if (!plan || plan.source === "venue_event") return null;
 
   async function save(change) {
@@ -144,8 +165,36 @@ export function PlanPanel({ plan, onSaved, onPickTime }) {
       const r = await saveSocialPlanSharing(plan.source, plan.id, change);
       onSaved({ ...plan, visibility: r.visibility || null, join_mode: r.join_mode });
     } catch (err) {
-      setError(err.message || "Couldn’t save");
+      const p = planProblem(err);
+      if (p) setProblem(p);
+      else setError(err.message || "Couldn’t save");
     }
+  }
+
+  // One choice, one save: Just me = only me + nobody joins; the others share it again.
+  const choose = (v) =>
+    save(v === "just_me" ? { visibility: "only_me", join_mode: "invite_only" } : { visibility: null, join_mode: v === "invite" ? "invite_only" : "ask" });
+
+  if (problem) {
+    return (
+      <div style={styles.controls} data-testid={`plan-panel-${plan.key}-${problem}`}>
+        {problem === "open_invite" ? (
+          <>
+            <span style={{ fontSize: 14, color: "#0f172a" }}>This is an Open Invite. Change it on its own page.</span>
+            <Link to={`/invite/${encodeURIComponent(plan.id)}`} style={styles.primary}>
+              Open the invite
+            </Link>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 14, color: "#0f172a" }}>This plan was cancelled or removed.</span>
+            <button type="button" onClick={() => onRemove?.()} style={styles.primary} data-testid={`plan-panel-${plan.key}-remove`}>
+              Remove from calendar
+            </button>
+          </>
+        )}
+      </div>
+    );
   }
 
   const link = plan.href ? `${window.location.origin}${plan.href}` : null;
@@ -157,20 +206,9 @@ export function PlanPanel({ plan, onSaved, onPickTime }) {
         </button>
       ) : null}
       <strong style={{ fontSize: 13, color: "#475569" }}>Who can come</strong>
-      <WhoCanCome
-        value={plan.join_mode}
-        onChange={(v) => save({ join_mode: v === "invite" ? "invite_only" : "ask" })}
-        testId={`plan-panel-${plan.key}-who`}
-      />
-      <label style={styles.radioRow} data-testid={`plan-panel-${plan.key}-just-me`}>
-        <input type="checkbox" checked={plan.visibility === "only_me"} onChange={() => save({ visibility: plan.visibility === "only_me" ? null : "only_me" })} />
-        <span style={{ display: "grid", gap: 1 }}>
-          <span style={{ fontSize: 14, color: "#0f172a" }}>Just me</span>
-          <span style={styles.muted}>Hide this plan from my calendar for others.</span>
-        </span>
-      </label>
+      <WhoCanCome value={plan.join_mode} justMe={plan.visibility === "only_me"} onChange={choose} testId={`plan-panel-${plan.key}-who`} />
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        {link ? (
+        {link && plan.visibility !== "only_me" ? (
           <button
             type="button"
             onClick={async () => {
