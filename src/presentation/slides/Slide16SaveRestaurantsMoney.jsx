@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-16-save-restaurants.png";
+import graphic from "../assets/slide-16-save-restaurants.webp";
 
 export default function Slide16SaveRestaurantsMoney() {
   return (

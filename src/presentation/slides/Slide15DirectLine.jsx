@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-15-path-to-success.png";
+import graphic from "../assets/slide-15-path-to-success.webp";
 
 export default function Slide15DirectLine() {
   return (

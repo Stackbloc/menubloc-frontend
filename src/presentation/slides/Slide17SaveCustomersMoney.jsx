@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-17-save-customers.png";
+import graphic from "../assets/slide-17-save-customers.webp";
 
 export default function Slide17SaveCustomersMoney() {
   return (

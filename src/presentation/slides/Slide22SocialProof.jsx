@@ -1,7 +1,7 @@
 import React from "react";
 import FullBleedGraphic from "../components/FullBleedGraphic.jsx";
 import { PRESENTATION_THEME } from "../theme.js";
-import graphic from "../assets/slide-22-plans.png";
+import graphic from "../assets/slide-22-plans.webp";
 
 export default function Slide22SocialProof() {
   return (
