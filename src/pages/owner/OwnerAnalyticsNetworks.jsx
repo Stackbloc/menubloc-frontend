@@ -279,8 +279,8 @@ function Growth({ report }) {
         {s.weeks ? `${s.weeks_net_positive} of ${s.weeks} closed weeks had more activations than lapses${s.current_positive_streak ? `; the last ${s.current_positive_streak} in a row` : ""}. One good stretch is not a sign of self-sustaining growth.` : "No closed weeks in this range yet."}
       </div>
       <Table rows={report.activation.weeks} columns={[
-        ["Week ending", "week_end"], ["Active (28-day)", (r) => num(r.active)], ["Activated", (r) => num(r.activated)],
-        ["Lapsed", (r) => num(r.lapsed)], ["Net", (r) => (r.net > 0 ? `+${r.net}` : String(r.net))],
+        ["Week ending", "week_end"], ["Active (28-day)", (r) => shown(r.active)], ["Activated", (r) => shown(r.activated)],
+        ["Lapsed", (r) => shown(r.lapsed)], ["Net", (r) => (r.net == null ? "—" : r.net > 0 ? `+${r.net}` : String(r.net))],
       ]} />
     </Section>
   );
@@ -292,7 +292,7 @@ function Comparison({ rows }) {
     <Section title="Networks side by side" subtitle="Same weeks, same rules. Compare networks of similar size; small ones swing a lot.">
       <Table rows={rows} columns={[
         ["Network", (r) => `${r.name}${r.archived ? " (archived)" : ""}`], ["Kind", (r) => KIND_LABEL[r.kind] || r.kind],
-        ["Members", (r) => num(r.members_now)], ["Active last week", (r) => shown(r.last_week?.active_members)],
+        ["Members", (r) => shown(r.members_now)], ["Active last week", (r) => shown(r.last_week?.active_members)],
         ["Median within", (r) => shown(r.last_week?.within?.median)], ["% with 2+ within", (r) => pct(r.last_week?.within?.two_plus_pct)],
         ["Density", (r) => pct(r.last_week?.density_pct)],
         ["Confirmed ≤24 h", (r) => `${pct(r.invitations.confirmed_pct)} (n=${shown(r.invitations.n)})`],
@@ -346,7 +346,7 @@ function Rosters({ clusterId, referrals, onChange }) {
                     <div style={{ fontWeight: 700 }}>{n.name}{n.archived_at ? " · archived" : ""}</div>
                     <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
                       {KIND_LABEL[n.kind]} · {num(n.members)} members · came by link: {num(n.referred_signups)} signed up, {num(n.referred_signins)} signed in ({num(n.referred_now_members)} now members)
-                      {ref ? ` · in this range: ${num(ref.signed_up + ref.signed_in)}` : ""}
+                      {ref ? ` · in this range: ${shown(ref.signed_up)} signed up, ${shown(ref.signed_in)} signed in` : ""}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
