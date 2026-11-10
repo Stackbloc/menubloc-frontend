@@ -7,6 +7,7 @@ import {
   getOwnerAnalyticsCampaigns,
   getOwnerAnalyticsHub,
 } from "../../lib/ownerApi.js";
+import NetworksTab from "./OwnerAnalyticsNetworks.jsx";
 
 // Owner Analytics: one page, aggregates only. Days are America/Los_Angeles; the backend owns every definition.
 const TABS = [
@@ -15,6 +16,7 @@ const TABS = [
   ["engagement", "Engagement & Retention"],
   ["discovery", "Restaurant Discovery"],
   ["social", "Social & Wall"],
+  ["networks", "Networks"],
   ["advertising", "Advertising"],
   ["reports", "Reports & Exports"],
 ];
@@ -106,6 +108,7 @@ export default function OwnerAnalytics() {
           {tab === "engagement" ? <Engagement e={data.engagement} defs={data.definitions} /> : null}
           {tab === "discovery" ? <Discovery d={data.discovery} m={data.marketplace} grain={filters.grain} defs={data.definitions} /> : null}
           {tab === "social" ? <Social s={data.social} /> : null}
+          {tab === "networks" ? <NetworksTab filters={filters} /> : null}
           {tab === "advertising" ? <Advertising ad={data.advertising} campaigns={campaigns} filters={filters} defs={data.definitions} /> : null}
           {tab === "reports" ? <Reports filters={filters} campaigns={campaigns} defs={data.definitions} /> : null}
         </div>
@@ -541,3 +544,6 @@ const smallButton = { border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 99
 const thStyle = { textAlign: "left", padding: "8px 10px", fontSize: 12, color: OWNER_COLORS.muted, fontWeight: 600, borderBottom: `1px solid ${OWNER_COLORS.line}`, whiteSpace: "nowrap" };
 const tdStyle = { padding: "9px 10px", borderBottom: `1px solid #F0F1F3`, color: OWNER_COLORS.ink, verticalAlign: "top", fontVariantNumeric: "tabular-nums" };
 const srOnly = { position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
+
+// Shared with the Networks tab (OwnerAnalyticsNetworks.jsx).
+export { Banner, Definitions, Grid, Kpi, Section, Segmented, Table, inputStyle, num, pct, smallButton, srOnly };

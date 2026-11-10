@@ -370,6 +370,11 @@ export const connectViaDinerQr = (token) =>
 export const fetchPublicDinerQr = (token) =>
   get(`/api/public/diner-qr/${encodeURIComponent(String(token))}`);
 
+// Network links (/n/:code): referral attribution only, never membership (mig 0410).
+export const getNetworkLink = (code) => get(`/api/consumer/network-links/${encodeURIComponent(String(code))}`);
+export const attachNetworkLink = (code, openedAt = null) =>
+  post(`/api/consumer/network-links/${encodeURIComponent(String(code))}/attach`, { opened_at: openedAt });
+
 /** Resolve scan landing for /d/:token (personal or Meet Me Here). Hits API host directly. */
 export async function resolveDinerQrScan(token) {
   const language = readStoredLanguage();

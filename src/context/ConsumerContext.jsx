@@ -23,6 +23,7 @@ import {
   verifySmsCode as verifyConsumerSmsCode,
   verifyPhoneChangeCode as verifyConsumerPhoneChangeCode,
 } from "../lib/consumerApi.js";
+import { attachPendingNetworkLink } from "../lib/pendingNetworkLink.js";
 import {
   clearAllergenExclusionSessionToastMarker,
   hasActiveAllergenExclusions,
@@ -117,6 +118,8 @@ export function ConsumerProvider({ children }) {
 
     try {
       const data = await loadMe({ clearOn401: false });
+      // A network link opened before sign-up / sign-in is credited once (referral only, never membership).
+      attachPendingNetworkLink();
       maybeResetMenuPreferenceSession(data, {
         dietary_preferences: data?.dietary_preferences,
         allergen_preferences: data?.allergen_preferences,

@@ -238,6 +238,24 @@ function hubQuery(params = {}) {
 export const getOwnerAnalyticsHub = (params = {}) => get(`/api/owner/analytics/hub${hubQuery(params)}`);
 export const getOwnerAnalyticsCampaigns = (params = {}) => get(`/api/owner/analytics/hub/campaigns${hubQuery(params)}`);
 
+// Atomic networks (mig 0410): Owner-managed rosters + network links. Analytics groupings only.
+const NETS = "/api/owner/analytics/networks";
+export const getOwnerNetworks = ({ cluster_id, archived } = {}) =>
+  get(`${NETS}?${new URLSearchParams({ cluster_id: String(cluster_id || 0), ...(archived ? { archived: "1" } : {}) })}`);
+export const createOwnerNetwork = (body) => post(NETS, body);
+export const updateOwnerNetwork = (id, body) => patch(`${NETS}/${encodeURIComponent(String(id))}`, body);
+export const getOwnerNetworkMembers = (id) => get(`${NETS}/${encodeURIComponent(String(id))}/members`);
+export const addOwnerNetworkMember = (id, identifier) => post(`${NETS}/${encodeURIComponent(String(id))}/members`, { identifier });
+export const removeOwnerNetworkMember = (id, userId) =>
+  del(`${NETS}/${encodeURIComponent(String(id))}/members/${encodeURIComponent(String(userId))}`);
+export const getOwnerNetworkReport = (params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ["from", "to", "cluster_id", "network_id"]) {
+    if (params[key] != null && params[key] !== "" && params[key] !== 0) qs.set(key, String(params[key]));
+  }
+  return get(`${NETS}/report?${qs}`);
+};
+
 async function ownerAnalyticsDownload(path) {
   const res = await fetch(`${API}${path}`, { credentials: "include" });
   if (!res.ok) {
