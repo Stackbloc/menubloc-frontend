@@ -743,7 +743,7 @@ export const getOwnerBot = (botKey) => get(`/api/owner/bots/${encodeURIComponent
 export const updateOwnerBotSchedule = (botKey, body) =>
   put(`/api/owner/bots/${encodeURIComponent(botKey)}/schedule`, body);
 
-/** Hours Bot accepts body { market: { name, state }, limit }; Address Bot { market: key, limit }. */
+/** Hours Bot: { market, limit } or { scope, mode, use_google, limit }; Address Bot { market: key, limit }. */
 export const runOwnerBotNow = (botKey, body = {}) => post(`/api/owner/bots/${encodeURIComponent(botKey)}/run`, body);
 
 /** Nutribot: recompute nutrition for every menu item of one restaurant. */
@@ -782,9 +782,24 @@ export const createNutribotTemplate = (body) => post("/api/owner/bots/nutribot/t
 /** Nutribot: assign templates by hand and recompute those items. body = { assignments: [{ menu_item_id, template_id }] } */
 export const assignNutribotTemplates = (assignments) => post("/api/owner/bots/nutribot/assign", { assignments });
 
-/** Hours Bot: find hours for one restaurant now. */
-export const runHoursBotForRestaurant = (restaurantId) =>
-  post(`/api/owner/bots/hours_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, {});
+/** Hours Bot: find (mode "fill") or re-check (mode "check") one restaurant's hours now. */
+export const runHoursBotForRestaurant = (restaurantId, { mode = "fill", use_google = false } = {}) =>
+  post(`/api/owner/bots/hours_bot/restaurants/${encodeURIComponent(restaurantId)}/run`, { mode, use_google });
+
+/** Hours Bot: the Check existing schedule. body: { enabled?, frequency?, day_of_week?, time_of_day? } */
+export const updateHoursBotCheckSchedule = (body) => put("/api/owner/bots/hours_bot/check-schedule", body);
+
+/** Hours Bot review: action "apply" (Use this), "keep" (Keep current) or "undo". */
+export const hoursBotReviewAction = (restaurantId, action) =>
+  post(`/api/owner/bots/hours_bot/restaurants/${encodeURIComponent(restaurantId)}/${encodeURIComponent(action)}`, {});
+
+/** Saved sources (plan 34): links bots start from for one restaurant (+ its chain's). */
+export const getRestaurantSources = (restaurantId) =>
+  get(`/api/owner/bots/sources/restaurants/${encodeURIComponent(restaurantId)}`);
+export const addRestaurantSource = (restaurantId, { kind, url }) =>
+  post(`/api/owner/bots/sources/restaurants/${encodeURIComponent(restaurantId)}`, { kind, url });
+export const removeRestaurantSource = (restaurantId, sourceId) =>
+  del(`/api/owner/bots/sources/restaurants/${encodeURIComponent(restaurantId)}/${encodeURIComponent(sourceId)}`);
 
 /** Hours Bot: one run with per-restaurant results. */
 export const getHoursBotRun = (runId) => get(`/api/owner/bots/hours_bot/runs/${encodeURIComponent(runId)}`);

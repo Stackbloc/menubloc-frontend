@@ -10,11 +10,13 @@ import {
   getHoursBotRun,
   getNutribotRun,
   getOwnerBot,
+  hoursBotReviewAction,
   runAddressBotForRestaurant,
   runHoursBotForRestaurant,
   runNutribotForRestaurant,
   runOwnerBotNow,
   searchMenuConsoleRestaurants,
+  updateHoursBotCheckSchedule,
   updateOwnerBotSchedule,
 } from "../../lib/ownerApi.js";
 import {
@@ -32,6 +34,7 @@ import {
   formatDuration,
   formatHoursSummary,
   formatTime12,
+  hoursModeLabel,
   addressSourceUrl,
   runResultText,
   scheduleSummary,
@@ -46,8 +49,10 @@ import {
  *   - Run history
  *   - Nutribot only: analyze one restaurant's whole menu right away; unprocessed items,
  *     template assignment and dish templates (NutribotTemplatesPanel.jsx)
- *   - Hours Bot only: find one restaurant's hours now, run one market,
- *     recent per-restaurant results, coverage of restaurants with menus
+ *   - Hours Bot only: one restaurant now (Fill missing / Check existing), "What to check"
+ *     (cluster, city, ZIP, near a spot, county, state, market, everywhere), review list for
+ *     changed hours a person entered, Undo for automatic updates, Check existing schedule
+ *     (plan 34), recent per-restaurant results, coverage of restaurants with menus
  *   - Address Bot only: same per-restaurant / market tools, LA street-address
  *     coverage, and a review list of matches the bot wasn't sure of
  *   - SEO Bot only: Search Console connection + traffic, "what to fix" from the
@@ -144,8 +149,16 @@ function RunHistory({ botKey, runs, showRestaurant = false, showScope = false, e
               {showRestaurant ? (
                 <td style={{ padding: 10 }}>{run.restaurant_name || `#${run.restaurant_id}`}</td>
               ) : null}
-              {showScope ? <td style={{ padding: 10 }}>{run.market || "All markets"}</td> : null}
-              <td style={{ padding: 10, whiteSpace: "nowrap" }}>{triggerLabel(run.trigger)}</td>
+              {showScope ? <td style={{ padding: 10 }}>{run.scope_label || run.market || "All markets"}</td> : null}
+              <td style={{ padding: 10, whiteSpace: "nowrap" }}>
+                {triggerLabel(run.trigger)}
+                {botKey === "hours_bot" && run.mode ? (
+                  <div style={{ ...mutedStyle, fontSize: 12, marginTop: 2 }}>
+                    {hoursModeLabel(run.mode)}
+                    {run.use_google ? " · Google" : ""}
+                  </div>
+                ) : null}
+              </td>
               <td style={{ padding: 10 }}><StatusPill status={run.status} /></td>
               <td style={{ padding: 10 }}>
                 {runResultText(botKey, run)}
@@ -162,8 +175,9 @@ function RunHistory({ botKey, runs, showRestaurant = false, showScope = false, e
   );
 }
 
-function ScheduleEditor({ bot, onSaved }) {
-  const schedule = bot.schedule;
+function ScheduleEditor({ bot, schedule: scheduleProp, idPrefix, saveFn, pausedText, onSaved }) {
+  const schedule = scheduleProp || bot.schedule;
+  const prefix = idPrefix || bot.bot_key;
   const [mode, setMode] = useState(schedule.enabled ? schedule.frequency : "paused");
   const [day, setDay] = useState(schedule.day_of_week ?? 0);
   const [time, setTime] = useState(schedule.time_of_day || "12:00");
@@ -194,7 +208,7 @@ function ScheduleEditor({ bot, onSaved }) {
         mode === "paused"
           ? { enabled: false }
           : { enabled: true, frequency: mode, time_of_day: time, ...(mode === "weekly" ? { day_of_week: Number(day) } : {}) };
-      const next = await updateOwnerBotSchedule(bot.bot_key, body);
+      const next = saveFn ? await saveFn(body) : await updateOwnerBotSchedule(bot.bot_key, body);
       setSaved(true);
       onSaved(next);
     } catch (err) {
@@ -208,8 +222,8 @@ function ScheduleEditor({ bot, onSaved }) {
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
-          <label style={labelStyle} htmlFor={`${bot.bot_key}-mode`}>Runs</label>
-          <select id={`${bot.bot_key}-mode`} style={inputStyle} value={mode} onChange={(e) => { setMode(e.target.value); setSaved(false); }}>
+          <label style={labelStyle} htmlFor={`${prefix}-mode`}>Runs</label>
+          <select id={`${prefix}-mode`} style={inputStyle} value={mode} onChange={(e) => { setMode(e.target.value); setSaved(false); }}>
             <option value="weekly">Every week</option>
             <option value="daily">Every day</option>
             <option value="paused">Paused</option>
@@ -217,16 +231,16 @@ function ScheduleEditor({ bot, onSaved }) {
         </div>
         {mode === "weekly" ? (
           <div>
-            <label style={labelStyle} htmlFor={`${bot.bot_key}-day`}>On</label>
-            <select id={`${bot.bot_key}-day`} style={inputStyle} value={day} onChange={(e) => { setDay(Number(e.target.value)); setSaved(false); }}>
+            <label style={labelStyle} htmlFor={`${prefix}-day`}>On</label>
+            <select id={`${prefix}-day`} style={inputStyle} value={day} onChange={(e) => { setDay(Number(e.target.value)); setSaved(false); }}>
               {DAY_NAMES.map((name, i) => <option key={name} value={i}>{name}</option>)}
             </select>
           </div>
         ) : null}
         {mode !== "paused" ? (
           <div>
-            <label style={labelStyle} htmlFor={`${bot.bot_key}-time`}>At (Pacific)</label>
-            <select id={`${bot.bot_key}-time`} style={inputStyle} value={time} onChange={(e) => { setTime(e.target.value); setSaved(false); }}>
+            <label style={labelStyle} htmlFor={`${prefix}-time`}>At (Pacific)</label>
+            <select id={`${prefix}-time`} style={inputStyle} value={time} onChange={(e) => { setTime(e.target.value); setSaved(false); }}>
               {timeOptions.map((t) => <option key={t} value={t}>{formatTime12(t)}</option>)}
             </select>
           </div>
@@ -237,7 +251,7 @@ function ScheduleEditor({ bot, onSaved }) {
       </div>
       <div style={{ ...mutedStyle, marginTop: 10 }}>
         {mode === "paused"
-          ? "While paused, the bot only runs when you click Run now."
+          ? pausedText || "While paused, the bot only runs when you click Run now."
           : "Changes apply from the next scheduled time. A run already in progress is not affected."}
       </div>
       {saved && !dirty ? <div style={{ marginTop: 8, color: "#047857", fontSize: 13, fontWeight: 700 }}>Schedule saved.</div> : null}
@@ -284,7 +298,18 @@ function HoursResult({ check }) {
           </span>
         ) : null}
       </div>
-      {check.hours?.length ? <div style={{ fontSize: 13 }}>{formatHoursSummary(check.hours)}</div> : null}
+      {check.hours?.length ? (
+        <div style={{ fontSize: 13 }}>
+          {check.outcome === "needs_review" || check.outcome === "updated" ? <strong>Found: </strong> : null}
+          {formatHoursSummary(check.hours)}
+        </div>
+      ) : null}
+      {(check.outcome === "needs_review" || check.outcome === "updated") && check.current_hours?.length ? (
+        <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+          <strong>{check.outcome === "updated" ? "Was: " : "On profile: "}</strong>
+          {formatHoursSummary(check.current_hours)}
+        </div>
+      ) : null}
       {check.outcome !== "saved" && check.notes?.length ? (
         <div style={{ ...mutedStyle, fontSize: 12 }}>{check.notes.join(" ")}</div>
       ) : null}
@@ -324,8 +349,10 @@ function AddressResult({ check }) {
   );
 }
 
-function RestaurantAnalyzer({ botKey, onFinished }) {
+function RestaurantAnalyzer({ botKey, onFinished, checkReady = false, googleAvailable = false }) {
   const cfg = ANALYZER[botKey];
+  const [hoursMode, setHoursMode] = useState("fill");
+  const [useGoogle, setUseGoogle] = useState(false);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState(null);
@@ -373,7 +400,7 @@ function RestaurantAnalyzer({ botKey, onFinished }) {
     setError("");
     setRun(null);
     try {
-      const data = await cfg.start(restaurant.id);
+      const data = await cfg.start(restaurant.id, botKey === "hours_bot" ? { mode: hoursMode, use_google: useGoogle } : undefined);
       setRun({ log_id: data.log_id, status: "running", totals: { items: data.total_items, updated: 0 } });
       onFinished?.();
       poll(data.log_id);
@@ -406,7 +433,7 @@ function RestaurantAnalyzer({ botKey, onFinished }) {
             Change
           </button>
           <button type="button" onClick={analyze} disabled={busy || running} style={primaryButtonStyle({ busy: busy || running })}>
-            {running ? "Working…" : busy ? "Starting…" : cfg.button}
+            {running ? "Working…" : busy ? "Starting…" : botKey === "hours_bot" && hoursMode === "check" ? "Check hours now" : cfg.button}
           </button>
         </div>
       ) : (
@@ -449,6 +476,13 @@ function RestaurantAnalyzer({ botKey, onFinished }) {
         </form>
       )}
 
+      {botKey === "hours_bot" ? (
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
+          <ModeToggle value={hoursMode} onChange={setHoursMode} checkReady={checkReady} idPrefix="hours-restaurant" />
+          {googleAvailable ? <GoogleToggle checked={useGoogle} onChange={setUseGoogle} /> : null}
+        </div>
+      ) : null}
+
       {run ? (
         <div
           style={{
@@ -483,25 +517,127 @@ function RestaurantAnalyzer({ botKey, onFinished }) {
   );
 }
 
-const BATCH_SIZES = [25, 50, 100, 200];
+// ── Hours Bot (plan 34): mode, Google, "What to check", review, undo ──────────
 
-function MarketRunner({ markets, running, onStarted }) {
+function ModeToggle({ value, onChange, checkReady, idPrefix }) {
+  const options = [
+    { key: "fill", label: "Fill missing" },
+    { key: "check", label: "Check existing", disabled: !checkReady },
+  ];
+  return (
+    <div role="radiogroup" aria-label="What Hours Bot does" style={{ display: "inline-flex", border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 10, overflow: "hidden" }}>
+      {options.map((o) => {
+        const active = value === o.key;
+        return (
+          <button
+            key={o.key}
+            id={`${idPrefix}-mode-${o.key}`}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={o.disabled}
+            title={o.disabled ? "Needs migration 0420" : undefined}
+            onClick={() => onChange(o.key)}
+            style={{
+              border: "none",
+              padding: "8px 14px",
+              fontWeight: 700,
+              fontSize: 13,
+              background: active ? OWNER_COLORS.ink : "#fff",
+              color: active ? "#fff" : OWNER_COLORS.ink,
+              cursor: o.disabled ? "not-allowed" : "pointer",
+              opacity: o.disabled ? 0.45 : 1,
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function GoogleToggle({ checked, onChange }) {
+  return (
+    <label style={{ display: "inline-flex", gap: 8, alignItems: "center", fontSize: 13, cursor: "pointer" }}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      Also use Google Places <span style={mutedStyle}>(paid, only when free sources find nothing)</span>
+    </label>
+  );
+}
+
+const SCOPE_KINDS = [
+  { key: "cluster", label: "A cluster", v2: true },
+  { key: "city", label: "A city", v2: true },
+  { key: "zip", label: "A ZIP code", v2: true },
+  { key: "radius", label: "Around a spot", v2: true },
+  { key: "county", label: "A county", v2: true },
+  { key: "state", label: "A state", v2: true },
+  { key: "market", label: "A market" },
+  { key: "all", label: "Everywhere" },
+];
+
+const AREA_LIMITS = [25, 50, 100, 200, 500, 1000];
+const RADIUS_MILES = [0.5, 1, 2, 5, 10, 25];
+
+function HoursScopeRunner({ bot, running, onStarted }) {
+  const ready = Boolean(bot.scopes_ready);
+  const clusters = bot.clusters || [];
+  const markets = bot.markets || [];
+  const [kind, setKind] = useState(ready ? "cluster" : "market");
+  const [mode, setMode] = useState("fill");
+  const [useGoogle, setUseGoogle] = useState(false);
+  const [clusterId, setClusterId] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("CA");
+  const [zip, setZip] = useState("");
+  const [county, setCounty] = useState("");
+  const [spot, setSpot] = useState("");
+  const [miles, setMiles] = useState(1);
   const [marketKey, setMarketKey] = useState("");
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(200);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
+  const spots = clusters.filter((c) => c.center);
+  const st = state.trim().toUpperCase();
+
+  function buildScope() {
+    if (kind === "cluster") return clusterId ? { type: "cluster", cluster_id: clusterId === "all" ? "all" : Number(clusterId) } : null;
+    if (kind === "market") {
+      const m = markets.find((x) => `${x.name}|${x.state}` === marketKey);
+      return m ? { type: "market", market: { name: m.name, state: m.state } } : null;
+    }
+    if (kind === "all") return { type: "all" };
+    if (kind === "city") return city.trim() && st.length === 2 ? { type: "area", area: { kind: "city", city: city.trim(), state: st } } : null;
+    if (kind === "zip") return /^\d{5}$/.test(zip.trim()) ? { type: "area", area: { kind: "zip", zip: zip.trim() } } : null;
+    if (kind === "state") return st.length === 2 ? { type: "area", area: { kind: "state", state: st } } : null;
+    if (kind === "county") return county.trim() && st.length === 2 ? { type: "area", area: { kind: "county", name: county.trim(), state: st } } : null;
+    if (kind === "radius") {
+      const c = spots.find((x) => String(x.id) === spot);
+      return c ? { type: "area", area: { kind: "radius", lat: c.center.lat, lng: c.center.lng, miles, label: c.name } } : null;
+    }
+    return null;
+  }
+
+  const scope = buildScope();
+  const usesLimit = kind !== "cluster";
+
   async function start() {
-    const market = (markets || []).find((m) => `${m.name}|${m.state}` === marketKey);
-    if (!market) return;
+    if (!scope) return;
     setBusy(true);
     setMessage("");
     try {
-      const data = await runOwnerBotNow("hours_bot", { market: { name: market.name, state: market.state }, limit });
+      const body = { scope, mode, use_google: useGoogle };
+      if (usesLimit) body.limit = limit;
+      const data = await runOwnerBotNow("hours_bot", body);
+      const where = data.scope_label || "this area";
       setMessage(
         data.total_restaurants
-          ? `Started: checking ${data.total_restaurants} restaurants in ${market.name}. Results appear below as it goes.`
-          : `Nothing to do in ${market.name} — every restaurant there has hours or was checked in the last 30 days.`
+          ? `Started: ${mode === "check" ? "checking" : "looking up"} ${data.total_restaurants} restaurants in ${where}. Results appear below as it goes.`
+          : data.resumed
+            ? "Picked up the run that was already under way."
+            : `Started for ${where}. Results appear below as it goes.`
       );
       onStarted?.();
     } catch (err) {
@@ -511,32 +647,221 @@ function MarketRunner({ markets, running, onStarted }) {
     }
   }
 
+  const stateInput = (
+    <div>
+      <label style={labelStyle} htmlFor="hours-scope-state">State</label>
+      <input id="hours-scope-state" style={{ ...inputStyle, width: 70 }} maxLength={2} value={state} onChange={(e) => setState(e.target.value.toUpperCase())} placeholder="CA" />
+    </div>
+  );
+
   return (
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-          <label style={labelStyle} htmlFor="hours-bot-market">Market</label>
-          <select id="hours-bot-market" style={{ ...inputStyle, width: "100%" }} value={marketKey} onChange={(e) => setMarketKey(e.target.value)}>
-            <option value="">Choose a market…</option>
-            {(markets || []).map((m) => (
-              <option key={`${m.name}|${m.state}`} value={`${m.name}|${m.state}`}>{m.name}</option>
+        <div>
+          <label style={labelStyle} htmlFor="hours-scope-kind">What to check</label>
+          <select id="hours-scope-kind" style={inputStyle} value={kind} onChange={(e) => { setKind(e.target.value); setMessage(""); }}>
+            {SCOPE_KINDS.map((k) => (
+              <option key={k.key} value={k.key} disabled={k.v2 && !ready}>{k.label}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label style={labelStyle} htmlFor="hours-bot-limit">Up to</label>
-          <select id="hours-bot-limit" style={inputStyle} value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
-            {BATCH_SIZES.map((n) => <option key={n} value={n}>{n} restaurants</option>)}
-          </select>
-        </div>
-        <button type="button" onClick={start} disabled={!marketKey || busy || running} style={primaryButtonStyle({ busy, disabled: !marketKey || running })}>
-          {busy ? "Starting…" : "Run for this market"}
+
+        {kind === "cluster" ? (
+          <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+            <label style={labelStyle} htmlFor="hours-scope-cluster">Cluster</label>
+            <select id="hours-scope-cluster" style={{ ...inputStyle, width: "100%" }} value={clusterId} onChange={(e) => setClusterId(e.target.value)}>
+              <option value="">Choose a cluster…</option>
+              <option value="all">Every cluster</option>
+              {clusters.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.restaurants})</option>)}
+            </select>
+          </div>
+        ) : null}
+
+        {kind === "city" ? (
+          <>
+            <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+              <label style={labelStyle} htmlFor="hours-scope-city">City</label>
+              <input id="hours-scope-city" style={{ ...inputStyle, width: "100%" }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Los Angeles" />
+            </div>
+            {stateInput}
+          </>
+        ) : null}
+
+        {kind === "zip" ? (
+          <div>
+            <label style={labelStyle} htmlFor="hours-scope-zip">ZIP code</label>
+            <input id="hours-scope-zip" style={{ ...inputStyle, width: 110 }} inputMode="numeric" maxLength={5} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} placeholder="90007" />
+          </div>
+        ) : null}
+
+        {kind === "county" ? (
+          <>
+            <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+              <label style={labelStyle} htmlFor="hours-scope-county">County</label>
+              <input id="hours-scope-county" style={{ ...inputStyle, width: "100%" }} value={county} onChange={(e) => setCounty(e.target.value)} placeholder="Orange County" />
+            </div>
+            {stateInput}
+          </>
+        ) : null}
+
+        {kind === "state" ? stateInput : null}
+
+        {kind === "radius" ? (
+          <>
+            <div>
+              <label style={labelStyle} htmlFor="hours-scope-miles">Within</label>
+              <select id="hours-scope-miles" style={inputStyle} value={miles} onChange={(e) => setMiles(Number(e.target.value))}>
+                {RADIUS_MILES.map((m) => <option key={m} value={m}>{m} mi</option>)}
+              </select>
+            </div>
+            <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+              <label style={labelStyle} htmlFor="hours-scope-spot">of</label>
+              <select id="hours-scope-spot" style={{ ...inputStyle, width: "100%" }} value={spot} onChange={(e) => setSpot(e.target.value)}>
+                <option value="">Choose a spot…</option>
+                {spots.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          </>
+        ) : null}
+
+        {kind === "market" ? (
+          <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+            <label style={labelStyle} htmlFor="hours-scope-market">Market</label>
+            <select id="hours-scope-market" style={{ ...inputStyle, width: "100%" }} value={marketKey} onChange={(e) => setMarketKey(e.target.value)}>
+              <option value="">Choose a market…</option>
+              {markets.map((m) => <option key={`${m.name}|${m.state}`} value={`${m.name}|${m.state}`}>{m.name}</option>)}
+            </select>
+          </div>
+        ) : null}
+
+        {usesLimit ? (
+          <div>
+            <label style={labelStyle} htmlFor="hours-scope-limit">Up to</label>
+            <select id="hours-scope-limit" style={inputStyle} value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
+              {AREA_LIMITS.map((n) => <option key={n} value={n}>{n} restaurants</option>)}
+            </select>
+          </div>
+        ) : null}
+      </div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
+        <ModeToggle value={mode} onChange={setMode} checkReady={ready} idPrefix="hours-scope" />
+        {bot.google_places_configured ? <GoogleToggle checked={useGoogle} onChange={setUseGoogle} /> : null}
+        <button type="button" onClick={start} disabled={!scope || busy || running} style={primaryButtonStyle({ busy, disabled: !scope || running })}>
+          {busy ? "Starting…" : mode === "check" ? "Check hours" : "Find hours"}
         </button>
       </div>
+
       <div style={{ ...mutedStyle, marginTop: 10 }}>
-        Checks the restaurants in this market that have no hours yet, those with menus first. Takes a few seconds per restaurant.
+        {mode === "check"
+          ? "Compares the hours on each profile with what the restaurant shows now. Hours Bot updates hours it found itself; hours a person entered, or on claimed restaurants, go to Needs review."
+          : "Looks up restaurants that have no hours yet, those with menus first. Saved hours pages are tried first."}
+        {kind === "cluster" ? " Clusters check every restaurant, even ones checked recently." : " Restaurants checked in the last 30 days are skipped."}
+        {!ready ? " Clusters, areas and Check existing turn on once migration 0420 is applied." : ""}
       </div>
       {message ? <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700 }}>{message}</div> : null}
+    </div>
+  );
+}
+
+function HoursRestaurantLink({ check }) {
+  return (
+    <div>
+      <a href={`/restaurants/${check.restaurant_id}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink }}>
+        {check.restaurant_name}
+      </a>
+      <span style={mutedStyle}> #{check.restaurant_id}{check.city ? ` · ${check.city}${check.state ? `, ${check.state}` : ""}` : ""}</span>
+    </div>
+  );
+}
+
+function useHoursAction(onChanged) {
+  const [busyKey, setBusyKey] = useState("");
+  const [error, setError] = useState("");
+  async function act(restaurantId, action) {
+    setBusyKey(`${restaurantId}:${action}`);
+    setError("");
+    try {
+      await hoursBotReviewAction(restaurantId, action);
+      onChanged?.();
+    } catch (err) {
+      setError(err?.message || "Could not do that");
+    } finally {
+      setBusyKey("");
+    }
+  }
+  return { busyKey, error, act };
+}
+
+function HoursReviewQueue({ checks, onChanged }) {
+  const { busyKey, error, act } = useHoursAction(onChanged);
+  if (!checks?.length) return <EmptyState>Nothing to review.</EmptyState>;
+  const smallButton = { ...secondaryButtonStyle, padding: "5px 12px" };
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+      {checks.map((c) => (
+        <div key={c.restaurant_id} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, paddingTop: 12, display: "grid", gap: 6 }}>
+          <HoursRestaurantLink check={c} />
+          <div style={{ fontSize: 13 }}>
+            <strong>On profile:</strong> {c.current_hours?.length ? formatHoursSummary(c.current_hours) : "No hours"}
+          </div>
+          <div style={{ fontSize: 13 }}>
+            <strong>Found:</strong> {formatHoursSummary(c.hours)}
+            {c.source ? (
+              <span style={mutedStyle}>
+                {" · "}
+                {c.source_url ? (
+                  <a href={c.source_url} target="_blank" rel="noreferrer">{HOURS_SOURCE_LABELS[c.source] || c.source}</a>
+                ) : (
+                  HOURS_SOURCE_LABELS[c.source] || c.source
+                )}
+              </span>
+            ) : null}
+          </div>
+          {c.notes?.length ? <div style={{ ...mutedStyle, fontSize: 12 }}>{c.notes.join(" ")}</div> : null}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" style={smallButton} disabled={Boolean(busyKey)} onClick={() => act(c.restaurant_id, "apply")}>
+              {busyKey === `${c.restaurant_id}:apply` ? "Saving…" : "Use found hours"}
+            </button>
+            <button type="button" style={smallButton} disabled={Boolean(busyKey)} onClick={() => act(c.restaurant_id, "keep")}>
+              {busyKey === `${c.restaurant_id}:keep` ? "Saving…" : "Keep current"}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HoursUndoList({ checks, onChanged }) {
+  const { busyKey, error, act } = useHoursAction(onChanged);
+  if (!checks?.length) return <EmptyState>No recent changes.</EmptyState>;
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      {error ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div> : null}
+      {checks.map((c) => (
+        <div key={c.restaurant_id} style={{ borderTop: `1px solid ${OWNER_COLORS.line}`, paddingTop: 12, display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 300px", minWidth: 0, display: "grid", gap: 4 }}>
+            <HoursRestaurantLink check={c} />
+            <div style={{ fontSize: 13 }}><strong>Now:</strong> {formatHoursSummary(c.hours)}</div>
+            {c.current_hours?.length ? (
+              <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}><strong>Was:</strong> {formatHoursSummary(c.current_hours)}</div>
+            ) : null}
+            <div style={{ ...mutedStyle, fontSize: 12 }}>
+              {c.review_action === "applied" ? "You chose the found hours" : "Updated automatically"} · {formatDateTime(c.written_at)}
+            </div>
+          </div>
+          <button
+            type="button"
+            style={{ ...secondaryButtonStyle, padding: "5px 12px" }}
+            disabled={Boolean(busyKey)}
+            onClick={() => act(c.restaurant_id, "undo")}
+          >
+            {busyKey === `${c.restaurant_id}:undo` ? "Undoing…" : "Undo"}
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -877,16 +1202,30 @@ export default function OwnerScheduledBot({ botKey }) {
 
             {botKey === "hours_bot" ? (
               <>
+                {bot.review_queue?.length ? (
+                  <PageCard style={{ padding: 24 }}>
+                    <SectionTitle
+                      title="Needs review"
+                      subtitle="Hours Bot found different hours than the ones a person entered (or the restaurant is claimed), so it didn't change them. Pick which to keep."
+                    />
+                    <HoursReviewQueue checks={bot.review_queue} onChanged={load} />
+                  </PageCard>
+                ) : null}
                 <PageCard style={{ padding: 24 }}>
                   <SectionTitle
-                    title="Find hours for a restaurant"
-                    subtitle="Looks up one restaurant right away and adds its hours to its profile. Hours already on a profile are never changed."
+                    title="Check one restaurant"
+                    subtitle="Fill missing adds hours when a restaurant has none. Check existing compares the hours on its profile with what the restaurant shows now."
                   />
-                  <RestaurantAnalyzer botKey="hours_bot" onFinished={load} />
+                  <RestaurantAnalyzer
+                    botKey="hours_bot"
+                    onFinished={load}
+                    checkReady={Boolean(bot.scopes_ready)}
+                    googleAvailable={Boolean(bot.google_places_configured)}
+                  />
                 </PageCard>
                 <PageCard style={{ padding: 24 }}>
-                  <SectionTitle title="Run for a market" subtitle="Fill in hours for one market now." />
-                  <MarketRunner markets={bot.markets} running={running} onStarted={load} />
+                  <SectionTitle title="Check an area" subtitle="A cluster, city, ZIP code, the area around a spot, a county, a state or a market." />
+                  <HoursScopeRunner bot={bot} running={running} onStarted={load} />
                 </PageCard>
               </>
             ) : null}
@@ -915,9 +1254,41 @@ export default function OwnerScheduledBot({ botKey }) {
             ) : null}
 
             <PageCard style={{ padding: 24 }}>
-              <SectionTitle title="Schedule" subtitle="When the bot runs on its own. Times are Pacific." />
+              <SectionTitle
+                title={botKey === "hours_bot" ? "Schedule: fill missing" : "Schedule"}
+                subtitle={botKey === "hours_bot" ? "When Hours Bot looks for hours restaurants don't have yet. Times are Pacific." : "When the bot runs on its own. Times are Pacific."}
+              />
               <ScheduleEditor bot={bot} onSaved={(next) => setBot((cur) => ({ ...cur, ...next }))} />
             </PageCard>
+
+            {botKey === "hours_bot" && bot.check_schedule ? (
+              <PageCard style={{ padding: 24 }}>
+                <SectionTitle
+                  title="Schedule: check existing"
+                  subtitle={`Re-checks the hours of every cluster restaurant. Hours Bot updates hours it found itself; anything a person entered goes to Needs review. Times are Pacific.${bot.check_schedule.next_run_at ? ` Next: ${formatDateTime(bot.check_schedule.next_run_at)}.` : ""}`}
+                />
+                <ScheduleEditor
+                  bot={bot}
+                  schedule={bot.check_schedule}
+                  idPrefix="hours-bot-check"
+                  pausedText="While paused, hours are only re-checked when you run Check existing yourself."
+                  saveFn={async (body) => (await updateHoursBotCheckSchedule(body)).check_schedule}
+                  onSaved={(next) => setBot((cur) => ({ ...cur, check_schedule: next }))}
+                />
+                {bot.check_schedule.env_disabled ? (
+                  <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412", fontSize: 13 }}>
+                    Scheduled checks are switched off on the server (HOURS_BOT_CHECK_SCHEDULED_ENABLED), so this won&apos;t run on its own until that&apos;s turned back on.
+                  </div>
+                ) : null}
+              </PageCard>
+            ) : null}
+
+            {botKey === "hours_bot" && bot.undoable?.length ? (
+              <PageCard style={{ padding: 24 }}>
+                <SectionTitle title="Recent hours changes" subtitle="Hours Bot replaced these restaurants' hours. Undo puts the old hours back." />
+                <HoursUndoList checks={bot.undoable} onChanged={load} />
+              </PageCard>
+            ) : null}
 
             <PageCard style={{ padding: 24 }}>
               <SectionTitle title="Run history" subtitle="The 10 most recent full runs." />

@@ -6,6 +6,7 @@ import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRest
 import OcrEditSplitLayout from "./OcrEditSplitLayout.jsx";
 import OwnerBrandStorePicker, { isBrandRecord } from "./OwnerBrandStorePicker.jsx";
 import OwnerMleLocations from "./OwnerMleLocations.jsx";
+import OwnerRestaurantSources from "./OwnerRestaurantSources.jsx";
 import OwnerProfileManager from "./OwnerProfileManager.jsx";
 import OwnerRestaurantDealsPanel from "./OwnerRestaurantDealsPanel.jsx";
 import {
@@ -1773,6 +1774,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                 {existingRestaurant && restaurant.business_type?.business_type === "mle" ? (
                   <OwnerMleLocations restaurant={restaurant} onChanged={refreshRestaurantRow} />
                 ) : null}
+                {existingRestaurant ? <OwnerRestaurantSources restaurantId={restaurant.id} /> : null}
               </>
             )}
           </div>

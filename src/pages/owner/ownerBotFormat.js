@@ -15,7 +15,7 @@ export const SCHEDULED_BOTS = {
     key: "hours_bot",
     name: "Hours Bot",
     path: "/owner/bots/hours-bot",
-    blurb: "Finds opening hours for restaurants that don't have them and shows them on their profile. Restaurants with menus go first.",
+    blurb: "Finds opening hours for restaurants that don't have them, and re-checks hours it found before. Starts from the hours pages saved for each restaurant.",
   },
   address_bot: {
     key: "address_bot",
@@ -67,6 +67,9 @@ export const HOURS_OUTCOME_LABELS = {
   kept_existing: "Already had hours",
   suspicious: "Found, but looked wrong",
   error: "Lookup failed — will retry",
+  same: "Hours still match",
+  updated: "Hours updated",
+  needs_review: "Different — needs review",
 };
 
 export const HOURS_OUTCOME_STATUS = {
@@ -75,6 +78,9 @@ export const HOURS_OUTCOME_STATUS = {
   kept_existing: "completed_no_writes",
   suspicious: "stale",
   error: "error",
+  same: "completed_no_writes",
+  updated: "success",
+  needs_review: "stale",
 };
 
 export const HOURS_SOURCE_LABELS = {
@@ -213,6 +219,24 @@ export function runResultText(botKey, run) {
     return parts.join(" · ");
   }
   if (botKey === "hours_bot") {
+    if (run.mode === "check") {
+      if (run.scope_type === "restaurant") {
+        if (t.updated) return "Hours updated";
+        if (t.review) return "Different — needs review";
+        if (t.same) return "Hours still match";
+        if (t.found) return "Hours added";
+        if (t.failed) return "Lookup failed";
+        return "No hours found";
+      }
+      const parts = [`${t.checked || 0} checked`];
+      if (t.same) parts.push(`${t.same} still match`);
+      if (t.updated) parts.push(`${t.updated} updated`);
+      if (t.review) parts.push(`${t.review} to review`);
+      if (t.found) parts.push(`${t.found} hours added`);
+      if (t.not_found) parts.push(`${t.not_found} not found`);
+      if (t.failed) parts.push(`${t.failed} failed`);
+      return parts.join(" · ");
+    }
     if (run.scope_type === "restaurant") {
       if (t.found) return "Hours added";
       if (t.skipped) return "Already had hours";
@@ -227,4 +251,9 @@ export function runResultText(botKey, run) {
   const parts = [`${t.translated || 0} translated`];
   if (t.failed) parts.push(`${t.failed} failed`);
   return parts.join(" · ");
+}
+
+/** Hours Bot run mode label. */
+export function hoursModeLabel(mode) {
+  return mode === "check" ? "Check existing" : "Fill missing";
 }
