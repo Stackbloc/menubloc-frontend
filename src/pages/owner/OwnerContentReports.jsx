@@ -18,7 +18,7 @@ const pill = (bg, fg, border = "transparent") => ({
 });
 const KIND_LABEL = {
   ate: "Diner clip", want: "Wish List clip", cooking: "Cooking clip", food_activity: "Food activity clip",
-  video_comment: "Dish video comment", wall: "Wall post", plan: "Social plan clip", event: "Event clip", managed: "Menuply clip", deal: "Deal clip",
+  video_comment: "Dish video comment", feed_comment: "Feed comment", wall: "Wall post", plan: "Social plan clip", event: "Event clip", managed: "Menuply clip", deal: "Deal clip",
 };
 
 export default function OwnerContentReports() {
@@ -80,6 +80,12 @@ export default function OwnerContentReports() {
               <strong>{r.reason_label}</strong>
               {r.note ? <span>“{r.note}”</span> : null}
               {r.wall?.body ? <span style={{ whiteSpace: "pre-wrap" }}>Wall post: “{r.wall.body}”</span> : null}
+              {r.comment?.body ? (
+                <span style={{ whiteSpace: "pre-wrap" }}>
+                  Comment: “{r.comment.body}” on clip {r.comment.post}
+                  {r.comment.status !== "published" ? ` (${r.comment.status})` : ""}
+                </span>
+              ) : null}
               <span style={{ color: "#5c665f", fontSize: 14 }}>
                 {KIND_LABEL[r.content_kind] || r.content_kind} #{r.content_id}
                 {r.reports_on_clip > 1 ? ` · reported ${r.reports_on_clip} times` : ""}
@@ -93,7 +99,7 @@ export default function OwnerContentReports() {
               ) : (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
                   {r.can_remove ? (
-                    <button type="button" disabled={busyId === r.id} style={pill("#b42318", "#fff")} onClick={() => act(r, "remove")}>{r.content_kind === "wall" ? "Remove post" : "Remove clip"}</button>
+                    <button type="button" disabled={busyId === r.id} style={pill("#b42318", "#fff")} onClick={() => act(r, "remove")}>{r.content_kind === "wall" ? "Remove post" : r.content_kind === "feed_comment" ? "Remove comment" : "Remove clip"}</button>
                   ) : (
                     <span style={{ fontSize: 14, color: "#5c665f" }}>Remove this one in Clip Manager.</span>
                   )}

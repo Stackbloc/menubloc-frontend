@@ -17,6 +17,7 @@ import AppIcon from "../../icons/AppIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
 import { trackShareEvent } from "../../share/shareUtils.js";
 import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
+import { commentCountLabel } from "../../../lib/feedComments.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
@@ -146,6 +147,8 @@ function RestaurantFavButton({ restaurantId, restaurantName, followSource }) {
  * @param {object} [props.shareAnalyticsContext]
  * @param {(open: boolean) => void} [props.onShareOpenChange] lets the parent pause the clip
  * @param {string} [props.followSource]
+ * @param {number|null} [props.commentCount] Feed comments (mig 0423): a number = comments are on → Comment button
+ * @param {() => void} [props.onComments] opens the comments sheet
  */
 export default function FeedVideoActionRail({
   bottomInset = 0,
@@ -163,6 +166,8 @@ export default function FeedVideoActionRail({
   shareAnalyticsContext = null,
   onShareOpenChange,
   followSource = "feed_video_rail",
+  commentCount = null,
+  onComments,
   /** Optional control above the buttons (Feed play/pause circle) — thumb-reachable. */
   topSlot = null,
 }) {
@@ -185,7 +190,8 @@ export default function FeedVideoActionRail({
   const showWannaGo = hasRestaurant;
   const showLike = hasRestaurant;
   const showShare = Boolean(shareData);
-  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showShare || showMenu;
+  const showComments = typeof commentCount === "number" && typeof onComments === "function";
+  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showComments || showShare || showMenu;
   if (!anyVisible) return null;
 
   function setShare(open) {
@@ -250,6 +256,17 @@ export default function FeedVideoActionRail({
             onClick={onInvite}
           >
             <InviteToEatIcon size={20} color="#fff" />
+          </RailButton>
+        ) : null}
+
+        {showComments ? (
+          <RailButton
+            testId="feed-rail-comments"
+            label={commentCountLabel(commentCount)}
+            hint={commentCount > 0 ? `${commentCount} ${commentCount === 1 ? "comment" : "comments"}. Open comments` : "Comment on this clip"}
+            onClick={onComments}
+          >
+            <AppIcon name="comment" size={22} color="#fff" />
           </RailButton>
         ) : null}
 

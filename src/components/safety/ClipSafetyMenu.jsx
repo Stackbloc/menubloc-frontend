@@ -29,7 +29,8 @@ const sheet = {
 };
 
 /** `children` replaces the ⋯ (the Feed shows a small flag + "Report", Andre 2026-11-04). */
-export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerName = "", onHidden, buttonStyle, label = "More", children = null }) {
+// noun: what is reported ("clip" by default; "comment" for Feed comments, mig 0423).
+export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerName = "", onHidden, buttonStyle, label = "More", children = null, noun = "clip" }) {
   const { isAuthenticated, consumer } = useConsumer();
   const location = useLocation();
   const feedbackTo = `/feedback?from=${encodeURIComponent(location.pathname)}`;
@@ -92,7 +93,7 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
       </button>
       {open ? (
         <div style={sheet.backdrop} onClick={close} onTouchStart={stop} onTouchEnd={stop} role="presentation">
-          <div style={sheet.panel} onClick={stop} role="dialog" aria-modal="true" aria-label="Clip options">
+          <div style={sheet.panel} onClick={stop} role="dialog" aria-modal="true" aria-label={`${noun.charAt(0).toUpperCase()}${noun.slice(1)} options`}>
             {!isAuthenticated ? (
               <>
                 <p style={sheet.title}>Sign in to report or block</p>
@@ -102,10 +103,10 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
               </>
             ) : step === "menu" ? (
               <>
-                {isOwn ? <p style={sheet.muted}>This is your clip.</p> : null}
+                {isOwn ? <p style={sheet.muted}>This is your {noun}.</p> : null}
                 {!isOwn ? (
                   <button type="button" style={sheet.row} onClick={() => setStep("reasons")} data-testid="clip-safety-report">
-                    Report clip
+                    Report {noun}
                   </button>
                 ) : null}
                 {!isOwn && dinerId != null ? (
@@ -121,7 +122,7 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
               </>
             ) : step === "reasons" ? (
               <>
-                <p style={sheet.title}>Why are you reporting this clip?</p>
+                <p style={sheet.title}>Why are you reporting this {noun}?</p>
                 {REASONS.map(([value, text]) => (
                   <label key={value} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 16 }}>
                     <input type="radio" name="report-reason" value={value} checked={reason === value} onChange={() => setReason(value)} />
@@ -135,7 +136,7 @@ export default function ClipSafetyMenu({ kind, contentId, dinerId = null, dinerN
                   disabled={!reason || busy}
                   style={{ ...sheet.pill, opacity: reason && !busy ? 1 : 0.5 }}
                   data-testid="clip-safety-send-report"
-                  onClick={() => run(() => reportContent({ kind, contentId, reason, note }), "Thanks, we'll take a look. You won't see this clip again.")}
+                  onClick={() => run(() => reportContent({ kind, contentId, reason, note }), `Thanks, we'll take a look. You won't see this ${noun} again.`)}
                 >
                   {busy ? "Sending…" : "Send report"}
                 </button>

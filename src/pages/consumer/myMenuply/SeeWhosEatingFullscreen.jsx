@@ -59,6 +59,8 @@ import { clearStuckMediaChrome, restoreDocumentScroll } from "./pendingHighlight
 import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/consumer/feed/FeedVideoPlayPauseButton.jsx";
 import ClipSafetyMenu from "../../../components/safety/ClipSafetyMenu.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
+import FeedCommentsSheet from "../../../components/consumer/feed/FeedCommentsSheet.jsx";
+import { feedItemCommentsOn } from "../../../lib/feedComments.js";
 
 const SWIPE_MIN_PX = 56;
 
@@ -82,6 +84,8 @@ export default function SeeWhosEatingFullscreen({
   headerSlot = null,
   showEmptyFirstVisitPrompt = false,
   sharedClipId = "",
+  /** Feed comments (mig 0423): ?comment= from a notification opens the comments of the shared clip. */
+  sharedCommentId = null,
   showSharedAccountInvite = false,
   onLoadMore = null,
   hasMore = false,
@@ -100,7 +104,14 @@ export default function SeeWhosEatingFullscreen({
   // Viewer pause (play/pause circle). Invite/Share also holds the clip so the reel cannot
   // advance to a different video while someone is sharing it.
   const [userPaused, setUserPaused] = useState(false);
-  const holdPlayback = userPaused || inviteOpen || railShareOpen;
+  // Feed comments sheet (mig 0423): the clip holds its place and pauses while comments are open.
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const commentsOpenRef = useRef(false);
+  commentsOpenRef.current = commentsOpen;
+  // Counts changed by this viewer (posted / deleted) since the Feed page loaded: { "ate:12": 4 }.
+  const [commentCounts, setCommentCounts] = useState({});
+  const autoOpenedCommentsRef = useRef(false);
+  const holdPlayback = userPaused || inviteOpen || railShareOpen || commentsOpen;
   const holdPlaybackRef = useRef(holdPlayback);
   holdPlaybackRef.current = holdPlayback;
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
@@ -113,6 +124,9 @@ export default function SeeWhosEatingFullscreen({
   const activeItems = isFeedHome ? playlist : items;
   const item = activeItems[index] || null;
   const feedShareData = useMemo(() => (item ? buildFeedVideoShareData(item) : null), [item]);
+  const itemCommentCount = feedItemCommentsOn(item)
+    ? (Object.prototype.hasOwnProperty.call(commentCounts, item.id) ? commentCounts[item.id] : item.comment_count)
+    : null;
   const inviteVideoShareUrl = useMemo(
     () => (item?.id ? feedClipShareUrl(item.id) : ""),
     [item?.id]
@@ -122,6 +136,23 @@ export default function SeeWhosEatingFullscreen({
   useEffect(() => {
     setPlaylist(Array.isArray(items) ? items : []);
   }, [items]);
+
+  // A notification link (/feed?clip=ate:12&comment=34) opens that clip's comments once.
+  useEffect(() => {
+    if (autoOpenedCommentsRef.current || !sharedCommentId || !item || !feedItemCommentsOn(item)) return;
+    if (String(item.id) !== String(sharedClipId)) return;
+    autoOpenedCommentsRef.current = true;
+    setCommentsOpen(true);
+  }, [item, sharedClipId, sharedCommentId]);
+
+  // Comments belong to one clip: moving to another closes the sheet (not on first render, so the
+  // notification auto-open above survives).
+  const commentsClipIdRef = useRef(item?.id);
+  useEffect(() => {
+    if (commentsClipIdRef.current === item?.id) return;
+    commentsClipIdRef.current = item?.id;
+    setCommentsOpen(false);
+  }, [item?.id]);
 
   useEffect(() => {
     const pendingIndex = pendingAdvanceAfterLoadRef.current;
@@ -326,6 +357,10 @@ export default function SeeWhosEatingFullscreen({
 
   useEffect(() => {
     function onKey(e) {
+      // Typing a comment (j / k / arrows) must never move the Feed; the sheet handles its own Escape.
+      if (commentsOpenRef.current) return;
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.key === "Escape") {
         e.preventDefault();
         if (menuBrowserOpen) {
@@ -999,6 +1034,8 @@ export default function SeeWhosEatingFullscreen({
           shareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
           onShareOpenChange={setRailShareOpen}
           followSource="feed_home_video"
+          commentCount={itemCommentCount}
+          onComments={() => setCommentsOpen(true)}
         />
       ) : null}
 
@@ -1056,6 +1093,16 @@ export default function SeeWhosEatingFullscreen({
   return (
     <>
       {isFeedHome ? ui : createPortal(ui, document.body)}
+      {itemCommentCount != null ? (
+        <FeedCommentsSheet
+          open={commentsOpen}
+          postId={item.id}
+          initialTotal={itemCommentCount}
+          focusCommentId={String(item.id) === String(sharedClipId) ? sharedCommentId : null}
+          onClose={() => setCommentsOpen(false)}
+          onCountChange={(n) => setCommentCounts((m) => (m[item.id] === n ? m : { ...m, [item.id]: n }))}
+        />
+      ) : null}
       {showInvite ? (
         <InviteToEatModal
           open={inviteOpen}
