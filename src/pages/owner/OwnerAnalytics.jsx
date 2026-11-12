@@ -435,7 +435,23 @@ function Social({ s }) {
       <Kpi label="Open Invites" value={s.open_invites} />
       <Kpi label="Plan RSVPs" value={s.plan_rsvps} />
       <Kpi label="Socially referred sign-ups" value={s.social_registrations} unit="people" note="Only with a tracked invite, QR or shared link." />
+      <FeedConversations f={s.feed_conversations} />
     </Grid>
+  );
+}
+
+/** Feed comments (backend mig 0423). Cluster = the clip's restaurant's only cluster; removed comments and test diners left out. */
+function FeedConversations({ f }) {
+  if (!f) return null;
+  return (
+    <>
+      <Kpi label="Feed comments" value={f.comments} note={`${num(f.replies)} replies`} />
+      <Kpi label="People commenting" value={f.commenters} unit="people" note={`${num(f.first_time)} for the first time`} />
+      <Kpi label="Repeat commenters" value={f.repeat} unit="people" note="Commented on 2+ different days." />
+      <Kpi label="Came back to a conversation" value={f.conversation_returns} unit="people" note="Commented again, on a later day, on a clip they had already commented on." />
+      <Kpi label="Clips with comments" value={f.posts} note={`${f.comments_per_post ?? "—"} comments and ${f.replies_per_post ?? "—"} replies per clip`} />
+      <Kpi label="Viewers who comment" value={f.viewer_comment_rate} unit="percent" note={`Of ${num(f.viewers)} signed-in diners who watched a Feed clip 3+ s.`} />
+    </>
   );
 }
 

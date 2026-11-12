@@ -38,6 +38,10 @@ export default function FeedHomePage() {
     () => feedClipQueryParam(searchParams.get("clip")),
     [searchParams]
   );
+  const sharedCommentId = useMemo(() => {
+    const n = Number(searchParams.get("comment"));
+    return Number.isInteger(n) && n > 0 ? n : null;
+  }, [searchParams]);
   const isDesktop = useFeedShellDesktop();
   const [items, setItems] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
@@ -179,6 +183,7 @@ export default function FeedHomePage() {
         desktopFeedShell={isDesktop}
         showEmptyFirstVisitPrompt={showEmptyFirstVisitPrompt}
         sharedClipId={sharedClipId}
+        sharedCommentId={sharedCommentId}
         // No "Open a free Menuply account" card over shared clips (cognitive load; header Log in stays).
         showSharedAccountInvite={false}
       />

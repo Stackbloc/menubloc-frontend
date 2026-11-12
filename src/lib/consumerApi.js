@@ -254,6 +254,16 @@ export const listDinerAbuseReasons = () => get("/api/consumer/diners/abuse-reaso
 export const reportContent = ({ kind, contentId, reason, note }) =>
   post("/api/consumer/reports", { kind, content_id: contentId, reason, note: note || undefined });
 export const listContentReportReasons = () => get("/api/consumer/reports/reasons");
+
+// Feed comments (backend mig 0423, flag feed_comments). post = Feed item id, e.g. "ate:12".
+const feedPostPath = (postId) => `/api/consumer/feed-posts/${encodeURIComponent(String(postId || ""))}/comments`;
+const pageQuery = (cursor) => (cursor ? `?cursor=${encodeURIComponent(cursor)}` : "");
+export const listFeedComments = (postId, { cursor = null } = {}) => get(`${feedPostPath(postId)}${pageQuery(cursor)}`);
+export const listFeedCommentReplies = (commentId, { cursor = null } = {}) =>
+  get(`/api/consumer/feed-comments/${encodeURIComponent(String(commentId))}/replies${pageQuery(cursor)}`);
+export const createFeedComment = (postId, { body, parentId = null, clientKey }) =>
+  post(feedPostPath(postId), { body, parent_id: parentId ?? undefined, client_key: clientKey });
+export const deleteFeedComment = (commentId) => del(`/api/consumer/feed-comments/${encodeURIComponent(String(commentId))}`);
 export const listBlockedDiners = () => get("/api/consumer/blocks");
 /** Accounts with a password send it; Google/Apple-only accounts send confirm: "DELETE". */
 export const deleteConsumerAccount = ({ password, confirm }) =>
