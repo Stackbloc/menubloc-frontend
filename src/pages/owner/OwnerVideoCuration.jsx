@@ -38,7 +38,7 @@ import {
   MAX_CLIP_MANAGER_VIDEO_BYTES,
   MAX_UPLOAD_VIDEO_BYTES,
 } from "../../lib/consumerCameraCapture.js";
-import { videoDealTermsProblem } from "../../lib/videoDealTerms.js";
+import { GENERAL_DEAL_TYPE, videoDealTermsProblem } from "../../lib/videoDealTerms.js";
 import DealMenuItemsPicker from "./OwnerDealMenuItemsPicker.jsx";
 
 const KIND_OPTIONS = [
@@ -774,6 +774,35 @@ function VideoUploadPanel({ onUploaded, clusters, clustersLoading }) {
   );
 }
 
+/** Blue marks every Clip Manager box about deal clips (Andre, 2026-11-12). */
+export const DEAL_CLIP_BLUE = {
+  bg: "#eff6ff",
+  border: "#93c5fd",
+  ink: "#1d4ed8",
+  pill: "#dbeafe",
+};
+
+function DealClipTag() {
+  return (
+    <span
+      data-testid="owner-deal-clip-tag"
+      style={{
+        display: "inline-block",
+        marginLeft: 8,
+        padding: "2px 10px",
+        borderRadius: 999,
+        background: DEAL_CLIP_BLUE.pill,
+        color: DEAL_CLIP_BLUE.ink,
+        fontSize: 12,
+        fontWeight: 700,
+        verticalAlign: "middle",
+      }}
+    >
+      Deal clip
+    </span>
+  );
+}
+
 /** Convenience default end date for the form — not a platform maximum. */
 function defaultDealEndDate() {
   const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -801,6 +830,7 @@ function DealVideoUploadPanel({ onUploaded }) {
   const [dealValue, setDealValue] = useState("");
 
   const dealRestaurantId = restaurant?.restaurant_id || null;
+  const isGeneralDeal = dealType === GENERAL_DEAL_TYPE;
   useEffect(() => {
     setDealItems([]);
     setDealMenu({ source: "public", items: [] });
@@ -876,6 +906,7 @@ function DealVideoUploadPanel({ onUploaded }) {
       itemCount: dealItems.length,
       startsAt: startDate,
       expiresAt: endDate,
+      title,
     });
     if (termsProblem) {
       setError(termsProblem);
@@ -892,15 +923,21 @@ function DealVideoUploadPanel({ onUploaded }) {
         description: description.trim() || undefined,
         deal_type: dealType,
         // percent for % off; dollars for $ off / special price (backend stores cents).
-        value: Number(dealValue),
+        // A general deal has no price (Andre, 2026-11-12).
+        ...(isGeneralDeal ? {} : { value: Number(dealValue) }),
         start_date: startDate,
         end_date: endDate,
         meal_periods: mealPeriods,
         show_meal_time_caption: showMealTimeCaption && mealPeriods.length > 0,
         publish: false,
-        menu_item_id: Number(dealItems[0].id),
-        applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
-        linked_items_source: dealMenu.source,
+        // Menu items are optional on a general deal; send them only when picked.
+        ...(dealItems.length
+          ? {
+              menu_item_id: Number(dealItems[0].id),
+              applies_to_menu_item_ids: dealItems.slice(1).map((i) => Number(i.id)),
+              linked_items_source: dealMenu.source,
+            }
+          : {}),
       });
       const dealId = created.deal?.id;
       if (!dealId) throw new Error("Deal was not created");
@@ -932,9 +969,22 @@ function DealVideoUploadPanel({ onUploaded }) {
   }
 
   return (
-    <PageCard style={{ padding: 18, marginBottom: 16 }} data-testid="owner-deal-video-upload-panel">
+    <PageCard
+      style={{
+        padding: 18,
+        marginBottom: 16,
+        background: DEAL_CLIP_BLUE.bg,
+        border: `1.5px solid ${DEAL_CLIP_BLUE.border}`,
+      }}
+      data-testid="owner-deal-video-upload-panel"
+    >
       <SectionTitle
-        title="Upload deal video"
+        title={
+          <>
+            Upload deal video
+            <DealClipTag />
+          </>
+        }
         subtitle="Feed → Deals category only. Pick meal time (breakfast, lunch, etc.), attach video, and publish. Subscribing restaurants upload via Operator → Deals; owner can post for any restaurant here."
       />
       <form onSubmit={handleUpload} style={{ display: "grid", gap: 12, maxWidth: 560 }}>
@@ -972,8 +1022,17 @@ function DealVideoUploadPanel({ onUploaded }) {
               <option value="percent_off">% off</option>
               <option value="amount_off">$ off</option>
               <option value="fixed_price">Special price</option>
+              <option value={GENERAL_DEAL_TYPE}>General deal (no price)</option>
             </select>
           </label>
+          {isGeneralDeal ? (
+            <span
+              style={{ alignSelf: "end", fontSize: 12, color: DEAL_CLIP_BLUE.ink, lineHeight: 1.4 }}
+              data-testid="owner-deal-video-general-note"
+            >
+              No price. Shows in Feed → Deals as “Deal” with the title. Dishes are optional.
+            </span>
+          ) : (
           <label style={{ display: "grid", gap: 6 }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>
               {dealType === "percent_off" ? "Percent off *" : dealType === "amount_off" ? "Dollars off *" : "Special price ($) *"}
@@ -989,6 +1048,7 @@ function DealVideoUploadPanel({ onUploaded }) {
               data-testid="owner-deal-video-value"
             />
           </label>
+          )}
         </div>
 
         <label style={{ display: "grid", gap: 6 }}>
@@ -1361,7 +1421,18 @@ function SearchWebMetadataSection({ video, clusters = [], clustersLoading = fals
       {error ? <p style={{ margin: 0, color: "#b91c1c", fontSize: 13 }}>{error}</p> : null}
       {success ? <p style={{ margin: 0, color: "#065f46", fontSize: 13 }}>{success}</p> : null}
       {!loading && payload ? (
-        <form onSubmit={handleSave} style={{ display: "grid", gap: 10 }}>
+        // Not a <form>: this section sits inside the editor's form, and a nested form's submit
+        // also fired the editor's Save metadata (re-sending every field). Andre 2026-11-12.
+        <div
+          style={{ display: "grid", gap: 10 }}
+          data-testid="owner-video-seo-section"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && e.target?.tagName === "INPUT") {
+              e.preventDefault();
+              handleSave(e);
+            }
+          }}
+        >
           <label style={{ display: "grid", gap: 4 }}>
             <span style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13, fontWeight: 700 }}>
               <span>SEO title</span>
@@ -1526,7 +1597,8 @@ function SearchWebMetadataSection({ video, clusters = [], clustersLoading = fals
             </div>
           </div>
           <button
-            type="submit"
+            type="button"
+            onClick={handleSave}
             disabled={busy}
             data-testid="owner-video-seo-save"
             style={{
@@ -1542,7 +1614,7 @@ function SearchWebMetadataSection({ video, clusters = [], clustersLoading = fals
           >
             {busy ? "Saving…" : "Save search metadata"}
           </button>
-        </form>
+        </div>
       ) : null}
     </fieldset>
   );
@@ -1971,17 +2043,27 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           width: "min(640px, 100%)",
           maxHeight: "min(92vh, 900px)",
           overflow: "auto",
-          background: "#fff",
+          background: isDealVideo ? DEAL_CLIP_BLUE.bg : "#fff",
           color: OWNER_COLORS.ink,
           borderRadius: 16,
-          border: `1px solid ${OWNER_COLORS.line}`,
+          border: isDealVideo ? `2px solid ${DEAL_CLIP_BLUE.border}` : `1px solid ${OWNER_COLORS.line}`,
           boxShadow: "0 24px 60px rgba(0, 0, 0, 0.18)",
           padding: "20px 22px",
         }}
+        data-deal-clip={isDealVideo ? "true" : undefined}
         onClick={(event) => event.stopPropagation()}
       >
         <SectionTitle
-          title="Edit video metadata"
+          title={
+            isDealVideo ? (
+              <>
+                Edit video metadata
+                <DealClipTag />
+              </>
+            ) : (
+              "Edit video metadata"
+            )
+          }
           subtitle={`Asset #${video.asset_number ?? "—"} · ${video.video_id}. Search by restaurant name, then pick a CK menu item.`}
           action={
             <button
@@ -2368,7 +2450,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <label style={{ display: "grid", gap: 6 }}>
-              <span style={{ fontWeight: 600, fontSize: 12 }}>Run start</span>
+              <span style={{ fontWeight: 600, fontSize: 12, color: isDealVideo ? DEAL_CLIP_BLUE.ink : undefined }}>
+                {isDealVideo ? "Deal starts" : "Run start"}
+              </span>
               <input
                 type="date"
                 value={runStartsAt}
@@ -2379,7 +2463,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
               />
             </label>
             <label style={{ display: "grid", gap: 6 }}>
-              <span style={{ fontWeight: 600, fontSize: 12 }}>Run end</span>
+              <span style={{ fontWeight: 600, fontSize: 12, color: isDealVideo ? DEAL_CLIP_BLUE.ink : undefined }}>
+                {isDealVideo ? "Deal ends" : "Run end"}
+              </span>
               <input
                 type="date"
                 value={runEndsAt}
@@ -2391,7 +2477,9 @@ function VideoEditor({ video, onSaved, onClose, clusters, clustersLoading }) {
             </label>
           </div>
           <p style={{ margin: 0, fontSize: 12, color: OWNER_COLORS.muted }}>
-            Leave run dates blank for always-on. Outside the window the video is hidden everywhere.
+            {isDealVideo
+              ? "These are the deal's own dates: Feed → Deals shows the clip from the start date through the end date."
+              : "Leave run dates blank for always-on. Outside the window the video is hidden everywhere."}
           </p>
         </fieldset>
 

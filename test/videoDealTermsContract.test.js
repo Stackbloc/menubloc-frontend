@@ -31,7 +31,7 @@ test("videoDealTermsProblem: complete terms pass for every priced type", () => {
 });
 
 test("videoDealTermsProblem: names what is missing", () => {
-  for (const dealType of ["other", "bogo", "combo", undefined]) {
+  for (const dealType of ["bogo", "combo", undefined]) {
     assert.match(videoDealTermsProblem({ ...complete, dealType }), /written deal first/);
   }
   assert.match(videoDealTermsProblem({ ...complete, value: "" }), /between 1 and 100/);
@@ -39,6 +39,15 @@ test("videoDealTermsProblem: names what is missing", () => {
   assert.match(videoDealTermsProblem({ ...complete, dealType: "amount_off", value: 0 }), /deal amount/);
   assert.match(videoDealTermsProblem({ ...complete, itemCount: 0 }), /at least one menu item/);
   assert.match(videoDealTermsProblem({ ...complete, expiresAt: "" }), /start and end dates/);
+});
+
+test("videoDealTermsProblem: general deal (no price) needs only dates and a title", () => {
+  const general = { dealType: "other", itemCount: 0, startsAt: "2026-11-12", expiresAt: "2026-12-12" };
+  assert.equal(videoDealTermsProblem(general), null);
+  assert.equal(videoDealTermsProblem({ ...general, title: "Specials" }), null);
+  assert.match(videoDealTermsProblem({ ...general, title: " " }), /title/);
+  assert.match(videoDealTermsProblem({ ...general, expiresAt: "" }), /start and end dates/);
+  assert.equal(videoDealTermsSummary({ ...general }), "General deal · 2026-11-12 – 2026-12-12");
 });
 
 test("videoDealTermsFromDeal: reads saved rows (cents) and linked items", () => {
@@ -59,9 +68,20 @@ test("videoDealTermsFromDeal: reads saved rows (cents) and linked items", () => 
       expiresAt: "2026-11-22T23:59:59.999Z",
     }
   );
+  // A saved general deal ("Specials") is complete once it has dates (Andre 2026-11-12).
   assert.match(
     videoDealTermsProblem(videoDealTermsFromDeal({ deal_type: "other", title: "Specials" })),
-    /written deal first/
+    /start and end dates/
+  );
+  assert.equal(
+    videoDealTermsProblem(
+      videoDealTermsFromDeal({
+        deal_type: "other",
+        starts_at: "2026-11-12T00:00:00.000Z",
+        expires_at: "2026-12-12T23:59:59.999Z",
+      })
+    ),
+    null
   );
 });
 

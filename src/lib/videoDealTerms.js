@@ -7,14 +7,25 @@
 const PRICED_DEAL_TYPES = new Set(["percent_off", "amount_off", "fixed_price"]);
 
 /**
+ * General deal clip (Andre, 2026-11-12): no reference price, stored as deal_type "other".
+ * Needs a title and dates; menu items are optional. Mirrors backend GENERAL_DEAL_TYPE.
+ */
+export const GENERAL_DEAL_TYPE = "other";
+
+/**
  * @param {{ dealType?: string, value?: number|string|null, itemCount?: number,
  *           startsAt?: string|null, expiresAt?: string|null }} terms
  *   `value` is the type's number: percent for % off, dollars for $ off / special price.
  * @returns {string|null} what is missing, or null when the terms are complete.
  */
-export function videoDealTermsProblem({ dealType, value, itemCount = 0, startsAt, expiresAt } = {}) {
+export function videoDealTermsProblem({ dealType, value, itemCount = 0, startsAt, expiresAt, title } = {}) {
+  if (dealType === GENERAL_DEAL_TYPE) {
+    if (title !== undefined && !String(title || "").trim()) return "Give the general deal a title.";
+    if (!startsAt || !expiresAt) return "Set the deal's start and end dates.";
+    return null;
+  }
   if (!PRICED_DEAL_TYPES.has(dealType)) {
-    return "Add the written deal first: choose % off, $ off, or a special price.";
+    return "Add the written deal first: choose % off, $ off, a special price, or a general deal.";
   }
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0 || (dealType === "percent_off" && n > 100)) {
@@ -60,7 +71,9 @@ export function videoDealTermsSummary({ dealType, value, startsAt, expiresAt } =
         ? `${money} off`
         : dealType === "fixed_price"
           ? `Special price ${money}`
-          : "";
+          : dealType === GENERAL_DEAL_TYPE
+            ? "General deal"
+            : "";
   const day = (v) => String(v || "").slice(0, 10);
   const dates = startsAt && expiresAt ? `${day(startsAt)} – ${day(expiresAt)}` : "";
   return [amount, dates].filter(Boolean).join(" · ");
