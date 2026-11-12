@@ -69,10 +69,11 @@ export function plansByDay(plans) {
 
 /**
  * Plan 37: can this plan go in Google / Apple Calendar? The server's rule (calendarFeedService):
- * a day and a time, and I'm hosting or going; my Open Invite only once someone took a spot.
+ * a day, and I'm hosting or going (no time yet → the start of its meal, Andre 2026-11-12);
+ * my Open Invite only once someone took a spot.
  */
 export function isCalendarReady(p) {
-  if (!p || !p.date || !p.time || p.time_open) return false;
+  if (!p || !p.date || p.time_open) return false;
   if (p.my_status !== "organizer" && p.my_status !== "going") return false;
   if (p.open_invite && p.is_organizer && !(Number(p.going_count) > 0)) return false;
   return true;

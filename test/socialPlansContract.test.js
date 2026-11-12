@@ -247,7 +247,8 @@ test("plans in my calendar (plan 37): subscribe once, Add to calendar on confirm
   assert.equal(isCalendarReady(p), true);
   assert.equal(isCalendarReady({ ...p, my_status: "organizer" }), true);
   for (const s of ["maybe", "interested", "declined", null]) assert.equal(isCalendarReady({ ...p, my_status: s }), false);
-  assert.equal(isCalendarReady({ ...p, time: null }), false);
+  assert.equal(isCalendarReady({ ...p, time: null }), true); // no time → meal start (Andre 2026-11-12)
+  assert.equal(isCalendarReady({ ...p, date: null }), false);
   assert.equal(isCalendarReady({ ...p, time_open: true }), false);
   assert.equal(isCalendarReady({ ...p, my_status: "organizer", is_organizer: true, open_invite: true, going_count: 0 }), false);
   assert.equal(isCalendarReady({ ...p, my_status: "organizer", is_organizer: true, open_invite: true, going_count: 1 }), true);
