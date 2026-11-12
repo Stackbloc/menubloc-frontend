@@ -284,3 +284,20 @@ test("search results: one event per search with its count; only the first tap co
   assert.equal(taps[0].page_view_id, results[1].page_view_id);
   assert.ok(!events.some((e) => "query" in e || "q" in e));
 });
+
+test("comments_open (mig 0424): Feed post id + restaurant + how it was opened; bad ids and Do Not Track send nothing", () => {
+  flushed();
+  tracker.trackCommentsOpen("ate:12", { restaurantId: 55, from: "rail" });
+  tracker.trackCommentsOpen("managed:3", { from: "link" });
+  tracker.trackCommentsOpen("javascript:1", { restaurantId: 55 });
+  const events = flushed().filter((e) => e.event_name === "comments_open");
+  assert.equal(events.length, 2);
+  assert.deepEqual(
+    events.map((e) => [e.page_type, e.label, e.subtype, e.restaurant_id ?? null]),
+    [["feed", "ate:12", "rail", 55], ["feed", "managed:3", "link", null]]
+  );
+  nav.doNotTrack = "1";
+  tracker.trackCommentsOpen("ate:12", { restaurantId: 55 });
+  nav.doNotTrack = null;
+  assert.equal(flushed().filter((e) => e.event_name === "comments_open").length, 0);
+});

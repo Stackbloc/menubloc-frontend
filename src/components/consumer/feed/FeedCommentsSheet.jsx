@@ -10,6 +10,7 @@ import {
 } from "../../../lib/consumerApi.js";
 import { dinerPeerProfilePath } from "../../../lib/liveFeedCategory.js";
 import { COMMENT_MAX, commentsTitle, commentTimeAgo, newCommentClientKey } from "../../../lib/feedComments.js";
+import { trackCommentsOpen } from "../../../lib/engagementTracking.js";
 import ClipSafetyMenu from "../../safety/ClipSafetyMenu.jsx";
 
 /**
@@ -181,6 +182,7 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
     [onCountChange]
   );
 
+  const loggedOpenRef = useRef(null);
   const loadFirst = useCallback(async () => {
     if (!postId) return;
     const req = ++reqRef.current;
@@ -195,15 +197,23 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
       setCanComment(Boolean(res.can_comment));
       setRestaurant(res.restaurant?.id ? res.restaurant : null);
       setStatus("ready");
+      // One comments_open per opening of the sheet (Try again doesn't count twice). Mig 0424.
+      if (loggedOpenRef.current !== postId) {
+        loggedOpenRef.current = postId;
+        trackCommentsOpen(postId, { restaurantId: res.restaurant?.id ?? null, from: focusCommentId ? "link" : "rail" });
+      }
     } catch (err) {
       if (req !== reqRef.current) return;
       setStatus(err?.payload?.code === "post_unavailable" ? "gone" : "error");
     }
-  }, [postId, onCountChange]);
+  }, [postId, onCountChange, focusCommentId]);
 
   // Fresh each time the sheet opens on a clip.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      loggedOpenRef.current = null;
+      return;
+    }
     setComments([]);
     setThreads({});
     setCursor(null);

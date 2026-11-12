@@ -428,6 +428,26 @@ export function trackSearchResultTap(subtype = "dish") {
   }
 }
 
+/**
+ * Feed comments sheet opened (backend mig 0424). The Feed has no tracked page view, so this goes on
+ * its own: page_type feed, label = the post ("ate:12"), subtype = rail (Comment button) or link (a
+ * notification / shared ?comment= link). Before 0424 the server drops these rows.
+ */
+const COMMENT_POST = /^(ate|want|plan|event|managed|cooking):\d{1,18}$/;
+export function trackCommentsOpen(postId, { restaurantId = null, from = "rail" } = {}) {
+  try {
+    if (!COMMENT_POST.test(String(postId || "")) || !isEngagementTrackingAllowed()) return;
+    const rid = Number(restaurantId);
+    enqueue({
+      event_id: newEventId(), event_name: "comments_open", page_view_id: newEventId(), page_type: "feed",
+      page_path: window.location.pathname, label: String(postId), subtype: from === "link" ? "link" : "rail",
+      ...(Number.isInteger(rid) && rid > 0 ? { restaurant_id: rid } : {}),
+    });
+  } catch {
+    // never throw into the UI
+  }
+}
+
 const SHARE_CHANNELS = new Set(["copy_link", "native", "sms", "email", "facebook", "x", "whatsapp"]);
 
 /**

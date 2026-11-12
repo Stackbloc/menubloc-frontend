@@ -77,3 +77,9 @@ test("Invite to eat from a comment: Connects only, the Feed opens one invite dia
   assert.match(feed, /sendInAppTo=\{commentInvite\.to\}/);
   assert.match(feed, /\|\| Boolean\(commentInvite\)/, "the clip holds while the invite dialog is open");
 });
+
+test("the sheet logs one comments_open per opening", () => {
+  const sheet = read("src/components/consumer/feed/FeedCommentsSheet.jsx");
+  assert.match(sheet, /if \(loggedOpenRef\.current !== postId\)/);
+  assert.match(sheet, /trackCommentsOpen\(postId, \{ restaurantId: res\.restaurant\?\.id \?\? null, from: focusCommentId \? "link" : "rail" \}\)/);
+});

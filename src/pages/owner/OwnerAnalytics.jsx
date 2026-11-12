@@ -451,6 +451,13 @@ function FeedConversations({ f }) {
       <Kpi label="Came back to a conversation" value={f.conversation_returns} unit="people" note="Commented again, on a later day, on a clip they had already commented on." />
       <Kpi label="Clips with comments" value={f.posts} note={`${f.comments_per_post ?? "—"} comments and ${f.replies_per_post ?? "—"} replies per clip`} />
       <Kpi label="Viewers who comment" value={f.viewer_comment_rate} unit="percent" note={`Of ${num(f.viewers)} signed-in diners who watched a Feed clip 3+ s.`} />
+      {/* Sheet opens (mig 0424): null until the server reads them. */}
+      {f.sheet_opens != null ? (
+        <>
+          <Kpi label="Comments opened" value={f.sheet_opens} note={`${num(f.openers)} people · ${num(f.opens_from_notices)} from a notification or link`} />
+          <Kpi label="Openers who comment" value={f.opener_comment_rate} unit="percent" note={`Of ${num(f.signed_in_openers)} signed-in diners who opened comments.`} />
+        </>
+      ) : null}
     </>
   );
 }
