@@ -118,7 +118,7 @@ export const TERMS_DOCUMENT = {
       "paragraphs": [
         "Certain Menuply features are designed to make food-related activity and content visible to other users.",
         "Depending on the feature and your settings, other users may be able to see your display name, profile image, public food activity, videos, photographs, comments, recommendations, eating plans, invitations, or other content you choose or are permitted to publish.",
-        "Menuply may provide social features including connections, Diner QR functionality, comments, Join Me, Invite to Eat, Dining Crews, social events, restaurant interactions, and other features that allow users to interact with one another.",
+        "Menuply may provide social features including connections, Diner QR functionality, comments, Join Me, Invite to Eat, Circles, social events, restaurant interactions, and other features that allow users to interact with one another.",
         "You are responsible for considering what information you choose to publish through these features."
       ]
     },
@@ -347,7 +347,7 @@ export const PRIVACY_DOCUMENT = {
       "heading": "Social and Public Information",
       "paragraphs": [
         "Depending on your use of Menuply and your settings, we may collect and display information associated with public or social activity, including your display name, profile image, public food activity, videos, photographs, comments, recommendations, connections, invitations, eating plans, event participation, and other content you choose to make available.",
-        "Some Menuply features allow users to interact with one another through connections, Diner QR functionality, comments, Join Me, Invite to Eat, Dining Crews, social events, and related features."
+        "Some Menuply features allow users to interact with one another through connections, Diner QR functionality, comments, Join Me, Invite to Eat, Circles, social events, and related features."
       ]
     },
     {
@@ -523,7 +523,7 @@ export const PRIVACY_DOCUMENT = {
       "heading": "Comments, Invitations, Events, and Social Activity",
       "paragraphs": [
         "If you use social features, Menuply may process information necessary to operate those features.",
-        "This may include comments, connections, Join Me activity, Invite to Eat activity, Dining Crew information, social event participation, responses to invitations, and related display names or profile information.",
+        "This may include comments, connections, Join Me activity, Invite to Eat activity, Circle information, social event participation, responses to invitations, and related display names or profile information.",
         "Some social activity is designed to be visible to other users."
       ]
     },
