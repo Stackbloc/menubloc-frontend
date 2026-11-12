@@ -41,3 +41,9 @@ test("Sources box lives only in the owner Restaurant Manager", () => {
   // Chain-wide links can't be removed from one restaurant.
   assert.match(sources, /!s\.is_chain \?/);
 });
+
+test("Bot page keeps refreshing after a failed fetch while a run is going", () => {
+  assert.match(page, /setFailedLoads\(\(n\) => n \+ 1\)/);
+  assert.match(page, /\}, \[bot, load, failedLoads\]\);/);
+  assert.match(page, /Lost connection to the server — trying again…/);
+});

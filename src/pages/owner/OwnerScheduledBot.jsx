@@ -1073,6 +1073,8 @@ export default function OwnerScheduledBot({ botKey }) {
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(false);
   const [runMessage, setRunMessage] = useState("");
+  // Failed refreshes in a row; each one schedules another try (e.g. while the backend restarts).
+  const [failedLoads, setFailedLoads] = useState(0);
   const refreshRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -1080,9 +1082,11 @@ export default function OwnerScheduledBot({ botKey }) {
       const data = await getOwnerBot(botKey);
       setBot(data);
       setError("");
+      setFailedLoads(0);
       return data;
     } catch (err) {
       setError(err?.message || "Could not load this bot");
+      setFailedLoads((n) => n + 1);
       return null;
     } finally {
       setLoading(false);
@@ -1095,12 +1099,13 @@ export default function OwnerScheduledBot({ botKey }) {
   }, [load]);
 
   // While a run is going, refresh every 10 s so the status and history update on their own.
+  // A failed refresh (backend restarting, network blip) keeps trying instead of stopping.
   useEffect(() => {
     clearTimeout(refreshRef.current);
     if (bot?.active_run) refreshRef.current = setTimeout(load, 10000);
     else setRunMessage((m) => (m.endsWith("while it runs.") ? "" : m));
     return () => clearTimeout(refreshRef.current);
-  }, [bot, load]);
+  }, [bot, load, failedLoads]);
 
   async function handleRunNow() {
     setStarting(true);
@@ -1126,7 +1131,11 @@ export default function OwnerScheduledBot({ botKey }) {
     >
       <div style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(0, 1fr)" }}>
         {loading && !bot ? <EmptyState>Loading…</EmptyState> : null}
-        {error ? <EmptyState><span style={{ color: "#b91c1c" }}>{error}</span></EmptyState> : null}
+        {error && bot?.active_run ? (
+          <EmptyState><span style={{ color: OWNER_COLORS.muted }}>Lost connection to the server — trying again…</span></EmptyState>
+        ) : error ? (
+          <EmptyState><span style={{ color: "#b91c1c" }}>{error}</span></EmptyState>
+        ) : null}
 
         {bot ? (
           <>
