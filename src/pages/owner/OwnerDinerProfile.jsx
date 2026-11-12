@@ -67,10 +67,10 @@ function HubSection({ title, items, emptyLabel }) {
 }
 
 const SUMMARY_ROWS = [
-  ["I'm Eating At", "im_eating_at"],
-  ["What I Ate", "what_i_ate_today"],
+  ["Posts: eating at", "im_eating_at"],
+  ["Posts: what I ate", "what_i_ate_today"],
   ["Wish List", "want_to_eat"],
-  ["Events", "social_events"],
+  ["Plans: events", "social_events"],
   ["Invites sent", "invites_sent"],
   ["Clips", "video_uploads"],
   ["Connects", "accepted_connects", { lifetimeOnly: true }],
@@ -258,11 +258,11 @@ export default function OwnerDinerProfile() {
 
               <SummaryGrid summary={data.summary} intervalLabel={intervalLabel} />
 
-              <HubSection title="Recent I'm Eating At" items={data.hub?.recent_eating} emptyLabel="No recent eating activity." />
-              <HubSection title="What I Ate Today" items={data.hub?.what_i_ate} emptyLabel="No What I Ate entries." />
+              <HubSection title="Posts: eating at" items={data.hub?.recent_eating} emptyLabel="No eating-at posts." />
+              <HubSection title="Posts: what I ate" items={data.hub?.what_i_ate} emptyLabel="No what-I-ate posts." />
               <HubSection title="Wish List" items={data.hub?.want_to_eat} emptyLabel="Nothing on the Wish List." />
-              <HubSection title="My Events" items={data.hub?.events} emptyLabel="No diner events." />
-              <HubSection title="Future plans" items={data.hub?.plans} emptyLabel="No What We Doing plans." />
+              <HubSection title="Plans: events" items={data.hub?.events} emptyLabel="No events." />
+              <HubSection title="Plans: group plans" items={data.hub?.plans} emptyLabel="No group plans." />
 
               <section style={{ marginTop: 18 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: OWNER_COLORS.ink, marginBottom: 8 }}>Recent activity</div>
