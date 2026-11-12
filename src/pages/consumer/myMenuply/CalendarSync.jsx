@@ -13,6 +13,15 @@ import { getPlanCalendarLinks, resetCalendarFeed } from "../../../lib/consumerAp
 
 const DISMISS_KEY = "menuply.calendarSync.dismissed";
 
+/** Google only adds a calendar from a link on a computer (Google Calendar Help, Andre's test 2026-11-12). */
+function onPhone() {
+  try {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  } catch {
+    return false;
+  }
+}
+
 function wasDismissed() {
   try {
     return window.localStorage.getItem(DISMISS_KEY) === "1";
@@ -25,6 +34,7 @@ export function CalendarSyncCard({ feed, onFeed, variant = "settings", testId = 
   const [hidden, setHidden] = useState(() => variant === "prompt" && wasDismissed());
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const phone = onPhone();
   if (!feed || hidden || (variant === "prompt" && feed.connected)) return null;
 
   const dismiss = () => {
@@ -63,13 +73,20 @@ export function CalendarSyncCard({ feed, onFeed, variant = "settings", testId = 
           : "Your confirmed plans show up in your calendar and stay up to date."}
       </span>
       <div style={styles.actions}>
-        <a href={feed.google_subscribe_url} target="_blank" rel="noopener noreferrer" style={styles.action} data-testid={`${testId}-google`}>
-          Google Calendar
-        </a>
+        {phone ? null : (
+          <a href={feed.google_subscribe_url} target="_blank" rel="noopener noreferrer" style={styles.action} data-testid={`${testId}-google`}>
+            Google Calendar
+          </a>
+        )}
         <a href={feed.webcal_url} style={styles.action} data-testid={`${testId}-apple`}>
           Apple Calendar
         </a>
       </div>
+      {phone ? (
+        <span style={styles.muted} data-testid={`${testId}-computer`}>
+          Google Calendar adds calendars from a computer: open this page on a computer, or use Add to this phone’s calendar in the Menuply app.
+        </span>
+      ) : null}
       {variant === "settings" ? (
         <>
           <div style={styles.actions}>

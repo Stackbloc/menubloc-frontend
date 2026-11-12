@@ -237,6 +237,9 @@ test("plans in my calendar (plan 37): subscribe once, Add to calendar on confirm
 
   const card = read("src/pages/consumer/myMenuply/CalendarSync.jsx");
   assert.match(card, /href=\{feed\.google_subscribe_url\}/);
+  // Phones: Google only subscribes from a computer, so no Google button there (Andre 2026-11-12).
+  assert.match(card, /\{phone \? null : \(\s*<a href=\{feed\.google_subscribe_url\}/);
+  assert.match(card, /Google Calendar adds calendars from a computer/);
   assert.match(card, /href=\{feed\.webcal_url\}/);
   assert.match(card, /window\.confirm\("Reset calendar link\?/);
   assert.match(card, /variant === "prompt" && feed\.connected/); // the prompt goes once it's connected
