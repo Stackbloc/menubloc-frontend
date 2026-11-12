@@ -100,6 +100,8 @@ export default function SeeWhosEatingFullscreen({
   const [index, setIndex] = useState(startIndex);
   const [videoMuted, setVideoMuted] = useState(() => defaultFeedVideoMuted(variant));
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Invite to eat from a Connect's comment: { to: { userId, name }, restaurant: { id, name } }.
+  const [commentInvite, setCommentInvite] = useState(null);
   const [railShareOpen, setRailShareOpen] = useState(false);
   // Viewer pause (play/pause circle). Invite/Share also holds the clip so the reel cannot
   // advance to a different video while someone is sharing it.
@@ -111,7 +113,7 @@ export default function SeeWhosEatingFullscreen({
   // Counts changed by this viewer (posted / deleted) since the Feed page loaded: { "ate:12": 4 }.
   const [commentCounts, setCommentCounts] = useState({});
   const autoOpenedCommentsRef = useRef(false);
-  const holdPlayback = userPaused || inviteOpen || railShareOpen || commentsOpen;
+  const holdPlayback = userPaused || inviteOpen || railShareOpen || commentsOpen || Boolean(commentInvite);
   const holdPlaybackRef = useRef(holdPlayback);
   holdPlaybackRef.current = holdPlayback;
   /** Menu Browser session: open Feed index + which discussed-menu trail slot is showing. */
@@ -1101,6 +1103,7 @@ export default function SeeWhosEatingFullscreen({
           focusCommentId={String(item.id) === String(sharedClipId) ? sharedCommentId : null}
           onClose={() => setCommentsOpen(false)}
           onCountChange={(n) => setCommentCounts((m) => (m[item.id] === n ? m : { ...m, [item.id]: n }))}
+          onInvite={isAuthenticated ? (to, restaurant) => setCommentInvite({ to, restaurant }) : null}
         />
       ) : null}
       {showInvite ? (
@@ -1117,6 +1120,17 @@ export default function SeeWhosEatingFullscreen({
           quickShareData={feedShareData}
           quickShareTitle="Share clip"
           quickShareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
+        />
+      ) : null}
+      {commentInvite ? (
+        <InviteToEatModal
+          open
+          onClose={() => setCommentInvite(null)}
+          restaurantId={commentInvite.restaurant.id}
+          restaurantName={commentInvite.restaurant.name || ""}
+          initialInviteeName={commentInvite.to.name || ""}
+          sendInAppTo={commentInvite.to}
+          flowTitle="Invite to Eat"
         />
       ) : null}
     </>

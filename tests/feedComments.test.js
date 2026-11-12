@@ -68,3 +68,12 @@ test("comment text renders as plain text (no HTML injection paths)", () => {
   assert.match(sheet, /kind="feed_comment"/);
   assert.match(sheet, /noun="comment"/);
 });
+
+test("Invite to eat from a comment: Connects only, the Feed opens one invite dialog after the sheet closes", () => {
+  const sheet = read("src/components/consumer/feed/FeedCommentsSheet.jsx");
+  assert.match(sheet, /onInvite && !c\.mine && c\.author\?\.connect/);
+  assert.match(sheet, /onClose\?\.\(\); onInvite\(/);
+  const feed = read("src/pages/consumer/myMenuply/SeeWhosEatingFullscreen.jsx");
+  assert.match(feed, /sendInAppTo=\{commentInvite\.to\}/);
+  assert.match(feed, /\|\| Boolean\(commentInvite\)/, "the clip holds while the invite dialog is open");
+});

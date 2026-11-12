@@ -77,7 +77,7 @@ function Avatar({ author, small, onOpen }) {
   );
 }
 
-function CommentRow({ c, small = false, highlight = false, signedIn, onReply, onDelete, onOpenProfile, onHidden, onRetry }) {
+function CommentRow({ c, small = false, highlight = false, signedIn, onReply, onDelete, onOpenProfile, onHidden, onRetry, onInvite }) {
   if (c.deleted) {
     return (
       <div style={styles.row} data-testid="feed-comment-deleted">
@@ -118,6 +118,12 @@ function CommentRow({ c, small = false, highlight = false, signedIn, onReply, on
                   Reply
                 </button>
               ) : null}
+              {/* Invite to eat (Andre 2026-11-12): only a Connect's comment — in-app invites reach Connects only. */}
+              {onInvite && !c.mine && c.author?.connect ? (
+                <button type="button" style={styles.metaBtn} onClick={() => onInvite(c)} data-testid="feed-comment-invite">
+                  Invite
+                </button>
+              ) : null}
               {c.mine ? (
                 <button type="button" style={styles.metaBtn} onClick={() => onDelete(c)} data-testid="feed-comment-delete">
                   Delete
@@ -144,7 +150,7 @@ function CommentRow({ c, small = false, highlight = false, signedIn, onReply, on
   );
 }
 
-export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focusCommentId = null, onClose, onCountChange }) {
+export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focusCommentId = null, onClose, onCountChange, onInvite = null }) {
   const { isAuthenticated } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
@@ -154,6 +160,7 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
   const [status, setStatus] = useState("idle"); // idle | loading | ready | error
   const [loadingMore, setLoadingMore] = useState(false);
   const [canComment, setCanComment] = useState(false);
+  const [restaurant, setRestaurant] = useState(null);
   const [threads, setThreads] = useState({}); // parentId → { open, items, cursor, loading, error }
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState(null); // { parentId, name }
@@ -186,6 +193,7 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
       setTotal(Number(res.total) || 0);
       onCountChange?.(Number(res.total) || 0);
       setCanComment(Boolean(res.can_comment));
+      setRestaurant(res.restaurant?.id ? res.restaurant : null);
       setStatus("ready");
     } catch (err) {
       if (req !== reqRef.current) return;
@@ -402,7 +410,9 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
 
   if (!open) return null;
   const stop = (e) => e.stopPropagation();
-  const rowProps = { signedIn: isAuthenticated, onReply: startReply, onDelete: remove, onOpenProfile: openProfile, onHidden: hide, onRetry: retry };
+  // The Feed opens its invite dialog once this sheet is closed (one dialog at a time).
+  const inviteToEat = onInvite && restaurant ? (c) => { onClose?.(); onInvite({ userId: c.author.id, name: c.author.name }, restaurant); } : null;
+  const rowProps = { signedIn: isAuthenticated, onReply: startReply, onDelete: remove, onOpenProfile: openProfile, onHidden: hide, onRetry: retry, onInvite: inviteToEat };
   const loginTo = `/account/login?next=${encodeURIComponent(location.pathname + location.search)}`;
 
   const ui = (
