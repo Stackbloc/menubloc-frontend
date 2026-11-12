@@ -16,7 +16,7 @@ import NewPlanPanel from "./myMenuply/NewPlanPanel.jsx";
 import PickPlanTime from "./myMenuply/PickPlanTime.jsx";
 import PlanTag from "./myMenuply/PlanTag.jsx";
 import { MonthGrid } from "./myMenuply/PlanCalendar.jsx";
-import { ymdOf } from "../../lib/socialPlanTags.js";
+import { planCalendarDays, ymdOf } from "../../lib/socialPlanTags.js";
 
 const SOCIAL_PLAN_KIND_LABELS = {
   dine: "Meal",
@@ -104,7 +104,7 @@ export default function SocialPlansPage() {
       .catch(() => setCalPlans([]));
   }, [authLoading, isAuthenticated, reload]);
 
-  const shown = day ? calPlans.filter((p) => p.date === day) : data.plans;
+  const shown = day ? calPlans.filter((p) => planCalendarDays(p).includes(day)) : data.plans;
   const today = data.today || ymdOf(new Date());
   // An Open Invite → its own page (the link; the panel can't change it: 2026-11-10 "Plan not found");
   // my plan → its panel; an undated invite to me → pick a time; anything else → open it.

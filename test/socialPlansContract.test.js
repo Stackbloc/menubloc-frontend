@@ -124,10 +124,13 @@ test("My Social Calendar: month grid on the page, week strip on My Menuply (owne
   const m = plansByDay([{ key: "a", date: "2026-10-30" }, { key: "b", date: "2026-10-30" }, { key: "c", date: null }]);
   assert.equal(m.get("2026-10-30").length, 2);
   assert.equal(m.size, 1);
+  // Plan 35: a Thursday 1:30 AM plan is blended — on Wednesday (late night) and on Thursday.
+  const late = plansByDay([{ key: "x", date: "2026-11-12", time: "01:30", night_date: "2026-11-11" }]);
+  assert.deepEqual([...late.keys()], ["2026-11-11", "2026-11-12"]);
   const page = read("src/pages/consumer/SocialPlansPage.jsx");
   assert.match(page, /<MonthGrid\n\s+month=\{month\}\n\s+plans=\{calPlans\}/);
   assert.match(page, /searchParams\.get\("day"\)/);
-  assert.match(page, /const shown = day \? calPlans\.filter\(\(p\) => p\.date === day\) : data\.plans;/);
+  assert.match(page, /const shown = day \? calPlans\.filter\(\(p\) => planCalendarDays\(p\)\.includes\(day\)\) : data\.plans;/);
   const mm = read("src/pages/consumer/MyMenuplyPage.jsx");
   assert.match(mm, /\{previewAsConnect \? null : <SocialCalendarCard \/>\}/);
   const card = read("src/pages/consumer/myMenuply/SocialCalendarCard.jsx");

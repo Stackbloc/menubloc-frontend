@@ -50,11 +50,19 @@ export function ymdOf(d) {
 }
 
 /** Plans grouped by day (undated plans left out). */
+/**
+ * Every calendar day a plan shows on (plan 35, Andre 2026-11-12): its date, plus the evening before
+ * when it's a 12–4 AM plan (blended: that night's late night and the start of its own day).
+ */
+export function planCalendarDays(p) {
+  if (!p?.date) return [];
+  return p.night_date && p.night_date !== p.date ? [p.night_date, p.date] : [p.date];
+}
+
 export function plansByDay(plans) {
   const m = new Map();
   for (const p of plans || []) {
-    if (!p?.date) continue;
-    m.set(p.date, [...(m.get(p.date) || []), p]);
+    for (const d of planCalendarDays(p)) m.set(d, [...(m.get(d) || []), p]);
   }
   return m;
 }
