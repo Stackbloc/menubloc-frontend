@@ -10,13 +10,14 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { listMySocialPlans } from "../../lib/consumerApi.js";
+import { getCalendarFeed, listMySocialPlans } from "../../lib/consumerApi.js";
+import { AddPlanToCalendar, CalendarSyncCard } from "./myMenuply/CalendarSync.jsx";
 import { CalendarWhoCard, PlanPanel } from "./myMenuply/SocialPlanSharing.jsx";
 import NewPlanPanel from "./myMenuply/NewPlanPanel.jsx";
 import PickPlanTime from "./myMenuply/PickPlanTime.jsx";
 import PlanTag from "./myMenuply/PlanTag.jsx";
 import { MonthGrid } from "./myMenuply/PlanCalendar.jsx";
-import { planCalendarDays, ymdOf } from "../../lib/socialPlanTags.js";
+import { isCalendarReady, planCalendarDays, ymdOf } from "../../lib/socialPlanTags.js";
 
 const SOCIAL_PLAN_KIND_LABELS = {
   dine: "Meal",
@@ -66,6 +67,8 @@ export default function SocialPlansPage() {
   const [day, setDay] = useState(/^\d{4}-\d{2}-\d{2}$/.test(dayParam || "") ? dayParam : null);
   const [month, setMonth] = useState(() => `${(day || ymdOf(new Date())).slice(0, 7)}-01`);
   const [calPlans, setCalPlans] = useState([]);
+  // Plan 37: my calendar link; null = calendar_sync off (or offline) → no calendar buttons.
+  const [calFeed, setCalFeed] = useState(null);
   const moveMonth = (delta) =>
     setMonth((m) => {
       const [y, mo] = m.split("-").map(Number);
@@ -104,6 +107,13 @@ export default function SocialPlansPage() {
       .catch(() => setCalPlans([]));
   }, [authLoading, isAuthenticated, reload]);
 
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    getCalendarFeed()
+      .then(setCalFeed)
+      .catch(() => setCalFeed(null));
+  }, [authLoading, isAuthenticated]);
+
   const shown = day ? calPlans.filter((p) => planCalendarDays(p).includes(day)) : data.plans;
   const today = data.today || ymdOf(new Date());
   // An Open Invite → its own page (the link; the panel can't change it: 2026-11-10 "Plan not found");
@@ -132,7 +142,14 @@ export default function SocialPlansPage() {
             + New plan
           </button>
         </div>
-        {settingsOpen ? <CalendarWhoCard /> : null}
+        {settingsOpen ? (
+          <>
+            <CalendarWhoCard />
+            <CalendarSyncCard feed={calFeed} onFeed={setCalFeed} variant="settings" testId="calendar-sync-settings" />
+          </>
+        ) : (
+          <CalendarSyncCard feed={calFeed} onFeed={setCalFeed} variant="prompt" testId="calendar-sync-prompt" />
+        )}
         {adding ? (
           <NewPlanPanel
             day={day && day >= today ? day : today}
@@ -225,6 +242,7 @@ export default function SocialPlansPage() {
                       .join(" · ")}
                   </span>
                 </Link>
+                {calFeed && isCalendarReady(p) ? <AddPlanToCalendar key={`${p.key}:${p.date} ${p.time}`} plan={p} /> : null}
                 {picking === p.key ? (
                   <PickPlanTime
                     plan={p}

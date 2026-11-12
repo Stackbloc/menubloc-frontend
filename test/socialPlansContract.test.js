@@ -142,7 +142,8 @@ test("simpler calendar (Andre 2026-10-28): calendar first, + New plan adds to th
   const page = read("src/pages/consumer/SocialPlansPage.jsx");
   assert.doesNotMatch(page, /compose: "plan"|Plan a meal/);
   assert.ok(page.indexOf("social-plans-add") < page.indexOf("<MonthGrid"));
-  assert.match(page, /\{settingsOpen \? <CalendarWhoCard \/> : null\}/);
+  // ⚙︎ holds Who sees my calendar (+ plan 37 Add to my calendar under it).
+  assert.match(page, /\{settingsOpen \? \(\s*<>\s*<CalendarWhoCard \/>/);
   assert.match(page, /searchParams\.get\("new"\)/);
   const form = read("src/pages/consumer/myMenuply/NewPlanPanel.jsx");
   assert.match(form, /createSocialPlan\(\{\n\s+kind,\n\s+date,\n\s+time,/);
@@ -220,4 +221,34 @@ test("Social Plans: click a plan → everyone going, organizer first (Andre 2026
   assert.match(src, /function PlanPeople/);
   assert.match(src, /a\.is_connect \? `\/account\/connections\/\$\{a\.id\}` : `\/diners\/\$\{a\.id\}`/);
   assert.match(src, /guest_count/);
+});
+
+test("plans in my calendar (plan 37): subscribe once, Add to calendar on confirmed plans, hidden when off", async () => {
+  const api = read("src/lib/consumerApi.js");
+  assert.match(api, /export const getCalendarFeed = \(\) => get\("\/api\/consumer\/social-plans\/calendar-feed"\)/);
+  assert.match(api, /export const resetCalendarFeed = \(\) => post\("\/api\/consumer\/social-plans\/calendar-feed\/reset", \{\}\)/);
+  assert.match(api, /export const getPlanCalendarLinks = \(source, ref\) => get\(`\$\{socialPlanPath\(source, ref\)\}\/calendar`\)/);
+
+  const page = read("src/pages/consumer/SocialPlansPage.jsx");
+  assert.match(page, /getCalendarFeed\(\)\s*\.then\(setCalFeed\)\s*\.catch\(\(\) => setCalFeed\(null\)\)/); // flag off → nothing
+  assert.match(page, /<CalendarSyncCard feed=\{calFeed\} onFeed=\{setCalFeed\} variant="prompt"/);
+  assert.match(page, /<CalendarSyncCard feed=\{calFeed\} onFeed=\{setCalFeed\} variant="settings"/);
+  assert.match(page, /\{calFeed && isCalendarReady\(p\) \? <AddPlanToCalendar/);
+
+  const card = read("src/pages/consumer/myMenuply/CalendarSync.jsx");
+  assert.match(card, /href=\{feed\.google_subscribe_url\}/);
+  assert.match(card, /href=\{feed\.webcal_url\}/);
+  assert.match(card, /window\.confirm\("Reset calendar link\?/);
+  assert.match(card, /variant === "prompt" && feed\.connected/); // the prompt goes once it's connected
+  assert.doesNotMatch(card, /borderRadius: 999/); // no pills
+
+  const { isCalendarReady } = await import("../src/lib/socialPlanTags.js");
+  const p = { date: "2026-11-14", time: "12:30", my_status: "going", time_open: false };
+  assert.equal(isCalendarReady(p), true);
+  assert.equal(isCalendarReady({ ...p, my_status: "organizer" }), true);
+  for (const s of ["maybe", "interested", "declined", null]) assert.equal(isCalendarReady({ ...p, my_status: s }), false);
+  assert.equal(isCalendarReady({ ...p, time: null }), false);
+  assert.equal(isCalendarReady({ ...p, time_open: true }), false);
+  assert.equal(isCalendarReady({ ...p, my_status: "organizer", is_organizer: true, open_invite: true, going_count: 0 }), false);
+  assert.equal(isCalendarReady({ ...p, my_status: "organizer", is_organizer: true, open_invite: true, going_count: 1 }), true);
 });

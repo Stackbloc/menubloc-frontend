@@ -828,6 +828,10 @@ export const answerSocialPlanJoinRequest = (requestId, approve) =>
   post(`/api/consumer/social-plans/join-requests/${encodeURIComponent(String(requestId))}/${approve ? "approve" : "decline"}`, {});
 export const getPeerSocialCalendar = (peerId) =>
   get(`/api/consumer/social-plans/connections/${encodeURIComponent(String(peerId))}`);
+// Plans in my calendar (plan 37, mig 0422, flag calendar_sync): 404 feature_off while the flag is off.
+export const getCalendarFeed = () => get("/api/consumer/social-plans/calendar-feed");
+export const resetCalendarFeed = () => post("/api/consumer/social-plans/calendar-feed/reset", {});
+export const getPlanCalendarLinks = (source, ref) => get(`${socialPlanPath(source, ref)}/calendar`);
 
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
