@@ -1,6 +1,6 @@
 export const ACCOUNT_TABS = [
   { id: "profile", label: "Profile" },
-  { id: "social", label: "Social & Crew" },
+  { id: "social", label: "Social & Circles" },
   { id: "wallet", label: "Wallet & Activity" },
   { id: "security", label: "Security & Account" },
 ];

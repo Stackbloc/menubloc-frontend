@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 export default function GuestContributeNextStep({
   nextPath = "/account/login",
-  identityAction = "Join Me, Dining Crew, and a personal history",
+  identityAction = "Join Me, Circle, and a personal history",
 }) {
   const to = `${nextPath}${nextPath.includes("?") ? "&" : "?"}next=${encodeURIComponent(
     typeof window !== "undefined" ? window.location.pathname + window.location.search : "/"

@@ -19,7 +19,7 @@ test("DinerSocialPresetsPanel scopes Take Me Out / Join Crew (not section Join M
   assert.doesNotMatch(panel, /data-testid="preset-plans"/);
   assert.doesNotMatch(panel, /data-testid="preset-events"/);
   assert.match(panel, /featureLabel="Take Me Out"/);
-  assert.match(panel, /featureLabel="Join Crew"/);
+  assert.match(panel, /featureLabel="Join Circle"/);
   assert.match(panel, /crews_join_me/);
   assert.match(panel, /activeScope === "wanna-eat"/);
   assert.match(panel, /activeScope === "crews"/);

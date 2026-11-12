@@ -35,7 +35,7 @@ function readDashboard() {
 test("account dashboard has four named tabs and ChipRail tab nav", () => {
   const src = readDashboard();
   assert.match(src, /Profile/);
-  assert.match(src, /Social & Crew/);
+  assert.match(src, /Social & Circle/);
   assert.match(src, /Wallet & Activity/);
   assert.match(src, /Security & Account/);
   assert.match(src, /ChipRail/);
@@ -70,7 +70,7 @@ test("profile tab lists My Diner QR and Share My Menuply after Profile informati
 test("account dashboard preserves existing diner surfaces", () => {
   const src = readDashboard();
   assert.match(src, /\/account\/dining-crews/);
-  assert.match(src, /Dining Crew/);
+  assert.match(src, /Circle/);
   assert.match(src, /\/account\/diner-qr/);
   assert.match(src, /My Diner QR/);
   assert.match(src, /\/account\/meet-me-here/);
@@ -94,7 +94,7 @@ test("account dashboard does not invent generic social or speculative wallet fea
   assert.doesNotMatch(src, /transaction history|available credit|stripe balance/i);
   assert.match(src, /not a generic friend list/i);
   assert.match(src, /not a Friend list/);
-  assert.match(src, /No Dining Crew yet/);
+  assert.match(src, /No Circle yet/);
 });
 
 test("dietary option contract remains on dashboard options", () => {
@@ -181,7 +181,7 @@ test("social tab shows connection count, clickable connections, groups, and even
   assert.match(social, /data-testid="social-groups"/);
   assert.match(social, /data-testid="social-events"/);
   assert.match(social, /listMyVenueEvents/);
-  assert.match(social, /sectionTitle\}>Crews</);
+  assert.match(social, /sectionTitle\}>Circles</);
   const app = read("src/App.jsx");
   assert.match(app, /\/account\/connections\/:peerId/);
   assert.match(app, /ConnectProfilePage/);

@@ -288,6 +288,7 @@ import DemoPresentation from "./presentation/DemoPresentation.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import EatInvitationPage from "./pages/EatInvitationPage.jsx";
+import CircleInviteLinkPage from "./pages/consumer/CircleInviteLinkPage.jsx";
 import OpenInvitePage from "./pages/consumer/OpenInvitePage.jsx";
 import JoinMeLandingPage from "./pages/JoinMeLandingPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
@@ -1027,6 +1028,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
         <Route path="/bmt/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BuyMeThisPage />} />
         <Route path="/eat/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EatInvitationPage />} />
+        <Route path="/invite/circle/:code" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CircleInviteLinkPage />} />
         <Route path="/invite/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <EatInvitationPage />} />
         <Route path="/join-me/:token" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinMeLandingPage />} />
         <Route path="/orders/confirmation/:publicOrderToken" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />

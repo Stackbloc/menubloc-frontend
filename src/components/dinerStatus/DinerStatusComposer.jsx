@@ -170,7 +170,7 @@ export default function DinerStatusComposer({
       ) : null}
       {notice ? <p style={styles.notice}>{notice}</p> : null}
       {posted && !isAuthenticated ? (
-        <GuestContributeNextStep identityAction="Join Me, Dining Crew, and a personal history" />
+        <GuestContributeNextStep identityAction="Join Me, Circle, and a personal history" />
       ) : null}
     </div>
   );

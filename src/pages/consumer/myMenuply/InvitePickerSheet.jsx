@@ -16,11 +16,11 @@ export default function InvitePickerSheet({
   const [query, setQuery] = useState("");
   if (!open) return null;
 
-  const title = kind === "event" ? "Invite to event" : "Invite to crew";
+  const title = kind === "event" ? "Invite to event" : "Invite to circle";
   const lead =
     kind === "event"
       ? "Pick one of your events. Anyone with the link can view it and accept Join Me if you turned that on."
-      : "Pick a crew to share its join link.";
+      : "Pick a circle to share its join link.";
 
   const q = String(query || "").trim().toLowerCase();
   const filtered = (items || []).filter((row) => {
@@ -68,14 +68,14 @@ export default function InvitePickerSheet({
             {emptyMessage ||
               (kind === "event"
                 ? "Create an event first from X → Plan an event."
-                : "Create a crew first from X → My Crews.")}
+                : "Create a circle first from X → My Circles.")}
           </p>
         ) : (
           <ul style={styles.list}>
             {filtered.map((row) => {
               const key = kind === "event" ? `ev-${row.id}` : `crew-${row.id}`;
               const label =
-                kind === "event" ? String(row.title || "Event").trim() : String(row.name || "Crew").trim();
+                kind === "event" ? String(row.title || "Event").trim() : String(row.name || "Circle").trim();
               const meta =
                 kind === "event"
                   ? [row.event_date, row.location_label, row.join_me_open ? "Join Me open" : null]

@@ -50,7 +50,7 @@ test("default Dining Crew name uses diner identity possessive", () => {
     defaultDiningCrewNameFromProfile({ first_name: "James" }),
     "James' Dining Crew"
   );
-  assert.equal(defaultDiningCrewNameFromProfile({}), "My Dining Crew");
+  assert.equal(defaultDiningCrewNameFromProfile({}), "My Circle");
 });
 
 test("welcome soft-migrates completed legacy progress", () => {
@@ -151,11 +151,11 @@ test("onboarding page is educational with optional actions — not forced tasks"
   assert.match(page, /Welcome to Menuply/);
   assert.match(page, /Eating is social/);
   assert.match(page, /Who do you eat with\?/);
-  assert.match(page, /Create Dining Crew/);
+  assert.match(page, /Create Circle/);
   assert.match(page, /Share invite/);
   assert.match(page, /buildDiningCrewInviteShareData/);
   assert.match(page, /ShareModal/);
-  assert.match(page, /Want to expand your Dining Crew\?/);
+  assert.match(page, /Want to expand your Circle\?/);
   assert.match(page, /Meet people through food/);
   assert.match(page, /Are you a student\?/);
   assert.match(page, /What are people eating\?/);

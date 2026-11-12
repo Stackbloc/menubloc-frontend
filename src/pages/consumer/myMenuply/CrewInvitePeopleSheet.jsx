@@ -52,7 +52,7 @@ export default function CrewInvitePeopleSheet({
 
         <section style={styles.section}>
           <h3 style={styles.sectionTitle}>Share join link</h3>
-          <p style={styles.hint}>Anyone with the link can open it and join (subject to crew approval rules).</p>
+          <p style={styles.hint}>Anyone with the link can open it and join (subject to circle approval rules).</p>
           <button
             type="button"
             style={styles.primaryBtn}

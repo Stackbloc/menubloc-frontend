@@ -25,8 +25,8 @@ test("dining crew invite share locks menuply.com URL", () => {
   );
   assert.ok(data);
   assert.equal(data.url, "https://menuply.com/account/dining-crews/invite/abc123");
-  assert.match(data.title, /Dining Crew/i);
-  assert.match(data.text, /Join my Dining Crew/i);
+  assert.match(data.title, /Circle/i);
+  assert.match(data.text, /Join my Circle/i);
 
   assert.equal(
     menuplyDiningCrewInviteUrl("/account/dining-crews/invite/xyz"),

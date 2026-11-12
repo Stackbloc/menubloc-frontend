@@ -29,8 +29,8 @@ export function buildDiningCrewInviteShareData(inviteUrl) {
   const url = menuplyDiningCrewInviteUrl(inviteUrl);
   if (!url) return null;
   return {
-    title: "Join my Dining Crew on Menuply",
-    text: "Join my Dining Crew on Menuply — let's decide where and what to eat together.",
+    title: "Join my Circle on Menuply",
+    text: "Join my Circle on Menuply — let's decide where and what to eat together.",
     url,
   };
 }

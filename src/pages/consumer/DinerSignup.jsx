@@ -259,7 +259,7 @@ export default function DinerSignup() {
               Make plans with your friends
             </h2>
             <p style={styles.intro}>
-              Create Diner Crews, invite friends to eat, suggest a restaurant and time, or
+              Create Diner Circles, invite friends to eat, suggest a restaurant and time, or
               counter-propose a different place or time until you find something that works for
               everyone.
             </p>

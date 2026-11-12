@@ -30,7 +30,7 @@ export default function CrewQuickCompose({
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Crew name"
+        placeholder="Circle name"
         disabled={busy}
         maxLength={80}
         autoComplete="off"

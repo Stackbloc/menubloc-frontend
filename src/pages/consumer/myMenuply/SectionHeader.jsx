@@ -161,7 +161,7 @@ export const PROFILE_SECTION_HEADERS = {
     icon: "ti-users",
     eyebrowLabel: "Groups",
     eyebrowColor: "#0C447C",
-    title: "My crews",
+    title: "My circles",
     accentColor: "#378ADD",
   },
   events: {

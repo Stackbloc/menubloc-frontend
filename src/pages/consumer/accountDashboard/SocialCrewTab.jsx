@@ -60,7 +60,7 @@ export default function SocialCrewTab() {
       setCrews(crewData.crews || []);
     } catch (err) {
       setCrews([]);
-      setError(err.message || "Unable to load Dining Crew");
+      setError(err.message || "Unable to load Circle");
     }
     try {
       const [connData, sessData, groupData, eventData] = await Promise.all([
@@ -93,14 +93,14 @@ export default function SocialCrewTab() {
     try {
       const data = await createDiningCrew({ name: newCrewName.trim() });
       setNewCrewName("");
-      setNotice("Dining Crew created.");
+      setNotice("Circle created.");
       if (data?.crew?.id) {
         navigate(`/account/dining-crews/${data.crew.id}`);
         return;
       }
       await load();
     } catch (err) {
-      setError(err.message || "Unable to create Dining Crew");
+      setError(err.message || "Unable to create Circle");
     } finally {
       setBusy(false);
     }
@@ -150,7 +150,7 @@ export default function SocialCrewTab() {
   }
 
   if (loading) {
-    return <p style={styles.muted}>Loading Dining Crew…</p>;
+    return <p style={styles.muted}>Loading Circle…</p>;
   }
 
   const connectionCount = accepted.length;
@@ -292,7 +292,7 @@ export default function SocialCrewTab() {
 
       <section style={styles.section} data-testid="social-groups">
         <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Crews</h2>
+          <h2 style={styles.sectionTitle}>Circles</h2>
           {crews.length > 0 ? (
             <Link to="/account/dining-crews" style={styles.textBtn}>
               Manage
@@ -305,9 +305,9 @@ export default function SocialCrewTab() {
 
         {crews.length === 0 ? (
           <div>
-            <p style={styles.summary}>No Dining Crew yet</p>
+            <p style={styles.summary}>No Circle yet</p>
             <p style={styles.sectionDesc}>
-              Create a small crew so you can decide where to eat together and send invitations
+              Create a small circle so you can decide where to eat together and send invitations
               from one place.
             </p>
             <form onSubmit={handleCreateCrew} style={{ display: "grid", gap: 10 }}>
@@ -315,7 +315,7 @@ export default function SocialCrewTab() {
                 style={styles.input}
                 value={newCrewName}
                 onChange={(e) => setNewCrewName(e.target.value)}
-                placeholder="Crew name"
+                placeholder="Circle name"
                 maxLength={80}
                 required
               />
@@ -324,7 +324,7 @@ export default function SocialCrewTab() {
                 style={styles.primaryBtn}
                 disabled={busy || !newCrewName.trim()}
               >
-                {busy ? "Creating…" : "Create a Dining Crew"}
+                {busy ? "Creating…" : "Create a Circle"}
               </button>
             </form>
           </div>
@@ -340,11 +340,11 @@ export default function SocialCrewTab() {
                 {crew.visibility ? ` · ${crew.visibility}` : ""}
               </p>
               <p style={styles.memberLine}>
-                {names.length ? names.join(" · ") : "Open the crew to see who is in it."}
+                {names.length ? names.join(" · ") : "Open the circle to see who is in it."}
               </p>
               <div style={styles.actions}>
                 <Link to={`/account/dining-crews/${crew.id}`} style={styles.primaryBtn}>
-                  Open crew
+                  Open circle
                 </Link>
                 <button
                   type="button"
@@ -356,7 +356,7 @@ export default function SocialCrewTab() {
                 </button>
               </div>
               {crew.is_full ? (
-                <p style={styles.muted}>This crew is full. Open the crew to raise the member limit.</p>
+                <p style={styles.muted}>This circle is full. Open the circle to raise the member limit.</p>
               ) : null}
             </div>
           );
@@ -406,7 +406,7 @@ export default function SocialCrewTab() {
           </Link>
         </div>
         <p style={styles.sectionDesc}>
-          Plan with Connections or a Dining Crew — suggest restaurants, venues, or events, vote,
+          Plan with Connections or a Circle — suggest restaurants, venues, or events, vote,
           then Make It a Plan.
         </p>
         {sessions.length === 0 ? (
@@ -458,7 +458,7 @@ export default function SocialCrewTab() {
         <AccountActionLink
           to="/account/social-onboarding"
           title="Who do you eat with?"
-          description="Optional intro to Dining Crew and meeting people around food."
+          description="Optional intro to Circle and meeting people around food."
         />
         <AccountActionLink
           to="/account/cluster-subscriptions"
@@ -478,7 +478,7 @@ export default function SocialCrewTab() {
         <ShareModal
           open={inviteShareOpen}
           onClose={() => setInviteShareOpen(false)}
-          modalTitle="Share Dining Crew invite"
+          modalTitle="Share Circle invite"
           shareData={inviteShareData}
           analyticsContext={{
             pageType: "dining_crew_invite",

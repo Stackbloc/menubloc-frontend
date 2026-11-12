@@ -533,6 +533,9 @@ export function resolveConsumerMediaUrl(pathOrUrl) {
 
 // ── Dining Crews ──────────────────────────────────────────────────────────
 export const listDiningCrews = () => get("/api/consumer/dining-crews");
+// Circle invite links (plan 38): the code rides inside menuply.com/invite/circle/<code>; nobody types it.
+export const getCircleLinkPreview = (code) => get(`/api/consumer/circles/link/${encodeURIComponent(String(code || ""))}`);
+export const joinCircleByLink = (code) => post("/api/consumer/circles/join", { code: String(code || "") });
 export const listDinerDiningCrews = (dinerId) =>
   get(`/api/consumer/dining-crews/for-diner/${encodeURIComponent(String(dinerId))}`);
 export const discoverPublicDiningCrews = ({ q = "", limit = 20 } = {}) => {

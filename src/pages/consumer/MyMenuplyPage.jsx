@@ -1980,7 +1980,7 @@ export default function MyMenuplyPage() {
       const body = inviteeUserId ? { invitee_user_id: inviteeUserId } : {};
       const data = await inviteToDiningCrew(crew.id, body);
       openShare(buildDiningCrewInviteShareData(data.invitation?.url || ""), {
-        modalTitle: "Share crew invite",
+        modalTitle: "Share circle invite",
         analyticsContext: { pageType: "dining_crew_invite", crewId: Number(crew.id) || null },
       });
       setCrewInvitePeopleOpen(false);
@@ -2746,7 +2746,7 @@ export default function MyMenuplyPage() {
                         style={hubEditStyles.settingsLink}
                         data-testid="crew-settings-link"
                       >
-                        Crew Settings
+                        Circle Settings
                       </Link>
                     </div>
                   )
@@ -2765,8 +2765,8 @@ export default function MyMenuplyPage() {
               {crews.length === 0 ? (
                 <SectionEmptyState testId="crews-empty">
                   {previewAsConnect
-                    ? "No crews to show."
-                    : "No crews yet. Tap + Add, or open Crew Settings to manage members."}
+                    ? "No circles to show."
+                    : "No circles yet. Tap + Add, or open Circle Settings to manage members."}
                 </SectionEmptyState>
               ) : (
                 crews.slice(0, 4).map((crew) => (
@@ -2938,12 +2938,12 @@ export default function MyMenuplyPage() {
                 <div
                   role="dialog"
                   aria-modal="true"
-                  aria-label="Create dining crew"
+                  aria-label="Create circle"
                   style={crewSheetStyles.panel}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div style={crewSheetStyles.head}>
-                    <p style={crewSheetStyles.title}>New crew</p>
+                    <p style={crewSheetStyles.title}>New circle</p>
                     <button
                       type="button"
                       style={crewSheetStyles.close}

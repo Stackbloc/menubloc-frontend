@@ -174,7 +174,7 @@ function CrewSettingsFields({
         style={styles.textarea}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="What is this crew about? (required)"
+        placeholder="What is this circle about? (required)"
         maxLength={1000}
         rows={3}
         disabled={disabled}
@@ -277,7 +277,7 @@ export function DiningCrewInvitePage() {
 
   return (
     <>
-      <StickyPageHeader title="Dining Crew invite" />
+      <StickyPageHeader title="Circle invite" />
       <div style={styles.page}>
         {error ? <p style={styles.error}>{error}</p> : null}
         {!invite && !error ? <p style={styles.muted}>Loading…</p> : null}
@@ -372,7 +372,7 @@ export function DiningCrewDetailPage() {
       return;
     }
     if (!authLoading && isAuthenticated) {
-      loadCrew().catch((err) => setError(err.message || "Unable to load crew"));
+      loadCrew().catch((err) => setError(err.message || "Unable to load circle"));
       listConnections()
         .then((data) => setConnections(data.accepted || []))
         .catch(() => setConnections([]));
@@ -411,7 +411,7 @@ export function DiningCrewDetailPage() {
   async function handleSaveSettings(e) {
     e.preventDefault();
     if (!String(desc || "").trim()) {
-      setError("Add a short description so people know what this crew is about.");
+      setError("Add a short description so people know what this circle is about.");
       return;
     }
     setBusy(true);
@@ -630,11 +630,11 @@ export function DiningCrewDetailPage() {
 
   return (
     <>
-      <StickyPageHeader title={crew?.name || "Dining Crew"} />
+      <StickyPageHeader title={crew?.name || "Circle"} />
       <div style={styles.page}>
         <p>
           <Link to="/account/dining-crews" style={styles.link}>
-            ← All crews
+            ← All circles
           </Link>
         </p>
         {error ? <p style={styles.error}>{error}</p> : null}
@@ -677,7 +677,7 @@ export function DiningCrewDetailPage() {
                   Request sent — the crew will review your request.
                 </p>
               ) : crew.is_full ? (
-                <p style={styles.muted}>This crew is full and not accepting new members.</p>
+                <p style={styles.muted}>This circle is full and not accepting new members.</p>
               ) : null}
             </div>
           ) : (
@@ -713,7 +713,7 @@ export function DiningCrewDetailPage() {
                   style={styles.secondaryBtn}
                   onClick={() => setSettingsOpen((v) => !v)}
                 >
-                  {settingsOpen ? "Hide settings" : "Crew settings"}
+                  {settingsOpen ? "Hide settings" : "Circle settings"}
                 </button>
               ) : null}
               {settingsOpen && canManageSettings ? (
@@ -819,12 +819,12 @@ export function DiningCrewDetailPage() {
                 Invite people
               </button>
               {crew.is_full ? (
-                <p style={styles.muted}>This crew is full. Increase the max in settings to invite more.</p>
+                <p style={styles.muted}>This circle is full. Increase the max in settings to invite more.</p>
               ) : null}
             </section>
 
             <section style={styles.section}>
-              <h2 style={styles.h2}>Plan a crew outing</h2>
+              <h2 style={styles.h2}>Plan a circle outing</h2>
               <p style={styles.muted}>
                 Pick a restaurant, then create a group Invite to Eat for this crew.
               </p>
@@ -988,7 +988,7 @@ export function DiningCrewDetailPage() {
         <ShareModal
           open={inviteShareOpen}
           onClose={() => setInviteShareOpen(false)}
-          modalTitle="Share Dining Crew invite"
+          modalTitle="Share Circle invite"
           shareData={inviteShareData}
           analyticsContext={{
             pageType: "dining_crew_invite",
@@ -1030,7 +1030,7 @@ export default function DiningCrewsPage() {
       return;
     }
     if (!authLoading && isAuthenticated) {
-      load().catch((err) => setError(err.message || "Unable to load crews"));
+      load().catch((err) => setError(err.message || "Unable to load circles"));
       loadDiscover().catch(() => setPublicCrews([]));
     }
   }, [authLoading, isAuthenticated, navigate, load, loadDiscover]);
@@ -1038,7 +1038,7 @@ export default function DiningCrewsPage() {
   async function handleCreate(e) {
     e.preventDefault();
     if (!String(description || "").trim()) {
-      setError("Add a short description so people know what this crew is about.");
+      setError("Add a short description so people know what this circle is about.");
       return;
     }
     setBusy(true);
@@ -1052,7 +1052,7 @@ export default function DiningCrewsPage() {
       setDescription("");
       navigate(`/account/dining-crews/${data.crew.id}`);
     } catch (err) {
-      setError(err.message || "Unable to create crew");
+      setError(err.message || "Unable to create circle");
     } finally {
       setBusy(false);
     }
@@ -1076,19 +1076,19 @@ export default function DiningCrewsPage() {
 
   return (
     <>
-      <StickyPageHeader title="Dining Crews" />
+      <StickyPageHeader title="Circles" />
       <div style={styles.page}>
-        <p style={styles.lead}>Your crews.</p>
+        <p style={styles.lead}>Your circles.</p>
         {error ? <p style={styles.error}>{error}</p> : null}
 
         <section style={styles.section}>
-          <h2 style={styles.h2}>Create a Dining Crew</h2>
+          <h2 style={styles.h2}>Create a Circle</h2>
           <form onSubmit={handleCreate} style={styles.form} data-testid="quick-compose">
             <input
               style={styles.input}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Crew name"
+              placeholder="Circle name"
               maxLength={80}
               required
             />
@@ -1096,7 +1096,7 @@ export default function DiningCrewsPage() {
               style={styles.input}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this crew about? (required)"
+              placeholder="What is this circle about? (required)"
               maxLength={160}
               required
               data-testid="dining-crew-create-description"
@@ -1106,15 +1106,15 @@ export default function DiningCrewsPage() {
               style={styles.primaryBtn}
               disabled={busy || !name.trim() || !description.trim()}
             >
-              {busy ? "…" : "Create crew"}
+              {busy ? "…" : "Create circle"}
             </button>
           </form>
         </section>
 
         <section style={styles.section}>
-          <h2 style={styles.h2}>Your crews</h2>
+          <h2 style={styles.h2}>Your circles</h2>
           {crews.length === 0 ? (
-            <p style={styles.muted}>No Dining Crews yet.</p>
+            <p style={styles.muted}>No Circles yet.</p>
           ) : (
             <ul style={styles.list}>
               {crews.map((c) => (
@@ -1140,12 +1140,12 @@ export default function DiningCrewsPage() {
         </section>
 
         <section style={styles.section}>
-          <h2 style={styles.h2}>Discover public crews</h2>
+          <h2 style={styles.h2}>Discover public circles</h2>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               loadDiscover(discoverQ).catch((err) =>
-                setError(err.message || "Unable to search public crews")
+                setError(err.message || "Unable to search public circles")
               );
             }}
             style={styles.form}
@@ -1154,14 +1154,14 @@ export default function DiningCrewsPage() {
               style={styles.input}
               value={discoverQ}
               onChange={(e) => setDiscoverQ(e.target.value)}
-              placeholder="Search public crews"
+              placeholder="Search public circles"
             />
             <button type="submit" style={styles.secondaryBtn} disabled={busy}>
               Search
             </button>
           </form>
           {publicCrews.length === 0 ? (
-            <p style={styles.muted}>No public crews found.</p>
+            <p style={styles.muted}>No public circles found.</p>
           ) : (
             <ul style={styles.list}>
               {publicCrews.map((c) => (

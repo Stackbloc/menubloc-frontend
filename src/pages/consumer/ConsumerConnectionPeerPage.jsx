@@ -406,7 +406,7 @@ export default function ConsumerConnectionPeerPage() {
                 testId="crews-section-header"
               />
               {crews.length === 0 ? (
-                <p style={s.muted}>No crews to show.</p>
+                <p style={s.muted}>No circles to show.</p>
               ) : (
                 crews.slice(0, 8).map((crew) => {
                   const isMember = Boolean(crew.viewer_role);

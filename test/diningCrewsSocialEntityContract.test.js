@@ -15,8 +15,8 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /CrewSettingsFields/);
   assert.match(page, /membership_approval/);
   assert.match(page, /View all \$\{crew\.member_count\} members/);
-  assert.match(page, /Discover public crews/);
-  assert.match(page, /Invite to Eat \(crew outing\)|Plan a crew outing/);
+  assert.match(page, /Discover public circles/);
+  assert.match(page, /Invite to Eat \(circle outing\)|Plan a circle outing/);
   assert.match(page, /data-testid="dining-crew-reader-view"/);
   assert.match(page, /data-testid="dining-crew-member-view"/);
   assert.match(page, /data-testid="dining-crew-request-join"/);
@@ -28,7 +28,7 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.doesNotMatch(page, /dining-crew-food-photo-input/);
   assert.match(page, /postDiningCrewPhoto/);
   assert.match(page, /ShareModal/);
-  assert.match(page, /Share Dining Crew invite/);
+  assert.match(page, /Share Circle invite/);
   {
     const readerStart = page.indexOf('data-testid="dining-crew-reader-view"');
     const memberStart = page.indexOf('data-testid="dining-crew-member-view"');
@@ -41,7 +41,7 @@ test("Dining Crews Phase 3 social entity UI + API client", () => {
   assert.match(page, /dinerPeerProfilePath/);
   assert.match(page, /data-testid="dining-crew-description"/);
   assert.match(page, /dining-crew-description-input/);
-  assert.match(page, /What is this crew about\? \(required\)/);
+  assert.match(page, /What is this circle about\? \(required\)/);
   assert.match(page, /dining-crew-basics/);
   assert.match(page, /memberAvatar/);
   assert.doesNotMatch(page, /Purpose \(optional\)/);

@@ -53,7 +53,7 @@ test("X sheet creates My Menuply content; Diner QR first; no I'm Eating At / My 
   assert.match(sheet, /title: "What I'm Eating"/);
   assert.match(sheet, /title: "What I Want to Eat"/);
   assert.match(sheet, /title: "Plan a meal"/);
-  assert.match(sheet, /title: "My Crews"/);
+  assert.match(sheet, /title: "My Circles"/);
   assert.match(sheet, /title: "Plan an event"/);
   assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "ate" \}\)/);
   assert.match(sheet, /myMenuplyProfileHref\(\{ compose: "want" \}\)/);

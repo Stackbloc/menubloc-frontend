@@ -55,7 +55,7 @@ const STEP_META = {
   welcome: { title: "Welcome to Menuply" },
   dining_crew: { title: "Eating is social." },
   invite_friends: { title: "Invite your friends and family" },
-  expand_crew: { title: "Want to expand your Dining Crew?" },
+  expand_crew: { title: "Want to expand your Circle?" },
   food_camera: { title: "Share food with the Menuply community" },
   student_edu: { title: "Are you a student?" },
   people_eating: { title: "What are people eating?" },
@@ -249,14 +249,14 @@ export default function SocialOnboardingPage() {
         const created = await createDiningCrew({ name: defaultName });
         crew = created.crew;
       }
-      if (!crew?.id) throw new Error("Unable to create Dining Crew");
+      if (!crew?.id) throw new Error("Unable to create Circle");
       setActiveCrewId(crew.id);
       setCrewName(crew.name || defaultName);
       setCrewCreated(true);
       setCrewNameSaved(false);
-      setNotice("Your Dining Crew is ready. You can rename it now or add people later.");
+      setNotice("Your Circle is ready. You can rename it now or add people later.");
     } catch (err) {
-      setError(err.message || "Unable to create Dining Crew");
+      setError(err.message || "Unable to create Circle");
     } finally {
       setBusy(false);
     }
@@ -266,7 +266,7 @@ export default function SocialOnboardingPage() {
     if (!activeCrewId) return;
     const nextName = String(crewName || "").trim();
     if (!nextName) {
-      setError("Enter a name for your Dining Crew.");
+      setError("Enter a name for your Circle.");
       return;
     }
     setBusy(true);
@@ -275,9 +275,9 @@ export default function SocialOnboardingPage() {
       const updated = await updateDiningCrew(activeCrewId, { name: nextName });
       setCrewName(updated.crew?.name || nextName);
       setCrewNameSaved(true);
-      setNotice("Dining Crew name saved.");
+      setNotice("Circle name saved.");
     } catch (err) {
-      setError(err.message || "Unable to update Dining Crew name");
+      setError(err.message || "Unable to update Circle name");
     } finally {
       setBusy(false);
     }
@@ -432,19 +432,19 @@ export default function SocialOnboardingPage() {
             </p>
             <p style={styles.lead}>Who do you eat with?</p>
             <p style={styles.body}>
-              Create your own <strong>Dining Crew</strong> to bring the people you eat with together
+              Create your own <strong>Circle</strong> to bring the people you eat with together
               so you can decide where and what to eat—and invite them when you find something good.
             </p>
 
             {crewCreated ? (
               <div style={styles.card}>
-                <strong>Your Dining Crew is ready</strong>
+                <strong>Your Circle is ready</strong>
                 <p style={{ ...styles.soft, marginTop: 8 }}>
                   Rename it if you like. Sharing an invite is optional — you can Continue without
                   inviting anyone.
                 </p>
                 <label style={styles.label}>
-                  Dining Crew name
+                  Circle name
                   <input
                     style={styles.input}
                     type="text"
@@ -474,7 +474,7 @@ export default function SocialOnboardingPage() {
                   Share invite
                 </button>
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
-                  Open Dining Crews
+                  Open Circles
                 </Link>
               </div>
             ) : (
@@ -485,7 +485,7 @@ export default function SocialOnboardingPage() {
                 onClick={handleCreateDiningCrew}
                 data-testid="create-dining-crew"
               >
-                Create Dining Crew
+                Create Circle
               </button>
             )}
 
@@ -567,7 +567,7 @@ export default function SocialOnboardingPage() {
                 </p>
                 <WhatPeopleAreEating clusterId={DEFAULT_ONBOARDING_CLUSTER.id} compact />
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
-                  Open Dining Crews
+                  Open Circles
                 </Link>
                 <Link to="/account/connections" style={styles.secondaryLink}>
                   Open Connections
@@ -609,7 +609,7 @@ export default function SocialOnboardingPage() {
                   photos and comments both count.
                 </p>
                 <Link to="/account/dining-crews" style={styles.secondaryLink}>
-                  Open Dining Crews
+                  Open Circles
                 </Link>
               </div>
             )}
@@ -865,7 +865,7 @@ export default function SocialOnboardingPage() {
         <ShareModal
           open={inviteShareOpen}
           onClose={() => setInviteShareOpen(false)}
-          modalTitle="Share Dining Crew invite"
+          modalTitle="Share Circle invite"
           shareData={inviteShareData}
           analyticsContext={{
             pageType: "dining_crew_invite_onboarding",

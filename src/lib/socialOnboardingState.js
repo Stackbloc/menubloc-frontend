@@ -129,7 +129,7 @@ export function defaultDiningCrewNameFromProfile(profile) {
   const first = String(profile?.first_name || "").trim();
   const display = String(profile?.display_name || "").trim();
   const base = first || display.split(/\s+/)[0] || "";
-  if (!base) return "My Dining Crew";
+  if (!base) return "My Circle";
   const possessive = /s$/i.test(base) ? `${base}'` : `${base}'s`;
   return `${possessive} Dining Crew`;
 }

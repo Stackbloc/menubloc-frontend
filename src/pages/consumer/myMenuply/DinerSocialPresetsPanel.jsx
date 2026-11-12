@@ -188,7 +188,7 @@ export default function DinerSocialPresetsPanel({
       <div style={styles.row} data-testid="preset-crews">
         <StatusToggle
           testId="preset-crews-toggle"
-          featureLabel="Join Crew"
+          featureLabel="Join Circle"
           open={Boolean(draftCrews.open)}
           busy={busy}
           onToggle={async (nextOpen) => {

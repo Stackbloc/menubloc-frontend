@@ -11,7 +11,7 @@ const CORE_LINKS = [
   {
     to: MY_MENUPLY_PROFILE_PATH,
     title: "My Menuply",
-    blurb: "Profile, clips, photos, connections, Dining Crew",
+    blurb: "Profile, clips, photos, connections, Circle",
     testId: "feed-me-my-menuply",
   },
   {
@@ -62,7 +62,7 @@ export default function FeedMePage() {
   return (
     <div style={styles.page} data-testid="feed-me">
       <h1 style={styles.h1}>Me</h1>
-      <p style={styles.lead}>Your identity and account — Connections and Dining Crew stay nested here.</p>
+      <p style={styles.lead}>Your identity and account — Connections and Circle stay nested here.</p>
       <ul style={styles.list}>
         {links.map((row) => (
           <li key={row.to} style={styles.item}>

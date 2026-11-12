@@ -86,8 +86,8 @@ const ACTION_DEFS = {
   },
   crew: {
     id: "crew",
-    title: "My Crews",
-    description: "Create a crew — people you eat and hang out with.",
+    title: "My Circles",
+    description: "Create a circle — people you eat and hang out with.",
     to: myMenuplyProfileHref({ compose: "crew" }),
     guestOk: false,
   },
@@ -107,8 +107,8 @@ const ACTION_DEFS = {
   },
   "invite-crew": {
     id: "invite-crew",
-    title: "Invite to crew",
-    description: "Pick a crew and share its join link.",
+    title: "Invite to circle",
+    description: "Pick a circle and share its join link.",
     to: myMenuplyProfileHref({ compose: "invite-crew" }),
     guestOk: false,
   },

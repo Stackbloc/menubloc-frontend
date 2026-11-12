@@ -34,7 +34,7 @@ test("Connect view is content-only — no how-to instructions", () => {
   assert.match(page, /needs_primary_location && !previewAsConnect/);
   assert.match(page, /HomeAtHomeSection[\s\S]*readOnly=\{previewAsConnect\}/);
   assert.match(page, /MyMenuplyPresentationRails[\s\S]*readOnly=\{previewAsConnect\}/);
-  assert.match(page, /previewAsConnect[\s\S]*No crews to show/);
+  assert.match(page, /previewAsConnect[\s\S]*No circles to show/);
   assert.match(page, /previewAsConnect[\s\S]*Nothing yet/);
 
   assert.match(home, /Connect \/ peer \(readOnly\): content only/);
