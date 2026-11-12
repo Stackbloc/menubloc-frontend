@@ -54,7 +54,7 @@ const DEAL_TYPES = [
   { value: "fixed_price", label: "Special price" },
   { value: "bogo", label: "Buy one, get one" },
   { value: "combo", label: "Combo" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "General deal (no price)" },
 ];
 const PRICED_TYPES = new Set(["percent_off", "amount_off", "fixed_price"]);
 
