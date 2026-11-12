@@ -172,6 +172,10 @@ export const getOwnerGrowthDetails = (params = {}) => {
 export const getOwnerDinerAccounts = (params = {}) => {
   const qs = new URLSearchParams();
   if (params.limit != null) qs.set("limit", String(params.limit));
+  // Diner Intelligence Stage 1: server-side search + paging (page, page_size 25|50|100, q, sort).
+  for (const key of ["page", "page_size", "q", "sort"]) {
+    if (params[key] != null && params[key] !== "") qs.set(key, String(params[key]));
+  }
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/diners${serialized ? `?${serialized}` : ""}`);
 };

@@ -1,11 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
-import { MetricCard, SimpleTable } from "./intelligence/intelligenceShared.jsx";
+import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 import {
   getOwnerDinerAccounts,
   getOwnerDinerCapabilityStats,
 } from "../../lib/ownerApi.js";
-import OwnerDinerHubDialog from "./OwnerDinerHubDialog.jsx";
+import {
+  DINER_INTERVAL_LABELS,
+  DINER_INTERVAL_OPTIONS,
+  dinerProfilePath,
+  displayDinerMetric,
+} from "./diners/dinerMetricDisplay.js";
+
+/**
+ * /owner/diners. Diner Intelligence Stage 1 (plan 39, Andre 2026-11-12):
+ *  - each card shows its status: a count, "Unavailable" (read failed) or "Not tracked". A failure is never 0.
+ *  - Los Angeles days; staff accounts and seeded test diners are left out everywhere.
+ *  - the roster is searched and paged on the server; a row opens /owner/diners/:id.
+ */
 
 const METRIC_GRID = {
   display: "grid",
@@ -13,13 +26,15 @@ const METRIC_GRID = {
   gap: 14,
 };
 
-const INTERVAL_OPTIONS = [
-  ["today", "Today"],
-  ["yesterday", "Yesterday"],
-  ["7d", "Week"],
-  ["30d", "Month"],
-  ["365d", "Year"],
-];
+const PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 300;
+
+const TONE_COLOR = {
+  count: OWNER_COLORS.ink,
+  zero: OWNER_COLORS.ink,
+  unavailable: "#9f1239",
+  not_tracked: OWNER_COLORS.muted,
+};
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -34,95 +49,163 @@ function formatDateTime(value) {
   });
 }
 
-function formatMetricCount(metric) {
-  if (metric?.is_average) {
-    return Number(metric.count || 0).toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-  }
-  return Number(metric?.count || 0).toLocaleString();
+function DinerMetricCard({ metric, loading = false }) {
+  const shown = loading ? { value: "—", subtitle: null, tone: "count" } : displayDinerMetric(metric);
+  const small = shown.tone === "unavailable" || shown.tone === "not_tracked";
+  return (
+    <div data-testid={`diner-metric-${metric?.key || "loading"}`} data-status={metric?.status || "loading"}>
+      <PageCard style={{ padding: 18, height: "100%", boxSizing: "border-box" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>{loading ? "Loading…" : metric.label}</div>
+        <div
+          style={{
+            fontSize: small ? 18 : 28,
+            fontWeight: 800,
+            marginTop: small ? 14 : 10,
+            color: TONE_COLOR[shown.tone] || OWNER_COLORS.ink,
+          }}
+        >
+          {shown.value}
+        </div>
+        {shown.subtitle ? (
+          <div style={{ marginTop: 6, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.4 }}>{shown.subtitle}</div>
+        ) : null}
+      </PageCard>
+    </div>
+  );
 }
 
-function metricSubtitle(metric) {
-  if (metric?.is_average) {
-    const parts = [];
-    if (metric.accepted_connects_total != null) {
-      parts.push(`${metric.accepted_connects_total} accepted total`);
-    }
-    if (metric.active_diners != null) {
-      parts.push(`${metric.active_diners} active diners`);
-    }
-    return parts.join(" · ") || null;
-  }
-  if (metric?.unique_diners != null) {
-    return `${metric.unique_diners} unique diners`;
-  }
-  return null;
+function CountCard({ label, value }) {
+  return (
+    <PageCard style={{ padding: 18 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, marginTop: 10, color: value == null ? OWNER_COLORS.muted : OWNER_COLORS.ink }}>
+        {value == null ? "—" : Number(value).toLocaleString("en-US")}
+      </div>
+    </PageCard>
+  );
+}
+
+function PagerButton({ disabled, onClick, children, testId }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      data-testid={testId}
+      style={{
+        padding: "6px 12px",
+        borderRadius: 999,
+        border: `1px solid ${OWNER_COLORS.line}`,
+        background: "#fff",
+        color: disabled ? OWNER_COLORS.muted : OWNER_COLORS.ink,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: disabled ? "default" : "pointer",
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function OwnerDiners() {
-  const [data, setData] = useState(null);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedInterval = searchParams.get("interval");
+  const interval = DINER_INTERVAL_LABELS[requestedInterval] ? requestedInterval : "today";
+
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState("");
   const [statsError, setStatsError] = useState("");
+  const [roster, setRoster] = useState(null);
+  const [rosterError, setRosterError] = useState("");
+  const [rosterLoading, setRosterLoading] = useState(true);
+  const [queryText, setQueryText] = useState("");
   const [query, setQuery] = useState("");
-  const [interval, setInterval] = useState("today");
-  const [selectedDinerId, setSelectedDinerId] = useState(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    getOwnerDinerAccounts({ limit: 2000 })
-      .then(setData)
-      .catch(() => setError("Diner accounts are temporarily unavailable."));
-  }, []);
-
-  useEffect(() => {
+    let cancelled = false;
+    setStats(null);
     setStatsError("");
     getOwnerDinerCapabilityStats({ interval })
-      .then(setStats)
-      .catch(() => setStatsError("Diner capability stats are temporarily unavailable."));
+      .then((payload) => {
+        if (!cancelled) setStats(payload);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError("Diner activity numbers couldn't be loaded just now.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [interval]);
 
-  const counts = data?.counts || { total: 0, active: 0, pending_phone_verification: 0, closed: 0 };
-  const rows = useMemo(() => {
-    const list = Array.isArray(data?.rows) ? data.rows : [];
-    const needle = query.trim().toLowerCase();
-    if (!needle) return list;
-    return list.filter((row) => {
-      const hay = [row.name, row.email, row.geographic_market, row.referral_source_label, row.status]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(needle);
-    });
-  }, [data, query]);
+  // Debounce typing, then search on the server from page 1.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(queryText.trim());
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [queryText]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRosterLoading(true);
+    setRosterError("");
+    getOwnerDinerAccounts({ page, page_size: PAGE_SIZE, q: query || undefined })
+      .then((payload) => {
+        if (!cancelled) setRoster(payload);
+      })
+      .catch(() => {
+        if (!cancelled) setRosterError("Diner accounts couldn't be loaded just now.");
+      })
+      .finally(() => {
+        if (!cancelled) setRosterLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, query]);
+
+  const changeInterval = (next) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === "today") params.delete("interval");
+    else params.set("interval", next);
+    setSearchParams(params, { replace: true });
+  };
+
+  const counts = roster?.counts || null;
+  const rows = Array.isArray(roster?.rows) ? roster.rows : [];
+  const matched = roster?.paging?.matched ?? rows.length;
+  const pageCount = Math.max(1, Math.ceil(matched / PAGE_SIZE));
+  const firstShown = matched ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const lastShown = Math.min(matched, (page - 1) * PAGE_SIZE + rows.length);
+  const openDiner = (row) => row?.id && navigate(dinerProfilePath(row.id, interval));
 
   return (
     <OwnerLayout title="Diner accounts">
       <SectionTitle
         title="All diner accounts"
-        subtitle="Lifetime consumer accounts with capability activity for the selected window. Referral source is Direct, QR code, or Website referral when captured at signup. Personal diner QR scans are not logged — QR connects and codes created are reported instead. Platform staff accounts excluded (ids 2, 3, 4, 29)."
+        subtitle="Lifetime diner accounts, with what they did in the selected window. Days are Los Angeles days. Platform staff accounts and seeded test diners are left out of every number. Referral source is Direct, QR code, or Website referral when captured at signup."
       />
-
-      {error ? (
-        <PageCard style={{ padding: 18, color: "#9f1239" }}>{error}</PageCard>
-      ) : null}
 
       <PageCard style={{ padding: 18, marginBottom: 18 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>Activity window</span>
-          {INTERVAL_OPTIONS.map(([key, label]) => (
+          {DINER_INTERVAL_OPTIONS.map(([key, label]) => (
             <button
               key={key}
               type="button"
               data-testid={`diner-stats-interval-${key}`}
-              onClick={() => setInterval(key)}
+              aria-pressed={interval === key}
+              onClick={() => changeInterval(key)}
               style={{
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: `1px solid ${interval === key ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                background: interval === key ? OWNER_COLORS.accentSoft || "#eef6f1" : "#fff",
-                color: interval === key ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+                // Selected chip = dark fill + white text; never a green pill (Andre 2026-11-06).
+                border: `1px solid ${interval === key ? OWNER_COLORS.ink : OWNER_COLORS.line}`,
+                background: interval === key ? OWNER_COLORS.ink : "#fff",
+                color: interval === key ? "#fff" : OWNER_COLORS.ink,
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -134,12 +217,10 @@ export default function OwnerDiners() {
         </div>
         {stats?.from && stats?.to ? (
           <div style={{ marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted }}>
-            {stats.from} through {stats.to}
+            {stats.from} through {stats.to} (Los Angeles days)
           </div>
         ) : null}
-        {statsError ? (
-          <div style={{ marginTop: 12, color: "#9f1239", fontSize: 13 }}>{statsError}</div>
-        ) : null}
+        {statsError ? <div style={{ marginTop: 12, color: "#9f1239", fontSize: 13 }}>{statsError}</div> : null}
         {stats?.notes?.length ? (
           <div style={{ marginTop: 12, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
             {stats.notes.join(" ")}
@@ -147,41 +228,35 @@ export default function OwnerDiners() {
         ) : null}
         <div style={{ ...METRIC_GRID, marginTop: 16 }} data-testid="diner-capability-metrics">
           {(stats?.metrics || []).map((metric) => (
-            <MetricCard
-              key={metric.key}
-              label={metric.label}
-              value={stats ? formatMetricCount(metric) : "—"}
-              subtitle={metricSubtitle(metric)}
-            />
+            <DinerMetricCard key={metric.key} metric={metric} />
           ))}
           {!stats && !statsError
-            ? Array.from({ length: 6 }).map((_, idx) => (
-                <MetricCard key={`loading-${idx}`} label="Loading…" value="—" />
-              ))
+            ? Array.from({ length: 6 }).map((_, idx) => <DinerMetricCard key={`loading-${idx}`} loading />)
             : null}
         </div>
       </PageCard>
 
       <div style={METRIC_GRID}>
-        <MetricCard label="Total diners" value={counts.total} />
-        <MetricCard label="Active" value={counts.active} />
-        <MetricCard label="Pending phone verification" value={counts.pending_phone_verification} />
-        <MetricCard label="Closed" value={counts.closed} />
+        <CountCard label="Total diners" value={counts?.total} />
+        <CountCard label="Active" value={counts?.active} />
+        <CountCard label="Pending phone verification" value={counts?.pending_phone_verification} />
+        <CountCard label="Closed" value={counts?.closed} />
       </div>
 
       <PageCard style={{ padding: 18, marginTop: 18 }}>
         <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>
-          Filter by email, name, market, or status
+          Search by email, name, market, or status
           <input
             type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Email, name, market, referral source, or status"
+            value={queryText}
+            onChange={(e) => setQueryText(e.target.value)}
+            placeholder="Email, name, market, or status"
             data-testid="diner-accounts-filter"
             style={{
               display: "block",
               width: "100%",
               maxWidth: 420,
+              boxSizing: "border-box",
               marginTop: 8,
               padding: "10px 12px",
               borderRadius: 10,
@@ -191,13 +266,27 @@ export default function OwnerDiners() {
           />
         </label>
         <div style={{ marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted }}>
-          Click a diner row to open a read-only My Menuply snapshot.
+          Click a diner to open their profile.
         </div>
-        <div style={{ marginTop: 16 }} data-testid="diner-accounts-table">
+        {rosterError ? <div style={{ marginTop: 12, color: "#9f1239", fontSize: 13 }}>{rosterError}</div> : null}
+        <div style={{ marginTop: 16, opacity: rosterLoading && roster ? 0.6 : 1 }} data-testid="diner-accounts-table">
           <SimpleTable
             rows={rows}
             columns={[
-              ["Name", "name", (row) => row.name || "—"],
+              [
+                "Name",
+                "name",
+                (row) => (
+                  <Link
+                    to={dinerProfilePath(row.id, interval)}
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid={`diner-row-link-${row.id}`}
+                    style={{ color: OWNER_COLORS.ink, fontWeight: 700, textDecoration: "none" }}
+                  >
+                    {row.name || "—"}
+                  </Link>
+                ),
+              ],
               ["Email", "email", (row) => row.email || "—"],
               ["Account opened", "opened_at", (row) => formatDateTime(row.opened_at)],
               ["Referral source", "referral_source_label", (row) => row.referral_source_label || "Direct"],
@@ -205,25 +294,38 @@ export default function OwnerDiners() {
               ["Geographic market", "geographic_market", (row) => row.geographic_market || "—"],
               ["Status", "status", (row) => row.status || "—"],
             ]}
-            emptyLabel={data ? "No diner accounts match this filter." : "Loading diner accounts…"}
-            onRowClick={(row) => row?.id && setSelectedDinerId(row.id)}
+            emptyLabel={
+              rosterLoading && !roster
+                ? "Loading diner accounts…"
+                : query
+                  ? "No diner accounts match this search."
+                  : "No diner accounts yet."
+            }
+            onRowClick={openDiner}
           />
         </div>
-        {data?.rows?.length ? (
-          <div style={{ marginTop: 12, fontSize: 12, color: OWNER_COLORS.muted }}>
-            Showing {rows.length} of {data.rows.length} listed accounts
-            {counts.total > data.rows.length ? ` (${counts.total} total)` : ""}.
+        {roster && matched > 0 ? (
+          <div
+            style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}
+            data-testid="diner-accounts-pager"
+          >
+            <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+              {firstShown}–{lastShown} of {matched.toLocaleString("en-US")}
+              {query && counts?.total != null ? ` matching (${counts.total.toLocaleString("en-US")} total)` : ""}
+            </span>
+            <PagerButton testId="diner-accounts-prev" disabled={page <= 1 || rosterLoading} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              Previous
+            </PagerButton>
+            <PagerButton
+              testId="diner-accounts-next"
+              disabled={page >= pageCount || rosterLoading}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            >
+              Next
+            </PagerButton>
           </div>
         ) : null}
       </PageCard>
-
-      {selectedDinerId ? (
-        <OwnerDinerHubDialog
-          dinerId={selectedDinerId}
-          interval={interval}
-          onClose={() => setSelectedDinerId(null)}
-        />
-      ) : null}
     </OwnerLayout>
   );
 }

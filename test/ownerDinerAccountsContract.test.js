@@ -1,5 +1,5 @@
 /**
- * Owner diner accounts roster + capability stats + hub dialog contract.
+ * Owner diner accounts roster + capability stats + diner profile page contract (Diner Intelligence Stage 1).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -23,35 +23,35 @@ describe("owner diner accounts panel", () => {
     assert.match(api, /\/api\/owner\/dashboard\/diners\/\$\{encodeURIComponent/);
   });
 
-  it("OwnerDiners shows capability metrics, interval chips, and clickable roster", () => {
+  it("OwnerDiners shows status-aware metrics, interval chips, and a server-paged roster", () => {
     const page = read("src/pages/owner/OwnerDiners.jsx");
     assert.match(page, /getOwnerDinerCapabilityStats/);
-    assert.match(page, /getOwnerDinerAccounts/);
-    assert.match(page, /OwnerDinerHubDialog/);
+    assert.match(page, /getOwnerDinerAccounts\(\{ page, page_size: PAGE_SIZE, q:/);
+    assert.doesNotMatch(page, /limit: 2000/);
+    assert.doesNotMatch(page, /OwnerDinerHubDialog/);
+    assert.match(page, /displayDinerMetric/);
     assert.match(page, /diner-capability-metrics/);
     assert.match(page, /diner-stats-interval-\$\{key\}/);
-    assert.match(page, /\["today", "Today"\]/);
-    assert.match(page, /useState\("today"\)/);
-    assert.match(page, /\["30d", "Month"\]/);
-    assert.match(page, /\["365d", "Year"\]/);
     assert.match(page, /onRowClick/);
-    assert.match(page, /My Menuply snapshot/);
+    assert.match(page, /dinerProfilePath/);
+    assert.match(page, /diner-accounts-pager/);
     assert.match(page, /Total diners/);
     assert.match(page, /Account opened/);
     assert.match(page, /Referral source/);
-    assert.match(page, /formatDateTime/);
-    assert.match(page, /ids 2, 3, 4, 29/);
-    assert.match(page, /QR scans are not logged/);
+    assert.match(page, /Los Angeles days/);
+    assert.match(page, /seeded test diners are left out/);
   });
 
-  it("OwnerDinerHubDialog loads diner detail and supports close", () => {
-    const dialog = read("src/pages/owner/OwnerDinerHubDialog.jsx");
-    assert.match(dialog, /getOwnerDinerDetail/);
-    assert.match(dialog, /owner-diner-hub-dialog/);
-    assert.match(dialog, /owner-diner-hub-dialog-close/);
-    assert.match(dialog, /My Menuply snapshot/);
-    assert.match(dialog, /diner-hub-summary-grid/);
-    assert.match(dialog, /Escape/);
+  it("OwnerDinerProfile is a real page at /owner/diners/:dinerId", () => {
+    const profile = read("src/pages/owner/OwnerDinerProfile.jsx");
+    const app = read("src/App.jsx");
+    assert.match(profile, /getOwnerDinerDetail/);
+    assert.match(profile, /useParams/);
+    assert.match(profile, /owner-diner-profile/);
+    assert.match(profile, /diner-hub-summary-grid/);
+    assert.match(profile, /diner-profile-back/);
+    assert.match(profile, /displayDinerCount/);
+    assert.match(app, /path="\/owner\/diners\/:dinerId"[^\n]*<OwnerRoute><OwnerDinerProfile \/><\/OwnerRoute>/);
   });
 
   it("owner nav and dashboard link to /owner/diners", () => {
