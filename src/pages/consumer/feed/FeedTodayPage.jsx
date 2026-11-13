@@ -460,6 +460,8 @@ export default function FeedTodayPage() {
   return (
     <div style={{ ...s.page, paddingBottom: `calc(${bottomGap + 72}px + env(safe-area-inset-bottom, 0px))` }} data-testid="today-screen">
       <div style={s.column}>
+        {/* Logo + location, day strip and meal buttons stay at the top as one block (Andre 2026-11-13, as the app). */}
+        <div style={s.stickyTop} data-testid="today-sticky-top">
         <header style={s.header}>
           <BrandLogo to="/feed/today" height={28} radius={7} pageColor="#ffffff" wordmarkColor="#111613" ariaLabel="Menuply" />
           <Link to="/feed/search" style={s.locChip} data-testid="today-location-chip" aria-label={`Location: ${place}. Change location`}>
@@ -493,8 +495,7 @@ export default function FeedTodayPage() {
           </div>
         ) : null}
 
-        {/* Meal buttons stay at the top while scrolling (Andre 2026-11-13, as the app). */}
-        <div style={{ ...s.timeline, ...s.sticky }} role="tablist" aria-label="Meal">
+        <div style={{ ...s.timeline, padding: "6px 0" }} role="tablist" aria-label="Meal">
           {tabs.map((w) => {
             const sel = w.key === windowKey;
             return (
@@ -511,6 +512,7 @@ export default function FeedTodayPage() {
               </button>
             );
           })}
+        </div>
         </div>
 
         {social?.open ? (
@@ -743,7 +745,17 @@ const s = {
   dayDot: { width: 5, height: 5, borderRadius: 3, background: "transparent" },
   dayDotOn: { background: C.ink },
   timeline: { display: "flex", gap: 4 },
-  sticky: { position: "sticky", top: 0, zIndex: 5, background: C.white, padding: "6px 0" },
+  stickyTop: {
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
+    background: C.white,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    paddingTop: "max(12px, env(safe-area-inset-top))",
+    marginTop: "calc(-1 * max(12px, env(safe-area-inset-top)))",
+  },
   searchLink: { display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, color: C.accent, fontWeight: 700, fontSize: 15, textDecoration: "none" },
   window: { flex: 1, minHeight: 40, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   panel: { borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 8 },
