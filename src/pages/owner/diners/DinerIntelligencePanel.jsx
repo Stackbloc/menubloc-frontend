@@ -44,7 +44,7 @@ function Chip({ selected, onClick, children, testId }) {
   );
 }
 
-export function ProfileRangePicker({ range, onChange }) {
+export function ProfileRangePicker({ range, onChange, options = PROFILE_RANGE_OPTIONS, testPrefix = "diner-range" }) {
   const [from, setFrom] = useState(range.from || "");
   const [to, setTo] = useState(range.to || "");
   const [custom, setCustom] = useState(range.key === "custom");
@@ -58,10 +58,10 @@ export function ProfileRangePicker({ range, onChange }) {
     <div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>Period</span>
-        {PROFILE_RANGE_OPTIONS.map(([key, label]) => (
+        {options.map(([key, label]) => (
           <Chip
             key={key}
-            testId={`diner-range-${key}`}
+            testId={`${testPrefix}-${key}`}
             selected={key === "custom" ? custom : !custom && range.key === key}
             onClick={() => (key === "custom" ? setCustom(true) : (setCustom(false), onChange({ key })))}
           >
@@ -78,12 +78,12 @@ export function ProfileRangePicker({ range, onChange }) {
           }}
         >
           <label style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-            From <input type="date" data-testid="diner-range-from" value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
+            From <input type="date" data-testid={`${testPrefix}-from`} value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
           </label>
           <label style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-            To <input type="date" data-testid="diner-range-to" value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
+            To <input type="date" data-testid={`${testPrefix}-to`} value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
           </label>
-          <Chip testId="diner-range-apply" selected onClick={() => from && to && onChange({ key: "custom", from, to })}>
+          <Chip testId={`${testPrefix}-apply`} selected onClick={() => from && to && onChange({ key: "custom", from, to })}>
             Show
           </Chip>
         </form>
