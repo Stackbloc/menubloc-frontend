@@ -33,19 +33,34 @@ function Harness({ onNext }) {
 }
 
 describe("QuickInviteWhoStep", () => {
-  it("lists Connects with round checks and a Favs cue; Next is off until someone is checked", () => {
+  it("lists Connects with round checks and a Favs cue; Next asks once in a small box, Not now goes on", () => {
     const onNext = vi.fn();
     render(<Harness onNext={onNext} />);
     expect(screen.getByText("Quick Invite")).toBeTruthy();
     expect(screen.getByTestId("quick-invite-connect-31").textContent).toMatch(/Favs pancakes, tacos/);
+    expect(screen.queryByText("Not a Connect?")).toBeNull();
     const next = screen.getByTestId("quick-invite-next");
-    expect(next.disabled).toBe(true);
     expect(next.textContent).toBe("Next ›");
     fireEvent.click(screen.getByTestId("quick-invite-connect-31"));
     expect(screen.getByTestId("quick-invite-connect-31").getAttribute("aria-checked")).toBe("true");
     expect(next.textContent).toBe("Next (1) ›");
     fireEvent.click(next);
-    expect(onNext).toHaveBeenCalled();
+    expect(screen.getByTestId("quick-invite-contacts-box").textContent).toMatch(/Invite someone who isn’t a Connect\?/);
+    expect(onNext).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("quick-invite-contacts-no"));
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("quick-invite-contacts-box")).toBeNull();
+    fireEvent.click(next);
+    expect(onNext).toHaveBeenCalledTimes(2);
+  });
+
+  it("with nobody checked Next opens the box; after Not now Next is off", () => {
+    const onNext = vi.fn();
+    render(<Harness onNext={onNext} />);
+    fireEvent.click(screen.getByTestId("quick-invite-next"));
+    fireEvent.click(screen.getByTestId("quick-invite-contacts-no"));
+    expect(onNext).not.toHaveBeenCalled();
+    expect(screen.getByTestId("quick-invite-next").disabled).toBe(true);
   });
 
   it("Open Invite · All my Connects checks everyone; tapping again clears", () => {
@@ -60,9 +75,10 @@ describe("QuickInviteWhoStep", () => {
     expect(screen.getByTestId("quick-invite-next").textContent).toBe("Next ›");
   });
 
-  it("Not a Connect? adds a typed name (they get the link from you)", () => {
+  it("Add a name in the box opens the name field (they get the link from you)", () => {
     render(<Harness onNext={() => {}} />);
-    fireEvent.click(screen.getByTestId("quick-invite-not-connect"));
+    fireEvent.click(screen.getByTestId("quick-invite-next"));
+    fireEvent.click(screen.getByTestId("quick-invite-contacts-yes"));
     fireEvent.change(screen.getByTestId("quick-invite-typed-name"), { target: { value: "Rose" } });
     fireEvent.click(screen.getByTestId("quick-invite-who-typed"));
     expect(screen.getByTestId("quick-invite-picked-typed-rose").textContent).toMatch(/You send the link/);

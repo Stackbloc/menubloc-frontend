@@ -4,8 +4,10 @@
  * (Today shows those). "Open Invite · All my Connects" checks them all. Next (n) › sits in a bar
  * pinned to the bottom, off until someone is checked.
  *
- * The web can't read phone contacts: "Not a Connect?" takes a typed name and that person gets the
- * link through the share sheet. Connects get it in Menuply.
+ * Next asks once, in a small box (app: "Invite phone contacts?", Andre 2026-11-13; it was a footer
+ * link): the web can't read phone contacts, so it asks "Invite someone who isn't a Connect?" — Add a
+ * name opens the name field (that person gets the link through the share sheet), Not now goes on.
+ * With nobody checked Next still opens the box once; after Not now it's off until someone is picked.
  *
  * Props: peers (null while loading), checked (Set of user ids), onToggle(id), onToggleAll(),
  * picked ([{ id, name }] typed names), onPicked(list), signedIn, count, onNext().
@@ -24,6 +26,27 @@ const C = {
 
 export default function QuickInviteWhoStep({ peers, checked, onToggle, onToggleAll, picked, onPicked, signedIn, count, onNext }) {
   const [other, setOther] = useState(false);
+  const [box, setBox] = useState(false);
+  const [asked, setAsked] = useState(false);
+  const nextOff = !count && asked;
+
+  function next() {
+    if (!asked && !other) {
+      setBox(true);
+      return;
+    }
+    if (count) onNext();
+  }
+  function notNow() {
+    setAsked(true);
+    setBox(false);
+    if (count) onNext();
+  }
+  function addName() {
+    setAsked(true);
+    setBox(false);
+    setOther(true);
+  }
   const [typedName, setTypedName] = useState("");
   const list = peers || [];
   const allOn = list.length > 0 && list.every((p) => checked.has(p.id));
@@ -60,7 +83,7 @@ export default function QuickInviteWhoStep({ peers, checked, onToggle, onToggleA
           ))}
         </div>
       ) : signedIn && peers != null ? (
-        <span style={styles.muted}>No Connects yet. Add someone’s name below and send them the link.</span>
+        <span style={styles.muted}>No Connects yet. Tap Next to invite someone by name and send them the link.</span>
       ) : null}
 
       {picked.length ? (
@@ -99,23 +122,37 @@ export default function QuickInviteWhoStep({ peers, checked, onToggle, onToggleA
       {/* Pinned above the tab bar (app: above the phone's nav bar) so Next is always in reach.
           Compact text links, no full-width button (Andre 2026-10-29). */}
       <div style={styles.footer} data-testid="quick-invite-footer">
-        {!other ? (
-          <button type="button" style={{ ...styles.link, flex: 1, textAlign: "left" }} onClick={() => setOther(true)} data-testid="quick-invite-not-connect">
-            Not a Connect?
-          </button>
-        ) : (
-          <span style={{ flex: 1 }} />
-        )}
+        <span style={{ flex: 1 }} />
         <button
           type="button"
-          disabled={!count}
-          onClick={onNext}
-          style={{ ...styles.link, opacity: count ? 1 : 0.4, cursor: count ? "pointer" : "default" }}
+          disabled={nextOff}
+          onClick={next}
+          style={{ ...styles.link, opacity: nextOff ? 0.4 : 1, cursor: nextOff ? "default" : "pointer" }}
           data-testid="quick-invite-next"
         >
           {count ? `Next (${count}) ›` : "Next ›"}
         </button>
       </div>
+
+      {/* A small box after Next, asked once (app "Invite phone contacts?", Andre 2026-11-13). Text links, no pills. */}
+      {box ? (
+        <div style={styles.scrim} onClick={notNow} data-testid="quick-invite-contacts-scrim">
+          <div role="dialog" aria-modal="true" aria-labelledby="qi-box-title" style={styles.box} onClick={(e) => e.stopPropagation()} data-testid="quick-invite-contacts-box">
+            <strong id="qi-box-title" style={{ fontSize: 16, color: C.text }}>
+              Invite someone who isn’t a Connect?
+            </strong>
+            <span style={styles.muted}>They get the link from you, by text or any app. No Menuply account needed.</span>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 24, paddingTop: 4 }}>
+              <button type="button" style={{ ...styles.link, color: C.muted }} onClick={notNow} data-testid="quick-invite-contacts-no">
+                Not now
+              </button>
+              <button type="button" style={styles.link} onClick={addName} data-testid="quick-invite-contacts-yes">
+                Add a name
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -185,6 +222,8 @@ const styles = {
   checkOn: { background: C.text, borderColor: C.text },
   input: { flex: 1, minWidth: 0, boxSizing: "border-box", borderRadius: 10, border: `1px solid ${C.border}`, padding: "10px 12px", fontSize: 15 },
   link: { border: "none", background: "none", padding: "8px 0", color: C.accent, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" },
+  scrim: { position: "fixed", inset: 0, zIndex: 40, background: "rgba(17,22,19,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
+  box: { width: "100%", maxWidth: 320, boxSizing: "border-box", background: C.white, borderRadius: 12, padding: 16, display: "grid", gap: 8 },
   footer: {
     position: "fixed",
     left: 0,
