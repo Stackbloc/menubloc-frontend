@@ -225,6 +225,27 @@ export const downloadOwnerDinerSectionsCsv = async (params = {}) => {
   }
   return res.blob();
 };
+// Diner Intelligence Stage 6: Social Network Health, USC launch view, drill-down lists (+ CSV).
+const NETWORK_KEYS = ["range", "from", "to", "cluster_id", "set", "cohort_from", "cohort_to", "tier", "source", "page", "page_size"];
+export function dinerNetworkQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const key of NETWORK_KEYS) if (params[key] != null && params[key] !== "" && params[key] !== 0) qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+export const getOwnerDinerNetwork = (params = {}) => get(`/api/owner/dashboard/diners/network${dinerNetworkQuery(params)}`);
+export const getOwnerDinerUsc = (params = {}) => get(`/api/owner/dashboard/diners/usc${dinerNetworkQuery(params)}`);
+export const getOwnerDinerList = (params = {}) => get(`/api/owner/dashboard/diners/list${dinerNetworkQuery(params)}`);
+export const downloadOwnerDinerListCsv = async (params = {}) => {
+  const res = await fetch(`${API}/api/owner/dashboard/diners/list.csv${dinerNetworkQuery(params)}`, { credentials: "include" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+};
 export const getOwnerDinerDetail = (id, params = {}) => {
   const qs = new URLSearchParams();
   if (params.interval) qs.set("interval", params.interval);
