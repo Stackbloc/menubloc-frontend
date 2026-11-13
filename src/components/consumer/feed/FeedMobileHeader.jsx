@@ -1,41 +1,30 @@
 /**
- * Mobile Feed top bar — More menu entry (TikTok mobile hamburger pattern). The cart button sits
- * beside ☰ whenever the basket has items, as in the app (CartButton); there is no Basket tab.
+ * Mobile Feed top bar, as in the app (menuply-mobile AppMenuButton showLocation + CartButton; the app
+ * wins, Andre 2026-11-13): ☰ at the top left with the diner's location beside it, and the cart button
+ * next to them whenever the basket has items. No logo and no "Log in" pill (sign-in lives in ☰ and on
+ * the Profile tab). The location opens Search, where it can be changed.
  */
 
 import { Link } from "react-router-dom";
-import { BrandLogo } from "../../BrandLogo.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import { useOrderCart } from "../../../context/OrderCartContext.jsx";
-import { FEED_SHELL_LOGIN_PATH } from "../../../lib/feedShellLinks.js";
+import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
-export default function FeedMobileHeader({
-  onMoreClick,
-  isAuthenticated = false,
-  showShopBasket = false,
-}) {
+/** City the Feed plays from (same source as FeedHomePage), e.g. "Los Angeles". */
+export function feedHeaderLocationLabel(storage) {
+  const detected = readDetectedLocation(storage);
+  const city = String(detected?.city || "").trim();
+  return city || "Los Angeles";
+}
+
+/** hideLocation: the Feed's "Clips | Deals" switch needs the top middle (Today shows the location). */
+export default function FeedMobileHeader({ onMoreClick, showShopBasket = false, hideLocation = false }) {
   const { itemCount } = useOrderCart();
+  const place = feedHeaderLocationLabel(typeof window !== "undefined" ? window.localStorage : null);
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
-      <div style={styles.logoWrap} onClick={() => clearStuckMediaChrome()}>
-        <BrandLogo
-        to="/feed"
-        height={28}
-        radius={7}
-        matchPageBackground
-        pageColor="#050705"
-        wordmarkColor="#FFFFFF"
-        ariaLabel="Menuply Feed home"
-        />
-      </div>
       <div style={styles.actions}>
-        {showShopBasket || itemCount > 0 ? <FeedShopBasketButton variant="feedDark" /> : null}
-        {!isAuthenticated ? (
-          <Link to={FEED_SHELL_LOGIN_PATH} style={styles.loginChip} data-testid="feed-mobile-login">
-            Log in
-          </Link>
-        ) : null}
         <button
           type="button"
           style={styles.moreBtn}
@@ -48,6 +37,18 @@ export default function FeedMobileHeader({
         >
           ☰
         </button>
+        {hideLocation ? null : (
+        <Link
+          to="/feed/search"
+          style={styles.place}
+          data-testid="feed-header-location"
+          aria-label={`Your location: ${place}. Change it in Search`}
+          onClick={() => clearStuckMediaChrome()}
+        >
+          {place}
+        </Link>
+        )}
+        {showShopBasket || itemCount > 0 ? <FeedShopBasketButton variant="feedDark" /> : null}
       </div>
     </header>
   );
@@ -58,19 +59,12 @@ const styles = {
     position: "fixed",
     top: 0,
     left: 0,
-    right: 0,
-    // Match primary nav (1300): Edit compose sheets (~1100) and page stacking must
-    // not sit above the logo / Edit·Connect / More controls.
+    // Left side only: the clip's cluster chip and sound button sit at the top right, as in the app.
     zIndex: 1300,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: "max(8px, env(safe-area-inset-top)) 12px 8px",
-    background: "linear-gradient(180deg, rgba(5,7,5,0.92) 0%, rgba(5,7,5,0.45) 70%, transparent 100%)",
+    padding: "max(10px, env(safe-area-inset-top)) 12px 8px max(12px, env(safe-area-inset-left))",
     pointerEvents: "none",
-  },
-  logoWrap: {
-    pointerEvents: "auto",
   },
   actions: {
     display: "inline-flex",
@@ -78,26 +72,29 @@ const styles = {
     gap: 8,
     pointerEvents: "auto",
   },
-  loginChip: {
-    padding: "6px 12px",
-    borderRadius: 999,
-    background: "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)",
-    color: "#fff",
-    fontWeight: 800,
-    fontSize: 13,
-    textDecoration: "none",
-    boxShadow: "0 2px 8px rgba(46, 125, 50, 0.35)",
-  },
   moreBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(8, 12, 10, 0.82)",
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    border: "none",
+    background: "rgba(0,0,0,0.45)",
     color: "#fff",
-    fontSize: 18,
+    fontSize: 17,
     lineHeight: 1,
     cursor: "pointer",
-    pointerEvents: "auto",
+  },
+  place: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 600,
+    textDecoration: "none",
+    background: "rgba(0,0,0,0.45)",
+    borderRadius: 12,
+    padding: "5px 10px",
+    maxWidth: 160,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    textShadow: "0 1px 3px rgba(0,0,0,0.5)",
   },
 };

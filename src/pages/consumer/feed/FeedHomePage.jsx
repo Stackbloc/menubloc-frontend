@@ -19,6 +19,7 @@ import SeeWhosEatingFullscreen from "../myMenuply/SeeWhosEatingFullscreen.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
 import { feedClipQueryParam, resolveFeedClipStartIndex } from "../../../lib/feedShare.js";
 import { shuffleFeedVideos } from "../../../lib/shuffleProfileVideos.js";
+import { appendUniqueFeedRows } from "../../../lib/feedRepeatVideos.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 
@@ -71,7 +72,7 @@ export default function FeedHomePage() {
       })
         .then((data) => {
           if (cancelled) return;
-          const rows = shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []);
+          const rows = appendUniqueFeedRows([], shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []));
           const publicVideoCount = Number(data?.public_video_count) || 0;
           const storage =
             typeof window !== "undefined" ? window.localStorage : null;
@@ -122,13 +123,8 @@ export default function FeedHomePage() {
       });
       const rows = shuffleFeedVideos(Array.isArray(data?.items) ? data.items : []);
       setNextCursor(data?.next_cursor || null);
-      const seen = new Set((itemsRef.current || []).map((row) => String(row?.id)));
-      const uniqueRows = rows.filter((row) => {
-        const id = String(row?.id || "");
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
+      // Same id or same video file as a clip already loaded → skipped (as the app).
+      const uniqueRows = appendUniqueFeedRows(itemsRef.current, rows);
       if (uniqueRows.length === 0) return false;
       setItems((prev) => [...(prev || []), ...uniqueRows]);
       return true;

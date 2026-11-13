@@ -225,6 +225,7 @@ import FeedShellPage from "./pages/consumer/feed/FeedShellPage.jsx";
 import FeedHomePage from "./pages/consumer/feed/FeedHomePage.jsx";
 import FeedMenusPage from "./pages/consumer/feed/FeedMenusPage.jsx";
 import FeedDealsPage from "./pages/consumer/feed/FeedDealsPage.jsx";
+import FeedTodayPage from "./pages/consumer/feed/FeedTodayPage.jsx";
 import FeedConnectsPage from "./pages/consumer/feed/FeedConnectsPage.jsx";
 import FeedSearchPage from "./pages/consumer/feed/FeedSearchPage.jsx";
 import FeedProfilePage from "./pages/consumer/feed/FeedProfilePage.jsx";
@@ -867,6 +868,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
           <Route path="menus" element={<FeedMenusPage />} />
           <Route path="eating" element={<Navigate to="/feed/menus" replace />} />
           <Route path="deals" element={<FeedDealsPage />} />
+          <Route path="today" element={<FeedTodayPage />} />
           <Route path="connects" element={<FeedConnectsPage />} />
           <Route path="search" element={<FeedSearchPage />} />
           <Route path="profile" element={<FeedProfilePage />} />

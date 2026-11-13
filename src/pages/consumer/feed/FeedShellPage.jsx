@@ -11,6 +11,8 @@ import FeedPrimaryNav, { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/con
 import FeedDesktopRail, { FEED_DESKTOP_RAIL_WIDTH } from "../../../components/consumer/feed/FeedDesktopRail.jsx";
 import FeedMobileHeader from "../../../components/consumer/feed/FeedMobileHeader.jsx";
 import FeedMorePanel from "../../../components/consumer/feed/FeedMorePanel.jsx";
+import FeedChannelSwitch from "../../../components/consumer/feed/FeedChannelSwitch.jsx";
+import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 import FeedVideoCreateSheet from "../../../components/consumer/feed/FeedVideoCreateSheet.jsx";
 import FeedShareMyMenuplySheet from "../../../components/consumer/feed/FeedShareMyMenuplySheet.jsx";
 import FeedVideoComposeOverlay from "../../../components/consumer/feed/FeedVideoComposeOverlay.jsx";
@@ -31,6 +33,26 @@ export default function FeedShellPage({ children = null }) {
   const [, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useConsumer();
   const isDesktop = useFeedShellDesktop();
+  // Today (Andre 2026-11-13, as the app with today_home on): signed-in diners get a Today tab, the
+  // Feed shows "Clips | Deals" at the top, and Menuply opens on Today once per visit.
+  const { todayHome } = useConsumerFeatureFlags();
+  const todayOn = Boolean(isAuthenticated && todayHome);
+  const onToday = location.pathname === "/feed/today";
+  const showChannels = todayOn && (location.pathname === "/feed" || location.pathname === "/feed/" || location.pathname.startsWith("/feed/deals"));
+  useEffect(() => {
+    if (!todayOn) return;
+    if (location.pathname !== "/feed" && location.pathname !== "/feed/") return;
+    if (location.search) return; // a shared clip (/feed?clip=…) or a comment link opens the Feed
+    try {
+      if (window.sessionStorage.getItem("menuply.today.sent")) return;
+      window.sessionStorage.setItem("menuply.today.sent", "1");
+    } catch {
+      return;
+    }
+    navigate("/feed/today", { replace: true });
+    // Only when the flag first turns on for this visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayOn]);
   // Feed pages read the saved city; refill it when only coordinates were saved.
   useDiscoveryAutoLocation({ repairOnly: true });
   // Same bottom tabs on every Feed screen, Menu Browser included (the app's tab bar, 2026-10-29).
@@ -227,13 +249,15 @@ export default function FeedShellPage({ children = null }) {
           }
           isAuthenticated={isAuthenticated}
         />
-      ) : (
+      ) : onToday ? null : (
+        // Today has its own header (logo + location), as the app.
         <FeedMobileHeader
           onMoreClick={() => setMoreOpen(true)}
-          isAuthenticated={isAuthenticated}
           showShopBasket={false}
+          hideLocation={showChannels}
         />
       )}
+      {showChannels ? <FeedChannelSwitch leftInset={isDesktop ? FEED_DESKTOP_RAIL_WIDTH : 0} /> : null}
 
       <div
         style={{

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 /**
  * Top-right chip on a Feed clip whose restaurant belongs to a cluster in the viewer's
  * Explore clusters (e.g. "USC Cluster"); links to that cluster (Andre, 2026-10-20).
- * Mobile sits below the Feed header (logo / Log in / menu), which overlays the clip.
+ * Top right on phones and desktop, as in the app; the sound button sits under it.
  */
 export default function FeedClipClusterBadge({ cluster, desktop = false }) {
   if (!cluster?.href || !cluster?.label) return null;
@@ -16,9 +16,8 @@ export default function FeedClipClusterBadge({ cluster, desktop = false }) {
       onClick={(e) => e.stopPropagation()}
       style={{
         ...styles.badge,
-        top: desktop
-          ? "max(16px, env(safe-area-inset-top))"
-          : "calc(max(16px, env(safe-area-inset-top)) + 56px)",
+        // Top right on phones too: the top bar is only ☰ + location on the left now (as the app).
+        top: desktop ? "max(16px, env(safe-area-inset-top))" : "max(12px, env(safe-area-inset-top))",
       }}
     >
       <span aria-hidden="true" style={styles.dot} />

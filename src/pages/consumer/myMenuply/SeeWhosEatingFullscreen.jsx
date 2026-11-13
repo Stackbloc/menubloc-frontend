@@ -60,6 +60,7 @@ import FeedVideoPlayPauseButton, { PIP_PAUSE_TITLE } from "../../../components/c
 import ClipSafetyMenu from "../../../components/safety/ClipSafetyMenu.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
 import FeedCommentsSheet from "../../../components/consumer/feed/FeedCommentsSheet.jsx";
+import FeedMenuSpaceKey, { FEED_CAPTION_ABOVE_MENU_KEY } from "../../../components/consumer/feed/FeedMenuSpaceKey.jsx";
 import { feedItemCommentsOn } from "../../../lib/feedComments.js";
 
 const SWIPE_MIN_PX = 56;
@@ -636,6 +637,8 @@ export default function SeeWhosEatingFullscreen({
   const atEnd = isFeedHome ? false : index >= activeItems.length - 1;
   const atStart = index <= 0;
   const showInvite = Boolean(isFeedHome && restaurantRef?.restaurant_id);
+  /** Menu = the centered space-bar key on Feed clips that have a restaurant (app FeedClip). */
+  const showMenuKey = Boolean(showInvite && item && !menuBrowserOpen);
   /** Mobile-only TikTok-style icon rail; desktop keeps Share & Invite dock. */
   // Same right-side action rail on mobile and desktop (Andre, 2026-10-11) — replaces the old
   // desktop-only Share & Invite dock and top Share button.
@@ -947,16 +950,31 @@ export default function SeeWhosEatingFullscreen({
         <FeedClipClusterBadge cluster={clipCluster} desktop={isDesktopViewport} />
       ) : null}
 
-      {!menuBrowserOpen ? (
+      {!menuBrowserOpen && isFeedHome && !managerForcedMute ? (
+        // The app's speaker button (Andre 2026-10-24 / 2026-11-13): round, top right, under the
+        // cluster chip when there is one. Tapping the clip still turns sound on or off.
+        <button
+          type="button"
+          style={{
+            ...styles.soundRound,
+            top: clipCluster
+              ? "calc(max(12px, env(safe-area-inset-top)) + 42px)"
+              : "max(12px, env(safe-area-inset-top))",
+          }}
+          aria-label={videoMuted ? "Turn sound on" : "Turn sound off"}
+          data-testid="see-whos-eating-sound-toggle"
+          onClick={onToggleVideoSound}
+        >
+          <AppIcon name={videoMuted ? "soundOff" : "soundOn"} size={18} color="#fff" />
+        </button>
+      ) : null}
+      {!menuBrowserOpen && !isFeedHome ? (
         <button
           type="button"
           style={{
             ...styles.soundToggle,
             ...(isFeedHome
-              ? {
-                  top: "max(16px, env(safe-area-inset-top))",
-                  left: "max(16px, env(safe-area-inset-left))",
-                }
+              ? null
               : {
                   left: "auto",
                   right: "max(12px, env(safe-area-inset-right))",
@@ -973,24 +991,33 @@ export default function SeeWhosEatingFullscreen({
       ) : null}
 
       {!menuBrowserOpen ? (
-      <div style={{ ...styles.metaDock, ...(useMobileActionRail ? styles.metaDockWithRail : null) }}>
-        <button
-          type="button"
-          style={styles.screenNameBtn}
-          data-testid="see-whos-eating-screen-name"
-          disabled={isLiveFeedGuestCreator(item)}
-          onClick={onScreenNameClick}
-        >
-          {screenName}
-        </button>
+      <div
+        style={{
+          ...styles.metaDock,
+          ...(useMobileActionRail ? styles.metaDockWithRail : null),
+          // With the Menu key showing, the caption sits just above it (as the app).
+          ...(showMenuKey ? { paddingBottom: FEED_CAPTION_ABOVE_MENU_KEY } : null),
+        }}
+      >
         {sponsoredBadge ? (
           <span style={styles.restaurantBadge} data-testid="see-whos-eating-sponsored-badge">
             {sponsoredBadge}
           </span>
-        ) : showRestaurantBadge ? (
+        ) : !isFeedHome && showRestaurantBadge ? (
           <span style={styles.restaurantBadge} data-testid="see-whos-eating-restaurant-badge">
             Restaurant
           </span>
+        ) : null}
+        {!isFeedHome ? (
+          <button
+            type="button"
+            style={styles.screenNameBtn}
+            data-testid="see-whos-eating-screen-name"
+            disabled={isLiveFeedGuestCreator(item)}
+            onClick={onScreenNameClick}
+          >
+            {screenName}
+          </button>
         ) : null}
         <FeedVideoWatchLink
           kind={item.kind}
@@ -1002,6 +1029,24 @@ export default function SeeWhosEatingFullscreen({
           onMenuLinkClick={onFeedMenuLinkClick}
           onOpenMenu={restaurantRef?.restaurant_id ? openMenuBrowser : null}
         />
+        {/* Feed: the poster's name comes last and small, as in the app (Andre 2026-11-13). Diners'
+            names open their profile; platform / restaurant names are plain text. */}
+        {isFeedHome && screenName && screenName !== (item.item_name || item.food_name) ? (
+          isLiveFeedGuestCreator(item) || !liveFeedCreatorProfilePath(item) ? (
+            <span style={styles.posterSmall} data-testid="see-whos-eating-screen-name">
+              {screenName}
+            </span>
+          ) : (
+            <button
+              type="button"
+              style={{ ...styles.posterSmall, ...styles.posterSmallLink }}
+              data-testid="see-whos-eating-screen-name"
+              onClick={onScreenNameClick}
+            >
+              {screenName}
+            </button>
+          )
+        ) : null}
         {item.is_recommend ? <p style={styles.recommend}>Recommend</p> : null}
         {(variant !== "feedHome" || isDesktopViewport) ? (
           <p style={styles.hint}>
@@ -1030,8 +1075,7 @@ export default function SeeWhosEatingFullscreen({
           menuItemName={String(item?.item_name || "").trim() || null}
           showInvite={showInvite}
           onInvite={() => setInviteOpen(true)}
-          showMenu={showInvite}
-          onMenu={openMenuBrowser}
+          showMenu={false}
           shareData={feedShareData}
           shareAnalyticsContext={{ surface: "feed_home_video", clip_id: item?.id }}
           onShareOpenChange={setRailShareOpen}
@@ -1072,9 +1116,19 @@ export default function SeeWhosEatingFullscreen({
         </div>
       ) : null}
 
-      {item && !menuBrowserOpen && (isFeedHome || !atEnd) ? (
+      {showMenuKey ? (
+        <FeedMenuSpaceKey
+          onClick={openMenuBrowser}
+          hint={inviteMenuItemId ? "Order this dish from the menu" : "See this restaurant's menu"}
+          active={!holdPlayback}
+        />
+      ) : null}
+
+      {/* Phones: no "Swipe up" pill and no pause circle, as the app (Andre 2026-11-13). A computer
+          has no swiping, so its up/down hint and pause stay. */}
+      {item && !menuBrowserOpen && (isFeedHome || !atEnd) && !(isFeedHome && !isDesktopViewport) ? (
         // Swipe pill with the play/pause circle centered directly under it.
-        <div style={styles.cueStack}>
+        <div style={{ ...styles.cueStack, ...(showMenuKey ? { bottom: FEED_CAPTION_ABOVE_MENU_KEY } : null) }}>
           {!atEnd ? (
             <div style={{ ...styles.swipeCue, ...styles.swipeCueInStack }} aria-hidden="true">
               {formatVerticalReelCue({ isDesktopViewport })}
@@ -1342,6 +1396,38 @@ const styles = {
     background: "transparent",
     cursor: "pointer",
     pointerEvents: "auto",
+  },
+  soundRound: {
+    position: "absolute",
+    zIndex: 5,
+    right: "max(16px, env(safe-area-inset-right))",
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    border: "none",
+    background: "rgba(0,0,0,0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    pointerEvents: "auto",
+  },
+  posterSmall: {
+    display: "inline-block",
+    marginTop: 2,
+    padding: 0,
+    border: "none",
+    background: "transparent",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 13,
+    fontWeight: 500,
+    fontFamily: "inherit",
+    textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+  },
+  posterSmallLink: {
+    cursor: "pointer",
+    textDecoration: "underline",
+    textUnderlineOffset: 2,
   },
   soundToggle: {
     position: "absolute",

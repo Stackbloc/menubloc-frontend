@@ -9,15 +9,15 @@ import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import {
   FEED_DESKTOP_RAIL_WIDTH,
-  FEED_HOME_TAB,
+  resolveFeedTabs,
   FEED_MENU_CAPTURE_HINT,
   FEED_MENU_CAPTURE_PATH,
-  FEED_RAIL_TABS_AFTER_HOME,
   visibleFeedTabs,
   FEED_SHELL_LOGIN_PATH,
   FEED_SHELL_SIGNUP_PATH,
 } from "../../../lib/feedShellLinks.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
+import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 
 function RailTab({ tab, onShareQr }) {
   const location = useLocation();
@@ -63,6 +63,9 @@ export default function FeedDesktopRail({
   onShareMyMenuply,
   isAuthenticated = false,
 }) {
+  // Signed in with Today on: Today first, Home is "Feed", Deals moves into the Feed (as the app).
+  const { todayHome } = useConsumerFeatureFlags();
+  const tabs = resolveFeedTabs({ isAuthenticated, todayHome });
   return (
     <aside style={styles.rail} data-testid="feed-desktop-rail" aria-label="Feed navigation">
       <div style={styles.logoWrap}>
@@ -78,7 +81,10 @@ export default function FeedDesktopRail({
       </div>
 
       <nav style={styles.tabs} aria-label="Primary">
-        <RailTab tab={FEED_HOME_TAB} onShareQr={onShareMyMenuply} />
+        {(tabs.railBeforeHome || []).map((tab) => (
+          <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
+        ))}
+        <RailTab tab={tabs.home} onShareQr={onShareMyMenuply} />
 
         <Link
           to={FEED_MENU_CAPTURE_PATH}
@@ -93,7 +99,7 @@ export default function FeedDesktopRail({
 
         {/* Basket sits between Search & Shop and Profile (same order as the mobile bar); it opens
             the existing order cart (OrderCartContext / OrderCartDrawer → /checkout). */}
-        {visibleFeedTabs(FEED_RAIL_TABS_AFTER_HOME, { isAuthenticated }).map((tab) =>
+        {visibleFeedTabs(tabs.railAfterHome, { isAuthenticated }).map((tab) =>
           tab.openCart ? (
             <div key={tab.testId} style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
               <FeedShopBasketButton variant="feedDark" />

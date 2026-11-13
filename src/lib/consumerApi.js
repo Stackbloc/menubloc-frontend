@@ -852,6 +852,16 @@ export const getCalendarFeed = () => get("/api/consumer/social-plans/calendar-fe
 export const resetCalendarFeed = () => post("/api/consumer/social-plans/calendar-feed/reset", {});
 export const getPlanCalendarLinks = (source, ref) => get(`${socialPlanPath(source, ref)}/calendar`);
 
+// Today (web follows the app, Andre 2026-11-13): server flags (mig 0411) and the Today home.
+export const getConsumerFeatureFlags = () => get("/api/consumer/feature-flags");
+export const getTodayHome = (query) => get(`/api/consumer/today?${query}`);
+export const postTodayYes = (body) => post("/api/consumer/today/yes", body);
+export const postTodaySkip = (body) => post("/api/consumer/today/skip", body);
+export const postTodayEvent = (body) => post("/api/consumer/today/events", body);
+export const leaveSocialPlan = (source, ref) => del(`${socialPlanPath(source, ref)}/going`);
+export const deleteSocialPlan = (source, ref) => del(socialPlanPath(source, ref));
+export const getSocialPlanDetail = (source, ref) => get(socialPlanPath(source, ref));
+
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
 export const listPeerDinerSocialEvents = (peerId) =>

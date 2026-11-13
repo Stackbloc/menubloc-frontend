@@ -18,6 +18,8 @@ import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.
 import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { markSetup } from "../../../lib/profileSetupMarks.js";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
 const MEAL_FILTERS = [{ id: "all", label: "All" }, ...DEAL_MEAL_PERIODS];
@@ -34,6 +36,10 @@ function resolveMarket() {
 export default function FeedDealsPage() {
   const isDesktop = useFeedShellDesktop();
   const [searchParams] = useSearchParams();
+  // With Today on, "Clips | Deals" sits at the top (FeedChannelSwitch): the meal chips go under it.
+  const { isAuthenticated } = useConsumer();
+  const { todayHome } = useConsumerFeatureFlags();
+  const underSwitch = Boolean(isAuthenticated && todayHome);
   const market = useMemo(() => resolveMarket(), []);
   const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +99,11 @@ export default function FeedDealsPage() {
   }, [market.city, market.state]);
 
   const headerSlot = isDesktop ? null : (
-    <div style={styles.chromeWrap} data-testid="feed-deals-chrome" data-deals-channel="public-offers">
+    <div
+      style={{ ...styles.chromeWrap, ...(underSwitch ? { top: "calc(max(12px, env(safe-area-inset-top)) + 48px)" } : null) }}
+      data-testid="feed-deals-chrome"
+      data-deals-channel="public-offers"
+    >
       <p style={styles.publicNote} data-testid="feed-deals-public-note">
         Public deal clips — offers for everyone
       </p>

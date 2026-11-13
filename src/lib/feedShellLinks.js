@@ -40,6 +40,30 @@ export const FEED_RIGHT_TABS = [
   { to: "/feed/profile", end: false, label: "Profile", icon: "profile", testId: "feed-nav-profile" },
 ];
 
+/**
+ * Today (Andre 2026-11-13: "the website should have a today page when user is signed in, same as
+ * app"). As the app's tab bar with flag today_home on (menuply-mobile app/(tabs)/_layout.tsx):
+ * Today · Feed · Post · Search · Profile. Today takes the Deals tab's place, so the Feed shows the
+ * "Clips | Deals" switch at the top (deals stay one tap away, Andre 2026-11-11).
+ */
+export const FEED_TODAY_TAB = { to: "/feed/today", end: true, label: "Today", icon: "fork", testId: "feed-nav-today", authOnly: true };
+export const FEED_FEED_TAB = { ...FEED_HOME_TAB, label: "Feed", alsoActiveOn: ["/", "/feed/deals"] };
+
+/** The tabs for this viewer: Today's layout only when signed in and the flag is on. */
+export function resolveFeedTabs({ isAuthenticated = false, todayHome = false } = {}) {
+  if (!isAuthenticated || !todayHome) {
+    return { left: FEED_LEFT_TABS, right: FEED_RIGHT_TABS, home: FEED_HOME_TAB, railAfterHome: FEED_RAIL_TABS_AFTER_HOME };
+  }
+  const right = FEED_RIGHT_TABS.filter((tab) => tab.to !== "/feed/deals");
+  return {
+    left: [FEED_TODAY_TAB, FEED_FEED_TAB],
+    right,
+    home: FEED_FEED_TAB,
+    railBeforeHome: [FEED_TODAY_TAB],
+    railAfterHome: [right[0], FEED_RAIL_BASKET_TAB, ...right.slice(1)],
+  };
+}
+
 /** Desktop rail only: opens the order cart (the mobile bar has no Basket tab). */
 export const FEED_RAIL_BASKET_TAB = { to: "/checkout", end: false, label: "Basket", testId: "feed-nav-basket", openCart: true };
 
@@ -85,6 +109,8 @@ export const FEED_MORE_SECTIONS = [
       {
         title: "For Diners",
         links: [
+          // Log in moved here from the Feed's top bar (Andre 2026-11-13: the top bar matches the app).
+          { to: FEED_SHELL_LOGIN_PATH, label: "Log in", testId: "feed-more-login" },
           { to: FEED_SHELL_SIGNUP_PATH, label: "Create account", testId: "feed-more-signup" },
         ],
       },

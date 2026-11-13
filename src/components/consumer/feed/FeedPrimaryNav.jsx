@@ -11,7 +11,8 @@
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
-import { FEED_LEFT_TABS, FEED_RIGHT_TABS, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
+import { resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
+import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import AppIcon from "../../icons/AppIcon.jsx";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
@@ -67,8 +68,11 @@ export default function FeedPrimaryNav({
   onShareQr,
 }) {
   const { isAuthenticated } = useConsumer();
-  const leftTabs = visibleFeedTabs(FEED_LEFT_TABS, { isAuthenticated });
-  const rightTabs = visibleFeedTabs(FEED_RIGHT_TABS, { isAuthenticated });
+  // Signed in with Today on: Today · Feed · Post · Search · Profile, as the app (Andre 2026-11-13).
+  const { todayHome } = useConsumerFeatureFlags();
+  const tabs = resolveFeedTabs({ isAuthenticated, todayHome });
+  const leftTabs = visibleFeedTabs(tabs.left, { isAuthenticated });
+  const rightTabs = visibleFeedTabs(tabs.right, { isAuthenticated });
   const nav = (
     <nav
       style={styles.nav}

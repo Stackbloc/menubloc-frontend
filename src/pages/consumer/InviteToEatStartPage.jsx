@@ -46,7 +46,12 @@ export default function InviteToEatStartPage() {
   const quickInvite = searchParams.get("quick_invite") === "1";
   const { isAuthenticated } = useConsumer();
   // Quick Invite asks who first (Andre 2026-10-29): { name, userId | null, via: "app" | "text" }.
-  const [to, setTo] = useState(null);
+  // Today's Invite on a Connect (Andre 2026-11-13, as the app's /quick-invite?to=&toName=): who is set.
+  const [to, setTo] = useState(() => {
+    const id = Number(searchParams.get("to_user_id"));
+    const name = String(searchParams.get("to_name") || "").trim();
+    return Number.isInteger(id) && id > 0 && name ? { name, userId: id, via: "app" } : null;
+  });
   const needsWho = quickInvite && !to;
   const [messageType, setMessageType] = useState("restaurant");
   const [selected, setSelected] = useState(null);
