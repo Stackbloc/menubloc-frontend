@@ -37,6 +37,8 @@ export async function createEatInvitationCounterProposal(
     displayName,
     restaurantId,
     menuItemId,
+    placeName,
+    placeAddress,
     proposedDate,
     proposedTime,
     note,
@@ -47,6 +49,9 @@ export async function createEatInvitationCounterProposal(
   if (displayName) body.display_name = displayName;
   if (restaurantId != null) body.restaurant_id = restaurantId;
   if (menuItemId != null) body.menu_item_id = menuItemId;
+  // A suggested place not on Menuply: name + street address (mig 0432).
+  if (placeName) body.place_name = placeName;
+  if (placeAddress) body.place_address = placeAddress;
   if (proposedDate) body.proposed_date = proposedDate;
   if (proposedTime) body.proposed_time = proposedTime;
   if (note) body.note = note;
@@ -65,6 +70,8 @@ export async function resolveEatInvitationProposal(
     displayName,
     restaurantId,
     menuItemId,
+    placeName,
+    placeAddress,
     proposedDate,
     proposedTime,
     note,
@@ -75,6 +82,9 @@ export async function resolveEatInvitationProposal(
   if (displayName) body.display_name = displayName;
   if (restaurantId != null) body.restaurant_id = restaurantId;
   if (menuItemId != null) body.menu_item_id = menuItemId;
+  // A suggested place not on Menuply: name + street address (mig 0432).
+  if (placeName) body.place_name = placeName;
+  if (placeAddress) body.place_address = placeAddress;
   if (proposedDate) body.proposed_date = proposedDate;
   if (proposedTime) body.proposed_time = proposedTime;
   if (note) body.note = note;

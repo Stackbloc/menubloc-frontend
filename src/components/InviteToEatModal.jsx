@@ -80,6 +80,7 @@ export default function InviteToEatModal({
    * get it in Menuply, 20 per request (the server's limit); anyone the send missed gets the link.
    */
   sendInAppGroup = null,
+  placeOpen = false,
 }) {
   const { isAuthenticated } = useConsumer();
   const autoShareOpenedRef = useRef(false);
@@ -246,7 +247,9 @@ export default function InviteToEatModal({
       const body = {
         // A place not on Menuply yet has no id: send the typed name instead (like posts).
         restaurant_id: restaurantId || undefined,
-        place_name: restaurantId ? undefined : unlistedPlaceNameFor(restaurantName) || undefined,
+        // You pick the place (mig 0432): no place; a friend suggests one.
+        place_open: placeOpen && !restaurantId ? true : undefined,
+        place_name: restaurantId || placeOpen ? undefined : unlistedPlaceNameFor(restaurantName) || undefined,
         place_city: restaurantId ? undefined : placeLocation?.city || undefined,
         place_state: restaurantId ? undefined : placeLocation?.state || undefined,
         place_address: restaurantId ? undefined : placeLocation?.address || undefined,
@@ -264,7 +267,7 @@ export default function InviteToEatModal({
         body.scheduled_date = date;
         body.scheduled_time = time;
       }
-      body.restaurant_negotiable = restaurantNegotiable;
+      body.restaurant_negotiable = placeOpen && !restaurantId ? true : restaurantNegotiable;
       body.schedule_negotiable =
         scheduleMode === "recipient_chooses" ? true : scheduleNegotiable;
       if (inviteKind === "private") {

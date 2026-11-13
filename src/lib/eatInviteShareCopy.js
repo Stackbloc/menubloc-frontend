@@ -117,6 +117,9 @@ function resolveSeed(seedCode, scheduledTime, timeLabel) {
   return pickInviteCopySeed({ scheduledTime, timeLabel });
 }
 
+/** The label a "You pick the place" invite carries instead of a restaurant name. */
+export const YOU_PICK_PLACE = "You pick the place";
+
 /**
  * Draft message body for a given seed code (no URL).
  */
@@ -129,6 +132,9 @@ export function buildEatInviteMessageDraft({
   seedCode = null,
 } = {}) {
   const place = restaurantName || "a restaurant";
+  // You pick the place (mig 0432): "Let's do lunch Sat 12:00 PM. You pick the place."
+  const at = restaurantName === YOU_PICK_PLACE ? "" : ` at ${place}`;
+  const pickClause = restaurantName === YOU_PICK_PLACE ? " You pick the place." : "";
   const when = whenParts(dateLabel, timeLabel);
   const seed = resolveSeed(seedCode, scheduledTime, timeLabel);
   const kind = String(inviteKind || "group").toLowerCase() === "private" ? "private" : "group";
@@ -144,12 +150,12 @@ export function buildEatInviteMessageDraft({
   }
 
   if (kind === "private") {
-    return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.${chooseClause}`.replace(
+    return `${seed.code} ${seed.emoji} — ${seed.verbPhrase}${at}${whenClause}.${pickClause}${chooseClause}`.replace(
       /\.\s+\./,
       "."
     );
   }
-  return `${seed.code} ${seed.emoji} — ${seed.verbPhrase} at ${place}${whenClause}.${chooseClause} Who wants to join me?`.replace(
+  return `${seed.code} ${seed.emoji} — ${seed.verbPhrase}${at}${whenClause}.${pickClause}${chooseClause} Who wants to join me?`.replace(
     /\.\s+\./,
     "."
   );

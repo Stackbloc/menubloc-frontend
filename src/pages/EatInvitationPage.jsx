@@ -192,6 +192,9 @@ export default function EatInvitationPage() {
   const [counterNote, setCounterNote] = useState("");
   const [counterRestaurantId, setCounterRestaurantId] = useState(null);
   const [counterRestaurantName, setCounterRestaurantName] = useState("");
+  // You pick the place (mig 0432): a suggestion not on Menuply needs a street address.
+  const [counterPlaceName, setCounterPlaceName] = useState("");
+  const [counterPlaceAddress, setCounterPlaceAddress] = useState("");
   const [restaurantQuery, setRestaurantQuery] = useState("");
   const [restaurantHits, setRestaurantHits] = useState([]);
   const [restaurantSearchBusy, setRestaurantSearchBusy] = useState(false);
@@ -334,8 +337,12 @@ export default function EatInvitationPage() {
 
   const organizerName = invitation?.organizer_display_name || "A Menuply diner";
   const terms = invitation?.current_terms || null;
-  const placeName =
-    terms?.restaurant_name || invitation?.restaurant_name || "a restaurant";
+  const youPick = invitation?.you_pick_place === true;
+  const placeName = invitation?.place_open
+    ? invitation?.is_organizer
+      ? "Waiting on your friends to suggest a place"
+      : "You pick the place"
+    : terms?.restaurant_name || invitation?.restaurant_name || "a restaurant";
   const restaurantNegotiable = invitation?.restaurant_negotiable === true;
   const scheduleNegotiable =
     invitation?.schedule_negotiable === true ||
@@ -494,6 +501,8 @@ export default function EatInvitationPage() {
     setCounterNote("");
     setCounterRestaurantId(null);
     setCounterRestaurantName("");
+    setCounterPlaceName("");
+    setCounterPlaceAddress("");
     setRestaurantQuery("");
     setRestaurantHits([]);
   }
@@ -510,6 +519,12 @@ export default function EatInvitationPage() {
       };
       if (restaurantNegotiable && counterRestaurantId) {
         payload.restaurantId = counterRestaurantId;
+      } else if (restaurantNegotiable && counterPlaceName.trim()) {
+        if (!counterPlaceAddress.trim()) {
+          throw new Error("Add the street address so everyone can find it");
+        }
+        payload.placeName = counterPlaceName.trim();
+        payload.placeAddress = counterPlaceAddress.trim();
       }
       if (scheduleNegotiable) {
         if (counterDate) payload.proposedDate = counterDate;
@@ -517,6 +532,7 @@ export default function EatInvitationPage() {
       }
       if (
         !payload.restaurantId &&
+        !payload.placeName &&
         !payload.proposedDate &&
         !payload.proposedTime
       ) {
@@ -800,10 +816,14 @@ export default function EatInvitationPage() {
                 }}
               >
                 <div style={{ fontWeight: 800, fontSize: 14 }}>
-                  Pending counter from {pendingProposal.proposer_display_name || "Someone"}
+                  {youPick
+                    ? `${pendingProposal.proposer_display_name || "Someone"} suggested ${pendingProposal.proposed_restaurant_name || "a place"}`
+                    : `Pending counter from ${pendingProposal.proposer_display_name || "Someone"}`}
                 </div>
                 <div style={{ fontSize: 14, color: "#44403c" }}>
-                  {proposalTermsLabel(pendingProposal) || "Updated terms proposed"}
+                  {youPick
+                    ? pendingProposal.proposed_restaurant_address || ""
+                    : proposalTermsLabel(pendingProposal) || "Updated terms proposed"}
                 </div>
                 {myTurnOnPending ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -814,7 +834,7 @@ export default function EatInvitationPage() {
                       onClick={() => resolvePending("accept")}
                       style={btnPrimary}
                     >
-                      Accept
+                      {youPick ? "Sounds good" : "Accept"}
                     </button>
                     <button
                       type="button"
@@ -823,8 +843,9 @@ export default function EatInvitationPage() {
                       onClick={() => resolvePending("counter")}
                       style={btnSecondary}
                     >
-                      Counter again
+                      {youPick ? "Suggest another" : "Counter again"}
                     </button>
+                    {youPick ? null : (
                     <button
                       type="button"
                       data-testid="invite-proposal-decline"
@@ -834,10 +855,13 @@ export default function EatInvitationPage() {
                     >
                       Decline
                     </button>
+                    )}
                   </div>
                 ) : (
                   <div style={{ fontSize: 13, color: "#78716c" }}>
-                    Waiting for the other person to respond.
+                    {youPick
+                      ? `Waiting on ${invitation?.is_organizer ? pendingProposal.proposer_display_name || "them" : invitation?.organizer_display_name || "the host"}`
+                      : "Waiting for the other person to respond."}
                   </div>
                 )}
               </div>
@@ -859,7 +883,7 @@ export default function EatInvitationPage() {
                     }}
                     style={btnSecondary}
                   >
-                    Propose a change
+                    {youPick && invitation?.place_open ? "Suggest a place" : "Propose a change"}
                   </button>
                 ) : null}
                 {counterOpen ? (
@@ -874,7 +898,7 @@ export default function EatInvitationPage() {
                       background: "#fafaf9",
                     }}
                   >
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>Counter proposal</div>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>{youPick ? "Suggest a place" : "Counter proposal"}</div>
                     {restaurantNegotiable ? (
                       <div style={{ display: "grid", gap: 6 }}>
                         <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 700 }}>
@@ -901,6 +925,30 @@ export default function EatInvitationPage() {
                             style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}
                           >
                             Selected: {counterRestaurantName}
+                          </div>
+                        ) : null}
+                        {youPick && !counterRestaurantId ? (
+                          <div style={{ display: "grid", gap: 6 }} data-testid="invite-counter-unlisted">
+                            <span style={{ fontSize: 12, color: "#78716c" }}>
+                              Not on Menuply? Type its name and street address so everyone can find it.
+                            </span>
+                            <input
+                              value={counterPlaceName}
+                              onChange={(e) => setCounterPlaceName(e.target.value.slice(0, 120))}
+                              placeholder="Place name"
+                              data-testid="invite-counter-place-name"
+                              style={{ boxSizing: "border-box", borderRadius: 10, border: "1px solid #d6d3d1", padding: "10px 12px", fontSize: 14 }}
+                            />
+                            {counterPlaceName.trim() ? (
+                              <input
+                                value={counterPlaceAddress}
+                                onChange={(e) => setCounterPlaceAddress(e.target.value.slice(0, 200))}
+                                placeholder="Street address"
+                                autoComplete="street-address"
+                                data-testid="invite-counter-place-address"
+                                style={{ boxSizing: "border-box", borderRadius: 10, border: "1px solid #d6d3d1", padding: "10px 12px", fontSize: 14 }}
+                              />
+                            ) : null}
                           </div>
                         ) : null}
                         {restaurantSearchBusy ? (

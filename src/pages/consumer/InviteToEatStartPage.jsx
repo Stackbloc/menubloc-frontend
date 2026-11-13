@@ -26,7 +26,7 @@ import { listConnections } from "../../lib/consumerApi.js";
 import { connectPeersFromResponse, groupName, QUICK_INVITES, quickInviteFor } from "../../lib/quickInviteWho.js";
 import { resolveEatingPrefill } from "../../lib/foodActivityApi.js";
 import { fetchRestaurantMenuCatalog } from "../../lib/api.js";
-import { buildLgdQuickInviteFormTitle } from "../../lib/eatInviteShareCopy.js";
+import { YOU_PICK_PLACE, buildLgdQuickInviteFormTitle } from "../../lib/eatInviteShareCopy.js";
 
 function menuAttachmentLabel(menu) {
   const label =
@@ -241,6 +241,12 @@ export default function InviteToEatStartPage() {
     setModalOpen(true);
   }
 
+  // "You pick the place" (Andre 2026-11-13, mig 0432): no place; a friend suggests one.
+  function letThemPick() {
+    setResolved({ restaurantId: null, restaurantName: YOU_PICK_PLACE, menuItemId: null, menuItemName: null, attachedMenuId: null, placeLocation: null, placeOpen: true });
+    setModalOpen(true);
+  }
+
   return (
     <>
       <StickyPageHeader title={headerTitle} />
@@ -318,6 +324,11 @@ export default function InviteToEatStartPage() {
           allowUnlisted
           hideNote
         />
+        {quickInvite && seedCode !== "MMH" && !hasPlace ? (
+          <button type="button" style={{ ...styles.link, alignSelf: "flex-start", padding: "8px 0" }} onClick={letThemPick} data-testid="quick-invite-let-them-pick">
+            Let them pick ›
+          </button>
+        ) : null}
         {unlistedPlaceName ? (
           <UnlistedPlaceLocation placeName={unlistedPlaceName} value={placeLocation} onChange={setPlaceLocation} />
         ) : null}
@@ -388,6 +399,7 @@ export default function InviteToEatStartPage() {
         menuItemName={resolved.menuItemName}
         attachedMenuId={resolved.attachedMenuId}
         placeLocation={resolved.placeLocation || null}
+        placeOpen={resolved.placeOpen === true}
         initialSeedCode={seedCode || null}
         initialInviteeName={(to?.single ? to.name : "") || String(searchParams.get("invitee_name") || "").trim()}
         initialInviteKind={
