@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  postedPlaceName,
   unlistedDishPlace,
   unlistedPlaceName,
   unlistedRestaurantPlace,
@@ -33,6 +34,14 @@ test("place_name only for a restaurant without an id", () => {
   assert.equal(unlistedPlaceName(unlistedRestaurantPlace("Joe's Tacos")), "Joe's Tacos");
   assert.equal(unlistedPlaceName({ restaurant_id: 42, restaurant_name: "Listed" }), null);
   assert.equal(unlistedPlaceName(null), null);
+});
+
+test("posted place_name keeps the diner's typed words, even with a Menuply link (Andre 2026-11-12)", () => {
+  assert.equal(postedPlaceName({ restaurant_id: 42, restaurant_name: "Bossa Nova", typed_name: " bossa  nova " }), "bossa nova");
+  assert.equal(postedPlaceName({ restaurant_id: 42, restaurant_name: "Bossa Nova" }), null);
+  assert.equal(postedPlaceName(unlistedRestaurantPlace("Noodle Corner")), "Noodle Corner");
+  assert.equal(postedPlaceName(null), null);
+  assert.match(read("src/lib/feedVideoCompose.js"), /place_name: resolvedWhere !== "home" \? postedPlaceName\(restaurant\) : null/);
 });
 
 test("picker offers Use “…” rows; posts send place_name; reviews accept a typed dish", () => {

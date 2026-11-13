@@ -245,12 +245,14 @@ export default function QuickPostSheet({
     const restaurant = asRestaurantPlace({ restaurant_id: row.restaurant_id, restaurant_name: row.restaurant_name });
     if (!dish || !restaurant) return;
     pickFood({ kind: "dish", dish });
-    choosePlace(restaurant, { keepDish: true });
+    choosePlace(restaurant, { keepDish: true, typed: "" });
   }
 
-  function choosePlace(next, { keepDish = false } = {}) {
+  function choosePlace(next, { keepDish = false, typed = placeText } = {}) {
     if (!next) return;
-    setPlace(next);
+    // Keep what the diner typed with the place (Andre 2026-11-12), even when it links a Menuply restaurant.
+    const typedName = String(typed || "").trim().replace(/\s+/g, " ").slice(0, 120);
+    setPlace(typedName.length >= 2 ? { ...next, typed_name: typedName } : next);
     setAtHome(false);
     setPlaceOpen(false);
     // The restaurant box unmounts without a blur, so the clip would stay small.
@@ -272,6 +274,7 @@ export default function QuickPostSheet({
 
   function clearPlace() {
     setPlace(null);
+    setPlaceText("");
     setAtHome(false);
     setRecommend(false);
     setNoDish(false);
@@ -290,9 +293,18 @@ export default function QuickPostSheet({
   }
 
   const food = resolveFood();
+  // A restaurant typed but not picked still counts (Andre 2026-11-12: ssus's typed restaurant was lost when
+  // Post was tapped without Enter or a suggestion): the exact suggestion, else the typed name.
+  const pendingTyped = placeOpen && !place && !atHome ? placeText.trim().replace(/\s+/g, " ").slice(0, 120) : "";
+  const pendingHit = pendingTyped.length >= 2 ? hits.find((h) => same(restaurantLabel(h), pendingTyped)) : null;
+  const pendingPlace =
+    pendingTyped.length >= 2
+      ? { ...(pendingHit ? asRestaurantPlace(pendingHit) : unlistedRestaurantPlace(pendingTyped)), typed_name: pendingTyped }
+      : null;
+  const postPlace = place || pendingPlace;
   // A restaurant clip can post with only the restaurant (Andre 2026-10-30: a clip can be about a place, not a dish).
   // So can any clip once "No particular dish" is picked (Andre 2026-11-02).
-  const placeOnly = !food && Boolean(place) && (noDish || about === "restaurant");
+  const placeOnly = !food && Boolean(postPlace) && (noDish || about === "restaurant");
   const canPost = Boolean(file) && !busy && (Boolean(food) || placeOnly);
 
   async function submit() {
@@ -310,8 +322,8 @@ export default function QuickPostSheet({
       text: "",
       mealPeriod: defaultWhatIAteMealPeriod(),
       homemade: atHome,
-      whereType: atHome ? "home" : place?.restaurant_id ? "restaurant" : "other",
-      restaurant: place,
+      whereType: atHome ? "home" : postPlace?.restaurant_id ? "restaurant" : "other",
+      restaurant: postPlace,
       dish,
       isRecommend: Boolean(recommend && place),
       // No food on a restaurant clip: postFeedAteVideo names the item after the restaurant.
@@ -320,7 +332,7 @@ export default function QuickPostSheet({
             {
               food_name: foodLabel(food),
               menu_item_id: dish?.menu_item_id || null,
-              restaurant_id: place?.restaurant_id || null,
+              restaurant_id: postPlace?.restaurant_id || null,
             },
           ]
         : null,
@@ -381,7 +393,12 @@ export default function QuickPostSheet({
           aria-label="Restaurant"
           data-testid="quick-post-where"
         />
-        <button type="button" style={styles.clear} onClick={() => setPlaceOpen(false)} aria-label="Cancel restaurant">
+        <button type="button" style={styles.clear} onClick={() => {
+            setPlaceOpen(false);
+            setPlaceText("");
+          }}
+          aria-label="Cancel restaurant"
+        >
           ✕
         </button>
       </div>

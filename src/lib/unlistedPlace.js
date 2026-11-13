@@ -25,6 +25,14 @@ export function unlistedPlaceName(restaurant) {
 }
 
 /**
+ * place_name for a post (Andre 2026-11-12): the diner's typed words (typed_name) are kept even when a
+ * Menuply restaurant is linked; otherwise the unlisted name. The server shows the link first.
+ */
+export function postedPlaceName(restaurant) {
+  return cleanTypedName(restaurant?.typed_name, 120) || unlistedPlaceName(restaurant);
+}
+
+/**
  * Where an Invite to Eat place not on Menuply is (Andre 2026-11-07): city + state, optional street.
  * Limits match backend mig 0400. Blank → null.
  */
