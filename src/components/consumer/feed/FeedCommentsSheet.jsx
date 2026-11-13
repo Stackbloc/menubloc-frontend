@@ -46,6 +46,7 @@ const styles = {
   smallAvatar: { width: 24, height: 24, fontSize: 11 },
   main: { flex: 1, minWidth: 0 },
   name: { background: "none", border: 0, padding: 0, fontSize: 13, fontWeight: 700, color: C.muted, cursor: "pointer" },
+  restaurantTag: { marginLeft: 6, fontSize: 11, fontWeight: 700, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "1px 5px" },
   body: { margin: "2px 0 4px", fontSize: 15, lineHeight: 1.35, whiteSpace: "pre-wrap", overflowWrap: "anywhere" },
   replyTo: { color: C.muted, fontWeight: 600 },
   meta: { display: "flex", gap: 14, alignItems: "center", fontSize: 13, color: C.muted },
@@ -96,6 +97,10 @@ function CommentRow({ c, small = false, highlight = false, signedIn, onReply, on
         <button type="button" style={styles.name} onClick={() => onOpenProfile(c.author)}>
           {c.author?.name || "A diner"}
         </button>
+        {/* Written by the restaurant itself (backend mig 0426). */}
+        {c.author?.restaurant ? (
+          <span style={styles.restaurantTag} data-testid="feed-comment-restaurant">Restaurant</span>
+        ) : null}
         <p style={styles.body}>
           {c.reply_to ? <span style={styles.replyTo}>@{c.reply_to.name} </span> : null}
           {c.body}
@@ -289,6 +294,11 @@ export default function FeedCommentsSheet({ open, postId, initialTotal = 0, focu
   }
 
   function openProfile(author) {
+    if (author?.restaurant?.id) {
+      onClose?.();
+      navigate(`/restaurants/${author.restaurant.id}`);
+      return;
+    }
     const path = dinerPeerProfilePath(author?.id);
     if (!path) return;
     onClose?.();

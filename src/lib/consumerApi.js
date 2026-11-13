@@ -449,6 +449,9 @@ export const searchWhatWeDoingVenues = (q) =>
 export const searchWhatWeDoingEvents = (q) =>
   get(`/api/consumer/what-we-doing/search/events?q=${encodeURIComponent(String(q || ""))}`);
 export const listConsumerNotifications = () => get("/api/consumer/notifications");
+// Badge (plan 40): unread notices newer than `since` (ISO), or all unread without it.
+export const getConsumerUnreadNotificationCount = (since = "") =>
+  get(`/api/consumer/notifications/unread-count${since ? `?since=${encodeURIComponent(since)}` : ""}`);
 export const markConsumerNotificationRead = (id) =>
   post(`/api/consumer/notifications/${encodeURIComponent(String(id))}/read`, {});
 

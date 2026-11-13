@@ -738,6 +738,17 @@ export const featureRestaurantFoodComment = (rid, commentId) =>
   post(`/operator/restaurants/${rid}/comments/${commentId}/feature`, {});
 export const unfeatureRestaurantFoodComment = (rid, commentId) =>
   del(`/operator/restaurants/${rid}/comments/${commentId}/feature`);
+// Plan 40 (backend mig 0426): remove a discussion comment from the restaurant's profile.
+export const removeRestaurantFoodComment = (rid, commentId) =>
+  del(`/operator/restaurants/${rid}/comments/${commentId}`);
+// Feed comments about this restaurant or its dishes: inbox, reply as the restaurant, remove.
+export const getRestaurantFeedComments = (rid, before = "") =>
+  get(`/operator/restaurants/${rid}/feed-comments${before ? `?before=${encodeURIComponent(before)}` : ""}`);
+export const getRestaurantCommentsNewCount = (rid) => get(`/operator/restaurants/${rid}/feed-comments/new-count`);
+export const replyRestaurantFeedComment = (rid, commentId, body) =>
+  post(`/operator/restaurants/${rid}/feed-comments/${commentId}/replies`, { body });
+export const removeRestaurantFeedComment = (rid, commentId) =>
+  del(`/operator/restaurants/${rid}/feed-comments/${commentId}`);
 
 // ── Restaurant: Menu Studio — Schedules (Pro) ─────────────────────────────
 export const duplicateMenu = (rid, mid) =>

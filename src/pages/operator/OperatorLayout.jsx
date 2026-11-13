@@ -17,7 +17,7 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { getSensitiveSession, verifyOwnerPin } from "../../lib/operatorApi.js";
+import { getSensitiveSession, verifyOwnerPin, getRestaurantCommentsNewCount } from "../../lib/operatorApi.js";
 import AdminConsoleShell from "../../components/adminConsole/AdminConsoleShell.jsx";
 import {
   ADMIN_CONSOLE,
@@ -300,6 +300,21 @@ export default function OperatorLayout({ title, children }) {
     });
   }
 
+  // Plan 40: new comments about this restaurant since Comments was last opened.
+  const [newComments, setNewComments] = useState(0);
+  useEffect(() => {
+    if (!rid) return undefined;
+    let alive = true;
+    getRestaurantCommentsNewCount(rid)
+      .then((d) => {
+        if (alive) setNewComments(Math.max(0, Number(d?.count) || 0));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [rid, location.pathname]);
+
   const sections = useMemo(() => {
     const list = [
       {
@@ -324,6 +339,12 @@ export default function OperatorLayout({ title, children }) {
                 to: "/operator/feedback",
                 label: t("operator.nav.feedback", "Feedback"),
                 icon: "★",
+                end: true,
+              },
+              {
+                to: "/operator/comments",
+                label: `${t("operator.nav.comments", "Comments")}${newComments ? ` (${newComments > 99 ? "99+" : newComments} new)` : ""}`,
+                icon: "💬",
                 end: true,
               },
             ],
@@ -496,6 +517,7 @@ export default function OperatorLayout({ title, children }) {
     showMarketing,
     showAdobe,
     openPublicMenu,
+    newComments,
   ]);
 
   const restaurantBlock = restaurants.length > 0 ? (

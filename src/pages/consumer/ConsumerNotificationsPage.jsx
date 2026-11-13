@@ -12,6 +12,7 @@ import {
   listConsumerNotifications,
   markConsumerNotificationRead,
 } from "../../lib/consumerApi.js";
+import { markNotificationsSeen } from "../../lib/useUnreadNotifications.js";
 
 export default function ConsumerNotificationsPage() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function ConsumerNotificationsPage() {
       const data = await listConsumerNotifications();
       setItems(data.notifications || []);
       setUnread(data.unread_count || 0);
+      markNotificationsSeen();
     } catch (err) {
       setError(err.message || "Unable to load notifications");
     } finally {

@@ -7,6 +7,7 @@ import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 import MenuplyXMark from "./MenuplyXMark.jsx";
 import MenuplyActionSheet from "./MenuplyActionSheet.jsx";
 import { MY_MENUPLY_PROFILE_PATH } from "../lib/myMenuplyRoutes.js";
+import { useUnreadNotifications } from "../lib/useUnreadNotifications.js";
 
 const POST_LABEL = "Post";
 
@@ -19,6 +20,8 @@ export default function BottomNav() {
   const { itemCount } = useOrderCart();
   const { isAuthenticated } = useConsumer();
   const [postOpen, setPostOpen] = useState(false);
+  // New notifications (replies, comments…) show on My Profile; the profile page links to them.
+  const unreadNotices = useUnreadNotifications(isAuthenticated);
 
   const tabs = useMemo(
     () => [
@@ -149,6 +152,7 @@ export default function BottomNav() {
             ? pathname === "/"
             : pathname === tab.to || pathname.startsWith(`${tab.to}/`);
         const showBadge = tab.to === "/checkout" && itemCount > 0;
+        const showNoticeBadge = tab.id === "my-menuply" && unreadNotices > 0;
         const iconSize = tab.iconSize || 22;
         const linkColor = active ? "#1d4ed8" : "#9ca3af";
 
@@ -200,6 +204,30 @@ export default function BottomNav() {
                   }}
                 >
                   {basketBadge}
+                </span>
+              ) : null}
+              {showNoticeBadge ? (
+                <span
+                  data-testid="nav-notifications-badge"
+                  aria-label={`${unreadNotices} new notifications`}
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    minWidth: 16,
+                    height: 16,
+                    padding: "0 4px",
+                    borderRadius: 999,
+                    background: "#dc2626",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    lineHeight: "16px",
+                    textAlign: "center",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {unreadNotices > 9 ? "9+" : String(unreadNotices)}
                 </span>
               ) : null}
             </span>
