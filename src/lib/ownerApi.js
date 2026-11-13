@@ -185,6 +185,21 @@ export const getOwnerDinerCapabilityStats = (params = {}) => {
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/diners/stats${serialized ? `?${serialized}` : ""}`);
 };
+// Diner Intelligence Stage 3: Live Activity (range 1d|7d|30d|90d, cluster_id) + online diner directory.
+export const getOwnerDinerLive = (params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ["range", "cluster_id"]) if (params[key]) qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners/live${serialized ? `?${serialized}` : ""}`);
+};
+export const getOwnerOnlineDiners = (params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ["page", "page_size", "q", "sort", "platform", "cluster_id"]) {
+    if (params[key] != null && params[key] !== "") qs.set(key, String(params[key]));
+  }
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners/online${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerDinerDetail = (id, params = {}) => {
   const qs = new URLSearchParams();
   if (params.interval) qs.set("interval", params.interval);
