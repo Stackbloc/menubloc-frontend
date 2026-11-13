@@ -11,6 +11,8 @@ import {
   postTodaySkip,
   postTodayYes,
 } from "./consumerApi.js";
+import { API_BASE } from "./api.js";
+import { getAnalyticsSessionId, getAnalyticsVisitorId, isAnalyticsStaffSession } from "./analyticsSessionId.js";
 
 const text = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const num = (v) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
@@ -103,6 +105,8 @@ export function reasonTone(tag) {
     case "fave_wish":
       return MEAL_WINDOWS[3].color;
     case "new":
+    case "newly_added":
+    case "for_you":
       return MEAL_WINDOWS[0].color;
     default:
       return "#5c665f";
@@ -110,7 +114,8 @@ export function reasonTone(tag) {
 }
 
 // ── Parsing (app parseToday) ─────────────────────────────────────────────────
-const TAGS = new Set(["fave_wish", "fave", "wish", "go_to", "nearby", "new", "shared_fave", "group_go_to", "group_plan"]);
+// newly_added / for_you / sponsored (app 9d3a32d + 04ac9be, Andre 2026-11-13).
+const TAGS = new Set(["fave_wish", "fave", "wish", "go_to", "nearby", "new", "newly_added", "for_you", "sponsored", "shared_fave", "group_go_to", "group_plan"]);
 const KEYS = new Set(["breakfast", "lunch", "dinner", "late"]);
 const ACTIONS = new Set(["join", "ask", "asked"]);
 
@@ -145,6 +150,8 @@ function parsePick(r) {
     miles: num(r.miles),
     reason: { tag, label: text(reason?.label) ?? "", line: text(reason?.line) ?? "" },
     plan: parseFriendPlan(r.plan),
+    // Sponsored idea (#4 / #7): its views and taps are counted for the advertiser.
+    sponsorshipId: tag === "sponsored" ? num(r.sponsorship_id) : null,
   };
 }
 
@@ -287,4 +294,30 @@ export async function sayYes(pick, windowKey, swapped, day = null) {
 export function todayErrorMessage(err) {
   if (err?.status === 401) return "Sign in again to see Today.";
   return String(err?.payload?.message || err?.message || "Something went wrong. Try again.");
+}
+
+/**
+ * Sponsored Today idea: one view or tap (POST /public/sponsorships/:id/event, placement "today"),
+ * the same event the app sends. Staff browsing is not counted. Never throws.
+ */
+export function trackTodaySponsorship(sponsorshipId, type, viewId, clickTarget) {
+  if (!sponsorshipId || typeof window === "undefined" || isAnalyticsStaffSession()) return;
+  const mobile = /Mobi|Android|iPhone/i.test(navigator.userAgent || "");
+  fetch(`${API_BASE}/public/sponsorships/${sponsorshipId}/event`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({
+      event_id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined,
+      type,
+      placement: "today",
+      view_id: viewId,
+      ...(type === "click" ? { click_target: clickTarget || "other" } : {}),
+      session_id: getAnalyticsSessionId(),
+      visitor_id: getAnalyticsVisitorId(),
+      platform: "web",
+      device_type: mobile ? "mobile" : "desktop",
+    }),
+  }).catch(() => undefined);
 }

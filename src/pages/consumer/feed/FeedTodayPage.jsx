@@ -6,7 +6,7 @@
  * Shown only when signed in and the server's today_home flag is on for this diner, like the app.
  * Look rules: no green pills, no outlined oval pills, no full-width buttons (Andre 2026-10-29 / 11-06 / 11-12).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../../components/BrandLogo.jsx";
 import AppIcon from "../../../components/icons/AppIcon.jsx";
@@ -41,6 +41,7 @@ import {
   sayYes,
   timeLabel,
   todayErrorMessage,
+  trackTodaySponsorship,
   windowState,
 } from "../../../lib/todayHome.js";
 
@@ -353,7 +354,25 @@ export default function FeedTodayPage() {
 
   const all = useMemo(() => (data && data.window === windowKey ? [...data.picks, ...data.more] : []), [data, windowKey]);
   const left = all.filter((p) => !declined.has(p.restaurant.id));
-  const shown = left.slice(0, showMore ? 5 : 3);
+  // Up to 8 ideas per meal (Andre 2026-11-13): 3 first, the rest behind Show more.
+  const shown = left.slice(0, showMore ? 8 : 3);
+  // Sponsored ideas: one view per loaded list, then taps (same as the app, placement "today").
+  const sponsorView = useRef({ of: null, id: "", seen: new Set() });
+  const viewOf = () => {
+    if (sponsorView.current.of !== data) sponsorView.current = { of: data, id: `today-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, seen: new Set() };
+    return sponsorView.current;
+  };
+  useEffect(() => {
+    const v = viewOf();
+    for (const p of shown) {
+      if (!p.sponsorshipId || v.seen.has(p.sponsorshipId)) continue;
+      v.seen.add(p.sponsorshipId);
+      trackTodaySponsorship(p.sponsorshipId, "impression", v.id);
+    }
+  });
+  const sponsorTap = (p, target) => {
+    if (p.sponsorshipId) trackTodaySponsorship(p.sponsorshipId, "click", viewOf().id, target);
+  };
   const plan = made ?? (data && data.window === windowKey ? data.myPlan : null);
   const social = data && data.window === windowKey ? data.social : null;
   const refresh = useCallback(() => {
@@ -362,6 +381,7 @@ export default function FeedTodayPage() {
   }, []);
 
   async function yes(pick, swapped) {
+    sponsorTap(pick, "restaurant");
     setBusy(pick.restaurant.id);
     setError(null);
     try {
@@ -473,7 +493,8 @@ export default function FeedTodayPage() {
           </div>
         ) : null}
 
-        <div style={s.timeline} role="tablist" aria-label="Meal">
+        {/* Meal buttons stay at the top while scrolling (Andre 2026-11-13, as the app). */}
+        <div style={{ ...s.timeline, ...s.sticky }} role="tablist" aria-label="Meal">
           {tabs.map((w) => {
             const sel = w.key === windowKey;
             return (
@@ -538,10 +559,8 @@ export default function FeedTodayPage() {
                 ? `Nothing open for ${meal.label.toLowerCase()} from your saves${cuisineLabel ? ` in ${cuisineLabel}` : ""}.`
                 : "Tap the heart on places you love and Wishlist on dishes you want to try. Today plans your meals from them."}
             </p>
-            {!data.hasLocation ? (
-              <Link to="/feed/search" style={s.actionLink} data-testid="today-set-location">Set your location for places near you ›</Link>
-            ) : null}
-            <Link to="/feed/search" style={s.actionLink} data-testid="today-find-food">Find food ›</Link>
+            {/* No location ask here (Andre 2026-11-13): the list ends in Search. */}
+            <SearchLink testID="today-find-food" />
           </div>
         ) : null}
 
@@ -584,7 +603,7 @@ export default function FeedTodayPage() {
               <div style={s.cardBody}>
                 <div style={s.cardText}>
                   {dishLeads ? <span style={{ ...s.meta, fontWeight: 600 }} data-testid={`today-try-${p.restaurant.id}`}>Try this</span> : null}
-                  <Link to={menuPathFor(p.restaurant.id)} style={s.place} data-testid={`today-place-${p.restaurant.id}`}>
+                  <Link to={menuPathFor(p.restaurant.id)} onClick={() => sponsorTap(p, "menu")} style={s.place} data-testid={`today-place-${p.restaurant.id}`}>
                     {friends
                       ? `Join ${namesText(friends.people)}?`
                       : dishLeads
@@ -630,9 +649,11 @@ export default function FeedTodayPage() {
         })}
         {!showMore && left.length > 3 ? (
           <button type="button" style={{ ...s.textBtn, ...s.leftBtn, color: C.accent }} onClick={() => setShowMore(true)} data-testid="today-show-more">
-            Show {Math.min(2, left.length - 3)} more
+            Show {Math.min(5, left.length - 3)} more
           </button>
         ) : null}
+        {/* The list ran out: Search, with its icon (Andre 2026-11-13). */}
+        {shown.length && (showMore || left.length <= 3) ? <SearchLink testID="today-search-more" /> : null}
         {error ? <p role="alert" style={{ ...s.meta, color: C.danger }} data-testid="today-error">{error}</p> : null}
       </div>
 
@@ -667,6 +688,17 @@ export default function FeedTodayPage() {
         }}
       />
     </div>
+  );
+}
+
+
+/** Plain text link with the search icon (no pill). */
+function SearchLink({ testID }) {
+  return (
+    <Link to="/feed/search" style={s.searchLink} aria-label="Search" data-testid={testID}>
+      <AppIcon name="search" size={16} color={C.accent} />
+      Search
+    </Link>
   );
 }
 
@@ -711,6 +743,8 @@ const s = {
   dayDot: { width: 5, height: 5, borderRadius: 3, background: "transparent" },
   dayDotOn: { background: C.ink },
   timeline: { display: "flex", gap: 4 },
+  sticky: { position: "sticky", top: 0, zIndex: 5, background: C.white, padding: "6px 0" },
+  searchLink: { display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, color: C.accent, fontWeight: 700, fontSize: 15, textDecoration: "none" },
   window: { flex: 1, minHeight: 40, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   panel: { borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 8 },
   panelTitle: { margin: 0, fontSize: 15, fontWeight: 700 },

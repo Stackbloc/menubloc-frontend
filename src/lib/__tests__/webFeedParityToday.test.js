@@ -49,3 +49,16 @@ test("Tabs: Today · Feed · Post · Search · Profile only when signed in with 
   assert.deepEqual([...on.left, ...on.right].map((t) => t.label), ["Today", "Feed", "Search", "Profile"]);
   assert.ok(on.home.alsoActiveOn.includes("/feed/deals"));
 });
+
+test("Today reads For you / Newly added / Sponsored like the app (2026-11-13); only sponsored ideas carry a sponsorship id", () => {
+  const t = parseToday({
+    window: { key: "lunch" },
+    picks: [],
+    more: [
+      { rank: 4, sponsorship_id: 501, restaurant: { id: 21, name: "Thai Patio" }, reason: { tag: "sponsored", label: "Sponsored", line: "2 for 1" } },
+      { rank: 5, sponsorship_id: 9, restaurant: { id: 22, name: "Bombay Grill" }, reason: { tag: "for_you", label: "For you" } },
+      { rank: 6, restaurant: { id: 23, name: "Poke Lab" }, reason: { tag: "newly_added", label: "Newly added" } },
+    ],
+  });
+  assert.deepEqual(t.more.map((p) => [p.reason.tag, p.sponsorshipId]), [["sponsored", 501], ["for_you", null], ["newly_added", null]]);
+});
