@@ -264,6 +264,9 @@ export const listFeedCommentReplies = (commentId, { cursor = null } = {}) =>
 export const createFeedComment = (postId, { body, parentId = null, clientKey }) =>
   post(feedPostPath(postId), { body, parent_id: parentId ?? undefined, client_key: clientKey });
 export const deleteFeedComment = (commentId) => del(`/api/consumer/feed-comments/${encodeURIComponent(String(commentId))}`);
+/** Restaurant profile: Feed comments about the place + its dishes; my_items = dishes you commented on (signed in). */
+export const listRestaurantFeedComments = (restaurantId, { limit = 10 } = {}) =>
+  get(`/api/consumer/restaurants/${encodeURIComponent(String(restaurantId))}/feed-comments?limit=${Number(limit) || 10}`);
 export const listBlockedDiners = () => get("/api/consumer/blocks");
 /** Accounts with a password send it; Google/Apple-only accounts send confirm: "DELETE". */
 export const deleteConsumerAccount = ({ password, confirm }) =>

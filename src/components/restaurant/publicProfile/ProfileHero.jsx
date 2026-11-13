@@ -24,6 +24,7 @@ import {
 import AddMenuAction from "../../AddMenuAction.jsx";
 import { canShowAddMenu } from "../../../lib/addMenuContribution.js";
 import IconHoverLabel from "../../IconHoverLabel.jsx";
+import { appendMenuHighlightQuery } from "../../share/shareUtils.js";
 import { formatWebsiteHostLabel } from "../../../lib/formatWebsiteHostLabel.js";
 import {
   normalizeBillboardImageFit,
@@ -127,6 +128,8 @@ export default function ProfileHero({
   profile = null,
   isMobile = false,
   contentMax,
+  /** Signed-in diner's dishes here they commented on: [{ id, name }] (Andre 2026-11-12). */
+  myCommentedItems = [],
 }) {
   void shortDescription;
   void showClaimInvites;
@@ -193,6 +196,46 @@ export default function ProfileHero({
   // No posted hours → no hours panel at all.
   const hoursStatus =
     openStatus?.is_open === true ? "Open now" : openStatus?.is_open === false ? "Closed now" : "";
+  const commentedItems = (Array.isArray(myCommentedItems) ? myCommentedItems : []).filter(
+    (it) => it?.id && String(it?.name || "").trim()
+  );
+  const commentedPanel = commentedItems.length ? (
+    <div
+      data-testid="profile-hero-you-commented"
+      style={{
+        marginTop: 10,
+        padding: isMobile ? "10px 12px" : "12px 14px",
+        borderRadius: 12,
+        background: "rgba(28,25,23,0.28)",
+        border: "1px solid rgba(250,250,249,0.18)",
+        boxSizing: "border-box",
+        maxWidth: "100%",
+      }}
+    >
+      <div style={{ fontSize: 14, fontWeight: 700, color: muted, marginBottom: 6, lineHeight: 1.4 }}>
+        You Commented on this
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", fontSize: 14, lineHeight: 1.4 }}>
+        {commentedItems.map((it) =>
+          menuHref ? (
+            <Link
+              key={it.id}
+              to={appendMenuHighlightQuery(menuHref, { menuItemId: it.id })}
+              data-testid="profile-hero-you-commented-item"
+              style={{ color: linkColor, textDecoration: "underline", fontWeight: 600 }}
+            >
+              {it.name}
+            </Link>
+          ) : (
+            <span key={it.id} data-testid="profile-hero-you-commented-item" style={{ color: linkColor, fontWeight: 600 }}>
+              {it.name}
+            </span>
+          )
+        )}
+      </div>
+    </div>
+  ) : null;
+
   const hoursPanel = hoursRows.length ? (
     <div
       data-testid="profile-hero-hours"
@@ -675,6 +718,7 @@ export default function ProfileHero({
         ) : null}
 
         {isMobile ? hoursPanel : null}
+        {commentedPanel}
       </div>
     </div>
   );

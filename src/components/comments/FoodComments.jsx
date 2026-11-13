@@ -15,6 +15,7 @@ import {
   updateFoodComment,
 } from "../../lib/foodCommentsApi.js";
 import { scheduleScrollToFoodComments } from "../../lib/foodCommentsScroll.js";
+import { appendMenuHighlightQuery } from "../share/shareUtils.js";
 import { profileReadableSurfaceStyle } from "../restaurant/publicProfile/profilePrimitives.jsx";
 
 const TOPIC_RESTAURANT = "";
@@ -376,6 +377,10 @@ export default function FoodComments({
   embedded = false,
   compact = false,
   experienceMode = false,
+  /** Restaurant profile: dish names open the menu at that dish (?highlightItem=) instead of the dish page. */
+  menuHref = null,
+  /** Profile: other comments already show above, so skip "No comments yet…". */
+  hideEmptyHint = false,
 }) {
   const { isAuthenticated, consumer, profile, refreshSession } = useConsumer();
   const location = useLocation();
@@ -483,6 +488,7 @@ export default function FoodComments({
   function buildMenuItemHref(comment) {
     const id = comment?.menu_item_id;
     if (!id) return null;
+    if (menuHref) return appendMenuHighlightQuery(menuHref, { menuItemId: id });
     return menuItemPath({
       restaurantSlug: restaurantSlug || undefined,
       city: restaurantCity || undefined,
@@ -741,7 +747,7 @@ export default function FoodComments({
         <div style={{ fontSize: 13, color: "#78716c" }}>Loading comments…</div>
       ) : null}
 
-      {!loading && !comments.length ? (
+      {!loading && !comments.length && !hideEmptyHint ? (
         <div style={{ fontSize: 13, color: "#78716c", marginBottom: 12 }}>
           {emptyHint}
         </div>

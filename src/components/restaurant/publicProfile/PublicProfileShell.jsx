@@ -14,6 +14,8 @@
  * No public diner-signal sections on restaurants/food trucks (status chips, What Diners Are
  * Saying, People Who Want To Go) — owners won't keep them up. Connect-only social proof stays.
  * Dining halls keep WhatDinersAreSaying ("what's good today") — no owner to moderate it.
+ * Comments (Andre 2026-11-12): every restaurant / food truck, claimed or not — Feed comments about the
+ * place or its dishes + the discussion thread; the hero shows "You Commented on this" (your dishes).
  */
 import { useMemo } from "react";
 import ProfileHero from "./ProfileHero.jsx";
@@ -25,6 +27,8 @@ import ProfileVideosSection from "./ProfileVideosSection.jsx";
 import FoodTruckUpcomingStops from "./FoodTruckUpcomingStops.jsx";
 import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
+import ProfileComments from "./ProfileComments.jsx";
+import useRestaurantProfileComments from "../../../hooks/useRestaurantProfileComments.js";
 import ConnectionSocialProof from "../../social/ConnectionSocialProof.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
@@ -111,6 +115,7 @@ export default function PublicProfileShell({
     null;
   const restaurantCity = profile?.city || null;
   const restaurantState = profile?.state || null;
+  const profileComments = useRestaurantProfileComments(restaurantId);
   const resolvedWindowsOrientation = normalizeWindowsPhotoOrientation(
     windowsPhotoOrientation ?? profile?.windows_photo_orientation
   );
@@ -275,6 +280,7 @@ export default function PublicProfileShell({
         statusLightProps={statusLightProps}
         restaurantId={restaurantId}
         menuHref={isDiningHall ? null : menuHref}
+        myCommentedItems={isDiningHall ? [] : profileComments.my_items}
         addMenuRestaurant={isDiningHall ? null : addMenuRestaurant}
         shareData={shareData}
         shareAnalytics={shareAnalytics}
@@ -382,6 +388,19 @@ export default function PublicProfileShell({
         )}
 
         {restaurantId ? <ConnectionSocialProof restaurantId={restaurantId} /> : null}
+
+        {restaurantId && !isDiningHall ? (
+          <ProfileComments
+            restaurantId={restaurantId}
+            restaurantSlug={restaurantSlug}
+            restaurantCity={restaurantCity}
+            restaurantState={restaurantState}
+            menuHref={menuHref}
+            menuPreviewItems={menuPreviewItems}
+            feedComments={profileComments.comments}
+            isMobile={isMobile}
+          />
+        ) : null}
 
         {restaurantId && isDiningHall ? (
           <WhatDinersAreSaying
