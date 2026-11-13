@@ -548,6 +548,11 @@ export function unobserveImpression(el) {
   }
 }
 
+/** Cluster the diner is looking at right now (cluster or Wall page), else null. Used by presence. */
+export function getCurrentEngagementClusterId() {
+  return currentPage?.cluster_id || null;
+}
+
 /** Test hook. */
 export function resetEngagementTrackingForTests() {
   clearBrowseTimer();

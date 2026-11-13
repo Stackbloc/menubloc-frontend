@@ -22,6 +22,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { startPresenceHeartbeat } from "./lib/presenceHeartbeat.js";
 import { BrowserRouter, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import SentryRoutePerformance from "./components/SentryRoutePerformance.jsx";
 import { SentryRoutes } from "./instrument.js";
@@ -1292,6 +1293,8 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
 
 export default function App() {
   const easyMenu = isEasyMenuHost();
+  // Live presence heartbeat (Diner Intelligence Stage 2): 60 s while the tab is visible.
+  useEffect(() => startPresenceHeartbeat(), []);
   const crmHost = isCrmHost();
   const venuesHost = isVenuesHost();
 
