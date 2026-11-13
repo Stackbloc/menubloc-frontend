@@ -2,11 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
 import { getOwnerDinerDetail } from "../../lib/ownerApi.js";
-import {
-  DINER_INTERVAL_LABELS,
-  DINER_INTERVAL_OPTIONS,
-  displayDinerCount,
-} from "./diners/dinerMetricDisplay.js";
+import DinerIntelligencePanel from "./diners/DinerIntelligencePanel.jsx";
+import { DEFAULT_PROFILE_RANGE, rangeFromParams } from "./diners/profileDisplay.js";
 
 /**
  * /owner/diners/:dinerId: the admin diner profile (Diner Intelligence Stage 1, plan 39). It was a modal on
@@ -66,93 +63,10 @@ function HubSection({ title, items, emptyLabel }) {
   );
 }
 
-const SUMMARY_ROWS = [
-  ["Posts: eating at", "im_eating_at"],
-  ["Posts: what I ate", "what_i_ate_today"],
-  ["Wish List", "want_to_eat"],
-  ["Plans: events", "social_events"],
-  ["Invites sent", "invites_sent"],
-  ["Clips", "video_uploads"],
-  ["Connects", "accepted_connects", { lifetimeOnly: true }],
-];
-
-function SummaryGrid({ summary, intervalLabel }) {
-  if (!summary) return null;
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-        gap: 10,
-        marginTop: 16,
-      }}
-      data-testid="diner-hub-summary-grid"
-    >
-      {SUMMARY_ROWS.map(([label, key, opts = {}]) => {
-        const unavailable = summary.status?.[key] === "unavailable";
-        return (
-          <div
-            key={key}
-            title={unavailable ? "Couldn't be counted just now. Not the same as 0." : undefined}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: `1px solid ${OWNER_COLORS.line}`,
-              background: "#faf7f4",
-            }}
-          >
-            <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted }}>{label}</div>
-            {!opts.lifetimeOnly ? (
-              <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.ink }}>
-                {intervalLabel}: <strong>{displayDinerCount(summary.interval?.[key])}</strong>
-              </div>
-            ) : null}
-            <div style={{ marginTop: 2, fontSize: 12, color: OWNER_COLORS.ink }}>
-              Lifetime: <strong>{displayDinerCount(summary.lifetime?.[key])}</strong>
-            </div>
-            {unavailable ? <div style={{ marginTop: 4, fontSize: 11, color: "#9f1239" }}>Unavailable</div> : null}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function IntervalPicker({ interval, onChange }) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.muted }}>Activity window</span>
-      {DINER_INTERVAL_OPTIONS.map(([key, label]) => (
-        <button
-          key={key}
-          type="button"
-          data-testid={`diner-profile-interval-${key}`}
-          aria-pressed={interval === key}
-          onClick={() => onChange(key)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 999,
-            // Selected chip = dark fill + white text; never a green pill (Andre 2026-11-06).
-                border: `1px solid ${interval === key ? OWNER_COLORS.ink : OWNER_COLORS.line}`,
-            background: interval === key ? OWNER_COLORS.ink : "#fff",
-            color: interval === key ? "#fff" : OWNER_COLORS.ink,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function OwnerDinerProfile() {
   const { dinerId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const requested = searchParams.get("interval");
-  const interval = DINER_INTERVAL_LABELS[requested] ? requested : "7d";
+  const range = rangeFromParams(searchParams);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -162,7 +76,8 @@ export default function OwnerDinerProfile() {
     let cancelled = false;
     setLoading(true);
     setError("");
-    getOwnerDinerDetail(dinerId, { interval })
+    // Identity + recent posts/plans only; the numbers come from DinerIntelligencePanel (Stage 4).
+    getOwnerDinerDetail(dinerId)
       .then((payload) => {
         if (!cancelled) setData(payload);
       })
@@ -177,23 +92,26 @@ export default function OwnerDinerProfile() {
     return () => {
       cancelled = true;
     };
-  }, [dinerId, interval]);
+  }, [dinerId]);
 
-  const changeInterval = (next) => {
+  const changeRange = (next) => {
     const params = new URLSearchParams(searchParams);
-    if (next === "7d") params.delete("interval");
-    else params.set("interval", next);
+    for (const k of ["interval", "range", "from", "to"]) params.delete(k);
+    if (next.key !== DEFAULT_PROFILE_RANGE) params.set("range", next.key);
+    if (next.key === "custom") {
+      params.set("from", next.from);
+      params.set("to", next.to);
+    }
     setSearchParams(params, { replace: true });
   };
 
   const identity = data?.identity;
-  const intervalLabel = DINER_INTERVAL_LABELS[interval] || interval;
 
   return (
     <OwnerLayout title="Diner profile">
       <div style={{ marginBottom: 12 }}>
         <Link
-          to={interval === "7d" ? "/owner/diners" : `/owner/diners?interval=${interval}`}
+          to="/owner/diners"
           data-testid="diner-profile-back"
           style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
         >
@@ -236,14 +154,7 @@ export default function OwnerDinerProfile() {
             </div>
           </div>
 
-          <div style={{ marginTop: 16 }}>
-            <IntervalPicker interval={interval} onChange={changeInterval} />
-            {data?.from && data?.to ? (
-              <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-                {data.from} through {data.to} (Los Angeles days)
-              </div>
-            ) : null}
-          </div>
+          {dinerId && !error ? <DinerIntelligencePanel dinerId={dinerId} range={range} onRangeChange={changeRange} /> : null}
 
           {error ? <div style={{ marginTop: 14, color: "#9f1239", fontSize: 13 }}>{error}</div> : null}
 
@@ -256,7 +167,6 @@ export default function OwnerDinerProfile() {
                 </section>
               ) : null}
 
-              <SummaryGrid summary={data.summary} intervalLabel={intervalLabel} />
 
               <HubSection title="Posts: eating at" items={data.hub?.recent_eating} emptyLabel="No eating-at posts." />
               <HubSection title="Posts: what I ate" items={data.hub?.what_i_ate} emptyLabel="No what-I-ate posts." />

@@ -200,6 +200,13 @@ export const getOwnerOnlineDiners = (params = {}) => {
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/diners/online${serialized ? `?${serialized}` : ""}`);
 };
+// Diner Intelligence Stage 4: one diner's lifetime + period numbers (range today…365d | custom from/to | lifetime).
+export const getOwnerDinerIntelligence = (id, params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ["range", "from", "to"]) if (params[key]) qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners/${encodeURIComponent(String(id))}/intelligence${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerDinerDetail = (id, params = {}) => {
   const qs = new URLSearchParams();
   if (params.interval) qs.set("interval", params.interval);

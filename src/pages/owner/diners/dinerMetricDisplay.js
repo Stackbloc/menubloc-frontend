@@ -50,5 +50,6 @@ export function displayDinerCount(value) {
 
 export function dinerProfilePath(id, interval) {
   const base = `/owner/diners/${encodeURIComponent(String(id))}`;
-  return interval && interval !== "7d" ? `${base}?interval=${encodeURIComponent(interval)}` : base;
+  // The profile opens on 30 days (Stage 4); any other window from the list is carried over.
+  return interval && interval !== "30d" ? `${base}?interval=${encodeURIComponent(interval)}` : base;
 }
