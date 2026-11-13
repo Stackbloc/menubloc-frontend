@@ -13,6 +13,7 @@ import {
   displayDinerMetric,
 } from "./diners/dinerMetricDisplay.js";
 import { LiveActivitySection, OnlineDirectory } from "./diners/OwnerDinersLive.jsx";
+import OwnerDinersSections from "./diners/OwnerDinersSections.jsx";
 
 /**
  * /owner/diners. Diner Intelligence Stage 1 (plan 39, Andre 2026-11-12):
@@ -187,6 +188,7 @@ export default function OwnerDiners() {
     <OwnerLayout title="Diner accounts">
       <LiveActivitySection />
       <OnlineDirectory />
+      <OwnerDinersSections />
       <SectionTitle
         title="All diner accounts"
         subtitle="Lifetime diner accounts, with what they did in the selected window. Days are Los Angeles days. Platform staff accounts and seeded test diners are left out of every number. Referral source is Direct, QR code, or Website referral when captured at signup."

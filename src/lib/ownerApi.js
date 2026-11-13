@@ -200,6 +200,31 @@ export const getOwnerOnlineDiners = (params = {}) => {
   const serialized = qs.toString();
   return get(`/api/owner/dashboard/diners/online${serialized ? `?${serialized}` : ""}`);
 };
+// Diner Intelligence Stage 4: one diner's lifetime + period numbers (range today…365d | custom from/to | lifetime).
+export const getOwnerDinerIntelligence = (id, params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ["range", "from", "to"]) if (params[key]) qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return get(`/api/owner/dashboard/diners/${encodeURIComponent(String(id))}/intelligence${serialized ? `?${serialized}` : ""}`);
+};
+// Diner Intelligence Stage 5: Acquisition / Engagement / Retention / Dining / Discovery (+ CSV).
+function dinerSectionsQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const key of ["range", "from", "to", "cluster_id"]) if (params[key]) qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+export const getOwnerDinerSections = (params = {}) => get(`/api/owner/dashboard/diners/sections${dinerSectionsQuery(params)}`);
+export const downloadOwnerDinerSectionsCsv = async (params = {}) => {
+  const res = await fetch(`${API}/api/owner/dashboard/diners/sections.csv${dinerSectionsQuery(params)}`, { credentials: "include" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+};
 export const getOwnerDinerDetail = (id, params = {}) => {
   const qs = new URLSearchParams();
   if (params.interval) qs.set("interval", params.interval);

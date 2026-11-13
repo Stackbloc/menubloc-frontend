@@ -38,7 +38,8 @@ describe("diner metric display", () => {
 
   it("interval options include 90 days; profile links carry the window", () => {
     assert.deepEqual(DINER_INTERVAL_OPTIONS.map(([k]) => k), ["today", "yesterday", "7d", "30d", "90d", "365d"]);
-    assert.equal(dinerProfilePath(42, "7d"), "/owner/diners/42");
+    assert.equal(dinerProfilePath(42, "30d"), "/owner/diners/42");
+    assert.equal(dinerProfilePath(42, "7d"), "/owner/diners/42?interval=7d");
     assert.equal(dinerProfilePath(42, "90d"), "/owner/diners/42?interval=90d");
   });
 });

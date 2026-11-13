@@ -48,9 +48,12 @@ describe("owner diner accounts panel", () => {
     assert.match(profile, /getOwnerDinerDetail/);
     assert.match(profile, /useParams/);
     assert.match(profile, /owner-diner-profile/);
-    assert.match(profile, /diner-hub-summary-grid/);
     assert.match(profile, /diner-profile-back/);
-    assert.match(profile, /displayDinerCount/);
+    // Stage 4: the numbers (period vs lifetime, custom range) come from DinerIntelligencePanel.
+    assert.match(profile, /<DinerIntelligencePanel/);
+    const panel = read("src/pages/owner/diners/DinerIntelligencePanel.jsx");
+    assert.match(panel, /getOwnerDinerIntelligence/);
+    assert.match(panel, /metricCell/);
     assert.match(app, /path="\/owner\/diners\/:dinerId"[^\n]*<OwnerRoute><OwnerDinerProfile \/><\/OwnerRoute>/);
   });
 
