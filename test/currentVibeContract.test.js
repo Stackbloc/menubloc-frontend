@@ -17,17 +17,17 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("docs/16: default is Not sure today (no badge); old values read as Not sure; Me time is the opt-out", () => {
+test("default is no vibe (no badge); old values and Me time read as no vibe (2026-11-13)", () => {
   assert.equal(DEFAULT_CURRENT_VIBE, "not_sure_today");
   assert.equal(OPT_OUT_CURRENT_VIBE, "me_time");
   assert.equal(coerceCurrentVibe(null), DEFAULT_CURRENT_VIBE);
   assert.equal(coerceCurrentVibe("craving"), DEFAULT_CURRENT_VIBE);
+  assert.equal(coerceCurrentVibe("me_time"), DEFAULT_CURRENT_VIBE);
   assert.equal(showsCurrentVibeBadge("not_sure_today"), false);
   assert.equal(showsCurrentVibeBadge("open_for_suggestions"), false);
   assert.equal(showsCurrentVibeBadge("hungry"), true);
-  assert.equal(showsCurrentVibeBadge("me_time"), true);
-  assert.equal(getCurrentVibeEntry("me_time").badgeTone, "muted");
-  assert.equal(getCurrentVibeEntry("me_time").icon, "🌙");
+  assert.equal(showsCurrentVibeBadge("me_time"), false);
+  assert.equal(getCurrentVibeEntry("me_time").badgeTone, "none");
   // Social search Phase 4: the default is not search-surfaced.
   assert.equal(getCurrentVibeEntry("not_sure_today").searchEligible, false);
   assert.equal(getCurrentVibeEntry("open_for_dinner").searchEligible, true);
@@ -42,7 +42,7 @@ test("DinerIdentityHero mounts Current Vibe on avatar wrap", () => {
   assert.match(hero, /currentVibe/);
 });
 
-test("picker: pick several, Not sure / Me time alone, For today / hours / days / all week", async () => {
+test("picker: pick several, no Me time / Not sure chips, For today / hours / days / all week", async () => {
   const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");
   assert.match(section, /Current vibe/);
   assert.match(section, /DEFAULT_CURRENT_VIBE/);
@@ -54,8 +54,10 @@ test("picker: pick several, Not sure / Me time alone, For today / hours / days /
   const { toggleVibeSet } = await import("../src/lib/currentVibeDisplay.js");
   assert.deepEqual(toggleVibeSet(["not_sure_today"], "coffee"), ["coffee"]);
   assert.deepEqual(toggleVibeSet(["coffee"], "open_for_lunch"), ["open_for_lunch", "coffee"]);
-  assert.deepEqual(toggleVibeSet(["open_for_lunch", "coffee"], "me_time"), ["me_time"]);
   assert.deepEqual(toggleVibeSet(["me_time"], "hungry"), ["hungry"]);
+  const { resolveCurrentVibeCatalog } = await import("../src/lib/currentVibeDisplay.js");
+  const fromServer = resolveCurrentVibeCatalog([{ value: "not_sure_today", label: "Not sure today" }, { value: "hungry", label: "Hungry" }, { value: "me_time", label: "Me time" }]);
+  assert.deepEqual(fromServer.map((e) => e.value), ["hungry"]);
   assert.deepEqual(toggleVibeSet(["hungry"], "hungry"), ["not_sure_today"]);
 });
 

@@ -28,17 +28,18 @@ test("profile page saves the audience through the current-vibe endpoint", () => 
   assert.equal((hero.match(/onSearchVibeAudienceChange=\{onSearchVibeAudienceChange\}/g) || []).length, 2);
 });
 
-test("default vibe (Not sure today) is not search-surfaced in the FE mirror", () => {
+test("no vibe (the old Not sure today) is not search-surfaced and not a chip (2026-11-13)", () => {
   const src = read("src/lib/currentVibeDisplay.js");
-  assert.match(src, /value: "not_sure_today", label: "Not sure today", icon: null, badgeTone: "none", searchEligible: false, exclusive: true/);
+  assert.match(src, /value: DEFAULT_CURRENT_VIBE, label: "No vibe", icon: null, badgeTone: "none", searchEligible: false/);
+  assert.doesNotMatch(src, /value: "not_sure_today"/);
 });
 
-test("vibe catalog docs/16: 7 vibes in Andre's order; others removed; chips have hover", () => {
+test("vibe catalog: 5 vibes in Andre's order; Me time and Not sure today dropped (2026-11-13); chips have hover", () => {
   const src = read("src/lib/currentVibeDisplay.js");
-  const order = ["not_sure_today", "open_for_lunch", "coffee", "open_for_dinner", "hungry", "eating_at_home", "me_time"].map((v) => src.indexOf(`value: "${v}"`));
+  const order = ["open_for_lunch", "coffee", "open_for_dinner", "hungry", "eating_at_home"].map((v) => src.indexOf(`value: "${v}"`));
   assert.ok(order.every((n) => n > 0));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
-  assert.match(src, /label: "Me time \(not available\)"/);
+  assert.doesNotMatch(src, /Me time \(not available\)|value: "me_time"/);
   assert.doesNotMatch(src, /value: "(drinks|craving|looking_for_company|im_good|open_for_suggestions)"/);
   assert.doesNotMatch(src, /going_out|cheap_eats|treat_myself/);
   const section = read("src/pages/consumer/myMenuply/CurrentVibeProfileSection.jsx");

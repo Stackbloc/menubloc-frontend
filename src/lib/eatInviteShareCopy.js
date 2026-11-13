@@ -12,6 +12,11 @@ import {
 export const INVITE_MESSAGE_SEED_CODES = ["LDL", "LDD", "LHC", "LGD", "MMH"];
 
 export const INVITE_COPY_SEEDS = {
+  // Quick Invite "What for?" also presets breakfast, brunch and late night (app parity 2026-11-13);
+  // they are not extra radio choices unless picked.
+  LDB: { code: "LDB", emoji: "🥞", verbPhrase: "Let's do breakfast", meal: "breakfast" },
+  LBR: { code: "LBR", emoji: "🥂", verbPhrase: "Let's do brunch", meal: "brunch" },
+  LLN: { code: "LLN", emoji: "🌙", verbPhrase: "Let's do late night", meal: "late" },
   LHC: { code: "LHC", emoji: "☕", verbPhrase: "Let's have coffee", meal: "coffee" },
   LDL: { code: "LDL", emoji: "🥗", verbPhrase: "Let's do lunch", meal: "lunch" },
   LDD: { code: "LDD", emoji: "🍽️", verbPhrase: "Let's do dinner", meal: "dinner" },
@@ -22,6 +27,9 @@ export const INVITE_COPY_SEEDS = {
 /** Default compose time when a quick-invite seed is chosen from the Feed X sheet. */
 export function defaultScheduledTimeForInviteSeed(seedCode) {
   const code = String(seedCode || "").trim().toUpperCase();
+  if (code === "LDB") return "08:30";
+  if (code === "LBR") return "11:00";
+  if (code === "LLN") return "22:30";
   if (code === "LHC") return "09:00";
   if (code === "LDL") return "12:30";
   if (code === "LGD") return "18:00";
@@ -156,8 +164,15 @@ export function listInviteMessageOptions({
   dateLabel,
   timeLabel,
   scheduledTime = null,
+  includeCode = null,
 } = {}) {
-  return INVITE_MESSAGE_SEED_CODES.map((code) => ({
+  // A preset that isn't one of the five standard choices (breakfast, brunch, late night) goes first.
+  const extra = String(includeCode || "").trim().toUpperCase();
+  const codes =
+    INVITE_COPY_SEEDS[extra] && !INVITE_MESSAGE_SEED_CODES.includes(extra)
+      ? [extra, ...INVITE_MESSAGE_SEED_CODES]
+      : INVITE_MESSAGE_SEED_CODES;
+  return codes.map((code) => ({
     code,
     text: buildEatInviteMessageDraft({
       inviteKind,

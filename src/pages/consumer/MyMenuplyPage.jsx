@@ -13,9 +13,9 @@ import {
   AppProfileControls,
   AppProfileStack,
   AppProfileStarterCard,
-  AppVibeCard,
 } from "./myMenuply/AppProfileCards.jsx";
-import CurrentVibeProfileSection from "./myMenuply/CurrentVibeProfileSection.jsx";
+import { discoverLevelOf } from "../../lib/discoverLevels.js";
+import MyVibeCard from "./myMenuply/MyVibeCard.jsx";
 import ShareModal from "../../components/share/ShareModal.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useFeedShellDesktop } from "../../lib/useFeedShellDesktop.js";
@@ -2423,17 +2423,8 @@ export default function MyMenuplyPage() {
             <ProfileConnectsBox />
             <AppProfileStarterCard avatarUrl={avatarUrl} />
             <MonthReportNudge />
-            {/* Andre 2026-11-02: the vibe always shows (Hidden says so); its "Who sees your vibe" link opens discoverability. */}
-            <AppVibeCard label={profile?.current_vibe_meta?.label || "Not sure today"} discover={discoverLevel} onDiscover={setDiscoverLevel}>
-              <CurrentVibeProfileSection
-                value={profile?.current_vibe || profile?.currentVibe || "not_sure_today"}
-                values={profile?.current_vibe_meta?.current_vibes || null}
-                expiresAt={profile?.current_vibe_meta?.expires_at || null}
-                catalog={profile?.current_vibe_catalog || null}
-                busy={identityBusy}
-                onChange={onCurrentVibeChange}
-              />
-            </AppVibeCard>
+            {/* My Vibe (app AvailabilityCard, plan 41): Hungry now, Up for, Eating at home, Pause; "Who can find you" opens discoverability. */}
+            <MyVibeCard discover={discoverLevel || discoverLevelOf(profile)} onDiscover={setDiscoverLevel} />
             <SocialCalendarCard />
             <QuickInviteCard />
             <AppMyActivity />

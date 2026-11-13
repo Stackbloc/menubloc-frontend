@@ -862,6 +862,32 @@ export const leaveSocialPlan = (source, ref) => del(`${socialPlanPath(source, re
 export const deleteSocialPlan = (source, ref) => del(socialPlanPath(source, ref));
 export const getSocialPlanDetail = (source, ref) => get(socialPlanPath(source, ref));
 
+// My Vibe on Profile (app AvailabilityCard, plan 41, Andre 2026-11-12/13): you're available unless
+// paused; Hungry now, Up for <meal or coffee> (mig 0430) and Eating at home (an at-home plan, mig 0427).
+const browserTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+};
+export const getAvailability = () => get("/api/consumer/profile/availability");
+/** { pause: "3h" | "today" | "week" | "month" | "forever" | "resume" } */
+export const setAvailability = (change) => put("/api/consumer/profile/availability", change);
+export const postHungryNow = () => post("/api/consumer/hungry", { when: "now", cravings: [] });
+export const clearHungryNow = () => del("/api/consumer/hungry");
+/** Up for breakfast | coffee | lunch | dinner | late; `date` YYYY-MM-DD, or null for today. */
+export const postUpFor = (window, date = null) =>
+  post("/api/consumer/today/up-for", { window, tz: browserTimeZone(), ...(date ? { date } : {}) });
+export const clearUpFor = (window, date = null) => {
+  const q = new URLSearchParams({ window });
+  const tz = browserTimeZone();
+  if (tz) q.set("tz", tz);
+  if (date) q.set("date", date);
+  return del(`/api/consumer/today/up-for?${q.toString()}`);
+};
+export const listMyCircles = () => get("/api/consumer/circles");
+
 /** Diner-created social events (My Menuply My Events — not venue_events). */
 export const listDinerSocialEvents = () => get("/api/consumer/social-events");
 export const listPeerDinerSocialEvents = (peerId) =>

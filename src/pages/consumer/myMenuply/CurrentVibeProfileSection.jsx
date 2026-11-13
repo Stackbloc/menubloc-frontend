@@ -1,7 +1,7 @@
 /**
- * Current Vibe on the diner profile (Andre 2026-10-28, menuply-mobile docs/16): Not sure today
- * (every day starts here) · Open for lunch · Open for coffee · Open for dinner · Hungry ·
- * Eating @home · Me time (not available). Pick several, except Not sure today / Me time; For:
+ * Current Vibe on the older profile hub (Andre 2026-10-28, menuply-mobile docs/16): Open for lunch ·
+ * Open for coffee · Open for dinner · Hungry · Eating at home (Me time and Not sure today dropped
+ * 2026-11-13; the app-layout Profile uses MyVibeCard instead). Pick several; For:
  * Today · Hours · Days · All week. Each tap saves. Lunch, coffee, dinner and hungry show to Connects.
  */
 
@@ -199,7 +199,7 @@ export default function CurrentVibeProfileSection({
             data-testid={`${testIdPrefix}-hint`}
           >
             Pick what you&apos;re up for — several at once — and your Connects can invite you. Lunch
-            shows 10:30 AM–3 PM and dinner 4–10 PM. Me time keeps you out of it. This is not a post.
+            shows 10:30 AM–3 PM and dinner 4–10 PM. Tap a vibe again to clear it. This is not a post.
           </p>
           {typeof onSearchVibeAudienceChange === "function" ? (
             <label

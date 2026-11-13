@@ -2,27 +2,30 @@
  * Current Vibe presentation helpers (FE).
  * Machine values/labels prefer backend catalog when provided.
  *
- * Andre 2026-10-28 (menuply-mobile docs/16): Not sure today (default; every day starts here) ·
- * Open for lunch · Open for coffee · Open for dinner · Hungry · Eating @home · Me time (not available).
- * Pick several, except Not sure today / Me time (each stands alone); set for today, hours, days or
- * all week. Old values (open_for_suggestions, im_good, craving, drinks, looking_for_company) read as
- * Not sure today.
+ * Andre 2026-10-28 (menuply-mobile docs/16): Open for lunch · Open for coffee · Open for dinner ·
+ * Hungry · Eating at home. Pick several; set for today, hours, days or all week. Old values
+ * (open_for_suggestions, im_good, craving, drinks, looking_for_company) read as no vibe.
+ *
+ * Andre 2026-11-13 (plan 41, app parity): the picker no longer offers Me time or Not sure today.
+ * "not_sure_today" stays only as the internal "no vibe" value (no chip, no badge); a saved Me time
+ * reads as no vibe. Profile's My Vibe card (MyVibeCard.jsx) replaces these chips on the app layout.
  */
 
+/** No vibe (was "Not sure today"): never a chip, never a badge. */
 export const DEFAULT_CURRENT_VIBE = "not_sure_today";
-/** Me time hides the vibe from Connects (was I'm good). */
+/** Me time is gone (2026-11-13); kept as a name so old saved values read as no vibe. */
 export const OPT_OUT_CURRENT_VIBE = "me_time";
-const LEGACY = new Set(["open_for_suggestions", "im_good", "craving", "drinks", "looking_for_company"]);
+const LEGACY = new Set(["open_for_suggestions", "im_good", "craving", "drinks", "looking_for_company", "me_time"]);
+const DROPPED = new Set([DEFAULT_CURRENT_VIBE, OPT_OUT_CURRENT_VIBE]);
+const NO_VIBE_ENTRY = Object.freeze({ value: DEFAULT_CURRENT_VIBE, label: "No vibe", icon: null, badgeTone: "none", searchEligible: false, exclusive: true });
 
 /** Fallback catalog if profile payload has no catalog yet (offline / stale session). */
 export const FALLBACK_CURRENT_VIBE_CATALOG = Object.freeze([
-  { value: "not_sure_today", label: "Not sure today", icon: null, badgeTone: "none", searchEligible: false, exclusive: true },
   { value: "open_for_lunch", label: "Open for lunch", icon: "🥪", badgeTone: "inviting", searchEligible: true, exclusive: false },
   { value: "coffee", label: "Open for coffee", icon: "☕", badgeTone: "warm", searchEligible: true, exclusive: false },
   { value: "open_for_dinner", label: "Open for dinner", icon: "🍝", badgeTone: "inviting", searchEligible: true, exclusive: false },
   { value: "hungry", label: "Hungry", icon: "🍽️", badgeTone: "warm", searchEligible: true, exclusive: false },
-  { value: "eating_at_home", label: "Eating @home", icon: "🏠", badgeTone: "warm", searchEligible: false, exclusive: false },
-  { value: "me_time", label: "Me time (not available)", icon: "🌙", badgeTone: "muted", searchEligible: false, exclusive: true },
+  { value: "eating_at_home", label: "Eating at home", icon: "🏠", badgeTone: "warm", searchEligible: false, exclusive: false },
 ]);
 
 export function coerceCurrentVibe(raw) {
@@ -35,12 +38,11 @@ export function coerceCurrentVibe(raw) {
   return hit ? key : DEFAULT_CURRENT_VIBE;
 }
 
-/** Tap a chip: Not sure today / Me time stand alone; anything else toggles and clears them. */
+/** Tap a chip: it toggles; nothing left = no vibe. */
 export function toggleVibeSet(current, tapped, catalog) {
   const list = resolveCurrentVibeCatalog(catalog);
-  const exclusive = new Set(list.filter((e) => e.exclusive).map((e) => e.value));
-  if (exclusive.has(tapped)) return [tapped];
-  const rest = (current || []).filter((v) => !exclusive.has(v));
+  if (DROPPED.has(tapped)) return [DEFAULT_CURRENT_VIBE];
+  const rest = (current || []).filter((v) => !DROPPED.has(v));
   const next = rest.includes(tapped) ? rest.filter((v) => v !== tapped) : [...rest, tapped];
   const order = list.map((e) => e.value);
   return next.length ? next.sort((a, b) => order.indexOf(a) - order.indexOf(b)) : [DEFAULT_CURRENT_VIBE];
@@ -48,13 +50,15 @@ export function toggleVibeSet(current, tapped, catalog) {
 
 export function resolveCurrentVibeCatalog(catalog) {
   if (Array.isArray(catalog) && catalog.length) {
-    return catalog.map((e) => ({
+    const rows = catalog.filter((e) => !DROPPED.has(String(e?.value || "").trim()));
+    if (!rows.length) return FALLBACK_CURRENT_VIBE_CATALOG;
+    return rows.map((e) => ({
       value: String(e.value || "").trim(),
       label: String(e.label || e.value || "").trim(),
       icon: e.icon == null || e.icon === "" ? null : String(e.icon),
       badgeTone: String(e.badgeTone || e.badge_tone || "warm"),
       searchEligible: e.searchEligible === true || e.search_eligible === true,
-      exclusive: e.exclusive === true || e.value === DEFAULT_CURRENT_VIBE || e.value === OPT_OUT_CURRENT_VIBE,
+      exclusive: false,
     }));
   }
   return FALLBACK_CURRENT_VIBE_CATALOG;
@@ -63,10 +67,10 @@ export function resolveCurrentVibeCatalog(catalog) {
 export function getCurrentVibeEntry(value, catalog) {
   const list = resolveCurrentVibeCatalog(catalog);
   const key = coerceCurrentVibe(value);
-  return list.find((e) => e.value === key) || list.find((e) => e.value === DEFAULT_CURRENT_VIBE);
+  return list.find((e) => e.value === key) || NO_VIBE_ENTRY;
 }
 
-/** Not sure today shows no badge; every picked vibe (Me time included) does. */
+/** No vibe shows no badge; every picked vibe does. */
 export function showsCurrentVibeBadge(value) {
   return coerceCurrentVibe(value) !== DEFAULT_CURRENT_VIBE;
 }

@@ -1,10 +1,19 @@
 /**
  * Invite to Eat entry — pick a restaurant, then open the existing InviteToEatModal flow.
  * LGD quick invite adds optional attached-menu selection on this page.
+ *
+ * Quick Invite (?quick_invite=1) follows the app (quick-invite.tsx, Andre 2026-11-13: "trying to do
+ * too much on one screen") in two steps:
+ *   1. "Quick Invite": a checklist of Connects (Open Invite · All my Connects checks everyone), plus
+ *      typed names for people who aren't Connects; Next (n) › pinned to the bottom.
+ *   2. "For <who> · Change", then What for? (only without a seed_code: Breakfast, Brunch, Lunch,
+ *      Dinner, Late night, Coffee, Drinks, Meet me here), then the place (typed places allowed).
+ * Checked Connects get it in Menuply (20 per request); typed names get the link via the share sheet.
+ * From someone's row (to_user_id + to_name) that Connect is checked and it opens on step 2.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import InviteToEatModal from "../../components/InviteToEatModal.jsx";
@@ -13,6 +22,8 @@ import UnlistedPlaceLocation from "../../components/UnlistedPlaceLocation.jsx";
 import { cleanPlaceLocation } from "../../lib/unlistedPlace.js";
 import QuickInviteWhoStep from "./QuickInviteWhoStep.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { listConnections } from "../../lib/consumerApi.js";
+import { connectPeersFromResponse, groupName, QUICK_INVITES, quickInviteFor } from "../../lib/quickInviteWho.js";
 import { resolveEatingPrefill } from "../../lib/foodActivityApi.js";
 import { fetchRestaurantMenuCatalog } from "../../lib/api.js";
 import { buildLgdQuickInviteFormTitle } from "../../lib/eatInviteShareCopy.js";
@@ -41,18 +52,68 @@ function sortMenusForLgd(menus = []) {
 
 export default function InviteToEatStartPage() {
   const [searchParams] = useSearchParams();
-  const seedCode = String(searchParams.get("seed_code") || "").trim().toUpperCase();
-  const isLgdQuickInvite = seedCode === "LGD";
+  const urlSeedCode = String(searchParams.get("seed_code") || "").trim().toUpperCase();
   const quickInvite = searchParams.get("quick_invite") === "1";
+  // From Today the meal is already picked (seed_code); from Profile step 2 asks What for? first.
+  const [pickedCode, setPickedCode] = useState(null);
+  const seedCode = urlSeedCode || pickedCode || "";
+  const invite = quickInviteFor(seedCode);
+  const isLgdQuickInvite = seedCode === "LGD";
   const { isAuthenticated } = useConsumer();
-  // Quick Invite asks who first (Andre 2026-10-29): { name, userId | null, via: "app" | "text" }.
-  // Today's Invite on a Connect (Andre 2026-11-13, as the app's /quick-invite?to=&toName=): who is set.
-  const [to, setTo] = useState(() => {
+  // Today's Invite on a Connect (Andre 2026-11-13, as the app's /quick-invite?to=&toName=): that
+  // Connect starts checked and the page opens on step 2 (Change still goes to step 1).
+  const fromRow = useMemo(() => {
     const id = Number(searchParams.get("to_user_id"));
     const name = String(searchParams.get("to_name") || "").trim();
-    return Number.isInteger(id) && id > 0 && name ? { name, userId: id, via: "app" } : null;
-  });
-  const needsWho = quickInvite && !to;
+    return Number.isInteger(id) && id > 0 && name ? { id, name } : null;
+  }, [searchParams]);
+  const [step, setStep] = useState(() => (fromRow ? "details" : "who"));
+  const [connects, setConnects] = useState(null);
+  const [checked, setChecked] = useState(() => new Set(fromRow ? [fromRow.id] : []));
+  const [picked, setPicked] = useState([]);
+
+  useEffect(() => {
+    if (!quickInvite || !isAuthenticated) return undefined;
+    let alive = true;
+    listConnections("accepted")
+      .then((body) => alive && setConnects(connectPeersFromResponse(body)))
+      .catch(() => alive && setConnects([]));
+    return () => {
+      alive = false;
+    };
+  }, [quickInvite, isAuthenticated]);
+
+  // From a Connect's row before the list loads: still name them.
+  const peers = useMemo(() => {
+    if (connects == null && !fromRow) return null;
+    const list = connects || [];
+    return fromRow && !list.some((p) => p.id === fromRow.id) ? [{ id: fromRow.id, name: fromRow.name, avatarUrl: null, favoriteFoods: [] }, ...list] : list;
+  }, [connects, fromRow]);
+  const allOn = Boolean(peers?.length) && peers.every((p) => checked.has(p.id));
+  const group = useMemo(
+    () => ({
+      connects: (peers || []).filter((p) => checked.has(p.id)).map((p) => ({ userId: p.id, name: p.name })),
+      contacts: picked,
+      ...(allOn && peers.length > 1 ? { allConnects: true } : {}),
+    }),
+    [peers, checked, picked, allOn]
+  );
+  const count = group.connects.length + group.contacts.length;
+  const to = quickInvite && count ? { name: groupName(group), single: count === 1, group } : null;
+  const needsWho = quickInvite && (step === "who" || !to);
+  const needsWhat = quickInvite && !needsWho && !invite;
+
+  function toggle(id) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setChecked(allOn ? new Set() : new Set((peers || []).map((p) => p.id)));
+  }
   const [messageType, setMessageType] = useState("restaurant");
   const [selected, setSelected] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -76,6 +137,18 @@ export default function InviteToEatStartPage() {
   const pageTitle = isLgdQuickInvite
     ? buildLgdQuickInviteFormTitle(selectedPlaceName)
     : "Invite to Eat";
+  // The app's header: step 1 "Quick Invite" (or the Today meal's phrase), step 2 the phrase or "What for?".
+  const headerTitle = quickInvite
+    ? step === "who"
+      ? urlSeedCode && invite
+        ? invite.phrase
+        : "Quick Invite"
+      : invite
+        ? invite.phrase
+        : "What for?"
+    : isLgdQuickInvite
+      ? "Let's Get Drinks"
+      : "Invite to Eat";
 
   useEffect(() => {
     const restaurantId = searchParams.get("restaurant_id");
@@ -170,24 +243,70 @@ export default function InviteToEatStartPage() {
 
   return (
     <>
-      <StickyPageHeader title={isLgdQuickInvite ? "Let's Get Drinks" : "Invite to Eat"} />
+      <StickyPageHeader title={headerTitle} />
       <main style={styles.main} data-testid="invite-to-eat-start">
-        {isLgdQuickInvite ? (
+        {isLgdQuickInvite && !needsWho ? (
           <h1 style={styles.lgdTitle} data-testid="lgd-quick-invite-title">
             {pageTitle}
           </h1>
         ) : null}
-        <p style={styles.lead}>
-          {isLgdQuickInvite
-            ? "Pick the bar or venue, optionally attach a drinks or full menu, then share the link. Friends can RSVP without a Menuply account."
-            : quickInvite
-              ? "Pick who it's for and the place, then set the details. Connects can get it in Menuply; anyone else by text, no account needed."
+        {quickInvite ? null : (
+          <p style={styles.lead}>
+            {isLgdQuickInvite
+              ? "Pick the bar or venue, optionally attach a drinks or full menu, then share the link. Friends can RSVP without a Menuply account."
               : "Pick a restaurant, set a time, then share your invitation."}
-        </p>
+          </p>
+        )}
         {loadingPrefill ? <p style={styles.muted}>Loading restaurant…</p> : null}
-        {quickInvite && !to ? <Link to="/account/open-invite" data-testid="quick-invite-open-invite">Or post an Open Invite ›</Link> : null}
-        {quickInvite ? <QuickInviteWhoStep value={to} onChange={setTo} signedIn={isAuthenticated} /> : null}
-        {needsWho ? null : (
+        {needsWho ? (
+          <QuickInviteWhoStep
+            peers={peers}
+            checked={checked}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            picked={picked}
+            onPicked={setPicked}
+            signedIn={isAuthenticated}
+            count={count}
+            onNext={() => count && setStep("details")}
+          />
+        ) : null}
+        {quickInvite && !needsWho ? (
+          <div style={styles.chosen} data-testid="quick-invite-who-chosen">
+            <div style={styles.chosenText}>
+              <span style={styles.muted}>For</span>
+              <strong style={styles.name}>{to.name}</strong>
+            </div>
+            <button type="button" style={styles.link} onClick={() => setStep("who")} data-testid="quick-invite-who-change">
+              Change
+            </button>
+          </div>
+        ) : null}
+        {quickInvite && !needsWho && invite && !urlSeedCode ? (
+          <div style={styles.chosen} data-testid="quick-invite-what-chosen">
+            <div style={styles.chosenText}>
+              <strong style={styles.name}>{invite.label}</strong>
+              <span style={styles.muted}>{invite.phrase}</span>
+            </div>
+            <button type="button" style={styles.link} onClick={() => setPickedCode(null)} data-testid="quick-invite-what-change">
+              Change
+            </button>
+          </div>
+        ) : null}
+        {needsWhat ? (
+          <>
+            <div style={styles.step}>What for?</div>
+            <div style={styles.whatList} data-testid="quick-invite-what">
+              {QUICK_INVITES.map((q) => (
+                <button key={q.code} type="button" style={styles.whatRow} onClick={() => setPickedCode(q.code)} data-testid={`quick-invite-what-${q.code.toLowerCase()}`}>
+                  <strong style={styles.name}>{q.label}</strong>
+                  <span style={styles.link}>›</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {needsWho || needsWhat ? null : (
         <>
         {quickInvite ? <div style={styles.step}>{seedCode === "MMH" ? "Where should they meet you?" : "Pick the place"}</div> : null}
         <DiningCrewFoodEntityPicker
@@ -254,6 +373,9 @@ export default function InviteToEatStartPage() {
         >
           Continue ›
         </button>
+        {quickInvite && invite ? (
+          <p style={styles.muted}>Next you pick a time. &quot;{invite.phrase}&quot; is already in the message.</p>
+        ) : null}
         </>
         )}
       </main>
@@ -267,18 +389,21 @@ export default function InviteToEatStartPage() {
         attachedMenuId={resolved.attachedMenuId}
         placeLocation={resolved.placeLocation || null}
         initialSeedCode={seedCode || null}
-        initialInviteeName={to?.name || String(searchParams.get("invitee_name") || "").trim()}
+        initialInviteeName={(to?.single ? to.name : "") || String(searchParams.get("invitee_name") || "").trim()}
         initialInviteKind={
-          to ||
+          to?.single ||
           String(searchParams.get("invite_kind") || "").trim().toLowerCase() === "private" ||
           String(searchParams.get("invitee_name") || "").trim()
             ? "private"
             : String(searchParams.get("invite_kind") || "").trim().toLowerCase() === "group"
               ? "group"
-              : null
+              : to
+                ? "group"
+                : null
         }
-        autoOpenShareOnReady={quickInvite && to?.via !== "app"}
-        sendInAppTo={to?.via === "app" && to.userId ? { userId: to.userId, name: to.name } : null}
+        /* Typed names get the link from the share sheet; checked Connects get it in Menuply. */
+        autoOpenShareOnReady={quickInvite && (!to || to.group.contacts.length > 0)}
+        sendInAppGroup={to?.group.connects.length ? to.group.connects : null}
         flowTitle={
           isLgdQuickInvite
             ? buildLgdQuickInviteFormTitle(resolved.restaurantName || selectedPlaceName)
@@ -306,7 +431,25 @@ const styles = {
   },
   lead: { margin: "0 0 16px", fontSize: 14, color: "#4b5563", lineHeight: 1.45 },
   muted: { fontSize: 13, color: "#6b7280", margin: 0 },
-  step: { fontSize: 13, fontWeight: 800, color: "#15803d", marginBottom: 8 },
+  step: { fontSize: 13, fontWeight: 700, color: "#0f7a24", margin: "4px 0 8px" },
+  chosen: { display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", marginBottom: 12, borderRadius: 12, border: "1px solid #e1e6e1", background: "#fff" },
+  chosenText: { display: "grid", gap: 2, flex: 1, minWidth: 0 },
+  name: { fontSize: 15, color: "#111613" },
+  link: { border: "none", background: "none", padding: 0, color: "#0f7a24", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit" },
+  whatList: { borderRadius: 12, border: "1px solid #e1e6e1", background: "#fff", overflow: "hidden" },
+  whatRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    minHeight: 48,
+    padding: "0 16px",
+    border: "none",
+    borderBottom: "1px solid #e1e6e1",
+    background: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
   menuFieldset: {
     margin: "16px 0 0",
     padding: 0,

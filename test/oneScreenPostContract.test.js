@@ -77,5 +77,7 @@ test("Quick Invite sits on My Profile, below My Social Calendar", () => {
   assert.ok(page.indexOf("<SocialCalendarCard />") < page.indexOf("<QuickInviteCard />"));
   const card = read("src/pages/consumer/myMenuply/QuickInviteCard.jsx");
   assert.match(card, /Quick Invite/);
-  assert.match(card, /seed_code: code, quick_invite: "1"/);
+  // One link since 2026-11-13 (app parity): no seed_code, so step 2 asks What for?
+  assert.match(card, /new URLSearchParams\(\{ quick_invite: "1" \}\)/);
+  assert.doesNotMatch(card, /seed_code: code/);
 });

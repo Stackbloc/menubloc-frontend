@@ -16,12 +16,19 @@ import {
   defaultScheduledTimeForInviteSeed,
   formatInviteDateLabel,
   formatInviteTimeLabel,
-  INVITE_MESSAGE_SEED_CODES,
+  INVITE_COPY_SEEDS,
   listInviteMessageOptions,
   pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
 import { unlistedPlaceName } from "../lib/unlistedPlace.js";
+import { chunk } from "../lib/quickInviteWho.js";
 import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../pages/consumer/myMenuply/pendingHighlightMedia.js";
+
+/** Connects to notify in Menuply: the checked group, or the one Connect (sendEatInvitationInApp(token, [sendInAppTo.userId]) before 2026-11-13). */
+function inAppTargetsOf(group, one) {
+  const rows = Array.isArray(group) && group.length ? group : one?.userId ? [one] : [];
+  return rows.filter((t) => Number.isInteger(Number(t?.userId)) && Number(t.userId) > 0);
+}
 
 function tomorrowIsoDate() {
   const d = new Date();
@@ -68,6 +75,11 @@ export default function InviteToEatModal({
   quickShareAnalyticsContext = null,
   /** Quick Invite "In Menuply" (2026-10-29): { userId, name } of the Connect to notify once created. */
   sendInAppTo = null,
+  /**
+   * Quick Invite checklist (app parity 2026-11-13): every checked Connect as [{ userId, name }]. They
+   * get it in Menuply, 20 per request (the server's limit); anyone the send missed gets the link.
+   */
+  sendInAppGroup = null,
 }) {
   const { isAuthenticated } = useConsumer();
   const autoShareOpenedRef = useRef(false);
@@ -87,6 +99,7 @@ export default function InviteToEatModal({
   const [shareOpen, setShareOpen] = useState(false);
   const [quickShareOpen, setQuickShareOpen] = useState(false);
   const [inAppStatus, setInAppStatus] = useState(null);
+  const [inAppSent, setInAppSent] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -98,7 +111,7 @@ export default function InviteToEatModal({
     const seedCode = String(initialSeedCode || "")
       .trim()
       .toUpperCase();
-    const resolvedSeedCode = INVITE_MESSAGE_SEED_CODES.includes(seedCode) ? seedCode : null;
+    const resolvedSeedCode = INVITE_COPY_SEEDS[seedCode] ? seedCode : null;
     const defaultTime = resolvedSeedCode
       ? defaultScheduledTimeForInviteSeed(resolvedSeedCode)
       : "19:00";
@@ -116,6 +129,7 @@ export default function InviteToEatModal({
     setShareOpen(false);
     setQuickShareOpen(false);
     setInAppStatus(null);
+    setInAppSent([]);
     autoShareOpenedRef.current = false;
   }, [open, diningCrewId, initialInviteKind, initialInviteeName, initialSeedCode]);
 
@@ -157,8 +171,9 @@ export default function InviteToEatModal({
         dateLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteDateLabel(date),
         timeLabel: scheduleMode === "recipient_chooses" ? "" : formatInviteTimeLabel(time),
         scheduledTime: scheduleMode === "recipient_chooses" ? null : time,
+        includeCode: initialSeedCode,
       }),
-    [inviteKind, placeName, date, time, scheduleMode]
+    [inviteKind, placeName, date, time, scheduleMode, initialSeedCode]
   );
 
   const selectedDraft =
@@ -289,21 +304,27 @@ export default function InviteToEatModal({
         }
       }
       setCreated(invitation);
-      if (sendInAppTo?.userId && isAuthenticated) {
+      const inAppTargets = inAppTargetsOf(sendInAppGroup, sendInAppTo);
+      if (inAppTargets.length && isAuthenticated) {
         const token =
           invitation.invitation_token ||
           String(invitation.url || "").split("/invite/").pop()?.split(/[?#]/)[0];
         setInAppStatus("sending");
-        try {
-          const sent = await sendEatInvitationInApp(token, [sendInAppTo.userId]);
-          const ok = Array.isArray(sent?.sent_to) && sent.sent_to.map(Number).includes(Number(sendInAppTo.userId));
-          setInAppStatus(ok ? "sent" : "failed");
-          // The invite exists either way; if Menuply couldn't deliver it, share the link instead.
-          if (!ok) setShareOpen(true);
-        } catch {
-          setInAppStatus("failed");
-          setShareOpen(true);
+        const sent = new Set();
+        for (const ids of chunk(inAppTargets.map((t) => t.userId))) {
+          try {
+            const res = await sendEatInvitationInApp(token, ids);
+            (Array.isArray(res?.sent_to) ? res.sent_to : []).forEach((id) => sent.add(Number(id)));
+          } catch {
+            // The rest still go; anyone missed gets the link below.
+          }
         }
+        const missed = inAppTargets.filter((t) => !sent.has(Number(t.userId)));
+        const delivered = inAppTargets.filter((t) => sent.has(Number(t.userId)));
+        setInAppSent(delivered);
+        setInAppStatus(missed.length ? (delivered.length ? "partial" : "failed") : "sent");
+        // The invite exists either way; if Menuply couldn't deliver it, share the link instead.
+        if (missed.length) setShareOpen(true);
       }
     } catch (err) {
       setError(err?.message || "Could not create invitation");
@@ -854,9 +875,14 @@ export default function InviteToEatModal({
                 {created.message || selectedDraft || message.trim()}
               </div>
             ) : null}
-            {inAppStatus === "sent" ? (
+            {inAppStatus === "sent" || inAppStatus === "partial" ? (
               <div style={{ fontSize: 14, fontWeight: 700, color: "#166534" }} data-testid="invite-sent-in-app">
-                Sent to {sendInAppTo?.name} in Menuply.
+                {inAppSent.length === 1 ? `Sent to ${inAppSent[0].name} in Menuply.` : `Sent to ${inAppSent.length} Connects in Menuply.`}
+              </div>
+            ) : null}
+            {inAppStatus === "partial" ? (
+              <div style={{ fontSize: 13, color: "#b91c1c" }} role="alert" data-testid="invite-in-app-partial">
+                Some didn’t get it in Menuply. Share the link with them.
               </div>
             ) : inAppStatus === "failed" ? (
               <div style={{ fontSize: 13, color: "#b91c1c" }} role="alert" data-testid="invite-in-app-failed">

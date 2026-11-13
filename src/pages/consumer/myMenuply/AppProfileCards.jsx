@@ -34,6 +34,7 @@ import { useMyInviteCode } from "../../../hooks/useMyInviteCode.js";
 import { SETUP_MARKS_EVENT, markSetup, readSetupMarks } from "../../../lib/profileSetupMarks.js";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
+import { DISCOVER_LEVELS as LEVELS, discoverLevelOf } from "../../../lib/discoverLevels.js";
 
 // App tokens (menuply-mobile src/theme/tokens.ts).
 const C = {
@@ -363,21 +364,8 @@ export function AppSettings({ onDiscoverChange, onSignOut }) {
   );
 }
 
-const LEVELS = [
-  { value: "hidden", label: "Hidden", hint: "Nobody can find you, and you won’t see or discover anyone either. Your Connects stay connected." },
-  { value: "connects", label: "My Connects", hint: "Your Connects see your vibe in food search. (Default)" },
-  { value: "connects_of_connects", label: "Connects of Connects", hint: "Also their Connects (they see your first name only)." },
-  { value: "everyone", label: "Everyone", hint: "Anyone on Menuply searching food in your city sees your first name, photo and vibe." },
-];
-
 const EVERYONE_WARNING =
   "Everyone on Menuply near you will see your first name, photo and vibe in food search while your vibe is on. Don’t share your home address or plans you wouldn’t want strangers to know. You can switch back anytime.";
-
-function discoverLevelOf(profile) {
-  if (profile?.discoverability === "nobody") return "hidden";
-  if (profile?.search_vibe_audience === "everyone") return "everyone";
-  return profile?.search_vibe_audience === "connects_of_connects" ? "connects_of_connects" : "connects";
-}
 
 /**
  * How discoverable are you? Hidden · My Connects (default) · Connects of Connects · Everyone, with a
@@ -489,70 +477,6 @@ export function AppDiscoverabilityCard({ onChange, startOpen = false }) {
             </button>
           </div>
         </div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * "Your vibe": one line with Change, so Profile stays short; Change opens the website's vibe picker.
- * "Who sees your vibe" at the bottom opens How discoverable are you? (Andre 2026-11-02, app parity:
- * the setting had dropped off Profile; a link keeps the vibe box uncrowded).
- */
-export function AppVibeCard({ label, children, discover = null, onDiscover }) {
-  const [open, setOpen] = useState(false);
-  const [discoverOpen, setDiscoverOpen] = useState(false);
-  const [fetched, setFetched] = useState(null);
-  const [picked, setPicked] = useState(null);
-  useEffect(() => {
-    if (discover) return undefined;
-    let alive = true;
-    getConsumerProfile()
-      .then((data) => alive && setFetched(discoverLevelOf(data?.profile || {})))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [discover]);
-  const level = discover || picked || fetched;
-  const levelLabel = LEVELS.find((l) => l.value === level)?.label || "";
-  return (
-    <div style={{ ...st.card, background: C.accentSoft, border: "none" }} data-testid="vibe-card">
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 12, lineHeight: "16px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: C.accent }}>Your vibe</h2>
-          <p style={{ ...st.body, fontWeight: 600, fontSize: 15 }} data-testid="vibe-current">
-            {label}
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          style={{ ...styles.pillQuiet, borderColor: C.accent, color: C.accent, background: C.background }}
-          data-testid="vibe-change"
-        >
-          {open ? "Done" : "Change"}
-        </button>
-      </div>
-      {level === "hidden" ? (
-        <p style={{ ...st.muted, margin: 0 }} data-testid="vibe-hidden">
-          You’re Hidden: nobody sees your vibe in food search.
-        </p>
-      ) : null}
-      {open ? children : null}
-      <button type="button" aria-expanded={discoverOpen} onClick={() => setDiscoverOpen((v) => !v)} style={styles.whoSees} data-testid="vibe-who-sees">
-        <span style={{ flex: 1, textAlign: "left", color: C.muted }}>Who sees your vibe</span>
-        <span style={{ color: C.accent }}>{`${levelLabel} ${discoverOpen ? "⌃" : "›"}`}</span>
-      </button>
-      {discoverOpen ? (
-        <AppDiscoverabilityCard
-          startOpen
-          onChange={(l) => {
-            setPicked(l);
-            onDiscover?.(l);
-          }}
-        />
       ) : null}
     </div>
   );
