@@ -15,9 +15,9 @@
 set -euo pipefail
 
 HOST="${1:-https://menuply.com}"
-# Locked tip 2026-11-13: menubloc-frontend-joihsjylo-menuply.vercel.app / index-CKTT__Xp.js (FE 96de0a67;BE d1393f3e;Web Quick Invite checklist + Profile My Vibe (TODAY-011))
-LOCKED_BUNDLE="index-CKTT__Xp.js"
-LOCKED_DEPLOY="menubloc-frontend-joihsjylo-menuply.vercel.app"
+# Locked tip 2026-11-13: menubloc-frontend-eh9gl47cz-menuply.vercel.app / index-B3deAXhy.js (FE 417a9a2b;BE d1393f3e;Quick Invite: Invite someone who isn't a Connect? box + web sticky Today top)
+LOCKED_BUNDLE="index-B3deAXhy.js"
+LOCKED_DEPLOY="menubloc-frontend-eh9gl47cz-menuply.vercel.app"
 
 DEPLOYMENT="${TIP_GATE_DEPLOYMENT:-}"
 # fetch <path> <curl args…> — live host by default, a specific deployment in pre-promotion mode
