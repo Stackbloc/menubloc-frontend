@@ -22,6 +22,7 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
   const [fields, setFields] = useState(null);
   const [hours, setHours] = useState(null);
   const [hadHours, setHadHours] = useState(false);
+  const [todayTypes, setTodayTypes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +38,7 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
         setFields(res.fields);
         setHours(fullWeek(res.hours));
         setHadHours(res.hours.length > 0);
+        setTodayTypes(res.today_types || []);
       })
       .catch((err) => setError(err?.message || "Could not load this restaurant"));
   }
@@ -66,7 +68,9 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
     return out;
   }, [fields, loaded]);
   const hoursChanged = Boolean(hours && baseHours && hoursKey(hours) !== hoursKey(baseHours));
-  const dirty = Object.keys(changedFields).length > 0 || hoursChanged;
+  const typesKey = (list) => [...(list || [])].sort().join(",");
+  const typesChanged = Boolean(loaded && typesKey(todayTypes) !== typesKey(loaded.today_types));
+  const dirty = Object.keys(changedFields).length > 0 || hoursChanged || typesChanged;
 
   async function save(confirmClaimed = false) {
     setSaving(true);
@@ -78,6 +82,10 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
         body.hours = hoursForSave(hours);
         body.hours_before = loaded.hours;
       }
+      if (typesChanged) {
+        body.today_types = todayTypes.length ? todayTypes : null;
+        body.today_types_before = loaded.today_types || null;
+      }
       if (confirmClaimed) body.confirm_claimed = true;
       const res = await saveOwnerRestaurantEdit(id, body);
       setAskClaimed(false);
@@ -85,6 +93,7 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
       setFields(res.restaurant.fields);
       setHours(fullWeek(res.restaurant.hours));
       setHadHours(res.restaurant.hours.length > 0);
+      setTodayTypes(res.restaurant.today_types || []);
       setMessage(res.changed.length ? "Saved." : "Nothing changed.");
       if (res.changed.length) onSaved?.();
     } catch (err) {
@@ -102,6 +111,8 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
   };
 
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
+  // The grid row's type is Today's guess unless the owner set one.
+  const guess = restaurant.today_type && restaurant.today_type.source !== "owner" && restaurant.today_type.styles?.length ? restaurant.today_type.styles.join(", ") : "";
 
   return createPortal(
     <div role="dialog" aria-label={`Edit ${restaurant.restaurant_name}`} style={backdrop} onClick={onClose}>
@@ -132,6 +143,38 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
                   {cuisines.map((c) => <option key={c} value={c} />)}
                 </datalist>
               </Field>
+
+              {Array.isArray(loaded.today_type_options) ? (
+                <Field label="Kind of place on Today">
+                  <div style={{ ...muted, textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+                    {todayTypes.length
+                      ? "Today uses what you pick (up to 3). It only changes order, never hides a place."
+                      : `Automatic${guess ? `: Today guesses ${guess}` : ": Today guesses from the name and cuisine"}. Pick up to 3 to set it yourself.`}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
+                    {loaded.today_type_options.map((o) => {
+                      const on = todayTypes.includes(o.key);
+                      return (
+                        <label key={o.key} style={{ ...check, opacity: !on && todayTypes.length >= 3 ? 0.4 : 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            disabled={!on && todayTypes.length >= 3}
+                            onChange={(e) => {
+                              setMessage("");
+                              setTodayTypes((list) => (e.target.checked ? [...list, o.key] : list.filter((k) => k !== o.key)));
+                            }}
+                          />
+                          {o.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {todayTypes.length ? (
+                    <button type="button" style={{ ...linkBtn, justifySelf: "start" }} onClick={() => { setMessage(""); setTodayTypes([]); }}>Back to automatic</button>
+                  ) : null}
+                </Field>
+              ) : null}
 
               <Field label="Service">
                 <div style={{ display: "flex", gap: 16 }}>
@@ -176,7 +219,7 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
                     {saving ? "Saving…" : "Save"}
                   </button>
                   {dirty ? (
-                    <button type="button" style={linkBtn} onClick={() => { setFields(loaded.fields); setHours(fullWeek(loaded.hours)); }}>Undo changes</button>
+                    <button type="button" style={linkBtn} onClick={() => { setFields(loaded.fields); setHours(fullWeek(loaded.hours)); setTodayTypes(loaded.today_types || []); }}>Undo changes</button>
                   ) : null}
                 </>
               )}

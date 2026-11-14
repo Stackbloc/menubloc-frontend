@@ -335,7 +335,7 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
         <div>{r.cuisine || "—"}</div>
         <div style={muted}>
           {r.today_type.styles.length ? r.today_type.styles.join(", ") : "No type"}
-          {r.today_type.source ? ` · from ${String(r.today_type.source).replace(/_/g, " ")}` : ""}
+          {r.today_type.source === "owner" ? " · set by hand" : r.today_type.source ? ` · from ${String(r.today_type.source).replace(/_/g, " ")}` : ""}
         </div>
       </td>
       <td style={tdStyle}>
