@@ -4,6 +4,7 @@ import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from ".
 import { fiApi, SYSTEM_LABELS, SYSTEMS } from "../../../lib/ownerFoodIntelligenceApi.js";
 import RecordEditor, { AddRecordForm } from "./RecordEditor.jsx";
 import { MealtimeBrowse, MealtimeDraft, MealtimeRankingPreview } from "./MealtimeScreens.jsx";
+import { OntologyKeyContext, OntologyList } from "./OntologyExplorer.jsx";
 import {
   Banner, Btn, ConfirmDialog, DiffList, IssueList, Loading, SummaryLine, Tag,
   inputStyle, linkStyle, recordSub, recordTitle, useLoad, when,
@@ -119,7 +120,9 @@ function Browse() {
   const ov = useLoad(() => fiApi.overview(), [system]);
   const sys = ov.data?.systems?.find((s) => s.system === system);
   const rev = useLoad(() => (sys?.current ? fiApi.revision(system, sys.current.id) : Promise.resolve(null)), [system, sys?.current?.id]);
+  const ontStats = useLoad(() => (system === "food_ontology" ? fiApi.ontologyKeyStats().catch(() => ({ keys: {} })) : Promise.resolve(null)), [system]);
   if (!SYSTEMS.includes(system)) return <EmptyState>Unknown system.</EmptyState>;
+  const ontology = system === "food_ontology";
   const records = rev.data?.records || [];
   const sel = records.find((r) => r.key === selected);
   async function startDraft() {
@@ -147,14 +150,21 @@ function Browse() {
             <Btn kind="primary" onClick={startDraft} disabled={busy}>✎ Start a draft</Btn>
           </div>
           <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 16 }}>
-            <div>
-              <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search name, code or key" style={{ ...inputStyle, width: "100%", marginBottom: 8 }} aria-label="Search records" />
-              <RecordList system={system} records={records} selected={selected} onSelect={setSelected} filter={filter} />
-            </div>
+            {ontology ? (
+              <div>
+                <OntologyList records={records} selected={selected} onSelect={setSelected} stats={ontStats.data} />
+              </div>
+            ) : (
+              <div>
+                <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search name, code or key" style={{ ...inputStyle, width: "100%", marginBottom: 8 }} aria-label="Search records" />
+                <RecordList system={system} records={records} selected={selected} onSelect={setSelected} filter={filter} />
+              </div>
+            )}
             <PageCard style={{ padding: 18 }}>
               {sel ? (
                 <>
                   <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{recordTitle(system, sel.key, sel.record)}</div>
+                  {ontology && sel.kind === "key" ? <OntologyKeyContext record={sel.record} records={records} onSelect={setSelected} /> : null}
                   <RecordEditor system={system} recordKey={sel.key} record={sel.record} readOnly />
                 </>
               ) : <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>Pick a record to see it. To change anything, start a draft.</div>}

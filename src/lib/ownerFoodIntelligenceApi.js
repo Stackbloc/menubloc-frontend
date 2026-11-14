@@ -32,6 +32,9 @@ const q = (params) => {
 export const fiApi = {
   overview: () => call("GET", "/overview"),
   checks: () => call("GET", "/checks"),
+  // Food Ontology context (read-only): live Search/Similar/Compare use + mapped dishes.
+  ontologyKeyStats: () => call("GET", "/food_ontology/key-stats"),
+  ontologyKeyContext: (key) => call("GET", `/food_ontology/keys/${encodeURIComponent(key)}/context`),
   audit: (params = {}) => call("GET", `/audit${q(params)}`),
   saveBaseline: (system) => call("POST", `/${system}/baseline`),
   revisions: (system) => call("GET", `/${system}/revisions`),
