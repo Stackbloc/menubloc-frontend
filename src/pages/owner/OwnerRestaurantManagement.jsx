@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import OwnerTodayCheckPanel from "./OwnerTodayCheckPanel.jsx";
+import OwnerRestaurantEditPanel from "./OwnerRestaurantEditPanel.jsx";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerRestaurantMarkets,
@@ -50,6 +51,8 @@ export default function OwnerRestaurantManagement() {
   const [markets, setMarkets] = useState([]);
   const [clusters, setClusters] = useState([]);
   const [checking, setChecking] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     getOwnerRestaurantMarkets().then((r) => setMarkets(Array.isArray(r?.markets) ? r.markets : [])).catch(() => setMarkets([]));
@@ -79,7 +82,7 @@ export default function OwnerRestaurantManagement() {
     return () => {
       live = false;
     };
-  }, [params]);
+  }, [params, reloadKey]);
 
   const set = (key) => (e) => setFilters((f) => ({ ...f, [key]: e.target.value, page: 1 }));
   const { page, page_size: pageSize, total } = data.pagination;
@@ -176,7 +179,7 @@ export default function OwnerRestaurantManagement() {
               </thead>
               <tbody>
                 {data.restaurants.map((r) => (
-                  <Row key={r.restaurant_id} r={r} onCheck={() => setChecking(r)} />
+                  <Row key={r.restaurant_id} r={r} onCheck={() => setChecking(r)} onEdit={() => setEditing(r)} />
                 ))}
               </tbody>
             </table>
@@ -198,6 +201,7 @@ export default function OwnerRestaurantManagement() {
           </button>
         </div>
       </PageCard>
+      {editing ? <OwnerRestaurantEditPanel restaurant={editing} onClose={() => setEditing(null)} onSaved={() => setReloadKey((k) => k + 1)} /> : null}
       {checking ? <OwnerTodayCheckPanel restaurant={checking} clusters={clusters} onClose={() => setChecking(null)} /> : null}
     </OwnerLayout>
   );
@@ -212,7 +216,7 @@ function Field({ label, children }) {
   );
 }
 
-function Row({ r, onCheck }) {
+function Row({ r, onCheck, onEdit }) {
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
   const service = [r.service.dine_in && "Dine-in", r.service.pickup && "Pickup", r.service.delivery && "Delivery"].filter(Boolean);
   return (
@@ -222,6 +226,7 @@ function Row({ r, onCheck }) {
           {r.restaurant_name}
         </a>
         <div style={muted}>#{r.restaurant_id}{r.chain_name ? ` · ${r.chain_name}` : ""}</div>
+        <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onEdit}>Edit</button>
       </td>
       <td style={tdStyle}>
         <div>{[r.city, r.state].filter(Boolean).join(", ") || "—"}</div>

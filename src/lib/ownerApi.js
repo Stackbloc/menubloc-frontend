@@ -434,6 +434,11 @@ export const getOwnerRestaurantOperations = (params = {}) => {
   return get(`/api/owner/restaurants/operations${qs ? `?${qs}` : ""}`);
 };
 export const getOwnerRestaurantOperationClusters = () => get("/api/owner/restaurants/operations/clusters");
+// Restaurant Management single edit (plan 42 step 3): existing writers, one transaction, audited.
+export const getOwnerRestaurantEdit = (restaurantId) =>
+  get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/edit`);
+export const saveOwnerRestaurantEdit = (restaurantId, body) =>
+  patch(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}`, body);
 // Today check (plan 42 step 2): would Today suggest it to a diner at a point? Read-only.
 export const getOwnerRestaurantTodayCheck = (restaurantId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
