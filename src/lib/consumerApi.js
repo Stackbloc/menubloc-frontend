@@ -874,7 +874,11 @@ const browserTimeZone = () => {
 export const getAvailability = () => get("/api/consumer/profile/availability");
 /** { pause: "3h" | "today" | "week" | "month" | "forever" | "resume" } */
 export const setAvailability = (change) => put("/api/consumer/profile/availability", change);
-export const postHungryNow = () => post("/api/consumer/hungry", { when: "now", cravings: [] });
+/** "Hungry now for?" (Andre 2026-11-14): optional food; the server fixes misspellings. */
+export const postHungryNow = (food = null) =>
+  post("/api/consumer/hungry", { when: "now", cravings: [], ...(String(food || "").trim() ? { food: String(food).trim() } : {}) });
+/** Typing help for "Hungry now for?": { suggestions: [{ name, kind }] }, names only. */
+export const suggestHungryFor = (q) => get(`/api/consumer/hungry/suggest?${new URLSearchParams({ q }).toString()}`);
 export const clearHungryNow = () => del("/api/consumer/hungry");
 /** Up for breakfast | coffee | lunch | dinner | late; `date` YYYY-MM-DD, or null for today. */
 export const postUpFor = (window, date = null) =>

@@ -4,9 +4,11 @@
  * shown). Rows: Hungry now · Up for a meal or coffee (day + meal) · Eating at home (day + meal, then
  * Just me or who can ask, with a safety note first) · Pause. Active rows report "Open for X · Day",
  * each with Remove. Going to a restaurant is a plan, not a vibe: it lives on the Social Calendar.
+ * Hungry now asks "Hungry now for?" first (optional, Andre 2026-11-14): a food, a restaurant or a
+ * dish, with name suggestions while typing; the server fixes misspellings. Skip = plain Hungry now.
  * Plain text links only: no oval pills, no green pills, no full-width buttons (Andre 2026-11-06/12).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearHungryNow,
   clearUpFor,
@@ -18,6 +20,7 @@ import {
   postHungryNow,
   postUpFor,
   setAvailability,
+  suggestHungryFor,
 } from "../../../lib/consumerApi.js";
 import {
   atHomePlanBody,
@@ -56,7 +59,7 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
-  // One picker open at a time, inline under the rows: "upfor" | "home" | "pause" | null.
+  // One picker open at a time, inline under the rows: "hungry" | "upfor" | "home" | "pause" | null.
   const [panel, setPanel] = useState(null);
   const [day, setDay] = useState(0);
   const [homeMeal, setHomeMeal] = useState(null);
@@ -156,7 +159,7 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
           {active ? (
             <div data-testid="my-vibe-active">
               {state.hungry ? (
-                <Row label="Hungry now" color={C.hungry} testId="my-vibe-hungry" onRemove={() => run(() => clearHungryNow())} busy={busy} />
+                <Row label={state.hungryFor ? `Hungry now for ${state.hungryFor}` : "Hungry now"} color={C.hungry} testId="my-vibe-hungry" onRemove={() => run(() => clearHungryNow())} busy={busy} />
               ) : null}
               {state.upFor.map((u) => (
                 <Row
@@ -179,8 +182,9 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
 
           <div style={st.choices}>
             {!state.hungry ? (
-              <Choice label="Hungry now" action="Set ›" busy={busy} onClick={() => run(() => postHungryNow())} testId="my-vibe-set-hungry" />
+              <Choice label="Hungry now" action={panel === "hungry" ? "Close" : "Set ›"} busy={busy} onClick={() => (panel === "hungry" ? closePanel() : (closePanel(), setPanel("hungry")))} testId="my-vibe-set-hungry" />
             ) : null}
+            {panel === "hungry" && !state.hungry ? <HungryFor busy={busy} onSet={(food) => run(() => postHungryNow(food))} /> : null}
             <Choice label="Up for a meal or coffee" action={panel === "upfor" ? "Close" : "Pick ›"} busy={busy} onClick={() => (panel === "upfor" ? closePanel() : (closePanel(), setPanel("upfor")))} testId="my-vibe-set-upfor" />
             {panel === "upfor" ? (
               <div style={st.panel} data-testid="my-vibe-upfor-sheet">
@@ -285,6 +289,77 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
   );
 }
 
+/** "Hungry now for?" — optional; suggestions fill the box; Skip or Done. */
+function HungryFor({ busy, onSet }) {
+  const [food, setFood] = useState("");
+  const [picked, setPicked] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const asked = useRef(0);
+  const q = food.trim();
+  useEffect(() => {
+    if (q.length < 2 || q === picked) return undefined;
+    const n = ++asked.current;
+    const timer = setTimeout(() => {
+      suggestHungryFor(q)
+        .then((b) => n === asked.current && setMatches((Array.isArray(b?.suggestions) ? b.suggestions : []).filter((x) => typeof x?.name === "string" && x.name.trim())))
+        .catch(() => n === asked.current && setMatches([]));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [q, picked]);
+  const shown = q.length >= 2 && q !== picked ? matches.slice(0, 5) : [];
+  return (
+    <div style={st.panel} data-testid="hungry-for-sheet">
+      <p style={st.panelTitle}>Hungry now for?</p>
+      <p style={st.status}>Optional. A food, a restaurant or a dish.</p>
+      <input
+        value={food}
+        onChange={(e) => {
+          setFood(e.target.value);
+          setPicked(null);
+          if (e.target.value.trim().length < 2) setMatches([]);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSet(food);
+        }}
+        placeholder="Pizza, Thai, Chipotle…"
+        maxLength={40}
+        autoComplete="off"
+        autoFocus
+        aria-label="Hungry now for"
+        style={st.input}
+        data-testid="hungry-for-input"
+      />
+      {shown.length ? (
+        <div data-testid="hungry-for-suggestions">
+          {shown.map((m, i) => (
+            <button
+              key={`${m.kind}-${m.name}`}
+              type="button"
+              style={st.match}
+              onClick={() => {
+                setFood(m.name);
+                setPicked(m.name);
+                setMatches([]);
+              }}
+              data-testid={`hungry-for-suggestion-${i}`}
+            >
+              {m.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 40 }}>
+        <button type="button" style={st.quiet} disabled={busy} onClick={() => onSet(null)} data-testid="hungry-for-skip">
+          Skip
+        </button>
+        <button type="button" style={{ ...st.link, fontSize: 16, alignSelf: "center" }} disabled={busy} onClick={() => onSet(food)} data-testid="hungry-for-done">
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Row({ label, color = C.text, onRemove, busy, testId }) {
   return (
     <div style={st.row} data-testid={testId}>
@@ -357,5 +432,7 @@ const st = {
   link: { alignSelf: "flex-start", border: "none", background: "transparent", padding: 0, fontSize: 14, fontWeight: 700, color: C.accent, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
   quiet: { border: "none", background: "transparent", padding: "6px 0", fontSize: 14, fontWeight: 600, color: C.muted, cursor: "pointer", fontFamily: "inherit" },
   error: { margin: 0, fontSize: 14, color: C.danger },
+  input: { width: "100%", boxSizing: "border-box", minHeight: 44, padding: "0 12px", fontSize: 16, fontFamily: "inherit", color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, margin: "6px 0" },
+  match: { display: "block", width: "100%", minHeight: 40, padding: 0, border: "none", borderTop: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 16, color: C.text, textAlign: "left" },
   who: { display: "flex", alignItems: "center", gap: 8, minHeight: 36, padding: "8px 0 0", border: "none", borderTop: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 600 },
 };

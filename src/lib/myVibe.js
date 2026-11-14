@@ -30,6 +30,8 @@ export function parseAvailability(body) {
     pausedUntil: text(a.paused_until),
     pausedForever: a.paused_forever === true,
     hungry: a.hungry === true,
+    // "Hungry now for Pizza" (Andre 2026-11-14): the food I gave, if any.
+    hungryFor: a.hungry === true ? text(a.hungry_for) : null,
     upFor: (Array.isArray(a.up_for) ? a.up_for : []).flatMap((u) => {
       const date = text(u?.date);
       const w = UP_FOR_KEYS.find((m) => m === u?.window);

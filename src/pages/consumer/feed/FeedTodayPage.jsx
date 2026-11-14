@@ -363,6 +363,12 @@ export default function FeedTodayPage() {
     setShowMore(false);
   };
   const pickWindow = (k) => {
+    // Re-tapping the meal that's on: keep its list (clearing data with no new fetch left "Loading…").
+    if (k === windowKey) {
+      setChip(null);
+      resetPicks();
+      return;
+    }
     setChosen(k);
     setChip(null);
     resetPicks();

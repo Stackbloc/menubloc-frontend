@@ -15,6 +15,7 @@ const api = vi.hoisted(() => ({
   getAvailability: vi.fn(),
   setAvailability: vi.fn(async () => ({})),
   postHungryNow: vi.fn(async () => ({})),
+  suggestHungryFor: vi.fn(async () => ({ suggestions: [] })),
   clearHungryNow: vi.fn(async () => ({})),
   postUpFor: vi.fn(async () => ({})),
   clearUpFor: vi.fn(async () => ({})),
@@ -70,6 +71,31 @@ describe("MyVibeCard", () => {
     await waitFor(() => expect(api.deleteSocialPlan).toHaveBeenCalledWith("eating_plan", "5"));
   });
 
+  it("Hungry now asks what for (optional): Skip sets plain Hungry now", async () => {
+    render(<MyVibeCard discover="connects" />);
+    fireEvent.click(await screen.findByTestId("my-vibe-set-hungry"));
+    expect(screen.getByText("Hungry now for?")).toBeTruthy();
+    expect(api.postHungryNow).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("hungry-for-skip"));
+    await waitFor(() => expect(api.postHungryNow).toHaveBeenCalledWith(null));
+  });
+
+  it("Hungry now for: suggestions fill the box; Done sends it; the row says what for", async () => {
+    api.suggestHungryFor.mockResolvedValue({ suggestions: [{ name: "Pizza", kind: "food" }, { name: "Pizza Hut", kind: "restaurant" }] });
+    render(<MyVibeCard discover="connects" />);
+    fireEvent.click(await screen.findByTestId("my-vibe-set-hungry"));
+    fireEvent.change(screen.getByTestId("hungry-for-input"), { target: { value: "piz" } });
+    expect((await screen.findByTestId("hungry-for-suggestion-1")).textContent).toBe("Pizza Hut");
+    expect(api.suggestHungryFor).toHaveBeenCalledWith("piz");
+    fireEvent.click(screen.getByTestId("hungry-for-suggestion-0"));
+    expect(screen.getByTestId("hungry-for-input").value).toBe("Pizza");
+    expect(screen.queryByTestId("hungry-for-suggestions")).toBeNull();
+    api.getAvailability.mockResolvedValue(avail({ hungry: true, hungry_for: "Pizza" }));
+    fireEvent.click(screen.getByTestId("hungry-for-done"));
+    await waitFor(() => expect(api.postHungryNow).toHaveBeenCalledWith("Pizza"));
+    expect((await screen.findByTestId("my-vibe-hungry")).textContent).toMatch(/^Hungry now for Pizza/);
+  });
+
   it("Up for: day + meal (coffee allowed)", async () => {
     render(<MyVibeCard discover="connects" />);
     fireEvent.click(await screen.findByTestId("my-vibe-set-upfor"));
@@ -97,10 +123,12 @@ describe("MyVibeCard", () => {
     );
   });
 
-  it("Hungry now sets in one tap; Pause offers the five lengths; paused shows Turn back on", async () => {
+  it("Hungry now (Skip what for); Pause offers the five lengths; paused shows Turn back on", async () => {
     render(<MyVibeCard discover="connects" />);
     fireEvent.click(await screen.findByTestId("my-vibe-set-hungry"));
+    fireEvent.click(screen.getByTestId("hungry-for-skip"));
     await waitFor(() => expect(api.postHungryNow).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByTestId("hungry-for-sheet")).toBeNull());
     fireEvent.click(screen.getByTestId("availability-pause"));
     api.getAvailability.mockResolvedValue({ availability: { available: false, paused_forever: true, hungry: false, up_for: [] } });
     fireEvent.click(screen.getByTestId("availability-pause-forever"));
