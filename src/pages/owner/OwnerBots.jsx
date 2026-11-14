@@ -55,6 +55,12 @@ const ON_DEMAND_BOTS = [
     path: "/owner/bots/agent",
     blurb: "Pick a cluster, a spot on the map, or a whole county or state; it finds the restaurants there and captures their menus and/or profiles.",
   },
+  {
+    key: "cluster_check",
+    name: "Cluster Check",
+    path: "/owner/bots/cluster-check",
+    blurb: "Checks every restaurant in a cluster for missing info, fills in a website or cuisine when it's sure, and starts Hours Bot, Address Bot and Menubot for the rest.",
+  },
 ];
 
 const mutedStyle = { color: OWNER_COLORS.muted, fontSize: 13 };

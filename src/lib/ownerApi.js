@@ -452,6 +452,11 @@ export const getOwnerRestaurantTodayCheck = (restaurantId, params = {}) => {
   return get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/today-check${qs ? `?${qs}` : ""}`);
 };
 export const getOwnerRestaurantCuisines = () => get("/api/owner/restaurants/cuisines");
+// Cluster Check (plan 42 step 6): Owner → Bots.
+export const getOwnerClusterCheck = () => get("/api/owner/cluster-check");
+export const startOwnerClusterCheck = (body) => post("/api/owner/cluster-check/run", body);
+export const getOwnerClusterCheckRun = (runId) => get(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}`);
+export const undoOwnerClusterCheck = (runId) => post(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}/undo`, {});
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
 export const getOwnerRestaurantProfileStyle = (restaurantId) =>

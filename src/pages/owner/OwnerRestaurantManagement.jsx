@@ -322,8 +322,9 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
       <td style={tdStyle}>
         <a href={r.public_url} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink, textDecoration: "none" }}>
           {r.restaurant_name}
-        </a>
-        <div style={muted}>#{r.restaurant_id}{r.chain_name ? ` · ${r.chain_name}` : ""}</div>
+        </a>{" "}
+        <span style={{ fontWeight: 600, color: OWNER_COLORS.ink, whiteSpace: "nowrap" }}>#{r.restaurant_id}</span>
+        {r.chain_name ? <div style={muted}>{r.chain_name}</div> : null}
         <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onEdit}>Edit</button>
       </td>
       <td style={tdStyle}>

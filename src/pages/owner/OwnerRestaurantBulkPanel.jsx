@@ -243,7 +243,7 @@ export default function OwnerRestaurantBulkPanel({ selection, count, onClose, on
               <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
                 {preview.sample.map((s) => (
                   <div key={s.restaurant_id} style={{ fontSize: 12 }}>
-                    <b>{s.restaurant_name}</b>
+                    <b>{s.restaurant_name}</b> #{s.restaurant_id}
                     {Object.keys(s.after).map((k) => (
                       <div key={k} style={muted}>
                         {LABEL[k] || k}: {show(k, s.before[k])} → {show(k, s.after[k])}
