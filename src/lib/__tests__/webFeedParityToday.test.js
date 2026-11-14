@@ -2,7 +2,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { appendUniqueFeedRows } from "../feedRepeatVideos.js";
-import { currentWindowKey, mealTabs, parseToday, todayQuery } from "../todayHome.js";
+import { currentWindowKey, mealTabs, parseOpen, parseToday, splitConnects, todayQuery } from "../todayHome.js";
 import { resolveFeedTabs } from "../feedShellLinks.js";
 
 test("Feed skips a clip whose video file is already loaded; sponsored clips repeat on purpose", () => {
@@ -61,4 +61,30 @@ test("Today reads For you / Newly added / Sponsored like the app (2026-11-13); o
     ],
   });
   assert.deepEqual(t.more.map((p) => [p.reason.tag, p.sponsorshipId]), [["sponsored", 501], ["for_you", null], ["newly_added", null]]);
+});
+
+test("Today Connects (Andre 2026-11-14): box = up to 3 Hungry; the Connects chip holds the rest; asked plans don't count", () => {
+  const hungry = (id) => ({ user_id: id, name: `H${id}`, vibe: "hungry", label: "Hungry now" });
+  const open = parseOpen({
+    plans: [
+      { ref: "777", people: ["Riley"], place_name: "Pho House", time: "12:15", action: "ask" },
+      { ref: "778", people: ["Jo"], place_name: "Taco Spot", time: "12:30", action: "asked" },
+      { ref: "88", people: ["Sam"], place_name: "Somewhere", at_home: true, time: "18:30", action: "join" },
+    ],
+    people: [hungry(1), hungry(2), hungry(3), hungry(4)],
+    up_for: [{ user_id: 9, name: "Leo", label: "Open for coffee · Sat", window: "coffee" }],
+  });
+  // Eating at home: never the place, always Ask to join.
+  assert.deepEqual([open.plans[2].placeName, open.plans[2].atHome, open.plans[2].action], ["Home", true, "ask"]);
+  assert.equal(open.upFor[0].window, "coffee");
+  const split = splitConnects(open, new Set());
+  assert.deepEqual(split.hungry.map((p) => p.userId), [1, 2, 3]);
+  assert.deepEqual(split.people.map((p) => p.userId), [4]);
+  assert.deepEqual(split.plans.map((p) => p.ref), ["777", "778"]);
+  assert.deepEqual(split.home.map((p) => p.ref), ["88"]);
+  // 777 + 88 + H4 + Leo; 778 is already asked.
+  assert.equal(split.count, 4);
+  assert.equal(splitConnects(open, new Set(["777"])).count, 3);
+  const none = splitConnects(parseOpen({ plans: [], people: [] }));
+  assert.deepEqual([none.count, none.any, none.hungry.length], [0, false, 0]);
 });

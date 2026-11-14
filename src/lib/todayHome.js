@@ -188,6 +188,8 @@ function parsePerson(p, vibe) {
     label: text(p.label) ?? (vibe === "up_for" ? "Up for it" : "Open"),
     both: p.both === true,
     bothLike: blId && blName ? { restaurantId: blId, name: blName } : null,
+    // Up for coffee rows (mig 0430): Invite asks for coffee, not the tab's meal.
+    window: text(p.window),
   };
 }
 
@@ -197,9 +199,11 @@ export function parseOpen(r) {
     .map((p) => {
       const ref = text(p?.ref);
       const action = text(p?.action);
-      const placeName = text(p?.place_name);
+      // Eating at home (mig 0427): Ask to join only; the place is never shown.
+      const atHome = p?.at_home === true;
+      const placeName = atHome ? "Home" : text(p?.place_name);
       if (!ref || !placeName || !ACTIONS.has(action)) return null;
-      return { source: text(p.source) ?? "eating_plan", ref, people: strings(p.people), peopleCount: num(p.people_count) ?? 0, avatarUrl: text(p.avatar_url), placeName, time: text(p.time), action };
+      return { source: text(p.source) ?? "eating_plan", ref, people: strings(p.people), peopleCount: num(p.people_count) ?? 0, avatarUrl: text(p.avatar_url), placeName, atHome, time: text(p.time), action: atHome && action === "join" ? "ask" : action };
     })
     .filter(Boolean);
   return {
@@ -207,6 +211,27 @@ export function parseOpen(r) {
     people: (Array.isArray(r.people) ? r.people : []).map((p) => parsePerson(p, null)).filter(Boolean),
     upFor: (Array.isArray(r.up_for) ? r.up_for : []).map((p) => parsePerson(p, "up_for")).filter(Boolean),
   };
+}
+
+/** Hungry now rows the Your Connects box shows; the rest go to the Connects chip. */
+export const BOX_HUNGRY = 3;
+
+/**
+ * Today Connects (Andre 2026-11-14, same as the app's splitConnects): the box shows Hungry now (up
+ * to 3); the Connects chip lists plans, Up for, other open signals, extra Hungry, then Eating at
+ * home. `count` = things still to do in the chip (plans I asked to join don't count).
+ */
+export function splitConnects(open, asked = new Set()) {
+  const all = open?.people ?? [];
+  const hungryAll = all.filter((p) => p.vibe === "hungry");
+  const hungry = hungryAll.slice(0, BOX_HUNGRY);
+  const people = [...all.filter((p) => p.vibe !== "hungry"), ...hungryAll.slice(BOX_HUNGRY)];
+  const upFor = open?.upFor ?? [];
+  const plans = (open?.plans ?? []).filter((p) => !p.atHome);
+  const home = (open?.plans ?? []).filter((p) => p.atHome);
+  const todo = (p) => p.action !== "asked" && !asked.has(p.ref);
+  const count = plans.filter(todo).length + home.filter(todo).length + people.length + upFor.length;
+  return { hungry, plans, people, upFor, home, count, any: plans.length + home.length + people.length + upFor.length > 0 };
 }
 
 export function parseToday(b) {
