@@ -434,6 +434,11 @@ export const getOwnerRestaurantOperations = (params = {}) => {
   return get(`/api/owner/restaurants/operations${qs ? `?${qs}` : ""}`);
 };
 export const getOwnerRestaurantOperationClusters = () => get("/api/owner/restaurants/operations/clusters");
+// Today check (plan 42 step 2): would Today suggest it to a diner at a point? Read-only.
+export const getOwnerRestaurantTodayCheck = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/today-check${qs ? `?${qs}` : ""}`);
+};
 export const getOwnerRestaurantCuisines = () => get("/api/owner/restaurants/cuisines");
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);

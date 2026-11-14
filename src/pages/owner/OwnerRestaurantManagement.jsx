@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import OwnerTodayCheckPanel from "./OwnerTodayCheckPanel.jsx";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerRestaurantMarkets,
@@ -48,6 +49,7 @@ export default function OwnerRestaurantManagement() {
   const [error, setError] = useState("");
   const [markets, setMarkets] = useState([]);
   const [clusters, setClusters] = useState([]);
+  const [checking, setChecking] = useState(null);
 
   useEffect(() => {
     getOwnerRestaurantMarkets().then((r) => setMarkets(Array.isArray(r?.markets) ? r.markets : [])).catch(() => setMarkets([]));
@@ -174,7 +176,7 @@ export default function OwnerRestaurantManagement() {
               </thead>
               <tbody>
                 {data.restaurants.map((r) => (
-                  <Row key={r.restaurant_id} r={r} />
+                  <Row key={r.restaurant_id} r={r} onCheck={() => setChecking(r)} />
                 ))}
               </tbody>
             </table>
@@ -196,6 +198,7 @@ export default function OwnerRestaurantManagement() {
           </button>
         </div>
       </PageCard>
+      {checking ? <OwnerTodayCheckPanel restaurant={checking} clusters={clusters} onClose={() => setChecking(null)} /> : null}
     </OwnerLayout>
   );
 }
@@ -209,7 +212,7 @@ function Field({ label, children }) {
   );
 }
 
-function Row({ r }) {
+function Row({ r, onCheck }) {
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
   const service = [r.service.dine_in && "Dine-in", r.service.pickup && "Pickup", r.service.delivery && "Delivery"].filter(Boolean);
   return (
@@ -251,6 +254,9 @@ function Row({ r }) {
         ) : (
           <span style={{ color: "#9f3a22" }}>{r.today_basics.blockers.map((b) => BLOCKER_LABEL[b] || b).join(", ") || "Not shown"}</span>
         )}
+        <div>
+          <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onCheck}>Check Today</button>
+        </div>
       </td>
       <td style={tdStyle}>
         {r.missing.length ? <span style={{ color: "#9f3a22" }}>{r.missing.map((m) => MISSING_LABEL[m] || m).join(", ")}</span> : "—"}
