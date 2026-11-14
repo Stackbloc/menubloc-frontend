@@ -19,6 +19,7 @@ import {
   leaveSocialPlan,
 } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { upForWord } from "../../../lib/myVibe.js";
 import { restaurantMenuPath } from "../../../lib/canonicalUrlCore.js";
 import { feedHeaderLocationLabel } from "../../../components/consumer/feed/FeedMobileHeader.jsx";
 import { FEED_PRIMARY_NAV_HEIGHT } from "../../../components/consumer/feed/FeedPrimaryNav.jsx";
@@ -96,7 +97,7 @@ function PersonRow({ p, meal, onInvite, onPerson, kind }) {
         <span style={s.rowText}>
           <span style={s.rowName}>{p.name}</span>
           <span style={{ ...s.rowLine, ...(p.vibe === "hungry" ? s.rowHungry : null) }}>
-            {p.both ? `You’re both open for ${p.window === "coffee" ? "coffee" : mealWord}` : p.label}
+            {p.both ? `You’re both open for ${p.window === "coffee" || p.window === "happy_hour" ? upForWord(p.window) : mealWord}` : p.label}
           </span>
           {p.both && p.bothLike ? <span style={s.rowLine}>You both like {p.bothLike.name}</span> : null}
         </span>
@@ -297,6 +298,7 @@ export default function FeedTodayPage() {
   const [now, setNow] = useState(() => new Date());
   const [chosen, setChosen] = useState(null);
   const [day, setDay] = useState(null);
+  const jumpRef = useRef(false);
   const [days, setDays] = useState([]);
   const [chip, setChip] = useState(null);
   // The Connects chip (Andre 2026-11-14): left of All; Connects' plans and people, no food.
@@ -348,6 +350,13 @@ export default function FeedTodayPage() {
     fetchToday(windowKey, where, chip, day)
       .then((d) => {
         if (!alive) return;
+        // A dotted later day opens on the meal with something on (Andre 2026-11-14), once per day tap.
+        const jump = jumpRef.current ? d.social?.activeWindows ?? null : null;
+        jumpRef.current = false;
+        if (jump?.length && !jump.includes(windowKey)) {
+          setChosen(jump[0]);
+          return;
+        }
         setData(d);
         if (d.days.length) setDays(d.days);
         setError(null);
@@ -379,6 +388,7 @@ export default function FeedTodayPage() {
     const next = index === 0 ? null : d;
     if (next === day) return;
     setDay(next);
+    jumpRef.current = index !== 0;
     if (index === 0) setChosen(null);
     setChip(null);
     resetPicks();
@@ -502,7 +512,7 @@ export default function FeedTodayPage() {
   const connectsView = connectsOn && split.any;
   const inviteConnect = (p) => {
     logTodayEvent("invite", windowKey, day, { targetUserId: p.userId });
-    navigate(quickInvitePath({ code: p.window === "coffee" ? "LHC" : MEAL_INVITE[meal.key], to: p }));
+    navigate(quickInvitePath({ code: p.window === "coffee" ? "LHC" : p.window === "happy_hour" ? "LGD" : MEAL_INVITE[meal.key], to: p }));
   };
   const openConnect = (p) => navigate(personPath(p.userId));
   const quickInvite = () => {

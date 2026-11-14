@@ -8,8 +8,13 @@
 export const MEAL_KEYS = ["breakfast", "lunch", "dinner", "late"];
 export const MEAL_NAMES = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", late: "Late night" };
 /** "Up for" takes coffee next to the four meals (Andre 2026-11-13, mig 0430); others see "Open for coffee". */
-export const UP_FOR_KEYS = ["breakfast", "coffee", "lunch", "dinner", "late"];
-export const UP_FOR_NAMES = { ...MEAL_NAMES, coffee: "Coffee" };
+/** And Happy Hour 🍸 (Andre 2026-11-14, mig 0436): a vibe, shown to Connects on the Dinner tab. */
+export const UP_FOR_KEYS = ["breakfast", "coffee", "lunch", "happy_hour", "dinner", "late"];
+export const UP_FOR_NAMES = { ...MEAL_NAMES, coffee: "Coffee", happy_hour: "Happy Hour 🍸" };
+/** "coffee", "dinner", "Happy Hour 🍸" — in a sentence ("Open for …"). */
+export function upForWord(k) {
+  return k === "happy_hour" ? "Happy Hour 🍸" : String(UP_FOR_NAMES[k] ?? k ?? "").toLowerCase();
+}
 
 export const PAUSE_CHOICES = [
   { key: "3h", label: "3 hours" },
@@ -67,7 +72,7 @@ export function dayLabel(date, now) {
 
 /** The active row: "Open for lunch · Today" (set with "Up for", report with "Open for"). */
 export function upForLine(u, now) {
-  return `Open for ${UP_FOR_NAMES[u.window].toLowerCase()} · ${dayLabel(u.date, now)}`;
+  return `Open for ${upForWord(u.window)} · ${dayLabel(u.date, now)}`;
 }
 
 /** "7:30 PM" for "19:30:00". */

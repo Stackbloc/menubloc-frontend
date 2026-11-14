@@ -46,7 +46,7 @@ describe("MyVibeCard", () => {
     expect(screen.getByText("My Vibe")).toBeTruthy();
     expect(await screen.findByTestId("my-vibe-none")).toBeTruthy();
     expect(screen.getByTestId("my-vibe-set-hungry").textContent).toMatch(/Hungry now/);
-    expect(screen.getByTestId("my-vibe-set-upfor").textContent).toMatch(/Up for a meal or coffee/);
+    expect(screen.getByTestId("my-vibe-set-upfor").textContent).toMatch(/Up for a meal, coffee or Happy Hour 🍸/);
     expect(screen.getByTestId("my-vibe-set-home").textContent).toMatch(/Eating at home/);
     expect(screen.getByTestId("availability-pause").textContent).toMatch(/Pause/);
     expect(document.body.textContent).not.toMatch(/Me time|Not sure today|Availability/);
@@ -94,6 +94,17 @@ describe("MyVibeCard", () => {
     fireEvent.click(screen.getByTestId("hungry-for-done"));
     await waitFor(() => expect(api.postHungryNow).toHaveBeenCalledWith("Pizza"));
     expect((await screen.findByTestId("my-vibe-hungry")).textContent).toMatch(/^Hungry now for Pizza/);
+  });
+
+  it("Up for Happy Hour 🍸 (mig 0436): picked like a meal; the row says Open for Happy Hour 🍸", async () => {
+    render(<MyVibeCard discover="connects" />);
+    fireEvent.click(await screen.findByTestId("my-vibe-set-upfor"));
+    expect(screen.getByTestId("my-vibe-meal-happy_hour").textContent).toMatch(/^Happy Hour 🍸/);
+    api.getAvailability.mockResolvedValue(avail({ up_for: [{ date: tomorrow, window: "happy_hour" }] }));
+    fireEvent.click(screen.getByTestId("my-vibe-day-1"));
+    fireEvent.click(screen.getByTestId("my-vibe-meal-happy_hour"));
+    await waitFor(() => expect(api.postUpFor).toHaveBeenCalledWith("happy_hour", tomorrow));
+    expect((await screen.findByTestId(`my-vibe-upfor-${tomorrow}-happy_hour`)).textContent).toMatch(/^Open for Happy Hour 🍸 · Tomorrow/);
   });
 
   it("Up for: day + meal (coffee allowed)", async () => {

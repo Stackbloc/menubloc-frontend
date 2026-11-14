@@ -185,12 +185,12 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
               <Choice label="Hungry now" action={panel === "hungry" ? "Close" : "Set ›"} busy={busy} onClick={() => (panel === "hungry" ? closePanel() : (closePanel(), setPanel("hungry")))} testId="my-vibe-set-hungry" />
             ) : null}
             {panel === "hungry" && !state.hungry ? <HungryFor busy={busy} onSet={(food) => run(() => postHungryNow(food))} /> : null}
-            <Choice label="Up for a meal or coffee" action={panel === "upfor" ? "Close" : "Pick ›"} busy={busy} onClick={() => (panel === "upfor" ? closePanel() : (closePanel(), setPanel("upfor")))} testId="my-vibe-set-upfor" />
+            <Choice label="Up for a meal, coffee or Happy Hour 🍸" action={panel === "upfor" ? "Close" : "Pick ›"} busy={busy} onClick={() => (panel === "upfor" ? closePanel() : (closePanel(), setPanel("upfor")))} testId="my-vibe-set-upfor" />
             {panel === "upfor" ? (
               <div style={st.panel} data-testid="my-vibe-upfor-sheet">
                 <p style={st.panelTitle}>Up for what?</p>
                 <DayStrip days={days} now={now} value={day} onChange={setDay} testPrefix="my-vibe-day" />
-                {/* The four meals plus coffee (Andre 2026-11-13, mig 0430). */}
+                {/* The four meals plus coffee (mig 0430) and Happy Hour 🍸 (mig 0436). */}
                 {UP_FOR_KEYS.map((m) => (
                   <Choice key={m} label={UP_FOR_NAMES[m]} action="›" busy={busy} onClick={() => run(() => postUpFor(m, day === 0 ? null : days[day]))} testId={`my-vibe-meal-${m}`} />
                 ))}

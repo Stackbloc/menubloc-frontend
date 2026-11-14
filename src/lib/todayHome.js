@@ -188,7 +188,7 @@ function parsePerson(p, vibe) {
     label: text(p.label) ?? (vibe === "up_for" ? "Up for it" : "Open"),
     both: p.both === true,
     bothLike: blId && blName ? { restaurantId: blId, name: blName } : null,
-    // Up for coffee rows (mig 0430): Invite asks for coffee, not the tab's meal.
+    // Up for coffee (mig 0430) / Happy Hour (mig 0436) rows: Invite asks for coffee / drinks, not the tab's meal.
     window: text(p.window),
   };
 }
@@ -249,7 +249,14 @@ export function parseToday(b) {
       return date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? { date, hasPlans: d.has_plans === true } : null;
     })
     .filter(Boolean);
-  const social = body.social && typeof body.social === "object" ? { open: parseOpen(body.social.open) } : null;
+  const social =
+    body.social && typeof body.social === "object"
+      ? {
+          open: parseOpen(body.social.open),
+          // A picked later day: meal tabs with something on, so a dotted day opens there (2026-11-14).
+          activeWindows: Array.isArray(body.social.active_windows) ? body.social.active_windows.filter((k) => KEYS.has(k)) : null,
+        }
+      : null;
   return {
     window: key,
     date: text(body.date),

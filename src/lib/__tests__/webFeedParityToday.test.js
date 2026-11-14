@@ -88,3 +88,9 @@ test("Today Connects (Andre 2026-11-14): box = up to 3 Hungry; the Connects chip
   const none = splitConnects(parseOpen({ plans: [], people: [] }));
   assert.deepEqual([none.count, none.any, none.hungry.length], [0, false, 0]);
 });
+
+test("reads active_windows for a picked day (a dotted day opens where the activity is, 2026-11-14)", () => {
+  const base = { window: { key: "lunch" }, picks: [], more: [] };
+  assert.deepEqual(parseToday({ ...base, social: { open: null, active_windows: ["dinner", "brunch"] } }).social.activeWindows, ["dinner"]);
+  assert.equal(parseToday({ ...base, social: { open: null } }).social.activeWindows, null);
+});
