@@ -439,6 +439,13 @@ export const getOwnerRestaurantEdit = (restaurantId) =>
   get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/edit`);
 export const saveOwnerRestaurantEdit = (restaurantId, body) =>
   patch(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}`, body);
+// Restaurant Management bulk edits (plan 42 step 4): preview → apply (one transaction) → undo.
+export const getOwnerRestaurantBulkOps = () => get("/api/owner/restaurants/operations/bulk");
+export const previewOwnerRestaurantBulk = (body) => post("/api/owner/restaurants/operations/bulk/preview", body);
+export const applyOwnerRestaurantBulk = (opId) =>
+  post(`/api/owner/restaurants/operations/bulk/${encodeURIComponent(opId)}/apply`, {});
+export const undoOwnerRestaurantBulk = (opId) =>
+  post(`/api/owner/restaurants/operations/bulk/${encodeURIComponent(opId)}/undo`, {});
 // Today check (plan 42 step 2): would Today suggest it to a diner at a point? Read-only.
 export const getOwnerRestaurantTodayCheck = (restaurantId, params = {}) => {
   const qs = new URLSearchParams(params).toString();

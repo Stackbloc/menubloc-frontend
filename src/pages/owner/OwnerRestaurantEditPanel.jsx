@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { OWNER_COLORS } from "./OwnerLayout.jsx";
 import { getOwnerRestaurantCuisines, getOwnerRestaurantEdit, saveOwnerRestaurantEdit } from "../../lib/ownerApi.js";
-import { WEEK_ORDER, isOpen24, setOpen24 } from "../../lib/weeklyHours.js";
+import OwnerHoursWeek, { fullWeek, hoursForSave, hoursKey } from "./OwnerHoursWeek.jsx";
 
 /**
  * Owner → Restaurant Management → Edit (plan 42 step 3). One restaurant.
@@ -10,23 +10,11 @@ import { WEEK_ORDER, isOpen24, setOpen24 } from "../../lib/weeklyHours.js";
  * Claimed restaurants ask for a second tap; a stale editor is told to reload.
  */
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SERVICE = [
   ["dine_in", "Dine-in"],
   ["pickup", "Pickup"],
   ["delivery", "Delivery"],
 ];
-
-function fullWeek(rows) {
-  const byDay = new Map((rows || []).map((r) => [Number(r.day_of_week), r]));
-  return Array.from({ length: 7 }, (_, d) => {
-    const r = byDay.get(d);
-    if (!r) return { day_of_week: d, opens_at: "09:00", closes_at: "21:00", is_closed: true, label: null };
-    return { day_of_week: d, opens_at: r.opens_at || "09:00", closes_at: r.closes_at || "21:00", is_closed: r.is_closed === true, label: r.label || null };
-  });
-}
-const hoursKey = (rows) =>
-  rows.map((r) => (r.is_closed ? `${r.day_of_week}:closed` : `${r.day_of_week}:${r.opens_at}-${r.closes_at}:${r.label || ""}`)).join("|");
 
 export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved }) {
   const id = restaurant.restaurant_id;
@@ -87,7 +75,7 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
     try {
       const body = { fields: changedFields, before: loaded.fields };
       if (hoursChanged) {
-        body.hours = hours.map((d) => ({ ...d, opens_at: d.is_closed ? null : d.opens_at, closes_at: d.is_closed ? null : d.closes_at }));
+        body.hours = hoursForSave(hours);
         body.hours_before = loaded.hours;
       }
       if (confirmClaimed) body.confirm_claimed = true;
@@ -112,14 +100,6 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
     setMessage("");
     setFields((f) => ({ ...f, [k]: v }));
   };
-  const setDay = (d, row) => {
-    setMessage("");
-    setHours((h) => h.map((x) => (x.day_of_week === d ? row : x)));
-  };
-  function copyMondayToWeekdays() {
-    const mon = hours.find((x) => x.day_of_week === 1);
-    setHours((h) => h.map((x) => ([2, 3, 4, 5].includes(x.day_of_week) ? { ...mon, day_of_week: x.day_of_week } : x)));
-  }
 
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
 
@@ -173,30 +153,13 @@ export default function OwnerRestaurantEditPanel({ restaurant, onClose, onSaved 
 
               <Field label="Hours">
                 {!hadHours ? <div style={{ ...muted, textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>No hours on file yet.</div> : null}
-                <div style={{ display: "grid", gap: 6 }}>
-                  {WEEK_ORDER.map((d) => {
-                    const day = hours.find((x) => x.day_of_week === d);
-                    const allDay = isOpen24(day);
-                    return (
-                      <div key={d} style={{ display: "grid", gridTemplateColumns: "84px 62px 72px 1fr 1fr", gap: 6, alignItems: "center", textTransform: "none", letterSpacing: 0 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: OWNER_COLORS.ink }}>{DAY_NAMES[d]}</span>
-                        <label style={check}>
-                          <input type="checkbox" checked={!day.is_closed} onChange={(e) => setDay(d, { ...day, is_closed: !e.target.checked })} />
-                          Open
-                        </label>
-                        <label style={{ ...check, opacity: day.is_closed ? 0.4 : 1 }}>
-                          <input type="checkbox" disabled={day.is_closed} checked={allDay} onChange={(e) => setDay(d, setOpen24(day, e.target.checked))} />
-                          24 hrs
-                        </label>
-                        <input type="time" style={input} disabled={day.is_closed || allDay} value={day.opens_at} onChange={(e) => setDay(d, { ...day, opens_at: e.target.value })} />
-                        <input type="time" style={input} disabled={day.is_closed || allDay} value={day.closes_at} onChange={(e) => setDay(d, { ...day, closes_at: e.target.value })} />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div>
-                  <button type="button" style={{ ...linkBtn, fontSize: 12 }} onClick={copyMondayToWeekdays}>Copy Monday to Tue–Fri</button>
-                </div>
+                <OwnerHoursWeek
+                  hours={hours}
+                  onChange={(next) => {
+                    setMessage("");
+                    setHours(next);
+                  }}
+                />
               </Field>
             </div>
 

@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import OwnerTodayCheckPanel from "./OwnerTodayCheckPanel.jsx";
 import OwnerRestaurantEditPanel from "./OwnerRestaurantEditPanel.jsx";
+import OwnerRestaurantBulkPanel, { OwnerRestaurantBulkHistory } from "./OwnerRestaurantBulkPanel.jsx";
+
+const MAX_BULK = 300; // server cap per bulk edit (ownerRestaurantBulkService.MAX_BULK)
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerRestaurantMarkets,
@@ -53,6 +56,11 @@ export default function OwnerRestaurantManagement() {
   const [checking, setChecking] = useState(null);
   const [editing, setEditing] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Bulk selection: picked ids (kept across pages) or "all matching this filter".
+  const [picked, setPicked] = useState(() => new Set());
+  const [allMatching, setAllMatching] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     getOwnerRestaurantMarkets().then((r) => setMarkets(Array.isArray(r?.markets) ? r.markets : [])).catch(() => setMarkets([]));
@@ -84,8 +92,50 @@ export default function OwnerRestaurantManagement() {
     };
   }, [params, reloadKey]);
 
+  // The filter without paging/sort: what "all matching" means. Changing it clears the selection.
+  const filterOnly = useMemo(() => {
+    const out = { ...params };
+    delete out.page;
+    delete out.page_size;
+    delete out.sort;
+    return out;
+  }, [params]);
+  const filterKey = JSON.stringify(filterOnly);
+  useEffect(() => {
+    setPicked(new Set());
+    setAllMatching(false);
+  }, [filterKey]);
+
   const set = (key) => (e) => setFilters((f) => ({ ...f, [key]: e.target.value, page: 1 }));
   const { page, page_size: pageSize, total } = data.pagination;
+  const pageIds = data.restaurants.map((r) => r.restaurant_id);
+  const pageAllPicked = pageIds.length > 0 && pageIds.every((id) => picked.has(id));
+  const selectedCount = allMatching ? total : picked.size;
+  const togglePick = (id) => {
+    setAllMatching(false);
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const togglePage = () => {
+    setAllMatching(false);
+    setPicked((prev) => {
+      const next = new Set(prev);
+      for (const id of pageIds) {
+        if (pageAllPicked) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  };
+  const clearPicked = () => {
+    setPicked(new Set());
+    setAllMatching(false);
+  };
+  const bulkSelection = allMatching ? { filter: filterOnly, expected_total: total } : { ids: [...picked] };
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total ? (page - 1) * pageSize + 1 : 0;
   const to = Math.min(total, page * pageSize);
@@ -165,6 +215,29 @@ export default function OwnerRestaurantManagement() {
           subtitle={loading ? "Loading…" : `${total.toLocaleString()} match${total === 1 ? "" : "es"}${total ? ` · showing ${from}–${to}` : ""}`}
         />
         {error ? <div style={{ color: "#9f3a22", fontSize: 13, marginBottom: 12 }}>{error}</div> : null}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", minHeight: 22, marginBottom: 10, fontSize: 13 }}>
+          {selectedCount ? (
+            <>
+              <b>{allMatching ? `All ${total.toLocaleString()} matching selected` : `${picked.size.toLocaleString()} selected`}</b>
+              {selectedCount > MAX_BULK ? (
+                <span style={{ color: "#9f3a22" }}>Bulk edits take up to {MAX_BULK}. Unselect some.</span>
+              ) : (
+                <button type="button" style={linkBtnStyle} onClick={() => setBulkOpen(true)}>Bulk edit</button>
+              )}
+              <button type="button" style={linkBtnStyle} onClick={clearPicked}>Clear</button>
+              {pageAllPicked && !allMatching && total > picked.size ? (
+                total <= MAX_BULK ? (
+                  <button type="button" style={linkBtnStyle} onClick={() => setAllMatching(true)}>Select all {total.toLocaleString()} matching</button>
+                ) : (
+                  <span style={{ color: OWNER_COLORS.muted }}>{total.toLocaleString()} match: narrow the filter to {MAX_BULK} or fewer to select them all.</span>
+                )
+              ) : null}
+            </>
+          ) : (
+            <span style={{ color: OWNER_COLORS.muted }}>Tick restaurants to edit several at once.</span>
+          )}
+          <button type="button" style={{ ...linkBtnStyle, marginLeft: "auto" }} onClick={() => setHistoryOpen(true)}>Recent bulk edits</button>
+        </div>
         {!loading && !data.restaurants.length ? (
           <EmptyState>No restaurants match these filters.</EmptyState>
         ) : (
@@ -172,6 +245,9 @@ export default function OwnerRestaurantManagement() {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1180 }}>
               <thead>
                 <tr>
+                  <th style={{ ...thStyle, width: 28 }}>
+                    <input type="checkbox" aria-label="Select this page" checked={pageAllPicked || allMatching} onChange={togglePage} disabled={allMatching} />
+                  </th>
                   {["Restaurant", "Where", "Cuisine · Today type", "Hours", "Service", "Dishes", "Status", "Today basics", "Missing", "Last checked"].map((l) => (
                     <th key={l} style={thStyle}>{l}</th>
                   ))}
@@ -179,7 +255,15 @@ export default function OwnerRestaurantManagement() {
               </thead>
               <tbody>
                 {data.restaurants.map((r) => (
-                  <Row key={r.restaurant_id} r={r} onCheck={() => setChecking(r)} onEdit={() => setEditing(r)} />
+                  <Row
+                    key={r.restaurant_id}
+                    r={r}
+                    picked={allMatching || picked.has(r.restaurant_id)}
+                    pickDisabled={allMatching}
+                    onPick={() => togglePick(r.restaurant_id)}
+                    onCheck={() => setChecking(r)}
+                    onEdit={() => setEditing(r)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -202,6 +286,17 @@ export default function OwnerRestaurantManagement() {
         </div>
       </PageCard>
       {editing ? <OwnerRestaurantEditPanel restaurant={editing} onClose={() => setEditing(null)} onSaved={() => setReloadKey((k) => k + 1)} /> : null}
+      {bulkOpen ? (
+        <OwnerRestaurantBulkPanel
+          selection={bulkSelection}
+          count={selectedCount}
+          onClose={() => setBulkOpen(false)}
+          onApplied={() => setReloadKey((k) => k + 1)}
+        />
+      ) : null}
+      {historyOpen ? (
+        <OwnerRestaurantBulkHistory onClose={() => setHistoryOpen(false)} onChanged={() => setReloadKey((k) => k + 1)} />
+      ) : null}
       {checking ? <OwnerTodayCheckPanel restaurant={checking} clusters={clusters} onClose={() => setChecking(null)} /> : null}
     </OwnerLayout>
   );
@@ -216,11 +311,14 @@ function Field({ label, children }) {
   );
 }
 
-function Row({ r, onCheck, onEdit }) {
+function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
   const service = [r.service.dine_in && "Dine-in", r.service.pickup && "Pickup", r.service.delivery && "Delivery"].filter(Boolean);
   return (
     <tr>
+      <td style={{ ...tdStyle, width: 28 }}>
+        <input type="checkbox" aria-label={`Select ${r.restaurant_name}`} checked={picked} disabled={pickDisabled} onChange={onPick} />
+      </td>
       <td style={tdStyle}>
         <a href={r.public_url} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink, textDecoration: "none" }}>
           {r.restaurant_name}
