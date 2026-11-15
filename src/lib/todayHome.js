@@ -213,27 +213,6 @@ export function parseOpen(r) {
   };
 }
 
-/** Hungry now rows the Your Connects box shows; the rest go to the Connects chip. */
-export const BOX_HUNGRY = 3;
-
-/**
- * Today Connects (Andre 2026-11-14, same as the app's splitConnects): the box shows Hungry now (up
- * to 3); the Connects chip lists plans, Up for, other open signals, extra Hungry, then Eating at
- * home. `count` = things still to do in the chip (plans I asked to join don't count).
- */
-export function splitConnects(open, asked = new Set()) {
-  const all = open?.people ?? [];
-  const hungryAll = all.filter((p) => p.vibe === "hungry");
-  const hungry = hungryAll.slice(0, BOX_HUNGRY);
-  const people = [...all.filter((p) => p.vibe !== "hungry"), ...hungryAll.slice(BOX_HUNGRY)];
-  const upFor = open?.upFor ?? [];
-  const plans = (open?.plans ?? []).filter((p) => !p.atHome);
-  const home = (open?.plans ?? []).filter((p) => p.atHome);
-  const todo = (p) => p.action !== "asked" && !asked.has(p.ref);
-  const count = plans.filter(todo).length + home.filter(todo).length + people.length + upFor.length;
-  return { hungry, plans, people, upFor, home, count, any: plans.length + home.length + people.length + upFor.length > 0 };
-}
-
 export function parseToday(b) {
   const body = b ?? {};
   const key = text(body.window?.key);

@@ -2,7 +2,7 @@
  * The app's icons (menuply-mobile src/components/icons/MenuplyIcon.tsx), same drawings, so menuply.com
  * and the app look like one product. Names: wishList, fav, invite, share, menu, more, home, deals,
  * search, basket, profile, pin, chevronDown, camera, check, arrowRight, food tiles (taco, pizza, burger,
- * salad, bowl, coffee, sushi, drumstick, cupcake, egg, boba, sandwich), fork, comment, upload…
+ * salad, bowl, coffee, sushi, drumstick, cupcake, egg, boba, sandwich), fork, comment, upload, join, ask, clock, bolt…
  */
 export default function AppIcon({ name, size = 18, color = "currentColor", filled = false, strokeWidth = 2, style = null }) {
   const stroke = { stroke: color, strokeWidth, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -145,6 +145,27 @@ export default function AppIcon({ name, size = 18, color = "currentColor", fille
           <path d="M16 3.13a4 4 0 0 1 0 7.75" {...stroke} />
         </>
       ) : null}
+      {/* Today Connects actions (Andre 2026-11-14), same drawings as the app. Join: a person with a +. */}
+      {name === 'join' ? (
+        <>
+          <circle cx="9" cy="7" r="4" {...stroke} />
+          <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M19 8v6M16 11h6" {...stroke} />
+        </>
+      ) : null}
+      {/* Ask to join: a chat bubble with a ? (a raised hand read as "caution"). */}
+      {name === 'ask' ? (
+        <>
+          <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" {...stroke} />
+          <path d="M10 8.6a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.4M12 14h.01" {...stroke} />
+        </>
+      ) : null}
+      {name === 'clock' ? (
+        <>
+          <circle cx="12" cy="12" r="9" {...stroke} />
+          <path d="M12 7v5l3 2" {...stroke} />
+        </>
+      ) : null}
+      {name === 'bolt' ? <path d="M13 3 4 14h7l-1 7 9-11h-7l1-7Z" {...stroke} /> : null}
       {/* Share: the solid arrow bending right from the "Eating is Social" ad (Andre, 2026-10-25). */}
       {name === 'share' ? <path d="M14 9V5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11Z" fill={color} /> : null}
       {name === 'menu' ? (

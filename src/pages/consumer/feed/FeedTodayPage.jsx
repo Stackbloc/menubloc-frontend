@@ -43,7 +43,6 @@ import {
   timeLabel,
   todayErrorMessage,
   trackTodaySponsorship,
-  splitConnects,
 } from "../../../lib/todayHome.js";
 
 const C = {
@@ -83,10 +82,32 @@ function Avatar({ url, name, size = 36 }) {
 }
 
 /**
- * Today Connects (Andre 2026-11-14, same as the app): on any one screen each person or plan faces
- * you once. ConnectsBox = "Your Connects": Hungry now (up to 3, Invite), then a plain count line,
- * then Quick Invite. The Connects chip (left of All) lists the rest via ConnectsList.
+ * Your Connects (Andre 2026-11-14, second take, same as the app): every Connect is in the box at the
+ * top (no Connects chip): Hungry now, Up for, Going, Eating at home, then Quick Invite. Only my
+ * Connects — no line about me. Actions are an icon over a small word, as on the Feed: Invite (two
+ * people), Join (person +), Ask (chat bubble ?), Asked (clock), Quick Invite (bolt).
  */
+function RowAction({ icon, word, color, onClick, disabled, label, testID }) {
+  const body = (
+    <>
+      <AppIcon name={icon} size={22} color={color} />
+      <span style={s.actionWord}>{word}</span>
+    </>
+  );
+  if (!onClick) {
+    return (
+      <span style={{ ...s.action, color }} aria-label={label ?? word} data-testid={testID}>
+        {body}
+      </span>
+    );
+  }
+  return (
+    <button type="button" style={{ ...s.action, ...s.plainBtn, color }} onClick={onClick} disabled={disabled} aria-label={label ?? word} data-testid={testID}>
+      {body}
+    </button>
+  );
+}
+
 function PersonRow({ p, meal, onInvite, onPerson, kind }) {
   const mealWord = meal.key === "late" ? "late night" : meal.label.toLowerCase();
   const id = kind === "upfor" ? `today-open-upfor-${p.userId}` : `today-open-person-${p.userId}`;
@@ -102,77 +123,65 @@ function PersonRow({ p, meal, onInvite, onPerson, kind }) {
           {p.both && p.bothLike ? <span style={s.rowLine}>You both like {p.bothLike.name}</span> : null}
         </span>
       </button>
-      <button type="button" style={{ ...s.textBtn, color: meal.color }} onClick={() => onInvite(p)} data-testid={`${id}-invite`}>
-        Invite
-      </button>
+      <RowAction icon="invite" word="Invite" color={meal.color} onClick={() => onInvite(p)} label={`Invite ${p.name}`} testID={`${id}-invite`} />
     </div>
   );
 }
 
-function ConnectsBox({ split, meal, onInvite, onPerson, onQuickInvite }) {
-  const empty = !split.hungry.length && !split.any;
+function PlanRow({ p, meal, waiting, busy, disabled, onAsk, onPlanStatus }) {
+  const who = namesText(p.people);
+  return (
+    <div style={s.row} data-testid={`today-open-plan-${p.ref}`}>
+      <button type="button" style={s.rowPerson} onClick={() => onPlanStatus(p)} aria-label={`${who}. See who's going`}>
+        <Avatar url={p.avatarUrl} name={p.people[0] ?? "A Connect"} />
+        <span style={s.rowText}>
+          <span style={s.rowName}>{who}</span>
+          <span style={s.rowLine} data-testid={`today-open-plan-line-${p.ref}`}>
+            {[p.atHome ? "Eating at home" : `Going to ${p.placeName}`, timeLabel(p.time)].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+      </button>
+      {busy ? (
+        <span style={{ ...s.action, ...s.meta }}>…</span>
+      ) : waiting ? (
+        <RowAction icon="clock" word="Asked" color={C.muted} label={`Asked · waiting on ${p.people[0] ?? "them"}`} testID={`today-open-asked-${p.ref}`} />
+      ) : p.action === "join" ? (
+        <RowAction icon="join" word="Join" color={meal.color} onClick={() => onAsk(p)} disabled={disabled} label={`Join ${who}`} testID={`today-open-ask-${p.ref}`} />
+      ) : (
+        <RowAction icon="ask" word="Ask" color={meal.color} onClick={() => onAsk(p)} disabled={disabled} label={`Ask to join ${who}`} testID={`today-open-ask-${p.ref}`} />
+      )}
+    </div>
+  );
+}
+
+function ConnectsBox({ open, meal, asked, busyRef, onAsk, onPlanStatus, onInvite, onPerson, onQuickInvite }) {
+  const hungry = open.people.filter((p) => p.vibe === "hungry");
+  const others = open.people.filter((p) => p.vibe !== "hungry");
+  const going = open.plans.filter((p) => !p.atHome);
+  const home = open.plans.filter((p) => p.atHome);
+  const empty = !open.people.length && !open.upFor.length && !open.plans.length;
+  const plan = (p) => (
+    <PlanRow key={p.ref} p={p} meal={meal} waiting={p.action === "asked" || asked.has(p.ref)} busy={busyRef === p.ref} disabled={busyRef != null} onAsk={onAsk} onPlanStatus={onPlanStatus} />
+  );
   return (
     <section style={{ ...s.panel, background: meal.soft }} data-testid="today-open" aria-label="Your Connects">
       <h2 style={{ ...s.panelTitle, color: meal.color }}>Your Connects</h2>
-      {split.hungry.map((p) => (
+      {hungry.map((p) => (
         <PersonRow key={p.userId} p={p} meal={meal} onInvite={onInvite} onPerson={onPerson} kind="person" />
       ))}
-      {split.count ? (
-        <p style={s.countLine} data-testid="today-connects-count">
-          {split.count} {split.hungry.length ? "more " : ""}to join or invite
-        </p>
-      ) : null}
+      {others.map((p) => (
+        <PersonRow key={p.userId} p={p} meal={meal} onInvite={onInvite} onPerson={onPerson} kind="person" />
+      ))}
+      {open.upFor.map((p) => (
+        <PersonRow key={`up-${p.userId}`} p={p} meal={meal} onInvite={onInvite} onPerson={onPerson} kind="upfor" />
+      ))}
+      {going.map(plan)}
+      {home.map(plan)}
       {empty ? <p style={{ ...s.rowLine, margin: 0 }} data-testid="today-open-empty">No pending activities</p> : null}
-      <button type="button" style={{ ...s.textBtn, ...s.leftBtn, color: meal.color }} onClick={onQuickInvite} data-testid="today-quick-invite">
-        Quick Invite ›
+      <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onQuickInvite} data-testid="today-quick-invite">
+        <AppIcon name="bolt" size={18} color={meal.color} /> Quick Invite ›
       </button>
     </section>
-  );
-}
-
-function ConnectsList({ split, meal, asked, busyRef, onAsk, onPlanStatus, onInvite, onPerson, onQuickInvite }) {
-  const planCard = (p) => {
-    const waiting = p.action === "asked" || asked.has(p.ref);
-    return (
-      <div key={p.ref} style={{ ...s.card, borderColor: meal.color, borderWidth: 2 }} data-testid={`today-connects-plan-${p.ref}`}>
-        <button type="button" style={{ ...s.place, ...s.plainBtn }} onClick={() => onPlanStatus(p)}>
-          {p.atHome ? `Join ${namesText(p.people)} at home?` : `Join ${namesText(p.people)}?`}
-        </button>
-        <span style={s.meta}>{[p.atHome ? "Eating at home" : `at ${p.placeName}`, timeLabel(p.time)].filter(Boolean).join(" · ")}</span>
-        <div style={s.actions}>
-          <button type="button" style={{ ...s.textBtn, color: meal.color }} onClick={() => onPlanStatus(p)} data-testid={`today-connects-status-${p.ref}`}>
-            Status
-          </button>
-          {busyRef === p.ref ? <span style={s.meta}>One moment…</span> : null}
-          {waiting ? (
-            <span style={s.waiting} data-testid={`today-connects-asked-${p.ref}`}>Asked · waiting on {p.people[0] ?? "them"}</span>
-          ) : (
-            <button type="button" style={s.goingPill} onClick={() => onAsk(p)} disabled={busyRef != null} data-testid={`today-connects-join-${p.ref}`}>
-              {p.action === "join" ? "Join" : "Ask to join"}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-  return (
-    <div style={s.connectsList} data-testid="today-connects-list">
-      {split.plans.map(planCard)}
-      {split.upFor.length || split.people.length ? (
-        <div style={{ ...s.card, gap: 0 }}>
-          {split.upFor.map((p) => (
-            <PersonRow key={`up-${p.userId}`} p={p} meal={meal} onInvite={onInvite} onPerson={onPerson} kind="upfor" />
-          ))}
-          {split.people.map((p) => (
-            <PersonRow key={p.userId} p={p} meal={meal} onInvite={onInvite} onPerson={onPerson} kind="person" />
-          ))}
-        </div>
-      ) : null}
-      {split.home.map(planCard)}
-      <button type="button" style={{ ...s.textBtn, alignSelf: "center", color: meal.color }} onClick={onQuickInvite} data-testid="today-connects-quick-invite">
-        Quick Invite ›
-      </button>
-    </div>
   );
 }
 
@@ -302,7 +311,6 @@ export default function FeedTodayPage() {
   const [days, setDays] = useState([]);
   const [chip, setChip] = useState(null);
   // The Connects chip (Andre 2026-11-14): left of All; Connects' plans and people, no food.
-  const [connectsOn, setConnectsOn] = useState(false);
   const [joining, setJoining] = useState(null);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -396,7 +404,7 @@ export default function FeedTodayPage() {
     setData(null);
   };
   const pickChip = (c) => {
-    setConnectsOn(false);
+    
     setChip((cur) => (cur?.key === c.key && cur.kind === c.kind ? null : { key: c.key, kind: c.kind }));
     resetPicks();
   };
@@ -507,9 +515,9 @@ export default function FeedTodayPage() {
     ? `Your ${cuisineLabel ? `${cuisineLabel} ` : ""}${mealWord} plan${carry}`
     : `${cuisineLabel ? `${cuisineLabel} ideas` : "Ideas"} for ${mealWord}${carry}`;
   const top = shown[0] ?? null;
-  // One source for the box, the Connects chip and its count (Andre 2026-11-14).
-  const split = splitConnects(social?.open ?? null, asked);
-  const connectsView = connectsOn && split.any;
+  // Each plan faces you once (Andre 2026-11-14): a Connect's plan already shown as an idea card stays out of the box.
+  const ideaPlans = new Set((social && plan ? [] : shown).flatMap((p) => (p.plan ? [`${p.plan.source}:${p.plan.ref}`] : [])));
+  const boxOpen = social?.open ? { ...social.open, plans: social.open.plans.filter((p) => !ideaPlans.has(`${p.source}:${p.ref}`)) } : null;
   const inviteConnect = (p) => {
     logTodayEvent("invite", windowKey, day, { targetUserId: p.userId });
     navigate(quickInvitePath({ code: p.window === "coffee" ? "LHC" : p.window === "happy_hour" ? "LGD" : MEAL_INVITE[meal.key], to: p }));
@@ -579,35 +587,9 @@ export default function FeedTodayPage() {
         </div>
         </div>
 
-        {social?.open ? <ConnectsBox split={split} meal={meal} onInvite={inviteConnect} onPerson={openConnect} onQuickInvite={quickInvite} /> : null}
-
-        <h1 style={s.heading} data-testid="today-ideas-title">{heading}</h1>
-
-        {data?.cravings.length || split.any ? (
-          <div style={s.chips}>
-            {/* Connects first, left of All; no count (the box has it); hidden with nothing to show (Andre 2026-11-14). */}
-            {split.any ? (
-              <button type="button" aria-pressed={connectsView} onClick={() => setConnectsOn(true)} style={{ ...s.chip, ...(connectsView ? s.chipOn : null) }} data-testid="today-craving-connects">
-                Connects
-              </button>
-            ) : null}
-            <button type="button" aria-pressed={chip == null && !connectsView} onClick={() => { setConnectsOn(false); setChip(null); resetPicks(); }} style={{ ...s.chip, ...(chip == null && !connectsView ? s.chipOn : null) }} data-testid="today-craving-all">
-              All
-            </button>
-            {(data?.cravings ?? []).map((c) => {
-              const sel = !connectsView && chip?.key === c.key && chip.kind === c.kind;
-              return (
-                <button key={`${c.kind}-${c.key}`} type="button" aria-pressed={sel} onClick={() => pickChip(c)} style={{ ...s.chip, ...(sel ? s.chipOn : null) }} data-testid={`today-craving-${c.key}`}>
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {connectsView ? (
-          <ConnectsList
-            split={split}
+        {boxOpen ? (
+          <ConnectsBox
+            open={boxOpen}
             meal={meal}
             asked={asked}
             busyRef={joining}
@@ -618,8 +600,27 @@ export default function FeedTodayPage() {
             onQuickInvite={quickInvite}
           />
         ) : null}
+
+        <h1 style={s.heading} data-testid="today-ideas-title">{heading}</h1>
+
+        {data?.cravings.length ? (
+          <div style={s.chips}>
+            <button type="button" aria-pressed={chip == null} onClick={() => { setChip(null); resetPicks(); }} style={{ ...s.chip, ...(chip == null ? s.chipOn : null) }} data-testid="today-craving-all">
+              All
+            </button>
+            {(data?.cravings ?? []).map((c) => {
+              const sel = chip?.key === c.key && chip.kind === c.kind;
+              return (
+                <button key={`${c.kind}-${c.key}`} type="button" aria-pressed={sel} onClick={() => pickChip(c)} style={{ ...s.chip, ...(sel ? s.chipOn : null) }} data-testid={`today-craving-${c.key}`}>
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         {!data && !error ? <p style={s.meta}>Loading…</p> : null}
-        {data && !connectsView && !shown.length ? (
+        {data && !shown.length ? (
           <div style={s.empty} data-testid="today-empty">
             <p style={{ ...s.body, margin: 0 }}>
               {data.hasSaves
@@ -631,9 +632,9 @@ export default function FeedTodayPage() {
           </div>
         ) : null}
 
-        {social && plan && !connectsView ? <PlanCard plan={plan} meal={meal} busy={leaving} onCantMakeIt={() => void cantMakeIt(plan)} /> : null}
+        {social && plan ? <PlanCard plan={plan} meal={meal} busy={leaving} onCantMakeIt={() => void cantMakeIt(plan)} /> : null}
 
-        {(connectsView || (social && plan) ? [] : shown).map((p, i) => {
+        {(social && plan ? [] : shown).map((p, i) => {
           const isPlan = i === 0 && !plan;
           const chosenHere = plan?.restaurantId === p.restaurant.id;
           const friends = social && isPlan && p.plan ? p.plan : null;
@@ -714,17 +715,17 @@ export default function FeedTodayPage() {
             </div>
           );
         })}
-        {!connectsView && !showMore && left.length > 3 ? (
+        {!showMore && left.length > 3 ? (
           <button type="button" style={{ ...s.textBtn, ...s.leftBtn, color: C.accent }} onClick={() => setShowMore(true)} data-testid="today-show-more">
             Show {Math.min(5, left.length - 3)} more
           </button>
         ) : null}
         {/* The list ran out: Search, with its icon (Andre 2026-11-13). */}
-        {!connectsView && shown.length && (showMore || left.length <= 3) ? <SearchLink testID="today-search-more" /> : null}
+        {shown.length && (showMore || left.length <= 3) ? <SearchLink testID="today-search-more" /> : null}
         {error ? <p role="alert" style={{ ...s.meta, color: C.danger }} data-testid="today-error">{error}</p> : null}
       </div>
 
-      {plan || (top && !connectsView && !(social && top.plan)) ? (
+      {plan || (top && !(social && top.plan)) ? (
         <div style={{ ...s.status, bottom: `calc(${bottomGap}px + env(safe-area-inset-bottom, 0px))`, ...(plan ? { background: meal.soft } : null) }} data-testid={plan ? "today-status-planned" : "today-status-ask"}>
           <div style={s.statusInner}>
             {plan ? (
@@ -821,8 +822,6 @@ const s = {
   searchLink: { display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, color: C.accent, fontWeight: 700, fontSize: 15, textDecoration: "none" },
   window: { flex: 1, minHeight: 40, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   panel: { borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 8 },
-  countLine: { margin: 0, fontSize: 15, color: C.ink },
-  connectsList: { display: "flex", flexDirection: "column", gap: 12 },
   plainBtn: { background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", fontFamily: "inherit" },
   panelTitle: { margin: 0, fontSize: 15, fontWeight: 700 },
   row: { display: "flex", alignItems: "center", gap: 12, minHeight: 48 },
@@ -834,9 +833,11 @@ const s = {
   avatar: { borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
   avatarEmpty: { display: "inline-flex", alignItems: "center", justifyContent: "center", background: C.border, color: C.muted, fontWeight: 700, fontSize: 14 },
   textBtn: { minHeight: 44, minWidth: 44, border: "none", background: "transparent", padding: "0 8px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
+  action: { minWidth: 48, minHeight: 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, cursor: "pointer" },
+  actionWord: { fontSize: 11, lineHeight: "14px", fontWeight: 600 },
+  iconBtn: { display: "flex", alignItems: "center", gap: 4 },
   leftBtn: { alignSelf: "flex-start", padding: 0, textAlign: "left" },
   quiet: { fontSize: 13, fontWeight: 500, color: C.muted },
-  waiting: { fontSize: 13, color: C.muted, fontWeight: 600 },
   heading: { margin: "4px 0 0", fontSize: 20, lineHeight: "26px", fontWeight: 700, color: C.ink },
   chips: { display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" },
   // Neutral chips; selected = dark (no green pills, Andre 2026-11-06).

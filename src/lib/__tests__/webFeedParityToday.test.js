@@ -2,7 +2,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { appendUniqueFeedRows } from "../feedRepeatVideos.js";
-import { currentWindowKey, mealTabs, parseOpen, parseToday, splitConnects, todayQuery } from "../todayHome.js";
+import { currentWindowKey, mealTabs, parseOpen, parseToday, todayQuery } from "../todayHome.js";
 import { resolveFeedTabs } from "../feedShellLinks.js";
 
 test("Feed skips a clip whose video file is already loaded; sponsored clips repeat on purpose", () => {
@@ -77,16 +77,8 @@ test("Today Connects (Andre 2026-11-14): box = up to 3 Hungry; the Connects chip
   // Eating at home: never the place, always Ask to join.
   assert.deepEqual([open.plans[2].placeName, open.plans[2].atHome, open.plans[2].action], ["Home", true, "ask"]);
   assert.equal(open.upFor[0].window, "coffee");
-  const split = splitConnects(open, new Set());
-  assert.deepEqual(split.hungry.map((p) => p.userId), [1, 2, 3]);
-  assert.deepEqual(split.people.map((p) => p.userId), [4]);
-  assert.deepEqual(split.plans.map((p) => p.ref), ["777", "778"]);
-  assert.deepEqual(split.home.map((p) => p.ref), ["88"]);
-  // 777 + 88 + H4 + Leo; 778 is already asked.
-  assert.equal(split.count, 4);
-  assert.equal(splitConnects(open, new Set(["777"])).count, 3);
-  const none = splitConnects(parseOpen({ plans: [], people: [] }));
-  assert.deepEqual([none.count, none.any, none.hungry.length], [0, false, 0]);
+  assert.deepEqual(open.plans.map((p) => p.ref), ["777", "778", "88"]);
+  assert.equal(open.people.length, 4);
 });
 
 test("reads active_windows for a picked day (a dotted day opens where the activity is, 2026-11-14)", () => {
