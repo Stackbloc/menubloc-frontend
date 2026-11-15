@@ -471,6 +471,20 @@ export const getOwnerRestaurantTodayCheck = (restaurantId, params = {}) => {
   return get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/today-check${qs ? `?${qs}` : ""}`);
 };
 export const getOwnerRestaurantCuisines = () => get("/api/owner/restaurants/cuisines");
+// Right now meal searches (plan 43): rules with versions/undo, pins & hides, Check meal search.
+const MEAL_TIME = "/api/owner/search/meal-time";
+export const getOwnerMealTimeRules = () => get(`${MEAL_TIME}/rules`);
+export const saveOwnerMealTimeRules = (body) => put(`${MEAL_TIME}/rules`, body);
+export const getOwnerMealTimeHistory = () => get(`${MEAL_TIME}/history`);
+export const restoreOwnerMealTimeRules = (version, basedOn) =>
+  post(`${MEAL_TIME}/rules/restore/${encodeURIComponent(version)}`, { based_on: basedOn });
+export const getOwnerMealTimeOverrides = () => get(`${MEAL_TIME}/overrides`);
+export const addOwnerMealTimeOverride = (body) => post(`${MEAL_TIME}/overrides`, body);
+export const removeOwnerMealTimeOverride = (id) => del(`${MEAL_TIME}/overrides/${encodeURIComponent(id)}`);
+export const putBackOwnerMealTimeOverride = (id) => post(`${MEAL_TIME}/overrides/${encodeURIComponent(id)}/put-back`, {});
+export const getOwnerMealTimeDishes = (restaurantId, q = "") =>
+  get(`${MEAL_TIME}/restaurants/${encodeURIComponent(restaurantId)}/dishes${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+export const checkOwnerMealTimeSearch = (params = {}) => get(`${MEAL_TIME}/check?${new URLSearchParams(params).toString()}`);
 // Cluster Check (plan 42 step 6): Owner → Bots.
 export const getOwnerClusterCheck = () => get("/api/owner/cluster-check");
 export const startOwnerClusterCheck = (body) => post("/api/owner/cluster-check/run", body);

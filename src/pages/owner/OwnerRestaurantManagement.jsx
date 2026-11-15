@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import OwnerTodayCheckPanel from "./OwnerTodayCheckPanel.jsx";
 import OwnerRestaurantEditPanel from "./OwnerRestaurantEditPanel.jsx";
 import OwnerRestaurantBulkPanel, { OwnerRestaurantBulkHistory } from "./OwnerRestaurantBulkPanel.jsx";
@@ -360,6 +361,14 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
         )}
         <div>
           <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onCheck}>Check Today</button>
+        </div>
+        <div>
+          <Link
+            to={`/owner/search/meal-time?tab=check&restaurant_id=${encodeURIComponent(r.restaurant_id)}&name=${encodeURIComponent(r.restaurant_name || "")}`}
+            style={{ ...linkBtnStyle, fontSize: 12, textDecoration: "none" }}
+          >
+            Check meal search
+          </Link>
         </div>
       </td>
       <td style={tdStyle}>

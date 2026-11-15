@@ -87,6 +87,7 @@ const NAV_SECTIONS_STATIC = [
     items: [
       { to: "/owner/restaurants", label: "Restaurant Intelligence" },
       { to: "/owner/restaurant-management", label: "Restaurant Management" },
+      { to: "/owner/search/meal-time", label: "Right now meals" },
       { to: "/owner/revenue", label: "Revenue" },
       { to: "/owner/subscription-designer", label: "Subscription Designer" },
       { to: "/owner/market-expansion", label: "Market Expansion" },
