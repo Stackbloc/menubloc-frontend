@@ -19,6 +19,7 @@ import {
   HERO_REFRESH_MS,
   TIME_OF_DAY_THEMES,
   heroPages,
+  rightNowQuery,
 } from "../../../lib/appSearchHome.js";
 import HomeNextLocationSelector from "../../homeNext/HomeNextLocationSelector.jsx";
 import AppIcon from "../../icons/AppIcon.jsx";
@@ -140,9 +141,10 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
     go({ query: q, surface: "feed_search_home" });
   }
 
-  // Words already typed stay the search; the card adds its meal period. Otherwise its own query.
+  // Words already typed stay the search; the card adds its meal period. Otherwise (or another card's
+  // words left in the box) its own query.
   function showHero(h) {
-    const q = text.trim() || h.query;
+    const q = rightNowQuery(text, h);
     setText(q);
     go({ query: q, mealPeriod: h.mealPeriod, surface: "feed_search_right_now" });
   }

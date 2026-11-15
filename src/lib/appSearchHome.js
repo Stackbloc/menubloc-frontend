@@ -85,6 +85,17 @@ const SEARCHES = {
   lateNight: { query: "late night", mealPeriod: "late_night" },
 };
 
+/**
+ * What a Right now card searches: words the diner typed stay the search; blank or another card's own
+ * words ("late night" left in the box after that search) give way to this card's query (Andre
+ * 2026-11-15: Breakfast kept showing Late night results).
+ */
+export function rightNowQuery(typed, hero) {
+  const q = String(typed || "").trim();
+  const preset = Object.values(SEARCHES).some((s) => s.query.toLowerCase() === q.toLowerCase());
+  return q && !preset ? q : hero.query;
+}
+
 // Later windows don't claim anything is open yet; they help plan.
 const AHEAD = {
   breakfast: { title: "Breakfast options near you", body: "Plan breakfast: early openings near you." },
