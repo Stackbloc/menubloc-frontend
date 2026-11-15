@@ -36,14 +36,25 @@ async function compose({ place, cancel = false }) {
   await act(async () => {
     fireEvent.change(screen.getByTestId("quick-post-upload-input"), { target: { files: [clip] } });
   });
-  fireEvent.change(await screen.findByTestId("quick-post-food"), { target: { value: "Taco" } });
-  fireEvent.click(screen.getByTestId("quick-post-where-open"));
+  // Where comes first (Andre 2026-11-14): no food box until a place or Home is picked.
+  fireEvent.click(await screen.findByTestId("quick-post-where-open"));
+  expect(screen.queryByTestId("quick-post-food")).toBeNull();
   fireEvent.change(screen.getByTestId("quick-post-where"), { target: { value: place } });
   // Let the type-ahead answer.
   await act(async () => {
     await new Promise((r) => setTimeout(r, 300));
   });
-  if (cancel) fireEvent.click(screen.getByLabelText("Cancel restaurant"));
+  if (cancel) {
+    fireEvent.click(screen.getByLabelText("Cancel restaurant"));
+    fireEvent.click(screen.getByTestId("quick-post-at-home"));
+  } else {
+    // Post with the restaurant only typed: it is taken, then the dish is asked for (nothing posted yet).
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("quick-post-submit"));
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  }
+  fireEvent.change(screen.getByTestId("quick-post-food"), { target: { value: "Taco" } });
   await act(async () => {
     fireEvent.click(screen.getByTestId("quick-post-submit"));
   });
@@ -75,7 +86,7 @@ describe("Post sheet keeps a typed restaurant", () => {
 
   it("Cancel drops what was typed", async () => {
     const payload = await compose({ place: "Somewhere", cancel: true });
-    expect(payload.whereType).toBe("other");
+    expect(payload.whereType).toBe("home");
     expect(payload.restaurant).toBeNull();
   });
 });

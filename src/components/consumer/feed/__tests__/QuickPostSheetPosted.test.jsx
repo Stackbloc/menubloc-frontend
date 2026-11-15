@@ -41,7 +41,11 @@ async function withClip() {
   await act(async () => {
     fireEvent.change(screen.getByTestId("quick-post-upload-input"), { target: { files: [clip] } });
   });
-  await screen.findByTestId("quick-post-food");
+  await screen.findByTestId("quick-post-where-open");
+}
+
+async function pickHome() {
+  fireEvent.click(screen.getByTestId("quick-post-at-home"));
 }
 
 async function pickBossa() {
@@ -74,6 +78,10 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     expect(screen.getByTestId("quick-post-logo").textContent).toBe("Menuply");
     await withClip();
     expect(screen.getByTestId("quick-post-title").textContent).toBe("Tag Your Clip");
+    // Where first: Restaurant / Home, no "What food" box until one is picked.
+    expect(screen.queryByTestId("quick-post-food")).toBeNull();
+    await pickHome();
+    expect(screen.getByTestId("quick-post-food")).toBeTruthy();
   });
 
   it("Posted! says the Feed and the restaurant's page, never the Wall; Done saves the price", async () => {
@@ -100,10 +108,11 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("no place: only the Feed; Done with no price saves nothing and closes", async () => {
+  it("Home: only the Feed; Done with no price saves nothing and closes", async () => {
     const onClose = vi.fn();
     render(<QuickPostSheet open onClose={onClose} onSubmit={async () => ({ id: 902 })} />);
     await withClip();
+    await pickHome();
     fireEvent.change(screen.getByTestId("quick-post-food"), { target: { value: "Dodger Dog" } });
     await post();
     expect(screen.getByTestId("quick-post-done-where").textContent).toBe("Your clip is in the Feed.");
@@ -116,6 +125,7 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     const onSubmit = vi.fn(async () => ({ id: 903 }));
     render(<QuickPostSheet open onClose={() => {}} onSubmit={onSubmit} />);
     await withClip();
+    await pickHome();
     fireEvent.change(screen.getByTestId("quick-post-food"), { target: { value: "Dodger Dog" } });
     await post();
     fireEvent.click(screen.getByTestId("quick-post-edit-tags"));
@@ -125,6 +135,7 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("quick-post-edit-tags"));
     expect(screen.getByTestId("quick-post-submit").textContent).toBe("Save");
+    fireEvent.click(screen.getByTestId("quick-post-place-chosen"));
     await pickBossa();
     await post();
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -135,6 +146,7 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
   it("guests (no post id back) never see Posted!", async () => {
     render(<QuickPostSheet open onClose={() => {}} onSubmit={async () => undefined} />);
     await withClip();
+    await pickHome();
     fireEvent.change(screen.getByTestId("quick-post-food"), { target: { value: "Dodger Dog" } });
     await post();
     expect(screen.queryByTestId("quick-post-done")).toBeNull();

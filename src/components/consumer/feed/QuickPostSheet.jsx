@@ -151,11 +151,14 @@ export default function QuickPostSheet({
     };
   }, [open, busy, onClose, posted, editing, saving, priceText, showPrice]);
 
-  // With a clip in hand, go straight to the caption.
+  // Where comes first (Andre 2026-11-14): after the clip, pick Restaurant or Home; the food box shows
+  // once a place (or Home) is picked and takes the focus then.
+  const whereChosen = Boolean(place) || atHome;
+  const showFood = whereChosen || editing || foodText.length > 0;
   useEffect(() => {
-    if (!file) return;
+    if (!file || !whereChosen || editing) return;
     foodRef.current?.focus();
-  }, [file]);
+  }, [file, whereChosen, editing]);
 
   useEffect(() => {
     if (placeOpen) placeRef.current?.focus();
@@ -234,7 +237,8 @@ export default function QuickPostSheet({
 
   const typedFood = cleanTyped(foodText);
   const menuDishes = place?.restaurant_id ? dishHits : [];
-  const nearbyDishes = place ? [] : cityDishes;
+  // Home cooking gets no restaurant dishes (Where is picked first since 2026-11-14).
+  const nearbyDishes = place || atHome ? [] : cityDishes;
   // A Menuply restaurant: only its menu dishes are suggested (Andre 2026-11-02: "Which restaurant dish?").
   const typeHits = place?.restaurant_id ? [] : foodTypes;
   // A dish typed at a restaurant that isn't on its menu is new: the server keeps it for review.
@@ -342,7 +346,10 @@ export default function QuickPostSheet({
   async function submit() {
     if (busy || saving) return;
     if (!food && !placeOnly) {
-      foodRef.current?.focus();
+      // A restaurant typed but not picked: take it, then ask for the dish.
+      if (!whereChosen && pendingPlace) choosePlace(pendingPlace);
+      else if (!whereChosen) setPlaceOpen(true);
+      else foodRef.current?.focus();
       return;
     }
     if (!file) return;
@@ -849,6 +856,7 @@ export default function QuickPostSheet({
               {placePicker}
             </div>
 
+            {showFood ? (
             <div style={styles.section}>
               <p style={styles.sectionLabel}>{place ? "Dish" : "What food"}</p>
               <div style={styles.caption}>
@@ -925,6 +933,7 @@ export default function QuickPostSheet({
                 </div>
               ) : null}
             </div>
+            ) : null}
 
         {errorBlock}
         {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
