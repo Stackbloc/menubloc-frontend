@@ -246,6 +246,25 @@ export const downloadOwnerDinerListCsv = async (params = {}) => {
   }
   return res.blob();
 };
+// Diner Intelligence Stage 7: Network Builder (Network Value leaderboard + period social columns) + CSV.
+const BUILDER_KEYS = ["range", "from", "to", "sort", "dir", "classification", "repeat", "plans", "page", "page_size"];
+export function dinerBuildersQuery(params = {}) {
+  const qs = new URLSearchParams();
+  for (const key of BUILDER_KEYS) if (params[key] != null && params[key] !== "") qs.set(key, String(params[key]));
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+export const getOwnerDinerBuilders = (params = {}) => get(`/api/owner/dashboard/diners/builders${dinerBuildersQuery(params)}`);
+export const downloadOwnerDinerBuildersCsv = async (params = {}) => {
+  const res = await fetch(`${API}/api/owner/dashboard/diners/builders.csv${dinerBuildersQuery(params)}`, { credentials: "include" });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const error = new Error(json.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.blob();
+};
 export const getOwnerDinerDetail = (id, params = {}) => {
   const qs = new URLSearchParams();
   if (params.interval) qs.set("interval", params.interval);
