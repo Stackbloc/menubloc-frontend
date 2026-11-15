@@ -6,22 +6,19 @@
  * the profile Wish List.
  * Like is for dishes; a clip with no linked dish shows the restaurant Fav heart (My Favs).
  * Hide (do not gray-out) actions that do not apply.
+ * Icons are the app's own drawings (AppIcon = MenuplyIcon), 22 px in an outlined circle, white
+ * when on (filled), the same as the app's feed rail (Andre 2026-11-15).
  */
 
 import { useState } from "react";
-import InviteToEatIcon from "../../icons/InviteToEatIcon.jsx";
-import FavHeartIcon from "../../icons/FavHeartIcon.jsx";
-import WishListIcon from "../../icons/WishListIcon.jsx";
-import ShareIcon from "../../share/ShareIcon.jsx";
 import AppIcon from "../../icons/AppIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
 import { trackShareEvent } from "../../share/shareUtils.js";
-import { FAV_ACCENT } from "../../../lib/likeButtonStyles.js";
 import { commentCountLabel } from "../../../lib/feedComments.js";
 import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
-import { WISH_LIST_ACCENT, WISH_LIST_ADD, WISH_LIST_ADDED } from "../../WishListMenuItemButton.jsx";
+import { WISH_LIST_ADD, WISH_LIST_ADDED } from "../../WishListMenuItemButton.jsx";
 
 /**
  * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
@@ -106,7 +103,7 @@ function DishLikeButton({ menuItemId }) {
       onClick={toggle}
     >
       {/* One Fav for restaurants and dishes (Andre 2026-10-24): same heart as the restaurant Fav. */}
-      <FavHeartIcon size={20} filled={liked} color={liked ? FAV_ACCENT : "#fff"} />
+      <AppIcon name="fav" size={22} filled={liked} color="#fff" />
     </RailButton>
   );
 }
@@ -125,7 +122,7 @@ function RestaurantFavButton({ restaurantId, restaurantName, followSource }) {
       disabled={statusLoading || actionLoading}
       onClick={toggleFollow}
     >
-      <FavHeartIcon size={20} filled={followed} color={followed ? FAV_ACCENT : "#fff"} />
+      <AppIcon name="fav" size={22} filled={followed} color="#fff" />
     </RailButton>
   );
 }
@@ -235,7 +232,7 @@ export default function FeedVideoActionRail({
             disabled={wish.busy}
             onClick={wish.toggle}
           >
-            <WishListIcon size={22} filled={wish.added} color={wish.added ? WISH_LIST_ACCENT : "#fff"} />
+            <AppIcon name="wishList" size={22} filled={wish.added} color="#fff" />
           </RailButton>
         ) : null}
 
@@ -255,7 +252,7 @@ export default function FeedVideoActionRail({
             hint={isDishVideo ? "Invite a Connect to eat this" : "Invite a Connect to eat here"}
             onClick={onInvite}
           >
-            <InviteToEatIcon size={20} color="#fff" />
+            <AppIcon name="invite" size={22} color="#fff" />
           </RailButton>
         ) : null}
 
@@ -280,7 +277,7 @@ export default function FeedVideoActionRail({
               setShare(true);
             }}
           >
-            <ShareIcon size={20} stroke="#fff" />
+            <AppIcon name="share" size={22} color="#fff" />
           </RailButton>
         ) : null}
 
@@ -359,15 +356,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "rgba(0,0,0,0.45)",
-    border: "1px solid rgba(255,255,255,0.28)",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+    // The app's outlined circle (menuply-mobile FeedClip styles.circle).
+    background: "rgba(0,0,0,0.2)",
+    border: "1.5px solid rgba(255,255,255,0.9)",
   },
   label: {
-    fontSize: 11,
-    fontWeight: 700,
+    fontSize: 12,
+    fontWeight: 600,
     lineHeight: 1.15,
-    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
     maxWidth: 64,
     textAlign: "center",
   },

@@ -722,7 +722,7 @@ export default function SeeWhosEatingFullscreen({
           buttonStyle={{ ...styles.safetyMenuBtn, bottom: `calc(${navInset}px + max(52px, env(safe-area-inset-bottom) + 36px))` }}
           label="Report or block"
         >
-          <AppIcon name="flag" size={14} color="rgba(255,255,255,0.8)" />
+          <AppIcon name="flag" size={14} color="rgba(255,255,255,0.75)" />
           <span>Report</span>
         </ClipSafetyMenu>
       ) : null}
@@ -965,7 +965,7 @@ export default function SeeWhosEatingFullscreen({
           data-testid="see-whos-eating-sound-toggle"
           onClick={onToggleVideoSound}
         >
-          <AppIcon name={videoMuted ? "soundOff" : "soundOn"} size={18} color="#fff" />
+          <AppIcon name={videoMuted ? "soundOff" : "soundOn"} size={20} color="#fff" />
         </button>
       ) : null}
       {!menuBrowserOpen && !isFeedHome ? (
