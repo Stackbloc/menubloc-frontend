@@ -77,3 +77,53 @@ test("staff browsers, GPC and hidden tabs don't beat", async () => {
   document.visibilityState = "visible";
   assert.equal(sent.length, 0);
 });
+
+// Stage 8 validation: a tab going to the background and coming back (fake clock; Date and setInterval mocked).
+test("background → foreground: no beats while hidden, one beat on return; same session under 5 minutes, new after", async (t) => {
+  t.mock.timers.enable({ apis: ["setInterval", "Date"], now: Date.parse("2026-11-14T20:00:00Z") });
+  const flush = () => new Promise((r) => setImmediate(r));
+  P.resetPresenceForTests();
+  sent.length = 0;
+  document.visibilityState = "visible";
+  const stop = P.startPresenceHeartbeat();
+  await flush();
+  t.mock.timers.tick(60 * 1000);
+  await flush();
+  assert.equal(sent.length, 2, "first beat + one a minute while visible");
+  const firstKey = sent[0].body.session_key;
+  assert.equal(sent[1].body.session_key, firstKey);
+
+  // Background for 3 minutes: the interval stops.
+  document.visibilityState = "hidden";
+  listeners.visibilitychange();
+  t.mock.timers.tick(3 * 60 * 1000);
+  await flush();
+  assert.equal(sent.length, 2, "no beats while hidden");
+
+  // Back within 5 minutes of the last beat: one beat right away, same session, then once a minute again.
+  document.visibilityState = "visible";
+  listeners.visibilitychange();
+  await flush();
+  assert.equal(sent.length, 3);
+  assert.equal(sent[2].body.session_key, firstKey, "same session after a short background");
+  t.mock.timers.tick(60 * 1000);
+  await flush();
+  assert.equal(sent.length, 4, "the minute beat restarted");
+
+  // Background for 6 minutes: coming back starts a new session (the server counts it as a new visit).
+  document.visibilityState = "hidden";
+  listeners.visibilitychange();
+  t.mock.timers.tick(6 * 60 * 1000);
+  await flush();
+  document.visibilityState = "visible";
+  listeners.visibilitychange();
+  await flush();
+  assert.equal(sent.length, 5);
+  assert.notEqual(sent[4].body.session_key, firstKey, "new session after a long background");
+
+  // Closing the tab says goodbye.
+  listeners.pagehide();
+  await flush();
+  assert.equal(sent[5].body.state, "gone");
+  stop();
+});
