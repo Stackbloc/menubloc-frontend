@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   downloadOwnerAnalyticsCampaignPdf,
@@ -59,7 +60,12 @@ function saveBlob(blob, name) {
 
 export default function OwnerAnalytics() {
   const [filters, setFilters] = useState(defaultFilters);
-  const [tab, setTab] = useState("scorecard");
+  // ?tab=network_value opens a tab directly (the Network Builder section on /owner/diners links here).
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState(() => {
+    const asked = searchParams.get("tab");
+    return TABS.some(([key]) => key === asked) ? asked : "scorecard";
+  });
   const [data, setData] = useState(null);
   const [campaigns, setCampaigns] = useState(null);
   const [error, setError] = useState("");
