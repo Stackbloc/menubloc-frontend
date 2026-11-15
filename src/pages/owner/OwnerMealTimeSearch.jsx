@@ -83,7 +83,13 @@ export default function OwnerMealTimeSearch() {
           <h2 style={{ margin: 0, fontSize: 20 }}>Right now meals</h2>
           <p style={{ ...muted, margin: "6px 0 0", maxWidth: 760 }}>
             What diners get when they tap Breakfast, Lunch, Dinner or Late night on Search in the app.
-            Changes reach diners within a minute. Typed searches, Today and menus don't change.
+            Changes reach diners within a minute. Typed food searches, Today and menus don't change.
+          </p>
+          <p style={{ ...muted, margin: "6px 0 0", maxWidth: 760 }}>
+            Which kinds of food count for each meal is set by food type on{" "}
+            <a href="/owner/food-intelligence/mealtime" style={{ color: OWNER_COLORS.ink }}>Food Intelligence → Mealtimes</a>.
+            Built-in starter choices apply until someone sets a food type there by hand. Typed “dinner”,
+            “lunch ideas” and “entrees” use the same meal search.
           </p>
           <nav style={{ display: "flex", gap: 20, marginTop: 14 }} aria-label="Sections">
             {[

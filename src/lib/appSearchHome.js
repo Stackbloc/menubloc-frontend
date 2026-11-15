@@ -80,8 +80,8 @@ export function getTimeOfDayTheme(date = new Date()) {
 // /search has no meal filter yet, so each window carries a query that fills the results.
 const SEARCHES = {
   breakfast: { query: "breakfast", mealPeriod: "breakfast" },
-  lunch: { query: "entrees", mealPeriod: "lunch" },
-  dinner: { query: "entrees", mealPeriod: "dinner" },
+  lunch: { query: "lunch", mealPeriod: "lunch" },
+  dinner: { query: "dinner", mealPeriod: "dinner" },
   lateNight: { query: "late night", mealPeriod: "late_night" },
 };
 
