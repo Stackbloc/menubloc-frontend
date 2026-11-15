@@ -688,6 +688,7 @@ function CheckTab({ params }) {
             <div style={{ fontSize: 14, marginTop: 6 }}>
               {result.returned.length} places shown of {result.fetched_cards} found · {s.dishes_dropped} dishes left out
               {s.moved_for_variety ? ` · ${s.moved_for_variety} moved down for variety` : ""}
+              {s.shown_first_at_other_meal ? ` · ${s.shown_first_at_other_meal} shown first at ${result.meal === "lunch" ? "Dinner" : "Lunch"}` : ""}
               {s.pinned_by_owner ? ` · ${s.pinned_by_owner} pinned` : ""}
               {s.hidden_by_owner ? ` · ${s.hidden_by_owner} hidden` : ""}
               {s.open_late_first ? " · open late first" : ""}
@@ -703,7 +704,7 @@ function CheckTab({ params }) {
           ) : (
             <>
               <div style={{ display: "grid", marginTop: 12 }}>
-                {shown.map((c) => <CardTrace key={`k${c.restaurant_id}`} c={c} focus={String(c.restaurant_id) === String(fromId)} />)}
+                {shown.map((c) => <CardTrace key={`k${c.restaurant_id}`} c={c} meal={result.meal} focus={String(c.restaurant_id) === String(fromId)} />)}
               </div>
               {notShown.length ? (
                 <div style={{ marginTop: 16 }}>
@@ -712,7 +713,7 @@ function CheckTab({ params }) {
                   </button>
                   {showAll ? (
                     <div style={{ display: "grid", marginTop: 8 }}>
-                      {notShown.map((c) => <CardTrace key={`n${c.restaurant_id}`} c={c} focus={String(c.restaurant_id) === String(fromId)} />)}
+                      {notShown.map((c) => <CardTrace key={`n${c.restaurant_id}`} c={c} meal={result.meal} focus={String(c.restaurant_id) === String(fromId)} />)}
                     </div>
                   ) : null}
                 </div>
@@ -726,7 +727,7 @@ function CheckTab({ params }) {
   );
 }
 
-function CardTrace({ c, focus }) {
+function CardTrace({ c, meal, focus }) {
   const [open, setOpen] = useState(focus);
   const muted = { color: OWNER_COLORS.muted, fontSize: 13 };
   const shownDishes = c.dishes.filter((d) => d.shown);
@@ -740,6 +741,7 @@ function CardTrace({ c, focus }) {
           {c.outcome !== "kept" ? <span style={{ color: "#9f3a22", fontSize: 13 }}> · {c.outcome_label}</span> : null}
           {c.pinned ? <span style={muted}> · pinned</span> : null}
           {c.moved_for_variety ? <span style={muted}> · moved down for variety</span> : null}
+          {c.shown_at_other_meal ? <span style={muted}> · shown first at {meal === "lunch" ? "Dinner" : "Lunch"}</span> : null}
           {tier ? <span style={muted}> · {tier}</span> : null}
         </span>
         <span style={muted}>{shownDishes.map((d) => d.name).join(", ") || `${c.dishes.length} dishes`}</span>
