@@ -178,14 +178,14 @@ function ConnectsBox({ open, meal, asked, busyRef, onAsk, onPlanStatus, onInvite
       {going.map(plan)}
       {home.map(plan)}
       {empty ? <p style={{ ...s.rowLine, margin: 0 }} data-testid="today-open-empty">No pending activities</p> : null}
-      {/* Quick Invite, then Create a plan as the last spot (Andre 2026-11-15). */}
-      <div style={s.boxActions}>
+      {/* Quick Invite · Create a plan: always one line, the same on every day and meal (Andre 2026-11-15). */}
+      <div style={s.boxActions} data-testid="today-box-actions">
         <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onQuickInvite} data-testid="today-quick-invite">
           <AppIcon name="bolt" size={18} color={meal.color} /> Quick Invite ›
         </button>
         {onCreatePlan ? (
           <>
-            <span style={s.rowLine}>{"\u00a0\u00a0·\u00a0\u00a0"}</span>
+            <span style={s.actionDot}>·</span>
             <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onCreatePlan} data-testid="today-create-plan">
               Create a plan ›
             </button>
@@ -836,7 +836,8 @@ const s = {
   searchLink: { display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, color: C.accent, fontWeight: 700, fontSize: 15, textDecoration: "none" },
   window: { flex: 1, minHeight: 40, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   panel: { borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 8 },
-  boxActions: { display: "flex", alignItems: "center", flexWrap: "wrap" },
+  boxActions: { display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" },
+  actionDot: { fontSize: 13, color: C.muted, margin: "0 8px" },
   plainBtn: { background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", fontFamily: "inherit" },
   panelTitle: { margin: 0, fontSize: 15, fontWeight: 700 },
   row: { display: "flex", alignItems: "center", gap: 12, minHeight: 48 },
