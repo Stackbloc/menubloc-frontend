@@ -92,7 +92,8 @@ const SEARCHES = {
  */
 export function rightNowQuery(typed, hero) {
   const q = String(typed || "").trim();
-  const preset = Object.values(SEARCHES).some((s) => s.query.toLowerCase() === q.toLowerCase());
+  // "entrees" = what the Lunch/Dinner cards sent before plan 44; it may still be left in the box.
+  const preset = q.toLowerCase() === "entrees" || Object.values(SEARCHES).some((s) => s.query.toLowerCase() === q.toLowerCase());
   return q && !preset ? q : hero.query;
 }
 
