@@ -1070,7 +1070,7 @@ const styles = {
   tagHeadText: { fontSize: 17, lineHeight: 1.3, whiteSpace: "nowrap", fontWeight: 800, fontStyle: "italic", color: C.logoInk, textAlign: "center" },
   tagRow: { display: "flex", alignItems: "center", gap: 6, minHeight: 52, boxSizing: "border-box", background: "#fff", borderRadius: 26, padding: "0 8px 0 10px", boxShadow: "0 2px 6px rgba(0,0,0,0.08)" },
   tagRowIcon: { width: 24, flex: "0 0 auto", display: "inline-flex", alignItems: "center", justifyContent: "center" },
-  tagRowLabel: { width: 84, flex: "0 0 auto", fontSize: 15, fontWeight: 800, color: C.ink },
+  tagRowLabel: { minWidth: 84, flex: "0 0 auto", whiteSpace: "nowrap", fontSize: 15, fontWeight: 800, color: C.ink },
   tagRowBar: { width: 1.5, alignSelf: "stretch", margin: "12px 0", background: "#dfe5dc", flex: "0 0 auto" },
   tagRowInput: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 14, fontStyle: "italic", padding: "12px 0", fontFamily: "inherit", color: C.ink },
   tagRowChosen: { flex: 1, minWidth: 0, appearance: "none", border: "none", background: "transparent", padding: 0, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
