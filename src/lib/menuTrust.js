@@ -11,8 +11,8 @@ export const CLAIM_RING = { claimed: "#16a34a", unclaimed: "#dc2626", unknown: "
 
 export const MPI_LINK_TEXT = "Menu Price Integrity";
 export const MPI_PATH = "/menu-price-integrity";
-export const REPORT_LEAD = "Menuply can't guarantee menu accuracy. See something wrong?";
-export const REPORT_LINK_TEXT = "Report it";
+export const REPORT_LEAD = "While Menuply can’t guarantee menu accuracy, including price accuracy, if you see something wrong,";
+export const REPORT_LINK_TEXT = "report it";
 
 /** "2026-10-12T18:04:00Z" → "October 12, 2026"; null when missing or unreadable. */
 export function reviewDateLabel(iso) {
@@ -32,8 +32,8 @@ export function menuClaimInfo({ claimed, reviewedAt }) {
     const date = reviewDateLabel(reviewedAt);
     return {
       headline: "Claimed by the restaurant",
-      detail: date ? `The owner manages this menu. Last updated by the owner on ${date}.` : "The owner manages this menu.",
-      prices: "If you order here, prices can't be higher than at the restaurant:",
+      detail: date ? `The restaurant owner manages and controls this menu. Last updated by the owner on ${date}.` : "The restaurant owner manages and controls this menu.",
+      prices: "If you order here, prices on Menuply cannot be higher than prices at the restaurant:",
     };
   }
   if (claimed === false) {

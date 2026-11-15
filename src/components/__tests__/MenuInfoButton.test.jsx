@@ -38,7 +38,7 @@ describe("MenuInfoButton (claim colors + copy, Andre 2026-11-15)", () => {
     );
     expect(screen.queryByTestId("menu-info-mpi")).toBeNull();
     expect(screen.getByTestId("menu-info-report-line").textContent).toBe(
-      "Menuply can't guarantee menu accuracy. See something wrong? Report it"
+      "While Menuply can’t guarantee menu accuracy, including price accuracy, if you see something wrong, report it"
     );
     const href = decodeURIComponent(screen.getByTestId("menu-info-report").getAttribute("href"));
     expect(href.startsWith("mailto:menus@menuply.com?subject=Menu report: Pasta Roma, Los Angeles, CA (#78184)")).toBe(true);
@@ -54,10 +54,10 @@ describe("MenuInfoButton (claim colors + copy, Andre 2026-11-15)", () => {
     fireEvent.click(button);
     expect(screen.getByTestId("menu-info-status").textContent).toBe("Claimed by the restaurant");
     expect(screen.getByTestId("menu-info-trust").textContent).toBe(
-      "The owner manages this menu. Last updated by the owner on October 12, 2026."
+      "The restaurant owner manages and controls this menu. Last updated by the owner on October 12, 2026."
     );
     expect(screen.getByTestId("menu-info-prices").textContent).toBe(
-      "If you order here, prices can't be higher than at the restaurant: Menu Price Integrity."
+      "If you order here, prices on Menuply cannot be higher than prices at the restaurant: Menu Price Integrity."
     );
     expect(screen.getByTestId("menu-info-mpi").getAttribute("href")).toBe("/menu-price-integrity");
   });
