@@ -154,7 +154,7 @@ function PlanRow({ p, meal, waiting, busy, disabled, onAsk, onPlanStatus }) {
   );
 }
 
-function ConnectsBox({ open, meal, asked, busyRef, onAsk, onPlanStatus, onInvite, onPerson, onQuickInvite }) {
+function ConnectsBox({ open, meal, asked, busyRef, onAsk, onPlanStatus, onInvite, onPerson, onQuickInvite, onCreatePlan }) {
   const hungry = open.people.filter((p) => p.vibe === "hungry");
   const others = open.people.filter((p) => p.vibe !== "hungry");
   const going = open.plans.filter((p) => !p.atHome);
@@ -178,9 +178,20 @@ function ConnectsBox({ open, meal, asked, busyRef, onAsk, onPlanStatus, onInvite
       {going.map(plan)}
       {home.map(plan)}
       {empty ? <p style={{ ...s.rowLine, margin: 0 }} data-testid="today-open-empty">No pending activities</p> : null}
-      <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onQuickInvite} data-testid="today-quick-invite">
-        <AppIcon name="bolt" size={18} color={meal.color} /> Quick Invite ›
-      </button>
+      {/* Quick Invite, then Create a plan as the last spot (Andre 2026-11-15). */}
+      <div style={s.boxActions}>
+        <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onQuickInvite} data-testid="today-quick-invite">
+          <AppIcon name="bolt" size={18} color={meal.color} /> Quick Invite ›
+        </button>
+        {onCreatePlan ? (
+          <>
+            <span style={s.rowLine}>{"\u00a0\u00a0·\u00a0\u00a0"}</span>
+            <button type="button" style={{ ...s.textBtn, ...s.leftBtn, ...s.iconBtn, color: meal.color }} onClick={onCreatePlan} data-testid="today-create-plan">
+              Create a plan ›
+            </button>
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -527,6 +538,8 @@ export default function FeedTodayPage() {
     logTodayEvent("invite", windowKey, day, {});
     navigate(quickInvitePath({ code: MEAL_INVITE[meal.key] }));
   };
+  // Create a plan (Andre 2026-11-15): the calendar's New plan, opened on the day shown.
+  const createPlan = () => navigate(`/account/social-plans?new=meal${/^\d{4}-\d{2}-\d{2}$/.test(day || "") ? `&day=${day}` : ""}`);
   const bottomGap = isDesktop ? 0 : FEED_PRIMARY_NAV_HEIGHT;
 
   return (
@@ -598,6 +611,7 @@ export default function FeedTodayPage() {
             onInvite={inviteConnect}
             onPerson={openConnect}
             onQuickInvite={quickInvite}
+            onCreatePlan={createPlan}
           />
         ) : null}
 
@@ -822,6 +836,7 @@ const s = {
   searchLink: { display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, color: C.accent, fontWeight: 700, fontSize: 15, textDecoration: "none" },
   window: { flex: 1, minHeight: 40, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   panel: { borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 8 },
+  boxActions: { display: "flex", alignItems: "center", flexWrap: "wrap" },
   plainBtn: { background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", fontFamily: "inherit" },
   panelTitle: { margin: 0, fontSize: 15, fontWeight: 700 },
   row: { display: "flex", alignItems: "center", gap: 12, minHeight: 48 },
