@@ -41,7 +41,7 @@ async function withClip() {
   await act(async () => {
     fireEvent.change(screen.getByTestId("quick-post-upload-input"), { target: { files: [clip] } });
   });
-  await screen.findByTestId("quick-post-where-open");
+  await screen.findByTestId("quick-post-where");
 }
 
 async function pickHome() {
@@ -49,7 +49,6 @@ async function pickHome() {
 }
 
 async function pickBossa() {
-  fireEvent.click(screen.getByTestId("quick-post-where-open"));
   fireEvent.change(screen.getByTestId("quick-post-where"), { target: { value: "bossa" } });
   await settle();
   fireEvent.click(screen.getByTestId("quick-post-place-78946"));
@@ -78,10 +77,12 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     expect(screen.getByTestId("quick-post-logo").textContent).toBe("Menuply");
     await withClip();
     expect(screen.getByTestId("quick-post-title").textContent).toBe("Tag Your Clip");
-    // Where first: Restaurant / Home, no "What food" box until one is picked.
-    expect(screen.queryByTestId("quick-post-food")).toBeNull();
-    await pickHome();
-    expect(screen.getByTestId("quick-post-food")).toBeTruthy();
+    // Andre 2026-11-14 mockup: restaurant and dish asked together, with the nudge to tag the place.
+    expect(screen.getByTestId("quick-post-tag-head").textContent).toBe("Tag it so friends can find it!");
+    expect(screen.getByTestId("quick-post-where").getAttribute("placeholder")).toBe("Where’s it from?");
+    expect(screen.getByTestId("quick-post-food").getAttribute("placeholder")).toBe("What are you eating?");
+    expect(screen.getByText("Cooking @home / No restaurant")).toBeTruthy();
+    expect(document.activeElement).not.toBe(screen.getByTestId("quick-post-food"));
   });
 
   it("Posted! says the Feed and the restaurant's page, never the Wall; Done saves the price", async () => {
@@ -135,7 +136,7 @@ describe("Post sheet redesign (Andre 2026-11-14)", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("quick-post-edit-tags"));
     expect(screen.getByTestId("quick-post-submit").textContent).toBe("Save");
-    fireEvent.click(screen.getByTestId("quick-post-place-chosen"));
+    fireEvent.click(screen.getByTestId("quick-post-at-home"));
     await pickBossa();
     await post();
     expect(onSubmit).toHaveBeenCalledTimes(1);

@@ -29,7 +29,7 @@ import { unlistedRestaurantPlace } from "../../../lib/unlistedPlace.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { updateWhatIAteToday } from "../../../lib/consumerApi.js";
 import { notifyFeedVideoPosted } from "../../../lib/feedVideoCompose.js";
-import { Burst, CheckIcon, PencilIcon, PriceTicket, StoreIcon, VideoCam } from "./postArt.jsx";
+import { Burst, CheckIcon, PencilIcon, PinIcon, PriceTicket, SearchIcon, StoreIcon, TacoIcon, TagSparks, VideoCam } from "./postArt.jsx";
 import { DOODLE_BG, POST_COLORS, priceToCents } from "../../../lib/postArtTheme.js";
 
 const TYPEAHEAD_MS = 220;
@@ -75,7 +75,7 @@ export default function QuickPostSheet({
   const [foodTypes, setFoodTypes] = useState([]);
   const [dishHits, setDishHits] = useState([]);
   const [cityDishes, setCityDishes] = useState([]);
-  const [placeOpen, setPlaceOpen] = useState(false);
+  const [, setPlaceOpen] = useState(false);
   const [placeText, setPlaceText] = useState("");
   const [hits, setHits] = useState([]);
   const [place, setPlace] = useState(null);
@@ -151,18 +151,6 @@ export default function QuickPostSheet({
     };
   }, [open, busy, onClose, posted, editing, saving, priceText, showPrice]);
 
-  // Where comes first (Andre 2026-11-14): after the clip, pick Restaurant or Home; the food box shows
-  // once a place (or Home) is picked and takes the focus then.
-  const whereChosen = Boolean(place) || atHome;
-  const showFood = whereChosen || editing || foodText.length > 0;
-  useEffect(() => {
-    if (!file || !whereChosen || editing) return;
-    foodRef.current?.focus();
-  }, [file, whereChosen, editing]);
-
-  useEffect(() => {
-    if (placeOpen) placeRef.current?.focus();
-  }, [placeOpen]);
 
   // Restaurants suggested while you type (2+ letters), one per franchise, as on the app.
   useEffect(() => {
@@ -306,20 +294,17 @@ export default function QuickPostSheet({
     if (foodPick?.kind === "dish") setFoodPick(null);
   }
 
-  /** "No particular dish": toggles; clears whatever food was typed. */
-  function toggleNoDish() {
-    const next = !noDish;
-    setNoDish(next);
-    if (next) {
-      setFoodPick(null);
-      setFoodText("");
-    }
+  /** "Cooking @home / No restaurant" (Andre 2026-11-14 mockup): a checkbox; checked clears the restaurant. */
+  function toggleHome() {
+    const next = !atHome;
+    if (next) clearPlace();
+    setAtHome(next);
   }
 
   const food = resolveFood();
   // A restaurant typed but not picked still counts (Andre 2026-11-12: ssus's typed restaurant was lost when
   // Post was tapped without Enter or a suggestion): the exact suggestion, else the typed name.
-  const pendingTyped = placeOpen && !place && !atHome ? placeText.trim().replace(/\s+/g, " ").slice(0, 120) : "";
+  const pendingTyped = !place && !atHome ? placeText.trim().replace(/\s+/g, " ").slice(0, 120) : "";
   const pendingHit = pendingTyped.length >= 2 ? hits.find((h) => same(restaurantLabel(h), pendingTyped)) : null;
   const pendingPlace =
     pendingTyped.length >= 2
@@ -328,7 +313,9 @@ export default function QuickPostSheet({
   const postPlace = place || pendingPlace;
   // A restaurant clip can post with only the restaurant (Andre 2026-10-30: a clip can be about a place, not a dish).
   // So can any clip once "No particular dish" is picked (Andre 2026-11-02).
-  const placeOnly = !food && Boolean(postPlace) && noDish;
+  // A restaurant alone is enough (Andre 2026-11-14: a typed restaurant left Post dim with no hint): picked or
+  // just typed, Post turns on and the clip posts about the place.
+  const placeOnly = !food && Boolean(postPlace);
   const canPost = Boolean(file) && !busy && !saving && (Boolean(food) || placeOnly);
   const whereNow = atHome ? "home" : postPlace?.restaurant_id ? "restaurant" : "other";
 
@@ -346,10 +333,7 @@ export default function QuickPostSheet({
   async function submit() {
     if (busy || saving) return;
     if (!food && !placeOnly) {
-      // A restaurant typed but not picked: take it, then ask for the dish.
-      if (!whereChosen && pendingPlace) choosePlace(pendingPlace);
-      else if (!whereChosen) setPlaceOpen(true);
-      else foodRef.current?.focus();
+      foodRef.current?.focus();
       return;
     }
     if (!file) return;
@@ -470,75 +454,36 @@ export default function QuickPostSheet({
           .filter((c) => c.typed || !same(c.label, typedFood) || c.sub)
           .slice(0, MAX_FOOD_CHIPS + 1)
       : [];
-  const placeTyping = !place && placeText.trim().length >= 2;
+  const placeTyping = !place && !atHome && placeText.trim().length >= 2;
   // Typing on a phone: small clip, sheet at the top, so the keyboard can't cover the box or chips.
   const typing = foodFocused || placeFocused;
 
-  const placePicker = placeOpen && !place ? (
-    <div>
-      <div style={styles.placeBox}>
-        <span aria-hidden>📍</span>
-        <input
-          ref={placeRef}
-          type="text"
-          value={placeText}
-          onChange={(e) => setPlaceText(e.target.value.slice(0, 120))}
-          onFocus={(e) => {
-            setPlaceFocused(true);
-            const el = e.currentTarget;
-            setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 250);
-          }}
-          onBlur={() => setPlaceFocused(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              acceptPlaceText();
-            }
-          }}
-          placeholder="Which restaurant?"
-          autoComplete="off"
-          enterKeyHint="done"
-          disabled={busy}
-          style={styles.placeInput}
-          aria-label="Restaurant"
-          data-testid="quick-post-where"
-        />
-        <button type="button" style={styles.clear} onClick={() => {
-            setPlaceOpen(false);
-            setPlaceText("");
-          }}
-          aria-label="Cancel restaurant"
+  // Restaurant suggestions under the Restaurant row while you type.
+  const placeChips = placeTyping ? (
+    <div style={styles.chips}>
+      {hits.map((h) => (
+        <button
+          key={h.restaurant_id}
+          type="button"
+          style={styles.chip}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => choosePlace(asRestaurantPlace(h))}
+          data-testid={`quick-post-place-${h.restaurant_id}`}
         >
-          ✕
+          {restaurantLabel(h)}
         </button>
-      </div>
-      {placeTyping ? (
-        <div style={styles.chips}>
-          {hits.map((h) => (
-            <button
-              key={h.restaurant_id}
-              type="button"
-              style={styles.chip}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => choosePlace(asRestaurantPlace(h))}
-              data-testid={`quick-post-place-${h.restaurant_id}`}
-            >
-              {restaurantLabel(h)}
-            </button>
-          ))}
-          {hits.some((h) => same(restaurantLabel(h), placeText.trim())) ? null : (
-            <button
-              type="button"
-              style={{ ...styles.chip, ...styles.chipNew }}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => choosePlace(unlistedRestaurantPlace(placeText))}
-              data-testid="quick-post-place-use-typed"
-            >
-              + “{placeText.trim()}” <span style={styles.chipSub}>· new, we'll add it</span>
-            </button>
-          )}
-        </div>
-      ) : null}
+      ))}
+      {hits.some((h) => same(restaurantLabel(h), placeText.trim())) ? null : (
+        <button
+          type="button"
+          style={{ ...styles.chip, ...styles.chipNew }}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => choosePlace(unlistedRestaurantPlace(placeText))}
+          data-testid="quick-post-place-use-typed"
+        >
+          + “{placeText.trim()}” <span style={styles.chipSub}>· new, we'll add it</span>
+        </button>
+      )}
     </div>
   ) : null;
 
@@ -810,56 +755,90 @@ export default function QuickPostSheet({
           <ClipPreview src={previewUrl} />
         </div>
 
-            <div style={styles.section}>
-              <p style={styles.sectionLabel}>Where</p>
-              <div style={styles.chips}>
-                {place ? (
-                  <>
-                    <button type="button" onMouseDown={keepFocus} style={{ ...styles.tag, ...styles.tagOn }} onClick={clearPlace} aria-label={`Remove ${restaurantLabel(place)}`} data-testid="quick-post-place-chosen">
-                      📍 {restaurantLabel(place)} ✕
-                    </button>
-                    <button
-                      onMouseDown={keepFocus}
-                      type="button"
-                      aria-pressed={recommend}
-                      style={{ ...styles.tag, ...(recommend ? styles.tagOn : null) }}
-                      onClick={() => setRecommend((v) => !v)}
-                      data-testid="quick-post-tag-recommend"
-                    >
-                      ⭐ Recommend
-                    </button>
-                  </>
-                ) : atHome ? (
-                  <button type="button" onMouseDown={keepFocus} style={{ ...styles.tag, ...styles.tagOn }} onClick={clearPlace} aria-label="Remove Home" data-testid="quick-post-place-chosen">
-                    🏠 Home ✕
-                  </button>
-                ) : placeOpen ? null : (
-                  <>
-                    <button type="button" onMouseDown={keepFocus} style={styles.tag} onClick={() => setPlaceOpen(true)} data-testid="quick-post-where-open">
-                      📍 Restaurant
-                    </button>
-                    <button
-                      onMouseDown={keepFocus}
-                      type="button"
-                      style={styles.tag}
-                      onClick={() => {
-                        setAtHome(true);
-                        setPlaceOpen(false);
-                      }}
-                      data-testid="quick-post-at-home"
-                    >
-                      🏠 Home
-                    </button>
-                  </>
-                )}
-              </div>
-              {placePicker}
+            {/* Andre 2026-11-14 mockup: restaurant and dish asked together, with a nudge to tag the place. */}
+            <div style={styles.tagHead} data-testid="quick-post-tag-head">
+              <TagSparks side="left" size={18} />
+              <span style={styles.tagHeadText}>Tag it so friends can find it!</span>
+              <TagSparks side="right" size={18} />
             </div>
 
-            {showFood ? (
             <div style={styles.section}>
-              <p style={styles.sectionLabel}>{place ? "Dish" : "What food"}</p>
-              <div style={styles.caption}>
+              <div style={{ ...styles.tagRow, ...(atHome ? styles.postSoft : null) }}>
+                <span style={styles.tagRowIcon}>
+                  <PinIcon size={22} />
+                </span>
+                <span style={styles.tagRowLabel}>Restaurant</span>
+                <span style={styles.tagRowBar} aria-hidden />
+                {place ? (
+                  <button type="button" onMouseDown={keepFocus} style={styles.tagRowChosen} onClick={clearPlace} aria-label={`Remove ${restaurantLabel(place)}`} data-testid="quick-post-place-chosen">
+                    <span style={styles.tagRowValue}>{restaurantLabel(place)}</span>
+                    <span style={styles.clear} aria-hidden>
+                      ✕
+                    </span>
+                  </button>
+                ) : (
+                  <input
+                    ref={placeRef}
+                    type="text"
+                    value={atHome ? "" : placeText}
+                    onChange={(e) => {
+                      setPlaceText(e.target.value.slice(0, 120));
+                      setPlaceOpen(true);
+                    }}
+                    onFocus={(e) => {
+                      setPlaceFocused(true);
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView?.({ block: "start", behavior: "smooth" }), 250);
+                    }}
+                    onBlur={() => setPlaceFocused(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        acceptPlaceText();
+                      }
+                    }}
+                    placeholder="Where’s it from?"
+                    autoComplete="off"
+                    enterKeyHint="done"
+                    disabled={busy || saving || atHome}
+                    style={styles.tagRowInput}
+                    aria-label="Restaurant: where's it from?"
+                    data-testid="quick-post-where"
+                  />
+                )}
+                {place ? null : pendingPlace ? (
+                  // The typed name counts as is (no Enter needed): say so like the Dish row does.
+                  <span style={styles.check} aria-label="Restaurant looks good" data-testid="quick-post-place-check">
+                    ✓
+                  </span>
+                ) : (
+                  <SearchIcon size={18} />
+                )}
+              </div>
+              {placeChips}
+              {place ? (
+                <div style={styles.chips}>
+                  <button
+                    onMouseDown={keepFocus}
+                    type="button"
+                    aria-pressed={recommend}
+                    style={{ ...styles.tag, ...(recommend ? styles.tagOn : null) }}
+                    onClick={() => setRecommend((v) => !v)}
+                    data-testid="quick-post-tag-recommend"
+                  >
+                    ⭐ Recommend
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div style={styles.section}>
+              <div style={styles.tagRow}>
+                <span style={styles.tagRowIcon}>
+                  <TacoIcon size={24} />
+                </span>
+                <span style={styles.tagRowLabel}>Dish</span>
+                <span style={styles.tagRowBar} aria-hidden />
                 <input
                   ref={foodRef}
                   type="text"
@@ -878,25 +857,22 @@ export default function QuickPostSheet({
                       e.currentTarget.blur();
                     }
                   }}
-                  placeholder={place ? "Which restaurant dish?" : "What food is your clip about?"}
+                  placeholder="What are you eating?"
                   autoComplete="off"
                   enterKeyHint="done"
                   disabled={busy || saving}
-                  style={styles.captionInput}
-                  aria-label={place ? "Which restaurant dish?" : "What food is your clip about?"}
+                  style={styles.tagRowInput}
+                  aria-label="Dish: what are you eating?"
                   data-testid="quick-post-food"
                 />
                 {food ? (
                   <span style={styles.check} aria-label="Looks good" data-testid="quick-post-food-check">
                     ✓
                   </span>
-                ) : null}
+                ) : (
+                  <SearchIcon size={18} />
+                )}
               </div>
-              {typedFood || place ? null : (
-                <p style={styles.examples} data-testid="quick-post-food-examples">
-                  Like tacos, a matcha latte, homemade lasagna
-                </p>
-              )}
               {foodChips.length ? (
                 <div style={styles.chips} data-testid="quick-post-food-chips">
                   {foodChips.map((c) => (
@@ -918,22 +894,15 @@ export default function QuickPostSheet({
                   ))}
                 </div>
               ) : null}
-              {place && !typedFood ? (
-                <div style={styles.chips}>
-                  <button
-                    type="button"
-                    aria-pressed={noDish}
-                    style={{ ...styles.tag, ...(noDish ? styles.tagOn : null) }}
-                    onMouseDown={keepFocus}
-                    onClick={toggleNoDish}
-                    data-testid="quick-post-no-dish"
-                  >
-                    No particular dish
-                  </button>
-                </div>
-              ) : null}
             </div>
-            ) : null}
+
+            <label style={styles.homeRow}>
+              <input type="checkbox" checked={atHome} onChange={toggleHome} disabled={busy || saving} style={styles.checkboxNative} data-testid="quick-post-at-home" />
+              <span style={{ ...styles.homeBox, ...(atHome ? styles.homeBoxOn : null) }} aria-hidden>
+                {atHome ? <CheckIcon size={16} /> : null}
+              </span>
+              Cooking @home / No restaurant
+            </label>
 
         {errorBlock}
         {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
@@ -1070,7 +1039,7 @@ const styles = {
   recordRing: { appearance: "none", position: "relative", width: 104, height: 104, borderRadius: 52, border: `3px solid ${C.logoInk}`, background: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: "pointer", boxSizing: "border-box" },
   recordInner: { width: 88, height: 88, borderRadius: 44, background: C.record, display: "inline-flex", alignItems: "center", justifyContent: "center" },
   // Tag Your Clip
-  clip: { position: "relative", height: "min(32vh, 260px)", minHeight: 200, borderRadius: 16, overflow: "hidden", background: "#111" },
+  clip: { position: "relative", height: "min(26vh, 220px)", minHeight: 160, borderRadius: 16, overflow: "hidden", background: "#111" },
   clipTyping: { height: 110, minHeight: 110 },
   clipBtn: { appearance: "none", position: "absolute", inset: 0, border: "none", padding: 0, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
   playBtn: { position: "relative", width: 64, height: 64, borderRadius: 32, background: glass, display: "inline-flex", alignItems: "center", justifyContent: "center", paddingLeft: 5, boxSizing: "border-box" },
@@ -1096,6 +1065,19 @@ const styles = {
   // Selected: dark, not a green pill (Andre 2026-11-06, same as the app).
   tagOn: { background: C.ink, borderColor: C.ink, color: "#fff" },
   error: { margin: 0, fontSize: 14, color: "#b42318", fontWeight: 600, textAlign: "center" },
+  // Tag rows (Andre 2026-11-14 mockup): white rounded rows, bold label | input, magnifier.
+  tagHead: { display: "flex", alignItems: "center", justifyContent: "center", gap: 4 },
+  tagHeadText: { fontSize: 17, lineHeight: 1.3, whiteSpace: "nowrap", fontWeight: 800, fontStyle: "italic", color: C.logoInk, textAlign: "center" },
+  tagRow: { display: "flex", alignItems: "center", gap: 6, minHeight: 52, boxSizing: "border-box", background: "#fff", borderRadius: 26, padding: "0 8px 0 10px", boxShadow: "0 2px 6px rgba(0,0,0,0.08)" },
+  tagRowIcon: { width: 24, flex: "0 0 auto", display: "inline-flex", alignItems: "center", justifyContent: "center" },
+  tagRowLabel: { width: 84, flex: "0 0 auto", fontSize: 15, fontWeight: 800, color: C.ink },
+  tagRowBar: { width: 1.5, alignSelf: "stretch", margin: "12px 0", background: "#dfe5dc", flex: "0 0 auto" },
+  tagRowInput: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 14, fontStyle: "italic", padding: "12px 0", fontFamily: "inherit", color: C.ink },
+  tagRowChosen: { flex: 1, minWidth: 0, appearance: "none", border: "none", background: "transparent", padding: 0, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
+  tagRowValue: { flex: 1, minWidth: 0, fontSize: 16, fontWeight: 700, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  homeRow: { position: "relative", alignSelf: "center", display: "inline-flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 26, padding: "10px 16px", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", color: C.ink, cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.08)" },
+  homeBox: { width: 22, height: 22, flex: "0 0 auto", boxSizing: "border-box", borderRadius: 6, border: `2px solid ${C.logoInk}`, background: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center" },
+  homeBoxOn: { background: C.accent, borderColor: C.accent },
   // Compact dark pill sized to its label (Post / Save / Done): no full-width bars, no green pills.
   darkPill: { alignSelf: "center", appearance: "none", border: "none", background: C.ink, color: "#fff", borderRadius: 999, padding: "11px 32px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   postRight: { alignSelf: "flex-end" },

@@ -36,23 +36,18 @@ async function compose({ place, cancel = false }) {
   await act(async () => {
     fireEvent.change(screen.getByTestId("quick-post-upload-input"), { target: { files: [clip] } });
   });
-  // Where comes first (Andre 2026-11-14): no food box until a place or Home is picked.
-  fireEvent.click(await screen.findByTestId("quick-post-where-open"));
-  expect(screen.queryByTestId("quick-post-food")).toBeNull();
-  fireEvent.change(screen.getByTestId("quick-post-where"), { target: { value: place } });
+  // Restaurant and Dish rows together (Andre 2026-11-14 mockup).
+  fireEvent.change(await screen.findByTestId("quick-post-where"), { target: { value: place } });
   // Let the type-ahead answer.
   await act(async () => {
     await new Promise((r) => setTimeout(r, 300));
   });
   if (cancel) {
-    fireEvent.click(screen.getByLabelText("Cancel restaurant"));
+    // Cooking @home / No restaurant drops the typed restaurant.
     fireEvent.click(screen.getByTestId("quick-post-at-home"));
   } else {
-    // Post with the restaurant only typed: it is taken, then the dish is asked for (nothing posted yet).
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("quick-post-submit"));
-    });
-    expect(onSubmit).not.toHaveBeenCalled();
+    // No Enter needed: the typed name gets a ✓ (Andre 2026-11-14: nothing said so before).
+    expect(screen.getByTestId("quick-post-place-check")).toBeTruthy();
   }
   fireEvent.change(screen.getByTestId("quick-post-food"), { target: { value: "Taco" } });
   await act(async () => {
@@ -84,9 +79,29 @@ describe("Post sheet keeps a typed restaurant", () => {
     expect(payload.items[0].restaurant_id).toBe(78946);
   });
 
-  it("Cancel drops what was typed", async () => {
+  it("Cooking @home drops a typed restaurant", async () => {
     const payload = await compose({ place: "Somewhere", cancel: true });
     expect(payload.whereType).toBe("home");
     expect(payload.restaurant).toBeNull();
+  });
+});
+
+describe("a restaurant alone turns Post on (Andre 2026-11-14)", () => {
+  it("typed, no Enter, no dish: Post is on and posts about the place", async () => {
+    const onSubmit = vi.fn(async () => {});
+    render(<QuickPostSheet open onClose={() => {}} onSubmit={onSubmit} />);
+    const clip = new File(["x"], "clip.mp4", { type: "video/mp4" });
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("quick-post-upload-input"), { target: { files: [clip] } });
+    });
+    expect(screen.getByTestId("quick-post-submit").getAttribute("aria-disabled")).toBe("true");
+    fireEvent.change(await screen.findByTestId("quick-post-where"), { target: { value: "Noodle Corner" } });
+    expect(screen.getByTestId("quick-post-submit").getAttribute("aria-disabled")).toBe("false");
+    expect(screen.queryByTestId("quick-post-no-dish")).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("quick-post-submit"));
+    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0].restaurant).toMatchObject({ restaurant_name: "Noodle Corner" });
   });
 });

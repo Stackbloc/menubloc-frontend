@@ -73,3 +73,42 @@ export function CheckIcon({ size = 18, color = "#fff", strokeWidth = 2.6 }) {
     </svg>
   );
 }
+
+/** Red map pin (Restaurant row on Tag Your Clip, Andre 2026-11-14 mockup). */
+export function PinIcon({ size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <path d="M12 1.5c-4.4 0-8 3.5-8 7.9C4 15 12 22.5 12 22.5S20 15 20 9.4c0-4.4-3.6-7.9-8-7.9Z" fill="#e3262e" />
+      <path d="M12 6.2a3.2 3.2 0 1 1 0 6.4 3.2 3.2 0 0 1 0-6.4Z" fill="#8f0f15" />
+    </svg>
+  );
+}
+
+/** Green outlined taco (Dish row on Tag Your Clip). */
+export function TacoIcon({ size = 30 }) {
+  return (
+    <svg width={size} height={size * 0.7} viewBox="0 0 34 24" aria-hidden>
+      <path d="M3 21 C3 11 9.5 4 17 4 C24.5 4 31 11 31 21 Z" fill="#dff3c9" stroke={POST_COLORS.camGreen} strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M7 13 C10 10.5 12 12 14 10 C16 8 19 9.5 21 8.5 C23.5 7.5 26 10 27.5 12.5" fill="none" stroke={POST_COLORS.camGreen} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Magnifier at the end of a tag row. */
+export function SearchIcon({ size = 22, color = POST_COLORS.logoInk }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden style={{ flex: "0 0 auto" }}>
+      <path d="M10.5 3.5a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z" fill="none" stroke={color} strokeWidth="2.2" />
+      <path d="M15.8 15.8 21 21" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Three short green dashes fanning out beside "Tag it so friends can find it!". */
+export function TagSparks({ side, size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden style={{ flex: "0 0 auto", transform: side === "right" ? "scaleX(-1)" : undefined }}>
+      <path d="M14 4 L19 8 M5 12 H17 M14 20 L19 16" stroke={POST_COLORS.camGreen} strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
