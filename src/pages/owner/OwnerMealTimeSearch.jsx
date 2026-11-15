@@ -24,6 +24,7 @@ import {
 
 const MEAL_LABEL = { breakfast: "Breakfast", brunch: "Brunch", lunch: "Lunch", dinner: "Dinner", late_night: "Late night" };
 const NUMBER_FIELDS = [
+  ["maxCards", "Places shown", "places"],
   ["dishesPerCard", "Dishes per restaurant card", ""],
   ["sameTypePerCard", "Same kind of dish on one card", ""],
   ["maxTypeShareOfCards", "Most cards one kind of dish may lead", "%"],
@@ -31,6 +32,7 @@ const NUMBER_FIELDS = [
   ["fetchRestaurants", "Places looked at before trimming", "places"],
 ];
 const FIELD_LABEL = {
+  maxCards: "Places shown",
   dishesPerCard: "Dishes per card",
   sameTypePerCard: "Same kind per card",
   maxTypeShareOfCards: "Most cards one kind may lead",
