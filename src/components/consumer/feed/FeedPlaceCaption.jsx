@@ -8,6 +8,7 @@
 
 import { Link } from "react-router-dom";
 import { resolveFeedPlaceCaption } from "../../../lib/liveFeedCategory.js";
+import { paidLabel } from "../../../lib/postArtTheme.js";
 
 const styles = {
   row: {
@@ -73,6 +74,14 @@ const styles = {
     borderRadius: 999,
     background: "rgba(0,0,0,0.35)",
     textDecoration: "none",
+    textShadow: "0 1px 3px rgba(0,0,0,0.75)",
+  },
+  // "I Paid $" (Andre 2026-11-14): only sent by the server when the diner chose to show it.
+  paid: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#fff",
+    lineHeight: 1.3,
     textShadow: "0 1px 3px rgba(0,0,0,0.75)",
   },
   fallback: {
@@ -183,6 +192,11 @@ export default function FeedPlaceCaption({
       ) : null}
       {showFoodFallback ? (
         <span style={styles.fallback}>{foodLabel}</span>
+      ) : null}
+      {paidLabel(item?.price_paid_cents) ? (
+        <span style={styles.paid} data-testid="feed-video-paid">
+          {paidLabel(item.price_paid_cents)}
+        </span>
       ) : null}
     </div>
   );

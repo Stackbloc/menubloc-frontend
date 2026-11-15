@@ -66,10 +66,16 @@ export default function FeedVideoComposeOverlay({
     } else if (payload.category === "cooking") {
       await postFeedCookingVideo(withProgress);
     } else {
-      await postFeedAteVideo(withProgress);
+      const entry = await postFeedAteVideo(withProgress);
+      // The Post sheet stays open on Posted! (Andre 2026-11-14): it closes itself on Done.
+      if (category === "post") {
+        notifyFeedVideoPosted();
+        return entry;
+      }
     }
     notifyFeedVideoPosted();
     onClose?.();
+    return null;
   }
 
   async function publishGuest(payload) {
@@ -116,7 +122,7 @@ export default function FeedVideoComposeOverlay({
     setUploadPercent(0);
     setError("");
     try {
-      await publishAuthenticated(payload);
+      return await publishAuthenticated(payload);
     } catch (err) {
       setError(err?.message || "Unable to post video");
       throw err;
