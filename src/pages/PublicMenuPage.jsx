@@ -1774,7 +1774,6 @@ export default function PublicMenuPage() {
       state={data?.state || null}
       menuUrl={shareData?.url || null}
       reviewedAt={data?.menu_last_verified_at || null}
-      franchiseStore={Number(data?.chain_id) > 0 && data?.is_canonical_parent !== true}
     />
   ) : null;
 

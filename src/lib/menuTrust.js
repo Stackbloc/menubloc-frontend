@@ -1,17 +1,18 @@
 /**
  * Menu ⓘ box (Andre 2026-10-31): how fresh the menu is, and a link to report a problem.
- * Same wording as the app (menuply-mobile src/lib/menuTrust.ts). The review date is set only when
+ * Same wording as the app (menuply-mobile src/lib/menuTrust.ts); copy by claim status 2026-11-15. The review date is set only when
  * the restaurant's own operators save their menu (backend touchMenuReviewOnSave).
  */
 
 export const MENU_REPORT_EMAIL = "menus@menuply.com";
 
-const NO_GUARANTEE = "Menuply cannot guarantee the accuracy of the menu information.";
+/** Ring on the menu ⓘ (Andre 2026-11-15): green = claimed, red = not claimed, gray while unknown. */
+export const CLAIM_RING = { claimed: "#16a34a", unclaimed: "#dc2626", unknown: "#cbd5e1" };
 
-/** Menu Price Integrity (Andre 2026-11-08). The policy link and report link sit between these parts. */
-export const MPI_NOTICE_INTRO = "Restaurants that accept orders through Menuply are subject to our";
-export const MPI_NOTICE_POLICY = "policy: prices on Menuply must not exceed the restaurant's regular menu prices. Although Menuply is not responsible for price discrepancies, if you have any concerns about the menu content, including prices, please";
+export const MPI_LINK_TEXT = "Menu Price Integrity";
 export const MPI_PATH = "/menu-price-integrity";
+export const REPORT_LEAD = "Menuply can't guarantee menu accuracy. See something wrong?";
+export const REPORT_LINK_TEXT = "Report it";
 
 /** "2026-10-12T18:04:00Z" → "October 12, 2026"; null when missing or unreadable. */
 export function reviewDateLabel(iso) {
@@ -22,26 +23,32 @@ export function reviewDateLabel(iso) {
 }
 
 /**
- * With a review date: when the owner last reviewed or edited it. Unclaimed restaurants: not
- * claimed or verified. Franchise stores (the chain's shared menu, never claimed store by store)
- * and claimed restaurants without a date: the disclaimer only.
+ * Menu ⓘ copy by claim status (Andre 2026-11-15: shorter, clearer, different for claimed vs not).
+ * claimed: true / false, or null while the profile is loading (no headline yet).
+ * `prices` (claimed only) is followed by the Menu Price Integrity link.
  */
-export function menuTrustText({ reviewedAt, unclaimed, franchiseStore }) {
-  const date = reviewDateLabel(reviewedAt);
-  if (date) {
-    return `The information in this menu was last reviewed or edited by the restaurant owner/operator on ${date}. ${NO_GUARANTEE}`;
+export function menuClaimInfo({ claimed, reviewedAt }) {
+  if (claimed === true) {
+    const date = reviewDateLabel(reviewedAt);
+    return {
+      headline: "Claimed by the restaurant",
+      detail: date ? `The owner manages this menu. Last updated by the owner on ${date}.` : "The owner manages this menu.",
+      prices: "If you order here, prices can't be higher than at the restaurant:",
+    };
   }
-  if (unclaimed && !franchiseStore) {
-    return `This menu has not been claimed or verified by the restaurant owner/operator. ${NO_GUARANTEE}`;
+  if (claimed === false) {
+    return {
+      headline: "Not claimed by the restaurant",
+      detail: "The owner hasn't checked this menu, so items and prices may be out of date.",
+      prices: null,
+    };
   }
-  return NO_GUARANTEE;
+  return { headline: null, detail: null, prices: null };
 }
 
-/** Claimed and claim_pending restaurants are owned (website RestaurantPublicPage isClaimedRestaurant). */
-export function isUnclaimedProfile(restaurant) {
-  if (!restaurant) return false;
-  const status = String(restaurant.claim_status || "").trim().toLowerCase();
-  return restaurant.claimable !== false && status !== "claimed" && status !== "claim_pending";
+/** Claimed = claim_status exactly "claimed" (claim_pending is not claimed yet). Same as the app. */
+export function isClaimedProfile(restaurant) {
+  return String(restaurant?.claim_status || "").trim().toLowerCase() === "claimed";
 }
 
 /** mailto: link to menus@menuply.com that names the menu (restaurant, city, id, link, date shown). */
