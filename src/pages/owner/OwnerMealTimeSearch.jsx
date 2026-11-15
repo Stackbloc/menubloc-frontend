@@ -23,21 +23,55 @@ import {
  */
 
 const MEAL_LABEL = { breakfast: "Breakfast", brunch: "Brunch", lunch: "Lunch", dinner: "Dinner", late_night: "Late night" };
-const NUMBER_FIELDS = [
-  ["maxCards", "Places shown", "places"],
-  ["dishesPerCard", "Dishes per restaurant card", ""],
-  ["sameTypePerCard", "Same kind of dish on one card", ""],
-  ["maxTypeShareOfCards", "Most cards one kind of dish may lead", "%"],
-  ["minCardsPerType", "…but never fewer than", "cards"],
-  ["fetchRestaurants", "Places looked at before trimming", "places"],
+// Grouped so the page reads top to bottom: how many places, each card, variety, how much is searched.
+const NUMBER_GROUPS = [
+  ["Results", "", [["maxCards", "Places shown", "places"]]],
+  [
+    "Each card",
+    "",
+    [
+      ["dishesPerCard", "Dishes per card", "dishes"],
+      ["sameTypePerCard", "Same food type on one card", "dishes"],
+      ["sameCategoryPerCard", "Same food category on one card", "dishes"],
+    ],
+  ],
+  [
+    "Variety across the list",
+    "Food type = omelette, pepperoni pizza… · Food category = pizza, sandwiches…",
+    [
+      ["maxTypeShareOfCards", "Most places one food type may lead", "%"],
+      ["minCardsPerType", "…but always at least", "places"],
+      ["maxCategoryShareOfCards", "Most places one food category may lead", "%"],
+      ["maxDishesPerType", "Most dishes of one food type", "dishes"],
+      ["maxDishesPerCategory", "Most dishes of one food category", "dishes"],
+    ],
+  ],
+  [
+    "How much is searched",
+    "Fewer is faster; more gives each meal more to choose from.",
+    [
+      ["fetchRestaurants", "Places looked at · Breakfast, Brunch, Late night", "places"],
+      ["fetchRestaurantsLunchDinner", "Places looked at · Lunch, Dinner", "places"],
+      ["gatherWords", "Food words searched · Breakfast, Brunch, Late night", "words"],
+      ["gatherWordsLunchDinner", "Food words searched · Lunch, Dinner", "words"],
+    ],
+  ],
 ];
+const PCT_FIELDS = new Set(["maxTypeShareOfCards", "maxCategoryShareOfCards"]);
 const FIELD_LABEL = {
   maxCards: "Places shown",
   dishesPerCard: "Dishes per card",
-  sameTypePerCard: "Same kind per card",
-  maxTypeShareOfCards: "Most cards one kind may lead",
-  minCardsPerType: "Never fewer than",
-  fetchRestaurants: "Places looked at",
+  sameTypePerCard: "Same food type per card",
+  sameCategoryPerCard: "Same food category per card",
+  maxTypeShareOfCards: "Most places one food type may lead",
+  minCardsPerType: "Always at least",
+  maxCategoryShareOfCards: "Most places one food category may lead",
+  maxDishesPerType: "Most dishes of one food type",
+  maxDishesPerCategory: "Most dishes of one food category",
+  fetchRestaurants: "Places looked at (Breakfast, Brunch, Late night)",
+  fetchRestaurantsLunchDinner: "Places looked at (Lunch, Dinner)",
+  gatherWords: "Food words searched (Breakfast, Brunch, Late night)",
+  gatherWordsLunchDinner: "Food words searched (Lunch, Dinner)",
   enabled: "On",
   onlyMealDishes: "Only dishes for this meal",
   preferred: "Staples first",
@@ -57,7 +91,7 @@ function showValue(field, v) {
   if (v == null) return "automatic";
   if (typeof v === "boolean") return v ? "on" : "off";
   if (Array.isArray(v)) return v.length ? v.map(kindLabel).join(", ") : "none";
-  if (field === "maxTypeShareOfCards") return `${Math.round(v * 100)}%`;
+  if (PCT_FIELDS.has(field)) return `${Math.round(v * 100)}%`;
   return String(v);
 }
 
@@ -143,7 +177,7 @@ function RulesTab() {
   }, [load]);
 
   const dirty = data && draft && JSON.stringify(draft) !== JSON.stringify(data.rules);
-  const setNum = (key, raw) => setDraft((d) => ({ ...d, [key]: key === "maxTypeShareOfCards" ? Number(raw) / 100 : Number(raw) }));
+  const setNum = (key, raw) => setDraft((d) => ({ ...d, [key]: PCT_FIELDS.has(key) ? Number(raw) / 100 : Number(raw) }));
   const setMeal = (meal, key, value) => setDraft((d) => ({ ...d, meals: { ...d.meals, [meal]: { ...d.meals[meal], [key]: value } } }));
 
   async function run(fn, okText) {
@@ -190,36 +224,42 @@ function RulesTab() {
             {data.is_default ? "Using the default rules" : `Saved ${when(data.version?.set_at)}`}
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14, marginTop: 14 }}>
-          {NUMBER_FIELDS.map(([key, label, unit]) => {
-            const lim = limits[key] || {};
-            const pct = key === "maxTypeShareOfCards";
-            const value = pct ? Math.round(draft[key] * 100) : draft[key];
-            const changed = draft[key] !== data.defaults[key];
-            return (
-              <label key={key} style={{ display: "grid", gap: 4, fontSize: 13 }}>
-                <span style={{ fontWeight: 700 }}>{label}</span>
-                <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <input
-                    type="number"
-                    style={{ ...inputStyle, width: 80 }}
-                    min={pct ? lim.min * 100 : lim.min}
-                    max={pct ? lim.max * 100 : lim.max}
-                    step={pct ? 5 : 1}
-                    value={value}
-                    onChange={(e) => setNum(key, e.target.value)}
-                  />
-                  <span style={muted}>{unit}</span>
-                </span>
-                <span style={{ ...muted, fontSize: 12 }}>
-                  {pct ? `${lim.min * 100}–${lim.max * 100}%` : `${lim.min}–${lim.max}`} · default {pct ? `${Math.round(data.defaults[key] * 100)}%` : data.defaults[key]}
-                  {changed ? " · changed" : ""}
-                </span>
-                {errFor(key) ? <span style={{ color: "#9f3a22", fontSize: 12 }}>{errFor(key).message}</span> : null}
-              </label>
-            );
-          })}
-        </div>
+        {NUMBER_GROUPS.map(([title, hint, fields]) => (
+          <div key={title} style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>{title}</div>
+            {hint ? <div style={{ ...muted, fontSize: 12, marginTop: 2 }}>{hint}</div> : null}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14, marginTop: 10 }}>
+              {fields.map(([key, label, unit]) => {
+                const lim = limits[key] || {};
+                const pct = PCT_FIELDS.has(key);
+                const value = pct ? Math.round(draft[key] * 100) : draft[key];
+                const changed = draft[key] !== data.defaults[key];
+                return (
+                  <label key={key} style={{ display: "grid", gap: 4, fontSize: 13 }}>
+                    <span style={{ fontWeight: 700 }}>{label}</span>
+                    <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        type="number"
+                        style={{ ...inputStyle, width: 80 }}
+                        min={pct ? lim.min * 100 : lim.min}
+                        max={pct ? lim.max * 100 : lim.max}
+                        step={pct ? 5 : 1}
+                        value={value}
+                        onChange={(e) => setNum(key, e.target.value)}
+                      />
+                      <span style={muted}>{unit}</span>
+                    </span>
+                    <span style={{ ...muted, fontSize: 12 }}>
+                      {pct ? `${Math.round(lim.min * 100)}–${Math.round(lim.max * 100)}%` : `${lim.min}–${lim.max}`} · default {pct ? `${Math.round(data.defaults[key] * 100)}%` : data.defaults[key]}
+                      {changed ? " · changed" : ""}
+                    </span>
+                    {errFor(key) ? <span style={{ color: "#9f3a22", fontSize: 12 }}>{errFor(key).message}</span> : null}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </PageCard>
 
       <PageCard style={{ padding: 20 }}>
