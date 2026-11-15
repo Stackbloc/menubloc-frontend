@@ -96,6 +96,7 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
   const isFeedDesktop = useFeedShellDesktop();
   const [text, setTextState] = useState(() => String(initialQuery || ""));
   const [photoNote, setPhotoNote] = useState(false);
+  const inputRef = useRef(null);
   const setText = (v) => {
     setTextState(v);
     onDraftQueryChange?.(v);
@@ -126,6 +127,12 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
     navigate(rewriteSearchPathForFeedShell(target));
   }
 
+  // × in the search box, same as the app (Andre 2026-11-14): empty the words, ready to type.
+  function clearSearch() {
+    setText("");
+    inputRef.current?.focus();
+  }
+
   function submit(e) {
     e.preventDefault();
     const q = text.trim();
@@ -153,6 +160,7 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
         .app-search-rail::-webkit-scrollbar { display: none; width: 0; height: 0; }
         .app-search-input::placeholder { color: ${INK_MUTED}; }
         .app-search-input:focus { outline: none; }
+        .app-search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
         .app-search-field:focus-within { box-shadow: 0 0 0 3px rgba(15,122,36,0.25); }
       `}</style>
 
@@ -179,6 +187,7 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
         <div className="app-search-field" style={styles.field}>
           <AppIcon name="search" size={20} color={INK} />
           <input
+            ref={inputRef}
             className="app-search-input"
             type="search"
             inputMode="search"
@@ -190,6 +199,11 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
             style={styles.input}
             data-testid="search-input"
           />
+          {text ? (
+            <button type="button" aria-label="Clear search" onClick={clearSearch} style={styles.clear} data-testid="search-clear">
+              ×
+            </button>
+          ) : null}
           <button
             type="button"
             aria-label="Search with a photo"
@@ -341,6 +355,23 @@ const styles = {
     color: INK,
     padding: "12px 0",
     fontFamily: "inherit",
+  },
+  clear: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    border: "none",
+    padding: 0,
+    background: INK_MUTED,
+    color: "#ffffff",
+    fontSize: 17,
+    lineHeight: "20px",
+    fontWeight: 700,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    flexShrink: 0,
   },
   camera: {
     width: 42,
