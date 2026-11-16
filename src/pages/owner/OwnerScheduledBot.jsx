@@ -1211,6 +1211,16 @@ export default function OwnerScheduledBot({ botKey }) {
 
             {botKey === "hours_bot" ? (
               <>
+                <PageCard style={{ padding: "14px 24px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+                      Enter hours yourself: paste a screenshot or type them, in a small window that stays on top.
+                    </div>
+                    <Link to="/owner/hours-mini" style={{ fontSize: 13, fontWeight: 800, color: OWNER_COLORS.accent }}>
+                      Mini Hours window
+                    </Link>
+                  </div>
+                </PageCard>
                 {bot.review_queue?.length ? (
                   <PageCard style={{ padding: 24 }}>
                     <SectionTitle

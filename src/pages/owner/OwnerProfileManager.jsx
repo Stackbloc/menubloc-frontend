@@ -10,8 +10,7 @@ import RestaurantStyleSelector from "../../components/operator/RestaurantStyleSe
 import MenuAppearanceSelector from "../../components/operator/MenuAppearanceSelector.jsx";
 import MenuWallpaperSelector from "../../components/operator/MenuWallpaperSelector.jsx";
 import OwnerProfileBillboardsPanel from "./OwnerProfileBillboardsPanel.jsx";
-import HoursBulkSet from "../../components/hours/HoursBulkSet.jsx";
-import { applyHoursToDays, isOpen24, setOpen24 } from "../../lib/weeklyHours.js";
+import WeeklyHoursForm from "../../components/hours/WeeklyHoursForm.jsx";
 import { inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
   OWNER_API_BASE,
@@ -1439,67 +1438,12 @@ export default function OwnerProfileManager({ embedded = false, restaurantId = n
                     {hoursSaving ? "Saving hours…" : "Save hours"}
                   </button>
                 </div>
-                <HoursBulkSet
+                <WeeklyHoursForm
+                  hours={hours}
+                  setHours={setHours}
                   accent={OWNER_COLORS.accent}
                   inputStyle={inputStyle}
-                  onApply={(days, setting) => setHours((prev) => applyHoursToDays(prev, days, setting))}
                 />
-                <div style={{ display: "grid", gap: 8 }}>
-                  {hours.map((day, idx) => {
-                    const allDay = isOpen24(day);
-                    const setRow = (row) => {
-                      const next = [...hours];
-                      next[idx] = row;
-                      setHours(next);
-                    };
-                    return (
-                    <div
-                      key={day.day_of_week}
-                      data-testid="owner-hours-row"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "100px 70px 80px 1fr 1fr",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{day.day_name}</div>
-                      <label style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
-                        <input
-                          type="checkbox"
-                          checked={!day.is_closed}
-                          onChange={(e) => setRow({ ...day, is_closed: !e.target.checked })}
-                        />
-                        Open
-                      </label>
-                      <label style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center", opacity: day.is_closed ? 0.4 : 1 }}>
-                        <input
-                          type="checkbox"
-                          data-testid="owner-hours-24"
-                          disabled={day.is_closed}
-                          checked={allDay}
-                          onChange={(e) => setRow(setOpen24(day, e.target.checked))}
-                        />
-                        24 hrs
-                      </label>
-                      <input
-                        type="time"
-                        disabled={day.is_closed || allDay}
-                        value={day.opens_at || "09:00"}
-                        onChange={(e) => setRow({ ...day, opens_at: e.target.value })}
-                        style={inputStyle}
-                      />
-                      <input
-                        type="time"
-                        disabled={day.is_closed || allDay}
-                        value={day.closes_at || "21:00"}
-                        onChange={(e) => setRow({ ...day, closes_at: e.target.value })}
-                        style={inputStyle}
-                      />
-                    </div>
-                    );
-                  })}
-                </div>
               </PageCard>
 
               <PageCard style={{ padding: 22 }} data-testid="owner-profile-manager-style">
