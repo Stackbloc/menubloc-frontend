@@ -9,6 +9,17 @@ import { fetchClusterNearbyEvents } from "../../lib/clusterApi.js";
 import { getTimezoneForUsState } from "../../lib/timeZoneUtils.js";
 import { splitEventsByLocalDay } from "../../lib/clusterDashboardModel.js";
 
+function dinerWhen(date, time) {
+  const parts = [];
+  if (date) {
+    const d = new Date(`${date}T12:00:00`);
+    if (!Number.isNaN(d.getTime())) parts.push(d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }));
+  }
+  const m = time ? /^(\d{1,2}):(\d{2})/.exec(time) : null;
+  if (m) parts.push(`${Number(m[1]) % 12 || 12}:${m[2]} ${Number(m[1]) < 12 ? "AM" : "PM"}`);
+  return parts.join(" · ") || null;
+}
+
 function EventRow({ event }) {
   const where = [event.venue_label, event.restaurant_name].filter(Boolean)[0];
   const when = event.start_time || event.date || null;
@@ -32,7 +43,7 @@ function EventRow({ event }) {
         <Link
           to={event.href || `/events/${encodeURIComponent(String(event.slug))}`}
           data-mp-event="event_click"
-          data-mp-venue-event-id={Number(event.id) || undefined}
+          data-mp-venue-event-id={Number.isFinite(Number(event.id)) ? Number(event.id) : undefined}
           data-mp-label={event.slug || event.title || undefined}
           data-mp-placement="cluster_nearby_events"
           style={styles.linkWrap}
@@ -67,7 +78,18 @@ export default function ClusterNearbyEvents({ cluster, onCount = null }) {
     fetchClusterNearbyEvents(slug, { radiusMiles: 30, limit: 16 })
       .then((data) => {
         if (cancelled) return;
-        const list = Array.isArray(data?.events) ? data.events : [];
+        const venue = Array.isArray(data?.events) ? data.events : [];
+        // Events restore (2026-11-15): diners' public events listed in this cluster, same rows.
+        const diner = (Array.isArray(data?.diner_events) ? data.diner_events : []).map((e) => ({
+          id: `diner-${e.id}`,
+          name: e.title,
+          // Local noon, so a date-only event lands on its own day in any time zone.
+          date: e.event_date ? `${e.event_date}T12:00:00` : null,
+          start_time: dinerWhen(e.event_date, e.start_time),
+          venue_label: e.location_label,
+          href: e.join_url,
+        }));
+        const list = [...venue, ...diner];
         setEvents(list);
         onCount?.(list.length);
       })

@@ -18,7 +18,11 @@ function formatCents(cents) {
 
 function formatWhen(event) {
   const parts = [];
-  if (event?.date || event?.event_date) parts.push(event.date || event.event_date);
+  const ymd = String(event?.date || event?.event_date || "").slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    // Noon local so the weekday never slips a day.
+    parts.push(new Date(`${ymd}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }));
+  }
   if (event?.start_time) parts.push(event.start_time);
   else if (event?.starts_at) {
     try {
@@ -169,6 +173,11 @@ export default function EventDetailPage() {
 
             <div style={{ display: "grid", gap: 6 }}>
               <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>{event.name}</h1>
+              {event.status === "cancelled" ? (
+                <div role="status" data-testid="event-cancelled" style={{ color: "#b42318", fontWeight: 700, fontSize: 14 }}>
+                  This event was cancelled.
+                </div>
+              ) : null}
               {formatWhen(event) ? (
                 <div style={{ color: "#5b6675", fontSize: 14 }}>{formatWhen(event)}</div>
               ) : null}
@@ -202,7 +211,7 @@ export default function EventDetailPage() {
                 Interested {rsvpCounts.interested || 0} · Going {rsvpCounts.going || 0}
                 {social?.viewer_rsvp ? ` · You: ${social.viewer_rsvp.replace("_", " ")}` : ""}
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: event.status === "cancelled" ? "none" : "flex", gap: 8, flexWrap: "wrap" }}>
                 <button type="button" disabled={busy} onClick={() => setRsvp("interested")}>
                   Interested
                 </button>

@@ -23,8 +23,14 @@ const RESPONSES = [
 ];
 
 function formatWhen(event) {
-  const parts = [event?.event_date, event?.start_time].filter(Boolean);
-  return parts.join(" · ");
+  // "Fri, Nov 20 · 8:00 PM", like the app. Noon local so the weekday never slips.
+  const ymd = String(event?.event_date || "").slice(0, 10);
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(ymd)
+    ? new Date(`${ymd}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    : event?.event_date;
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(event?.start_time || ""));
+  const time = m ? `${Number(m[1]) % 12 || 12}:${m[2]} ${Number(m[1]) < 12 ? "AM" : "PM"}` : event?.start_time;
+  return [day, time].filter(Boolean).join(" · ");
 }
 
 export default function SocialEventJoinPage() {
@@ -35,7 +41,7 @@ export default function SocialEventJoinPage() {
   const [event, setEvent] = useState(null);
   const [busy, setBusy] = useState(false);
   const [responded, setResponded] = useState(null);
-  const [guestName, setGuestName] = useState(() => getEatInviteGuestDisplayName());
+  const [guestName] = useState(() => getEatInviteGuestDisplayName());
   const [shareOpen, setShareOpen] = useState(false);
 
   async function reload() {
@@ -113,12 +119,17 @@ export default function SocialEventJoinPage() {
 
   const organizer = event.organizer_display_name || "A diner";
   const isPast = event.is_past === true;
-  const joinClosed = isPast || !event.join_me_open;
+  // Events restore (2026-11-15): the link is the invitation — anyone signed in can answer, Connect
+  // or not (rsvp_open). Older servers only took answers when Join Me was open.
+  const rsvpOpen = typeof event.rsvp_open === "boolean" ? event.rsvp_open : event.join_me_open === true;
+  const joinClosed = isPast || !rsvpOpen;
+  const myAnswer = responded || event.my_response || null;
+  const loginHref = `/account/login?next=${encodeURIComponent(`/join-event/${token}`)}`;
 
   return (
     <div style={styles.page} data-testid="social-event-join-landing">
       <div style={styles.card}>
-        <p style={styles.kicker}>Join Me · Social Plans</p>
+        <p style={styles.kicker}>{event.is_public ? "Event" : "You're invited"}</p>
         <h1 style={styles.h1}>{event.title}</h1>
         <p style={styles.meta}>
           {[organizer, formatWhen(event), event.location_label].filter(Boolean).join(" · ")}
@@ -134,26 +145,28 @@ export default function SocialEventJoinPage() {
           <p style={styles.notice} data-testid="social-event-ended">
             This event has already ended — RSVPs are closed.
           </p>
+        ) : event.is_organizer ? (
+          <p style={styles.notice} data-testid="social-event-is-host">
+            This is your event.{" "}
+            <Link to={`/account/social-events/${event.id}`} style={styles.link}>
+              See who's coming
+            </Link>
+          </p>
         ) : joinClosed ? (
-          <p style={styles.notice}>Join Me is not open for this event. You can still view the details.</p>
-        ) : responded ? (
-          <p style={styles.success} data-testid="social-event-responded">
-            Thanks — you responded {responded}.
+          <p style={styles.notice}>RSVPs are closed for this event. You can still view the details.</p>
+        ) : !isAuthenticated ? (
+          <p style={styles.notice} data-testid="social-event-sign-in">
+            <Link to={loginHref} style={styles.link}>
+              Sign in or make a free account
+            </Link>{" "}
+            to RSVP. You'll come right back here.
           </p>
         ) : (
           <>
-            {!isAuthenticated ? (
-              <label style={styles.label}>
-                Your name (optional)
-                <input
-                  type="text"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  maxLength={80}
-                  style={styles.input}
-                  data-testid="social-event-guest-name"
-                />
-              </label>
+            {myAnswer ? (
+              <p style={styles.success} data-testid="social-event-responded">
+                You said {RESPONSES.find((r) => r.status === myAnswer)?.label || myAnswer}. You can change it anytime.
+              </p>
             ) : null}
             <div style={styles.actions}>
               {RESPONSES.map((opt) => (

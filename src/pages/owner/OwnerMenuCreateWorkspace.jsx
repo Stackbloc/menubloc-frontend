@@ -9,6 +9,7 @@ import OwnerMleLocations from "./OwnerMleLocations.jsx";
 import OwnerRestaurantSources from "./OwnerRestaurantSources.jsx";
 import OwnerProfileManager from "./OwnerProfileManager.jsx";
 import OwnerRestaurantDealsPanel from "./OwnerRestaurantDealsPanel.jsx";
+import OwnerRestaurantEventsPanel from "./OwnerRestaurantEventsPanel.jsx";
 import {
   BusinessTypeConvertPanel,
   BusinessTypeCreateField,
@@ -454,6 +455,8 @@ const RESTAURANT_SECTIONS = [
   { key: "profile", label: "Public profile" },
   { key: "menus", label: "Menus" },
   { key: "deals", label: "Deals" },
+  // Events restore (Andre 2026-11-15): venues make Events too.
+  { key: "events", label: "Events" },
 ];
 
 function restaurantSectionFrom(searchParams) {
@@ -670,7 +673,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [menuTabBusy, setMenuTabBusy] = useState(false);
-  // Restaurant Manager: one restaurant, four sections (?section=details|profile|menus|deals).
+  // Restaurant Manager: one restaurant, five sections (?section=details|profile|menus|deals|events).
   const section = restaurantSectionFrom(searchParams);
   const showProfilePanel = section === "details";
 
@@ -2401,6 +2404,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <OwnerProfileManager key={rid} embedded restaurantId={rid} />
       ) : null}
 
+      {restaurant && existingRestaurant && section === "events" ? (
+        <OwnerRestaurantEventsPanel key={rid} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />
+      ) : null}
       {restaurant && existingRestaurant && section === "deals" ? (
         <OwnerRestaurantDealsPanel key={rid} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />
       ) : null}

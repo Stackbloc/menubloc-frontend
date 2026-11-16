@@ -1486,3 +1486,24 @@ export const lookupKnowledgeBotChain = (params = {}) => {
   return get(`/api/owner/knowledge-bot/lookup/chain?${qs.toString()}`);
 };
 
+
+// ─── Restaurant Manager → Events (Events restore, Andre 2026-11-15) ─────────
+// Venue events for one restaurant. Same service as the restaurant's own /operator/events.
+
+const ownerEventsPath = (restaurantId, rest = "") => `/api/owner/restaurants/${restaurantId}/events${rest}`;
+
+/** → { capability_enabled, events } */
+export const listOwnerRestaurantEvents = (restaurantId) => get(ownerEventsPath(restaurantId));
+export const setOwnerRestaurantEventsEnabled = (restaurantId, enabled) =>
+  put(ownerEventsPath(restaurantId, "/capability"), { enabled: enabled === true });
+/** Always saved as a draft; publish is its own step. */
+export const createOwnerRestaurantEvent = (restaurantId, body) => post(ownerEventsPath(restaurantId), body);
+export const updateOwnerRestaurantEvent = (restaurantId, eventId, body) =>
+  patch(ownerEventsPath(restaurantId, `/${eventId}`), body);
+/** action: "publish" | "pause" | "cancel" */
+export const setOwnerRestaurantEventStatus = (restaurantId, eventId, action) =>
+  post(ownerEventsPath(restaurantId, `/${eventId}/${action}`), {});
+export const deleteOwnerRestaurantEvent = (restaurantId, eventId) => del(ownerEventsPath(restaurantId, `/${eventId}`));
+/** → { rsvp_counts: { going, interested, not_going }, rsvps: [{ display_name, status, answered_at }] } */
+export const listOwnerRestaurantEventRsvps = (restaurantId, eventId) =>
+  get(ownerEventsPath(restaurantId, `/${eventId}/rsvps`));
