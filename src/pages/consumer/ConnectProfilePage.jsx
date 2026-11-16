@@ -19,6 +19,7 @@ import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../li
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import {
   blockDiner,
+  getDiscoverableDiner,
   getFollowedRestaurants,
   getMonthInFood,
   getPeerMonthInFood,
@@ -331,6 +332,17 @@ function ClipGrid({ clips }) {
   );
 }
 
+const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** " · Thu" for an invite on a later day; nothing for today (the server only sends today on). */
+function pendingDayWord(date, now = new Date()) {
+  const d = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  const days = Math.round((d.getTime() - today.getTime()) / 86400000);
+  if (days <= 0) return "";
+  return days === 1 ? " · Tomorrow" : ` · ${SHORT_DAYS[d.getDay()]}`;
+}
+
 /** Shows `size` rows, with See all / Show less below them. */
 function ExpandableList({ items, size, testId, render }) {
   const [all, setAll] = useState(false);
@@ -372,6 +384,18 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips: clipsIn =
   const bothWant = self ? [] : wishOverlap(wishes || [], myWishes);
   const inviteTo = `/account/invite-to-eat?invitee_name=${encodeURIComponent(first)}`;
   const foods = Array.isArray(peer?.favorite_foods) ? peer.favorite_foods.map((f) => f?.label).filter(Boolean) : [];
+  // "Lunch invite pending" (Andre 2026-11-16): my invites they haven't answered yet.
+  const [pendingInvites, setPendingInvites] = useState([]);
+  useEffect(() => {
+    if (self || !peerId) return undefined;
+    let alive = true;
+    getDiscoverableDiner(peerId)
+      .then((r) => alive && setPendingInvites(Array.isArray(r?.pending_invites) ? r.pending_invites.filter((x) => x?.date && x?.label) : []))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [self, peerId]);
   const [allClips, setAllClips] = useState(false);
   const [peerPlans, setPeerPlans] = useState(null);
   const [monthHas, setMonthHas] = useState(false);
@@ -422,6 +446,12 @@ export function ConnectScreenBody({ peer, name, eating, wishes, clips: clipsIn =
         {peer.diner_about ? <p style={styles.about}>{peer.diner_about}</p> : null}
         {/* Invite always (Andre 2026-11-06): icon + word, no green pill. */}
         {self ? null : <ActionLabel icon="invite" label="Invite" to={inviteTo} testId="connect-profile-invite" />}
+        {pendingInvites.map((p) => (
+          <p key={`${p.date}|${p.label}`} style={styles.muted} data-testid="connect-invite-pending">
+            {p.label}
+            {pendingDayWord(p.date)}
+          </p>
+        ))}
         <BothWant items={bothWant} inviteTo={inviteTo} />
       </section>
 

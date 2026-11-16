@@ -190,6 +190,8 @@ function parsePerson(p, vibe) {
     bothLike: blId && blName ? { restaurantId: blId, name: blName } : null,
     // Up for coffee (mig 0430) / Happy Hour (mig 0436) rows: Invite asks for coffee / drinks, not the tab's meal.
     window: text(p.window),
+    // Already invited for this meal and day, no answer yet: Invite is gray (Andre 2026-11-16).
+    invitePending: p.invite_pending === true,
   };
 }
 

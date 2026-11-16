@@ -86,3 +86,15 @@ test("reads active_windows for a picked day (a dotted day opens where the activi
   assert.deepEqual(parseToday({ ...base, social: { open: null, active_windows: ["dinner", "brunch"] } }).social.activeWindows, ["dinner"]);
   assert.equal(parseToday({ ...base, social: { open: null } }).social.activeWindows, null);
 });
+
+test("Invite pending (Andre 2026-11-16): rows carry invite_pending like the app", () => {
+  const open = parseOpen({
+    people: [
+      { user_id: 10, name: "Sam", vibe: "hungry", label: "Hungry now", invite_pending: true },
+      { user_id: 11, name: "Ana", vibe: "hungry", label: "Hungry now" },
+    ],
+    up_for: [{ user_id: 12, name: "Kai", label: "Open for lunch", invite_pending: true }],
+  });
+  assert.deepEqual(open.people.map((p) => p.invitePending), [true, false]);
+  assert.equal(open.upFor[0].invitePending, true);
+});

@@ -87,7 +87,7 @@ function Avatar({ url, name, size = 36 }) {
  * Connects — no line about me. Actions are an icon over a small word, as on the Feed: Invite (two
  * people), Join (person +), Ask (chat bubble ?), Asked (clock), Quick Invite (bolt).
  */
-function RowAction({ icon, word, color, onClick, disabled, label, testID }) {
+function RowAction({ icon, word, color, onClick, disabled, label, testID, dim = false }) {
   const body = (
     <>
       <AppIcon name={icon} size={22} color={color} />
@@ -96,7 +96,7 @@ function RowAction({ icon, word, color, onClick, disabled, label, testID }) {
   );
   if (!onClick) {
     return (
-      <span style={{ ...s.action, color }} aria-label={label ?? word} data-testid={testID}>
+      <span style={{ ...s.action, color, ...(dim ? { opacity: 0.4 } : null) }} aria-label={label ?? word} aria-disabled={dim ? "true" : undefined} data-testid={testID}>
         {body}
       </span>
     );
@@ -123,7 +123,12 @@ function PersonRow({ p, meal, onInvite, onPerson, kind }) {
           {p.both && p.bothLike ? <span style={s.rowLine}>You both like {p.bothLike.name}</span> : null}
         </span>
       </button>
-      <RowAction icon="invite" word="Invite" color={meal.color} onClick={() => onInvite(p)} label={`Invite ${p.name}`} testID={`${id}-invite`} />
+      {/* Invite pending (Andre 2026-11-16): already invited for this meal and day → Invite is gray, not clickable. */}
+      {p.invitePending ? (
+        <RowAction icon="invite" word="Invite" color={C.muted} dim label={`Invite pending · waiting on ${p.name}`} testID={`${id}-invite-pending`} />
+      ) : (
+        <RowAction icon="invite" word="Invite" color={meal.color} onClick={() => onInvite(p)} label={`Invite ${p.name}`} testID={`${id}-invite`} />
+      )}
     </div>
   );
 }
