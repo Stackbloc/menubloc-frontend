@@ -15,6 +15,7 @@ import {
 } from "../../lib/consumerApi.js";
 import { buildSocialEventJoinShareData } from "../../lib/diningCrewInviteShare.js";
 import { MY_MENUPLY_PROFILE_PATH } from "../../lib/myMenuplyRoutes.js";
+import { EventMedia } from "../../components/events/EventMedia.jsx";
 
 function formatWhen(ev) {
   const d = String(ev?.event_date || "").trim();
@@ -120,6 +121,7 @@ export default function DinerSocialEventDetailPage() {
             <h1 style={styles.title}>{event.title}</h1>
             {when ? <p style={styles.meta}>{when}</p> : null}
             {event.location_label ? <p style={styles.meta}>{event.location_label}</p> : null}
+            <EventMedia event={event} />
             {event.description ? <p style={styles.description}>{event.description}</p> : null}
 
             <div style={styles.actions}>

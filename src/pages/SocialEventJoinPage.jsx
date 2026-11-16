@@ -15,6 +15,7 @@ import {
   setEatInviteGuestDisplayName,
 } from "../lib/eatInviteGuestIdentity.js";
 import { buildSocialEventJoinShareData } from "../lib/diningCrewInviteShare.js";
+import { EventMedia } from "../components/events/EventMedia.jsx";
 
 const RESPONSES = [
   { status: "going", label: "I'm in" },
@@ -134,6 +135,7 @@ export default function SocialEventJoinPage() {
         <p style={styles.meta}>
           {[organizer, formatWhen(event), event.location_label].filter(Boolean).join(" · ")}
         </p>
+        <EventMedia event={event} />
         {event.description ? <p style={styles.body}>{event.description}</p> : null}
         {event.going_count != null ? (
           <p style={styles.muted} data-testid="social-event-going-count">

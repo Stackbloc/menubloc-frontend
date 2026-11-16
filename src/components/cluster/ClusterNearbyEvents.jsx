@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { fetchClusterNearbyEvents } from "../../lib/clusterApi.js";
 import { getTimezoneForUsState } from "../../lib/timeZoneUtils.js";
 import { splitEventsByLocalDay } from "../../lib/clusterDashboardModel.js";
+import { EventThumb } from "../events/EventMedia.jsx";
 
 function dinerWhen(date, time) {
   const parts = [];
@@ -27,7 +28,7 @@ function EventRow({ event }) {
     event.distance_miles != null && Number.isFinite(Number(event.distance_miles))
       ? `${Number(event.distance_miles)} mi`
       : null;
-  const inner = (
+  const text = (
     <>
       <div className="cluster-feed-item-title" style={styles.title}>
         {event.name || "Event"}
@@ -37,6 +38,16 @@ function EventRow({ event }) {
       </p>
     </>
   );
+  // A diner event's clip or photo sits to the left (event clip, 2026-11-16).
+  const inner =
+    event.video_url || event.photo_url ? (
+      <span style={styles.withThumb}>
+        <EventThumb videoUrl={event.video_url} photoUrl={event.photo_url} />
+        <span style={{ minWidth: 0 }}>{text}</span>
+      </span>
+    ) : (
+      text
+    );
   return (
     <li data-testid="cluster-event-item" style={styles.row}>
       {event.href || event.slug ? (
@@ -88,6 +99,8 @@ export default function ClusterNearbyEvents({ cluster, onCount = null }) {
           start_time: dinerWhen(e.event_date, e.start_time),
           venue_label: e.location_label,
           href: e.join_url,
+          video_url: e.video_url || null,
+          photo_url: e.video_url ? null : e.photo_url || null,
         }));
         const list = [...venue, ...diner];
         setEvents(list);
@@ -179,4 +192,5 @@ const styles = {
   title: { fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.35 },
   detail: { margin: "3px 0 0", fontSize: 13, color: "#4b5563", lineHeight: 1.4 },
   linkWrap: { color: "inherit", textDecoration: "none", display: "block" },
+  withThumb: { display: "flex", gap: 12, alignItems: "center" },
 };
