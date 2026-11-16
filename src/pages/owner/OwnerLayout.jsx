@@ -71,6 +71,7 @@ const NAV_SECTIONS_STATIC = [
       { to: "/owner/diners", label: "Diner accounts" },
       { to: "/owner/videos", label: "Clip Manager" },
       { to: "/owner/phms", label: "Platform Health" },
+      { to: "/owner/menu-pipeline", label: "Menu Pipeline" },
       { to: "/owner/errors", label: "Errors" },
       { to: "/owner/feedback", label: "Feedback" },
       { to: "/owner/reports", label: "Reports" },

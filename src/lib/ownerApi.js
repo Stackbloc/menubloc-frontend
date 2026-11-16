@@ -490,6 +490,12 @@ export const getOwnerClusterCheck = () => get("/api/owner/cluster-check");
 export const startOwnerClusterCheck = (body) => post("/api/owner/cluster-check/run", body);
 export const getOwnerClusterCheckRun = (runId) => get(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}`);
 export const undoOwnerClusterCheck = (runId) => post(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}/undo`, {});
+// Owner → Menu Pipeline explorer (read-only GETs).
+export const getOwnerMenuPipelineRegistry = () => get("/api/owner/menu-pipeline/registry");
+export const getOwnerMenuPipelineMetrics = (days = 7) => get(`/api/owner/menu-pipeline/metrics?days=${encodeURIComponent(days)}`);
+export const searchOwnerMenuPipelineRestaurants = (q) => get(`/api/owner/menu-pipeline/restaurants?q=${encodeURIComponent(q)}`);
+export const getOwnerMenuPipelineTrace = (restaurantId) =>
+  get(`/api/owner/menu-pipeline/trace?restaurant_id=${encodeURIComponent(restaurantId)}`);
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
 export const getOwnerRestaurantProfileStyle = (restaurantId) =>
