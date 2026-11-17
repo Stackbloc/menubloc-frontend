@@ -907,7 +907,7 @@ export default function OwnerKnowledgeBot() {
                 <a href={`/restaurants/${applyResult.restaurant_id}`} target="_blank" rel="noreferrer" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>
                   Open public profile ↗
                 </a>
-                <Link to={`/owner/menu-console/restaurants/${applyResult.restaurant_id}`} style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>
+                <Link to={`/owner/restaurant-manager?restaurant=${applyResult.restaurant_id}&section=menus`} style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>
                   Edit in menu console
                 </Link>
               </div>
