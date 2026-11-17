@@ -114,6 +114,8 @@ export default function ProfileHero({
   metaBits = [],
   /** "Est. 1998" — Founded shown inline beside the cuisine (no separate block). */
   establishedLabel = "",
+  /** Reservations (Phase 4): "Takes reservations" after Est. (diners with the reservations flag). */
+  takesReservations = false,
   venueLabel = "",
   clusterName = "",
   clusterHref = null,
@@ -161,7 +163,7 @@ export default function ProfileHero({
   const cluster = String(clusterName || "").trim();
   const established = String(establishedLabel || "").trim();
   const showIdentityMeta =
-    profileType === "restaurant" && (venue || metaBits.length || established);
+    profileType === "restaurant" && (venue || metaBits.length || established || takesReservations);
   const establishedSpan = (withSeparator) =>
     established ? (
       <span data-testid="profile-hero-established">
@@ -498,6 +500,12 @@ export default function ProfileHero({
               <span data-testid="profile-hero-venue">{metaBits[0]}</span>
             ) : null}
             {establishedSpan(Boolean(venue || metaBits[0]))}
+            {takesReservations ? (
+              <span data-testid="profile-hero-takes-reservations">
+                {venue || metaBits[0] || established ? "\u00a0·\u00a0" : ""}
+                Takes reservations
+              </span>
+            ) : null}
           </div>
         ) : null}
 

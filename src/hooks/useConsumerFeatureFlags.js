@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { getConsumerFeatureFlags } from "../lib/consumerApi.js";
 
-export const FLAGS_OFF = Object.freeze({ todayHome: false, socialPlans: false, planPush: false, feedComments: false });
+export const FLAGS_OFF = Object.freeze({ todayHome: false, socialPlans: false, planPush: false, feedComments: false, reservations: false });
 
 export function parseFeatureFlags(body) {
   const f = (body && typeof body === "object" && body.flags) || {};
@@ -17,6 +17,8 @@ export function parseFeatureFlags(body) {
     socialPlans: f.social_plans === true,
     planPush: f.plan_push === true,
     feedComments: f.feed_comments === true,
+    // Reservations (Phase 4, mig 0443): "Takes reservations" on restaurant pages.
+    reservations: f.reservations === true,
   };
 }
 

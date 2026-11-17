@@ -29,6 +29,7 @@ import ProfileUpcomingEvents from "./ProfileUpcomingEvents.jsx";
 import WhatDinersAreSaying from "../WhatDinersAreSaying.jsx";
 import ProfileComments from "./ProfileComments.jsx";
 import useRestaurantProfileComments from "../../../hooks/useRestaurantProfileComments.js";
+import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 import ConnectionSocialProof from "../../social/ConnectionSocialProof.jsx";
 import { pickWindowsPosts } from "../../../lib/profileWindows.js";
 import { restaurantFromAddMenuContext } from "../../../lib/addMenuContribution.js";
@@ -212,6 +213,9 @@ export default function PublicProfileShell({
     profile?.year_founded
   );
   const establishedLabel = formatEstablishedLabel(founded);
+  // Reservations (Phase 4): the restaurant's switch, shown only to diners with the reservations flag.
+  const flags = useConsumerFeatureFlags();
+  const takesReservations = flags.reservations === true && profile?.takes_reservations === true;
   const openStatus = profile?.open_status || null;
 
   const favorites = Array.isArray(favoriteMenuItems)
@@ -301,6 +305,7 @@ export default function PublicProfileShell({
         showClaimInvites={allowClaimInvites}
         metaBits={metaBits}
         establishedLabel={establishedLabel}
+        takesReservations={takesReservations}
         venueLabel={isFoodTruck ? "" : primaryVenue}
         clusterName={clusterName}
         clusterHref={clusterHref}
