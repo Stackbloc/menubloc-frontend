@@ -159,6 +159,16 @@ export default function OwnerLayout({ title, children, actions = null }) {
         ],
       },
       {
+        id: "ck-learning",
+        label: "CK Learning",
+        // Plan 50 (Andre 2026-11-16): teach the local agent; Library + Lab. Local Qwen; nothing is published.
+        items: [
+          { to: "/owner/teach", label: "Teach CK" },
+          { to: "/owner/knowledge", label: "Knowledge Library" },
+          { to: "/owner/training-lab", label: "Training Lab" },
+        ],
+      },
+      {
         id: "food-intelligence",
         label: "Food Intelligence",
         // Phase 1 (Andre 2026-11-07): versioned Food Ontology (MKS v2 keys) + MKS food types.

@@ -223,6 +223,9 @@ const OwnerMenuPipeline = React.lazy(() => import("./pages/owner/OwnerMenuPipeli
 import OwnerMealTimeSearch from "./pages/owner/OwnerMealTimeSearch.jsx";
 import OwnerHealthDeptBot from "./pages/owner/OwnerHealthDeptBot.jsx";
 import OwnerAgent from "./pages/owner/OwnerAgent.jsx";
+import OwnerKnowledgeLibrary from "./pages/owner/OwnerKnowledgeLibrary.jsx";
+import OwnerTrainingLab from "./pages/owner/OwnerTrainingLab.jsx";
+import OwnerTeach from "./pages/owner/OwnerTeach.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1242,6 +1245,12 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/search/meal-time" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMealTimeSearch /></OwnerRoute>} />
         <Route path="/owner/bots/health-dept-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHealthDeptBot /></OwnerRoute>} />
         <Route path="/owner/bots/agent" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent /></OwnerRoute>} />
+        <Route path="/owner/teach" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTeach /></OwnerRoute>} />
+        <Route path="/owner/teach/:conversationId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTeach /></OwnerRoute>} />
+        <Route path="/owner/knowledge" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeLibrary /></OwnerRoute>} />
+        <Route path="/owner/knowledge/:sourceId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeLibrary /></OwnerRoute>} />
+        <Route path="/owner/training-lab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTrainingLab /></OwnerRoute>} />
+        <Route path="/owner/training-lab/:caseId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTrainingLab /></OwnerRoute>} />
         {/* Legacy Knowledge Bot URLs (bookmarks, handoff docs) — same pages. */}
         <Route path="/owner/knowledge-bot/history" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBotHistory /></OwnerRoute>} />
         <Route path="/owner/knowledge-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeBot /></OwnerRoute>} />

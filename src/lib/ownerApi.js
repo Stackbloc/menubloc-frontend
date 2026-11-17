@@ -1531,3 +1531,51 @@ export const acceptOwnerReservation = (restaurantId, id) => post(ownerReservatio
 export const declineOwnerReservation = (restaurantId, id) => post(ownerReservationsPath(restaurantId, `/${id}/decline`), {});
 export const markOwnerReservationEntered = (restaurantId, id, entered) =>
   put(ownerReservationsPath(restaurantId, `/${id}/entered`), { entered: entered === true });
+
+// ───────── Plan 50: Knowledge Library + Menu Training Lab (/api/owner/knowledge) ─────────
+const qs = (params = {}) => {
+  const p = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+  const s = p.toString();
+  return s ? `?${s}` : "";
+};
+export const listKnowledgeSources = (filters = {}) => get(`/api/owner/knowledge/sources${qs(filters)}`);
+export const getKnowledgeSource = (id) => get(`/api/owner/knowledge/sources/${encodeURIComponent(id)}`);
+export const createKnowledgeSources = (formData) => postFormData("/api/owner/knowledge/sources", formData, { timeoutMs: 300000 });
+export const addKnowledgeVersion = (id, formData) => postFormData(`/api/owner/knowledge/sources/${encodeURIComponent(id)}/versions`, formData, { timeoutMs: 300000 });
+export const updateKnowledgeSource = (id, body) => patch(`/api/owner/knowledge/sources/${encodeURIComponent(id)}`, body);
+export const knowledgeSourceAction = (id, action, note) => post(`/api/owner/knowledge/sources/${encodeURIComponent(id)}/${action}`, { note });
+export const rollbackKnowledgeSource = (id, versionId) => post(`/api/owner/knowledge/sources/${encodeURIComponent(id)}/rollback`, { version_id: versionId });
+export const reprocessKnowledgeSource = (id) => post(`/api/owner/knowledge/sources/${encodeURIComponent(id)}/reprocess`, {});
+export const reviewKnowledgeConcept = (linkId, decision) => post(`/api/owner/knowledge/concepts/${linkId}/${decision}`, {});
+export const addKnowledgeConcept = (id, body) => post(`/api/owner/knowledge/sources/${encodeURIComponent(id)}/concepts`, body);
+export const resolveKnowledgeConflict = (conflictId, resolution) => post(`/api/owner/knowledge/conflicts/${conflictId}/resolve`, { resolution });
+export const getLabMeta = () => get("/api/owner/knowledge/lab/meta");
+export const getLabDashboard = () => get("/api/owner/knowledge/lab/dashboard");
+export const listLabCases = (filters = {}) => get(`/api/owner/knowledge/lab/cases${qs(filters)}`);
+export const createLabBatch = (formData) => postFormData("/api/owner/knowledge/lab/batches", formData, { timeoutMs: 600000 });
+export const getLabCase = (id) => get(`/api/owner/knowledge/lab/cases/${encodeURIComponent(id)}`);
+export const updateLabCase = (id, body) => patch(`/api/owner/knowledge/lab/cases/${encodeURIComponent(id)}`, body);
+export const labCasePartUrl = (id, ordinal) => `${API}/api/owner/knowledge/lab/cases/${encodeURIComponent(id)}/parts/${ordinal}`;
+export const queueLabRun = (id, body = {}) => post(`/api/owner/knowledge/lab/cases/${encodeURIComponent(id)}/runs`, body);
+export const getLabRun = (runId) => get(`/api/owner/knowledge/lab/runs/${runId}`);
+export const addLabCorrection = (runId, body) => post(`/api/owner/knowledge/lab/runs/${runId}/corrections`, body);
+export const reviewLabCorrection = (id, decision) => post(`/api/owner/knowledge/lab/corrections/${id}/${decision}`, {});
+export const saveLabReference = (caseId, body) => post(`/api/owner/knowledge/lab/cases/${encodeURIComponent(caseId)}/references`, body);
+export const verifyLabReference = (refId) => post(`/api/owner/knowledge/lab/references/${refId}/verify`, {});
+
+// ── CK teaching conversation, lessons, switches, model profiles, comparisons (plan 50) ──
+export const getLearningSwitches = () => get("/api/owner/knowledge/switches");
+export const setLearningSwitch = (key, enabled) => post(`/api/owner/knowledge/switches/${encodeURIComponent(key)}`, { enabled });
+export const listModelProfiles = () => get("/api/owner/knowledge/models");
+export const listConversations = () => get("/api/owner/knowledge/conversations");
+export const createConversation = (body) => post("/api/owner/knowledge/conversations", body);
+export const getConversation = (id) => get(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}`);
+export const sendConversationMessage = (id, text, modelProfile) =>
+  post(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/messages`, { text, model_profile: modelProfile || null }, { timeoutMs: 400000 });
+export const proposeConversationLesson = (id, body) => post(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/lessons`, body);
+export const listLessons = (status) => get(`/api/owner/knowledge/lessons${qs(status ? { status } : {})}`);
+export const reviewLesson = (id, decision, body = {}) => post(`/api/owner/knowledge/lessons/${id}/${decision}`, body);
+export const promoteLabCorrection = (id, body = {}) => post(`/api/owner/knowledge/lab/corrections/${id}/lesson`, body);
+export const listLabComparisons = () => get("/api/owner/knowledge/lab/comparisons");
+export const startLabComparison = (body) => post("/api/owner/knowledge/lab/comparisons", body);
+export const getLabComparison = (id) => get(`/api/owner/knowledge/lab/comparisons/${encodeURIComponent(id)}`);
