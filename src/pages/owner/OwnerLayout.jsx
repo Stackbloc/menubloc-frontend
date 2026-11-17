@@ -169,6 +169,8 @@ export default function OwnerLayout({ title, children, actions = null }) {
           // Phase 2 (Andre 2026-11-07): mealtime codes on MKS food types; ranking preview only (Stage A).
           { to: "/owner/food-intelligence/mealtime", label: "Mealtimes", end: true },
           { to: "/owner/food-intelligence/mealtime/preview", label: "Mealtime preview" },
+          // Plan 48 Phase 2 (Andre 2026-11-16): filter rows + Check a dish (read-only).
+          { to: "/owner/food-intelligence/filters", label: "Filters" },
           { to: "/owner/food-intelligence/drafts", label: "Draft revisions" },
           { to: "/owner/food-intelligence/versions", label: "Published versions" },
           { to: "/owner/food-intelligence/history", label: "Change history" },

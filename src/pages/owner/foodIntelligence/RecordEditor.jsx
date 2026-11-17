@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { OWNER_COLORS } from "../OwnerLayout.jsx";
 import { Btn, Tag, fmtValue, inputStyle, isActive, labelStyle, recordTitle } from "./fiUi.jsx";
+import { CONTAINS_LEVELS, CONTAINS_TAGS } from "../../../lib/ownerFoodIntelligenceApi.js";
 
 const list = (s) => String(s || "").split(",").map((x) => x.trim()).filter(Boolean);
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -114,15 +115,52 @@ function MksForm({ rec, meta, onChange }) {
   );
 }
 
+/**
+ * Filters (plan 48): what this food type contains. Children inherit; a blank tag = not sure.
+ * "Usually" counts as contains. Filters read only the published version, and only when switched on.
+ */
+function ContainsField({ value, onChange }) {
+  const set = (tag, level) => {
+    const next = { ...value };
+    if (level) next[tag] = level;
+    else delete next[tag];
+    onChange(next);
+  };
+  return (
+    <Field
+      label="Contains (Filters)"
+      hint="Blank = not sure (the menu's words decide). “Usually” counts as contains. Smaller food types inside this one get the same answers unless they set their own."
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 6 }}>
+        {CONTAINS_TAGS.map(({ tag, label }) => (
+          <label key={tag} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, fontSize: 13 }}>
+            <span>{label}</span>
+            <select value={value[tag] || ""} onChange={(e) => set(tag, e.target.value)} style={{ ...inputStyle, padding: "3px 6px" }} aria-label={`${label} contained`}>
+              <option value="">—</option>
+              {CONTAINS_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </label>
+        ))}
+      </div>
+    </Field>
+  );
+}
+
 function KeyForm({ rec, onChange }) {
   const [notes, setNotes] = useState(rec.notes || "");
   const [eligible, setEligible] = useState(rec.is_eligible !== false);
   const [aliases, setAliases] = useState(() => (rec.aliases || []).map((a) => ({ ...a })));
+  const [contains, setContains] = useState(() => ({ ...(rec.contains || {}) }));
   useEffect(() => {
-    const fields = { notes: notes.trim() || null, is_eligible: eligible, aliases: aliases.filter((a) => a.alias_text.trim()).map((a) => ({ alias_text: a.alias_text.trim(), match_type: a.match_type })) };
+    const fields = {
+      notes: notes.trim() || null,
+      is_eligible: eligible,
+      aliases: aliases.filter((a) => a.alias_text.trim()).map((a) => ({ alias_text: a.alias_text.trim(), match_type: a.match_type })),
+      contains: Object.keys(contains).length ? contains : null,
+    };
     onChange(Object.fromEntries(Object.entries(fields).filter(([k, v]) => !same(v, rec[k] ?? (k === "aliases" ? [] : null)))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notes, eligible, aliases]);
+  }, [notes, eligible, aliases, contains]);
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 10 }}>
@@ -152,6 +190,7 @@ function KeyForm({ rec, onChange }) {
           <div><Btn small onClick={() => setAliases((l) => [...l, { alias_text: "", match_type: "exact" }])}>＋ Alias</Btn></div>
         </div>
       </Field>
+      <ContainsField value={contains} onChange={setContains} />
     </div>
   );
 }

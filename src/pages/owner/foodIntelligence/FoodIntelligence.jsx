@@ -5,6 +5,7 @@ import { fiApi, SYSTEM_LABELS, SYSTEMS } from "../../../lib/ownerFoodIntelligenc
 import RecordEditor, { AddRecordForm } from "./RecordEditor.jsx";
 import { MealtimeBrowse, MealtimeDraft, MealtimeRankingPreview } from "./MealtimeScreens.jsx";
 import { OntologyKeyContext, OntologyList } from "./OntologyExplorer.jsx";
+import FiltersScreen from "./FiltersScreen.jsx";
 import {
   Banner, Btn, ConfirmDialog, DiffList, IssueList, Loading, SummaryLine, Tag,
   inputStyle, linkStyle, recordSub, recordTitle, useLoad, when,
@@ -643,6 +644,7 @@ const TITLES = {
   food_ontology: "Food Ontology",
   mks: "MKS",
   mealtime: "Mealtimes",
+  filters: "Filters",
   drafts: "Draft revisions",
   versions: "Published versions",
   history: "Change history",
@@ -665,6 +667,7 @@ export default function FoodIntelligence() {
         <Route path="mealtime" element={<MealtimeBrowse />} />
         <Route path="mealtime/preview" element={<MealtimeRankingPreview />} />
         <Route path="mealtime/drafts/:id" element={<MealtimeDraft />} />
+        <Route path="filters" element={<FiltersScreen />} />
         <Route path=":system" element={<Browse />} />
         <Route path=":system/drafts/:id" element={<DraftEditor />} />
       </Routes>

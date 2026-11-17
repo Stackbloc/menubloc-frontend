@@ -53,6 +53,9 @@ export const fiApi = {
   mealtimeAddSuggestions: (draftId, { confirmBulk = false, categories } = {}) =>
     call("POST", `/mealtime/drafts/${draftId}/suggestions`, { confirm_bulk: confirmBulk, categories: categories && categories.length ? categories : null }),
   mealtimeRankingPreview: (params) => call("GET", `/mealtime/ranking-preview${q(params)}`),
+  // Filters (plan 48 Phase 2, read-only): filter rows, which version Filters read, Check a dish.
+  filtersRegistry: () => call("GET", "/filters/registry"),
+  filtersCheck: (body) => call("POST", "/filters/check", body),
   mealtimeLive: () => call("GET", "/mealtime/live"),
   mealtimeSetLive: (settings) => call("POST", "/mealtime/live", { settings }),
   restore: (system, { target, keys, expectedCurrent, note }) =>
@@ -65,7 +68,29 @@ export const fiApi = {
     }),
 };
 
-export const SYSTEM_LABELS = { food_ontology: "Food Ontology", mks: "MKS", mealtime: "Mealtimes" };
+/** Food Ontology "Contains" tags (backend filterRegistry.js CONTAINS_TAGS; the server validates). */
+export const CONTAINS_TAGS = [
+  { tag: "meat", label: "Meat" },
+  { tag: "pork", label: "Pork" },
+  { tag: "poultry", label: "Poultry" },
+  { tag: "fish", label: "Fish" },
+  { tag: "shellfish", label: "Shellfish" },
+  { tag: "meat_broth", label: "Meat broth" },
+  { tag: "gelatin", label: "Gelatin" },
+  { tag: "egg", label: "Egg" },
+  { tag: "dairy", label: "Dairy" },
+  { tag: "gluten", label: "Gluten" },
+  { tag: "wheat", label: "Wheat" },
+  { tag: "peanuts", label: "Peanuts" },
+  { tag: "tree_nuts", label: "Tree nuts" },
+  { tag: "soy", label: "Soy" },
+  { tag: "sesame", label: "Sesame" },
+  { tag: "alcohol", label: "Alcohol" },
+  { tag: "honey", label: "Honey" },
+];
+export const CONTAINS_LEVELS = ["always", "usually", "never"];
+
+export const SYSTEM_LABELS ={ food_ontology: "Food Ontology", mks: "MKS", mealtime: "Mealtimes" };
 export const SYSTEMS = ["food_ontology", "mks", "mealtime"];
 export const MEALTIME_CODES = [
   { code: "B", label: "Breakfast" },
