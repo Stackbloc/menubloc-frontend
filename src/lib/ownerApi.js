@@ -588,6 +588,13 @@ export const getOwnerRestaurantHours = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours`);
 export const updateOwnerRestaurantHours = (restaurantId, schedule) =>
   put(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours`, { schedule });
+// Hours for each location (2026-11-16): franchise stores ("r:<id>") and MLE kitchens ("l:<uuid>").
+export const getOwnerHoursLocations = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours/locations`);
+export const getOwnerLocationHours = (restaurantId, key) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours/locations/${encodeURIComponent(key)}`);
+export const saveOwnerLocationHours = (restaurantId, { schedule, keys, onlyMissing = false }) =>
+  put(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/hours/locations`, { schedule, keys, only_missing: onlyMissing });
 export const addOwnerRestaurantToCrm = (restaurantId) =>
   post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/add-to-crm`, {});
 export const getOwnerRevenueSummary = (params = {}) => {

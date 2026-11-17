@@ -1214,7 +1214,7 @@ export default function OwnerScheduledBot({ botKey }) {
                 <PageCard style={{ padding: "14px 24px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
-                      Enter hours yourself: paste a screenshot or type them, in a small window that stays on top.
+                      Enter hours yourself: paste a screenshot or type them, in a small window that stays on top. Works for each store of a franchise and each location of an MLE.
                     </div>
                     <Link to="/owner/hours-mini" style={{ fontSize: 13, fontWeight: 800, color: OWNER_COLORS.accent }}>
                       Mini Hours window
