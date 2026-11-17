@@ -100,7 +100,7 @@ test("invite friends step explains why and shares a note with the signup link", 
   const page = read("src/pages/consumer/SocialOnboardingPage.jsx");
   assert.match(page, /social-onboarding-invite-friends/);
   assert.match(page, /Invite your friends and family/);
-  assert.match(page, /Menuply is better with your people/);
+  assert.match(page, /Menuply is made for the people you already eat with/);
   assert.match(page, /settle\("invite_friends", "skipped"\)/);
   const { buildMenuplyFriendInviteShareData } = await import("../src/lib/menuplyAccountInvite.js");
   const data = buildMenuplyFriendInviteShareData();

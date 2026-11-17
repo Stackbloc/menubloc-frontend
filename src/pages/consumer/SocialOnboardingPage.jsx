@@ -502,11 +502,10 @@ export default function SocialOnboardingPage() {
 
         {stepId === "invite_friends" ? (
           <section data-testid="social-onboarding-invite-friends">
-            <p style={styles.lead}>Menuply is better with your people.</p>
+            <p style={styles.lead}>Menuply is made for the people you already eat with.</p>
             <p style={styles.body}>
-              When the people you eat with are on Menuply, you can send them a Quick Invite, plan
-              where to eat together, see the dishes they love, and share clips of what you&apos;re
-              eating.
+              Invite them now to get the most out of it from day one: plan meals together, send a
+              Quick Invite in a tap, and see the dishes they love.
             </p>
             <p style={styles.soft}>Joining is free. Send a link by text, email, or any app.</p>
 
@@ -534,7 +533,7 @@ export default function SocialOnboardingPage() {
               disabled={busy}
               onClick={() => settle("invite_friends", "skipped")}
             >
-              Skip
+              Not now
             </button>
           </section>
         ) : null}
