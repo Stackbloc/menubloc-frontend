@@ -34,7 +34,7 @@ import {
 import { restaurantMenuPath } from "../../lib/canonicalUrlCore.js";
 
 /**
- * Owner → Bots → Agent.
+ * Owner → Bots → Area Bot (plan 55 renamed it from "Agent"; API /api/owner/agent unchanged).
  *   1. Where: a place name or address + a radius → the map finds it (no AI guesses the spot)
  *   2. Start: the agent finds the restaurants there, skips chains and marketplaces, reads
  *      menus from the restaurants' own sites and publishes them through Menubot. Places whose
@@ -1008,7 +1008,7 @@ export default function OwnerAgent() {
   }, [selected]);
 
   return (
-    <OwnerLayout title="Agent">
+    <OwnerLayout title="Area Bot">
       <div style={{ display: "grid", gap: 16 }}>
         <div style={mutedStyle}>
           Pick a Menuply cluster and the agent finds the menus for its restaurants, or pick a new spot and it finds the restaurants

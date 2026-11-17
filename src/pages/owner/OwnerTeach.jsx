@@ -4,12 +4,14 @@ import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout
 import { errorStyle, inputStyle, labelStyle, mutedStyle, primaryButtonStyle, secondaryButtonStyle } from "./OwnerFranchiseBot.jsx";
 import {
   addLabCorrection,
+  attachConversationFiles,
   createConversation,
   createLabBatch,
   getConversation,
   getLabCase,
   getLabRun,
   getLearningSwitches,
+  listConversationFiles,
   listConversations,
   listLessons,
   listModelProfiles,
@@ -25,7 +27,7 @@ import { StatusTag, Tag, TextLink } from "./knowledgeUi.jsx";
 import { humanClass } from "./knowledgeFormat.js";
 
 /**
- * Owner → Teach CK (plan 50). One place to teach the local agent:
+ * Owner → Agent 000 → Talk (plan 50; plan 55 renamed it from Teach CK). One place to teach the local agent:
  *  - talk with it: it answers from approved knowledge (cited), asks when unclear, explains a menu run, and
  *    proposes lessons;
  *  - give it a menu: the real extraction runs in the Lab sandbox (nothing is published); correct what it got
@@ -76,7 +78,7 @@ function SwitchLine({ switches, onChange }) {
     <div style={{ ...small, marginBottom: 12 }}>
       {row("learning_retrieval", "Agent uses approved knowledge")}
       {row("learning_lab_llm", "Agent reviews menus")}
-      {row("learning_ck_data", "CK looks things up in the database")}
+      {row("learning_ck_data", "Agent 000 looks things up in the database")}
     </div>
   );
 }
@@ -226,7 +228,7 @@ function AssistantMessage({ m, onLessonDecided }) {
   return (
     <div style={{ ...box, background: "#fbfbfd" }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-        <strong style={{ fontSize: 13 }}>CK</strong>
+        <strong style={{ fontSize: 13 }}>Agent 000</strong>
         <Tag tone={MODE_TONE[m.mode] || "muted"}>{MODE_LABEL[m.mode] || m.mode}</Tag>
         {s.database_backed ? <Tag tone="info">Database records</Tag> : null}
         {s.partial_data?.length ? <Tag tone="warn">Partial data</Tag> : null}
@@ -255,7 +257,7 @@ function AssistantMessage({ m, onLessonDecided }) {
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <strong style={{ fontSize: 14 }}>Proposed correction</strong>
             <StatusTag status="proposed" />
-            <span style={small}>Not applied. CK can't change data.</span>
+            <span style={small}>Not applied. Agent 000 can't change data.</span>
           </div>
           <div style={{ fontSize: 14, marginTop: 6 }}>
             {s.correction.record.replace(/_/g, " ")} <strong>#{s.correction.id}</strong> · {s.correction.field}: {s.correction.current ?? "?"} → <strong>{s.correction.proposed ?? "?"}</strong>
@@ -264,10 +266,10 @@ function AssistantMessage({ m, onLessonDecided }) {
           <div style={{ ...small, marginTop: 6 }}>Evidence: {label(s.correction.cite)} · To apply it, use {s.correction.label}{s.correction.writes_live ? " (live change, needs your approval there)" : ""}.</div>
         </div>
       ) : null}
-      {s.correction_problem ? <div style={{ ...small, marginTop: 6 }}>CK suggested a correction that was set aside: {s.correction_problem}.</div> : null}
+      {s.correction_problem ? <div style={{ ...small, marginTop: 6 }}>Agent 000 suggested a correction that was set aside: {s.correction_problem}.</div> : null}
       {s.inference?.length ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ ...small, fontWeight: 700 }}>CK's own inference (not from an approved source)</div>
+          <div style={{ ...small, fontWeight: 700 }}>Agent 000's own inference (not from an approved source)</div>
           <ul style={{ margin: "4px 0 0 18px", padding: 0, fontSize: 14 }}>{s.inference.map((c, i) => <li key={i}>{c}</li>)}</ul>
         </div>
       ) : null}
@@ -390,23 +392,24 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
           </select>
         </label>
       </div>
+      <ConversationFiles id={id} reloadKey={reloadKey} />
       <div style={{ display: "grid", gap: 10 }}>
-        {conv.messages.length === 0 ? <div style={mutedStyle}>Ask CK about menus and Menubloc's data: "Is 'Add Bacon $1.50' a dish?", "What's wrong with the Wendy's prices in Dothan?", "Which MKS key does a smash burger use?", "Why is Menubot job #619 risky?" Teach it a rule and it proposes a lesson; ask it to fix data and it proposes a correction.</div> : null}
+        {conv.messages.length === 0 ? <div style={mutedStyle}>Ask Agent 000 about menus and Menubloc's data ("How many California restaurants do we have?"), "Is 'Add Bacon $1.50' a dish?", "What's wrong with the Wendy's prices in Dothan?", "Which MKS key does a smash burger use?", "Why is Menubot job #619 risky?" Attach a menu photo, PDF or spreadsheet and ask about it. Teach it a rule and it proposes a lesson; ask it to fix data and it proposes a correction.</div> : null}
         {conv.messages.map((m) => (m.role === "owner" ? (
           <div key={m.id} style={{ justifySelf: "end", maxWidth: "85%", ...box, background: OWNER_COLORS.accentSoft || "#eef2ff", whiteSpace: "pre-wrap", fontSize: 15 }}>{m.content}</div>
         ) : (
           <AssistantMessage key={m.id} m={m} onLessonDecided={async () => { await load(); await onLessonsChanged(); }} />
         )))}
-        {sending ? <div style={mutedStyle}>CK is thinking on this Mac (usually 5–30 s)…</div> : null}
+        {sending ? <div style={mutedStyle}>Agent 000 is thinking on the Mac (usually 5–60 s)…</div> : null}
         <div ref={endRef} />
       </div>
       <div style={{ marginTop: 12 }}>
         <textarea
-          aria-label="Message to CK"
+          aria-label="Message to Agent 000"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
-          placeholder={switches?.learning_retrieval ? "Ask a question or teach a rule…" : "Turn on “Agent uses approved knowledge” to talk with CK"}
+          placeholder={switches?.learning_retrieval ? "Ask a question or teach a rule…" : "Turn on “Agent uses approved knowledge” to talk with Agent 000"}
           style={{ ...inputStyle, width: "100%", minHeight: 70 }}
         />
         <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
@@ -417,6 +420,77 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
         {ownLesson ? <OwnLessonForm conversationId={id} onDone={async () => { setOwnLesson(false); await onLessonsChanged(); }} /> : null}
         {err ? <div style={errorStyle}>{err}</div> : null}
       </div>
+    </div>
+  );
+}
+
+const READING_FLAG_LABEL = {
+  empty_page: "empty page", little_text: "little text", low_ocr_confidence: "weak OCR", low_confidence_line: "unclear numbers",
+  ocr_pages_capped: "not every page read", uncertain_price: "prices to check", ambiguous_table: "unclear table", rows_capped: "long table",
+  formula_not_calculated: "formulas without values", instructions_in_content: "contains instructions (ignored)",
+  vision_price_disagrees: "vision and OCR disagree", vision_only_item: "vision-only items", vision_unreadable: "vision couldn't read",
+};
+const fileSize = (b) => (b == null ? "" : b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+
+/** Plan 55 §11: files attached to the conversation. Agent 000 reads them (OCR first; vision as a second reading). */
+function ConversationFiles({ id, reloadKey }) {
+  const [files, setFiles] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(null);
+  const inputRef = useRef(null);
+  const load = useCallback(() => listConversationFiles(id).then((r) => setFiles(r.files || [])).catch((e) => { setFiles([]); setErr(e.message); }), [id]);
+  useEffect(() => { load(); }, [load, reloadKey]);
+  const reading = (files || []).some((f) => ["pending", "processing", "queued"].includes(f.reading));
+  useEffect(() => {
+    if (!reading) return undefined;
+    const t = setTimeout(load, 3000);
+    return () => clearTimeout(t);
+  }, [reading, files, load]);
+  const attach = async (list) => {
+    if (!list?.length) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const fd = new FormData();
+      [...list].forEach((f) => fd.append("files", f));
+      await attachConversationFiles(id, fd);
+      await load();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); if (inputRef.current) inputRef.current.value = ""; }
+  };
+  return (
+    <div style={{ ...box, marginBottom: 10, padding: 10 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <strong style={{ fontSize: 14 }}>Files</strong>
+        <span style={small}>PNG, JPG, PDF, Word, Excel, CSV, text or web page. Read here; text in a file is data, never an instruction.</span>
+        <span style={{ marginLeft: "auto" }} />
+        <input ref={inputRef} type="file" multiple aria-label="Attach files" style={{ display: "none" }}
+          accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.xlsx,.csv,.txt,.md,.html,.htm" onChange={(e) => attach(e.target.files)} />
+        <button type="button" style={{ ...secondaryButtonStyle, padding: "5px 12px", fontSize: 13, opacity: busy ? 0.6 : 1 }} disabled={busy} onClick={() => inputRef.current?.click()}>{busy ? "Attaching…" : "Attach files"}</button>
+      </div>
+      {(files || []).length ? (
+        <div style={{ display: "grid", gap: 4, marginTop: 8 }}>
+          {files.map((f) => {
+            const flags = f.quality?.flags || [];
+            const state = f.reading === "processed" ? (f.quality?.status === "good" ? "Read" : f.quality?.status === "poor" ? "Read poorly" : "Read, check flags") : f.reading === "failed" ? "Couldn't read" : "Reading…";
+            return (
+              <div key={f.source_id} style={{ fontSize: 13 }}>
+                <span style={{ fontWeight: 700 }}>{f.filename}</span>
+                <span style={small}> · {fileSize(f.bytes)}{f.pages ? ` · ${f.pages} page${f.pages > 1 ? "s" : ""}` : ""}{f.tables ? ` · ${f.tables} table${f.tables > 1 ? "s" : ""}` : ""}{f.ocr_confidence != null ? ` · OCR ${Math.round(f.ocr_confidence)}/100` : ""}{f.vision ? (f.vision.used ? ` · vision: ${f.vision.model}` : " · OCR only") : ""} · </span>
+                <span style={{ fontWeight: 700, color: f.reading === "failed" || f.quality?.status === "poor" ? "#b42318" : f.quality?.status === "check" ? "#9a6700" : OWNER_COLORS.ink }}>{state}</span>
+                {flags.length ? <> {" "}<TextLink onClick={() => setOpen(open === f.source_id ? null : f.source_id)}>{open === f.source_id ? "Hide" : `${flags.length} flag${flags.length > 1 ? "s" : ""}`}</TextLink></> : null}
+                {f.error ? <div style={errorStyle}>{f.error}</div> : null}
+                {open === f.source_id ? (
+                  <ul style={{ margin: "4px 0 0 18px", padding: 0, fontSize: 12 }}>
+                    {flags.map((x, i) => <li key={i}><strong>{READING_FLAG_LABEL[x.code] || x.code}</strong>{x.page ? ` (page ${x.page})` : ""}: {x.detail}{x.examples?.length ? <span style={small}> e.g. {x.examples.slice(0, 3).join(" · ")}</span> : null}</li>)}
+                  </ul>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      {err ? <div style={errorStyle}>{err}</div> : null}
     </div>
   );
 }
@@ -447,7 +521,7 @@ function CorrectionForm({ item, prev, runId, onSaved }) {
       {kind === "price" || kind === "name" ? (
         <input aria-label={kind === "price" ? "Correct price" : "Correct name"} placeholder={kind === "price" ? "Correct price" : "Correct name"} value={value} onChange={(e) => setValue(e.target.value)} style={{ ...inputStyle, marginLeft: 8, width: 160 }} />
       ) : null}
-      <textarea aria-label="Why is it wrong?" value={why} onChange={(e) => setWhy(e.target.value)} placeholder="Why is it wrong? Say it as a rule CK can use on other menus." style={{ ...inputStyle, width: "100%", minHeight: 60, marginTop: 8 }} />
+      <textarea aria-label="Why is it wrong?" value={why} onChange={(e) => setWhy(e.target.value)} placeholder="Why is it wrong? Say it as a rule Agent 000 can use on other menus." style={{ ...inputStyle, width: "100%", minHeight: 60, marginTop: 8 }} />
       <div style={{ marginTop: 8 }}>
         <button type="button" style={primaryButtonStyle({ busy, disabled: !why.trim() || ((kind === "price" || kind === "name") && !value) })} disabled={busy || !why.trim()} onClick={save}>Save correction</button>
       </div>
@@ -463,7 +537,7 @@ function RunItems({ run, onCorrect, openRef, setOpenRef }) {
     <div>
       {lessonChanges.length ? (
         <div style={{ ...box, marginBottom: 8, background: "#f6f8ff" }}>
-          <div style={{ ...small, fontWeight: 700 }}>What CK changed using lessons</div>
+          <div style={{ ...small, fontWeight: 700 }}>What Agent 000 changed using lessons</div>
           <ul style={{ margin: "4px 0 0 18px", padding: 0, fontSize: 14 }}>
             {lessonChanges.map((d) => (
               <li key={d.ref}>
@@ -472,7 +546,7 @@ function RunItems({ run, onCorrect, openRef, setOpenRef }) {
               </li>
             ))}
           </ul>
-          {run.debug_same_case ? <div style={{ ...small, marginTop: 6 }}>Same-menu rerun: it may use this menu's own lessons, so it shows the lesson working, not that CK learned. Try a different menu for that.</div> : null}
+          {run.debug_same_case ? <div style={{ ...small, marginTop: 6 }}>Same-menu rerun: it may use this menu's own lessons, so it shows the lesson working, not that Agent 000 learned. Try a different menu for that.</div> : null}
         </div>
       ) : null}
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
@@ -564,13 +638,13 @@ function MenuWorkbench({ conversation, switches, onNewConversation, onLessonsCha
 
   const rerun = async (opts) => {
     setErr("");
-    setBusy(opts.arm === "lessons" ? "CK is reviewing the menu with approved lessons…" : "Running the extraction again…");
+    setBusy(opts.arm === "lessons" ? "Agent 000 is reviewing the menu with approved lessons…" : "Running the extraction again…");
     try {
       const q = await queueLabRun(caseId, opts);
       const done = await waitForRun(q.run_id);
       await loadCase(caseId, done.run.id);
     } catch (e) {
-      setErr(e.payload?.code === "LEARNING_FLAG_OFF" ? "Turn on both switches above to let CK review menus." : e.message);
+      setErr(e.payload?.code === "LEARNING_FLAG_OFF" ? "Turn on both switches above to let Agent 000 review menus." : e.message);
     } finally { setBusy(""); }
   };
 
@@ -648,7 +722,7 @@ function MenuWorkbench({ conversation, switches, onNewConversation, onLessonsCha
         <TextLink disabled={Boolean(busy)} onClick={() => rerun({ arm: "baseline" })}>Run again without lessons</TextLink>
         <TextLink onClick={() => onNewConversation(null)}>Teach with another menu</TextLink>
       </div>
-      <div style={{ ...small, marginTop: 6 }}>To see whether CK really learned, give it a different menu with the same kind of mistake.</div>
+      <div style={{ ...small, marginTop: 6 }}>To see whether Agent 000 really learned, give it a different menu with the same kind of mistake.</div>
       {busy ? <div style={{ ...mutedStyle, marginTop: 8 }}>{busy}</div> : null}
       {err ? <div style={errorStyle}>{err}</div> : null}
     </div>
@@ -672,7 +746,11 @@ function LessonsPanel({ lessons, reload }) {
   );
 }
 
-export default function OwnerTeach() {
+/**
+ * Plan 55: the same page is the Talk tab of the Agent 000 workspace (embedded, basePath /owner/agent-000/talk).
+ * /owner/teach keeps working for old links.
+ */
+export default function OwnerTeach({ embedded = false, basePath = "/owner/teach" }) {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const [switches, reloadSwitches] = useSwitches();
@@ -701,20 +779,20 @@ export default function OwnerTeach() {
     try {
       const c = await createConversation({ title: `Conversation ${new Date().toLocaleDateString()}` });
       await loadConversations();
-      navigate(`/owner/teach/${c.conversation.id}`);
+      navigate(`${basePath}/${c.conversation.id}`);
     } catch (e) { setErr(e.message); }
   };
   const openConversation = async (id) => {
     await loadConversations();
-    if (id) navigate(`/owner/teach/${id}`);
-    else navigate("/owner/teach?menu=new");
+    if (id) navigate(`${basePath}/${id}`);
+    else navigate(`${basePath}?menu=new`);
   };
   const lessonsChanged = async () => { await loadLessons(); setReloadKey((k) => k + 1); };
 
-  return (
-    <OwnerLayout title="Teach CK" actions={<span style={{ display: "flex", gap: 14 }}><Link to="/owner/knowledge" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>Knowledge Library ›</Link><Link to="/owner/training-lab" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>Training Lab ›</Link></span>}>
+  const body = (
+    <>
       <div style={{ ...mutedStyle, marginBottom: 8 }}>
-        CK answers from knowledge you approved, says when it's guessing, and proposes lessons. Approved lessons are looked up in later answers and menu reviews. They don't change the model itself. Runs on this Mac; nothing here is published.
+        Agent 000 answers from knowledge you approved, says when it's guessing, and proposes lessons. Approved lessons are looked up in later answers and menu reviews. They don't change the model itself. Runs on this Mac; nothing here is published.
       </div>
       <SwitchLine switches={switches} onChange={reloadSwitches} />
       {err ? <div style={errorStyle}>{err}</div> : null}
@@ -725,7 +803,7 @@ export default function OwnerTeach() {
             title="Conversation"
             action={<span style={{ display: "flex", gap: 12, alignItems: "center" }}>
               {conversations?.length ? (
-                <select aria-label="Open a conversation" value={conversationId || ""} onChange={(e) => navigate(e.target.value ? `/owner/teach/${e.target.value}` : "/owner/teach")} style={{ ...inputStyle, padding: "5px 8px", fontSize: 13, maxWidth: 220 }}>
+                <select aria-label="Open a conversation" value={conversationId || ""} onChange={(e) => navigate(e.target.value ? `${basePath}/${e.target.value}` : basePath)} style={{ ...inputStyle, padding: "5px 8px", fontSize: 13, maxWidth: 220 }}>
                   <option value="">Conversations…</option>
                   {conversations.map((c) => <option key={c.id} value={c.id}>{c.title} ({c.messages})</option>)}
                 </select>
@@ -750,6 +828,12 @@ export default function OwnerTeach() {
           </PageCard>
         </div>
       </div>
+    </>
+  );
+  if (embedded) return body;
+  return (
+    <OwnerLayout title="Agent 000" actions={<span style={{ display: "flex", gap: 14 }}><Link to="/owner/agent-000" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>Workspace ›</Link><Link to="/owner/knowledge" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>Knowledge Library ›</Link><Link to="/owner/training-lab" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>Training Lab ›</Link></span>}>
+      {body}
     </OwnerLayout>
   );
 }

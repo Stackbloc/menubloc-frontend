@@ -155,15 +155,16 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/bots/franchise-bot", label: "Franchise Bot" },
           { to: "/owner/bots/location-bot", label: "Location Bot" },
           { to: "/owner/bots/health-dept-bot", label: "HealthDeptBot" },
-          { to: "/owner/bots/agent", label: "Agent" },
+          { to: "/owner/bots/agent", label: "Area Bot" },
         ],
       },
       {
         id: "ck-learning",
-        label: "CK Learning",
+        label: "Agent 000",
         // Plan 50 (Andre 2026-11-16): teach the local agent; Library + Lab. Local Qwen; nothing is published.
+        // Plan 55 (2026-11-17): one Agent 000 workspace (Talk, Assignments, Proposals, History, Status).
         items: [
-          { to: "/owner/teach", label: "Teach CK" },
+          { to: "/owner/agent-000", label: "Agent 000" },
           { to: "/owner/knowledge", label: "Knowledge Library" },
           { to: "/owner/training-lab", label: "Training Lab" },
         ],

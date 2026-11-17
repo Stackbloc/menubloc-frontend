@@ -226,6 +226,7 @@ import OwnerAgent from "./pages/owner/OwnerAgent.jsx";
 import OwnerKnowledgeLibrary from "./pages/owner/OwnerKnowledgeLibrary.jsx";
 import OwnerTrainingLab from "./pages/owner/OwnerTrainingLab.jsx";
 import OwnerTeach from "./pages/owner/OwnerTeach.jsx";
+import OwnerAgent000 from "./pages/owner/OwnerAgent000.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -1245,6 +1246,9 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/search/meal-time" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMealTimeSearch /></OwnerRoute>} />
         <Route path="/owner/bots/health-dept-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHealthDeptBot /></OwnerRoute>} />
         <Route path="/owner/bots/agent" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent /></OwnerRoute>} />
+        <Route path="/owner/agent-000" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent000 /></OwnerRoute>} />
+        <Route path="/owner/agent-000/talk/:conversationId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent000 /></OwnerRoute>} />
+        <Route path="/owner/agent-000/:tab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent000 /></OwnerRoute>} />
         <Route path="/owner/teach" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTeach /></OwnerRoute>} />
         <Route path="/owner/teach/:conversationId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTeach /></OwnerRoute>} />
         <Route path="/owner/knowledge" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerKnowledgeLibrary /></OwnerRoute>} />

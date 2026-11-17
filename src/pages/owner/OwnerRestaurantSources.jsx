@@ -16,7 +16,7 @@ const FOUND_BY_LABELS = {
   address_bot: "Address Bot",
   location_bot: "Location Bot",
   franchise_bot: "Franchise Bot",
-  agent: "Agent",
+  agent: "Area Bot",
   pricebot: "PriceBot",
   photo_bot: "Photo Bot",
   health_dept_bot: "HealthDeptBot",

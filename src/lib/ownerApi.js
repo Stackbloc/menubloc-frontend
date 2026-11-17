@@ -1579,3 +1579,18 @@ export const promoteLabCorrection = (id, body = {}) => post(`/api/owner/knowledg
 export const listLabComparisons = () => get("/api/owner/knowledge/lab/comparisons");
 export const startLabComparison = (body) => post("/api/owner/knowledge/lab/comparisons", body);
 export const getLabComparison = (id) => get(`/api/owner/knowledge/lab/comparisons/${encodeURIComponent(id)}`);
+
+// ── Agent 000 workspace (plan 55) ──
+export const listConversationFiles = (id) => get(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/files`);
+export const attachConversationFiles = (id, formData) => postFormData(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/files`, formData, { timeoutMs: 600000 });
+export const getAgent000Status = () => get("/api/owner/agent-000/status");
+export const listAgent000Assignments = () => get("/api/owner/agent-000/assignments");
+export const createAgent000Assignment = (body) => post("/api/owner/agent-000/assignments", body);
+export const getAgent000Assignment = (id, filters = {}) => get(`/api/owner/agent-000/assignments/${encodeURIComponent(id)}${qs(filters)}`);
+export const agent000AssignmentAction = (id, action) => post(`/api/owner/agent-000/assignments/${encodeURIComponent(id)}/${action}`, {});
+export const listAgent000Proposals = (filters = {}) => get(`/api/owner/agent-000/proposals${qs(filters)}`);
+export const decideAgent000Proposals = (ids, approve, note) => post("/api/owner/agent-000/proposals/decide", { ids, approve, note: note || null });
+export const applyAgent000Proposals = (ids) => post("/api/owner/agent-000/proposals/apply", { ids }, { timeoutMs: 300000 });
+export const getAgent000ReviewPacket = (kind, id) => get(`/api/owner/agent-000/review-packet/${kind}/${encodeURIComponent(id)}`);
+export const recordAgent000Review = (kind, id, body) => post(`/api/owner/agent-000/review-packet/${kind}/${encodeURIComponent(id)}/review`, body);
+export const getAgent000History = (limit = 100) => get(`/api/owner/agent-000/history${qs({ limit })}`);
