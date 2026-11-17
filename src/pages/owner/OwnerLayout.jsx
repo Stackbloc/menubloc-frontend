@@ -155,7 +155,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
           { to: "/owner/bots/franchise-bot", label: "Franchise Bot" },
           { to: "/owner/bots/location-bot", label: "Location Bot" },
           { to: "/owner/bots/health-dept-bot", label: "HealthDeptBot" },
-          { to: "/owner/bots/agent", label: "Area Bot" },
+          { to: "/owner/bots/agent", label: "ScoutBot" },
         ],
       },
       {

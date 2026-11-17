@@ -51,7 +51,7 @@ const ON_DEMAND_BOTS = [
   },
   {
     key: "agent",
-    name: "Area Bot",
+    name: "ScoutBot",
     path: "/owner/bots/agent",
     blurb: "Pick a cluster, a spot on the map, or a whole county or state; it finds the restaurants there and captures their menus and/or profiles.",
   },
