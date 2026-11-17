@@ -81,28 +81,55 @@ function SwitchLine({ switches, onChange }) {
   );
 }
 
+const SCOPE_OPTIONS = [
+  ["chain", "One chain"], ["site_platform", "One website platform"], ["doc_type", "One kind of menu document"],
+  ["cluster", "One cluster"], ["capability", "One capability"], ["global", "Every restaurant"],
+];
+const EVIDENCE_LABEL = { conversation_message: "Your message in a teaching conversation", lab_correction: "Approved Lab correction", library_chunk: "Approved Library passage", fact: "Record shown in that turn" };
+const FLAG_LABEL = {
+  instruction_override: "tells the model to ignore its rules", ai_directed: "addressed to an AI", role_markup: "prompt markup",
+  policy_override: "tries to change approvals or checks", hidden_text: "hidden characters", encoded_instruction: "encoded instructions",
+};
+
+/**
+ * Agent audit G-04: the approval view. Evidence, scope, source and who proposed it are shown before Approve;
+ * a flagged lesson can be edited or rejected, never approved as is; an agent-proposed lesson needs a scope choice.
+ */
 function LessonCard({ lesson, onDecided }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(lesson.title || "");
   const [rule, setRule] = useState(lesson.body || "");
+  const rv = lesson.review || null;
+  const [scope, setScope] = useState(rv?.needs_scope_choice ? "" : lesson.scope || "global");
+  const [scopeKey, setScopeKey] = useState(lesson.scope_key || "");
+  const [revokeNote, setRevokeNote] = useState("");
+  const [revoking, setRevoking] = useState(false);
   if (!lesson?.id) return null;
-  const decide = async (decision) => {
+  const decide = async (decision, extra = {}) => {
     setBusy(true);
     setErr("");
     try {
-      await reviewLesson(lesson.id, decision, editing ? { title, rule } : {});
+      const body = { ...(editing ? { title, rule } : {}), ...extra };
+      if (decision === "approve") Object.assign(body, { scope, scope_key: scope === "global" ? null : scopeKey.trim() || null });
+      await reviewLesson(lesson.id, decision, body);
       setEditing(false);
+      setRevoking(false);
       await onDecided?.();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
+  const flags = rv?.screening?.flags || [];
+  const needsKey = scope && scope !== "global" && !scopeKey.trim();
+  const approveDisabled = busy || !scope || needsKey || (!rv?.can_approve && !editing);
   return (
     <div style={{ ...box, borderColor: lesson.status === "proposed" ? "#f2c48d" : OWNER_COLORS.line, marginTop: 8 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <strong style={{ fontSize: 14 }}>Lesson #{lesson.id}</strong>
         <StatusTag status={lesson.status === "active" ? "approved" : lesson.status} />
         {lesson.error_class ? <Tag>{humanClass(lesson.error_class)}</Tag> : null}
+        {flags.length ? <Tag tone="bad">Reads like instructions</Tag> : null}
+        {rv?.revoked ? <Tag tone="bad">Approval withdrawn</Tag> : null}
       </div>
       {editing ? (
         <div style={{ marginTop: 8 }}>
@@ -115,15 +142,63 @@ function LessonCard({ lesson, onDecided }) {
           <div style={{ fontSize: 14, marginTop: 2 }}>{lesson.body}</div>
         </>
       )}
-      {lesson.status === "proposed" ? (
-        <div style={{ display: "flex", gap: 14, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button type="button" style={primaryButtonStyle({ busy })} disabled={busy} onClick={() => decide("approve")}>Approve lesson</button>
-          <TextLink disabled={busy} onClick={() => setEditing(!editing)}>{editing ? "Cancel edit" : "Edit first"}</TextLink>
-          <TextLink tone="bad" disabled={busy} onClick={() => decide("reject")}>Reject</TextLink>
-          <span style={small}>Nothing is used until you approve it.</span>
+      {rv ? (
+        <div style={{ fontSize: 13, marginTop: 8, display: "grid", gap: 3 }}>
+          <div><span style={small}>Proposed by</span> {rv.proposer === "agent" ? "Agent 000" : rv.proposer === "owner_correction" ? "You (Lab correction)" : "You"}{rv.model ? ` · ${rv.model}` : ""}{rv.source ? ` · ${rv.source}` : ""}</div>
+          <div><span style={small}>Applies to</span> {rv.scope_label}{rv.needs_scope_choice ? " (not chosen yet)" : ""}</div>
+          <div>
+            <span style={small}>Evidence</span>
+            {rv.evidence.length ? (
+              <ul style={{ margin: "2px 0 0 18px", padding: 0 }}>
+                {rv.evidence.map((e, i) => (
+                  <li key={i}>
+                    {EVIDENCE_LABEL[e.kind] || e.kind}{e.cite ? ` ${e.cite}` : ""}: {e.verified ? "checked" : e.supporting ? "supporting only" : `not verified${e.note ? ` (${e.note})` : ""}`}
+                    {e.excerpt ? <div style={{ ...small, whiteSpace: "pre-wrap" }}>“{e.excerpt}”</div> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : " none"}
+          </div>
+          {flags.length ? <div style={{ color: "#b42318" }}>Screening: {flags.map((f) => FLAG_LABEL[f] || f).join(", ")}. Edit the text or reject it.</div> : null}
+          {rv.blocked_reason ? <div style={{ color: "#b42318" }}>{rv.blocked_reason}</div> : null}
+          {rv.revoked ? <div style={small}>Withdrawn: {rv.revoked.reason}</div> : null}
         </div>
+      ) : lesson.status === "proposed" ? (
+        <div style={{ ...small, marginTop: 8 }}>Open it under Lessons to see its evidence and scope before approving.</div>
+      ) : null}
+      {lesson.status === "proposed" && rv ? (
+        <>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={small} htmlFor={`scope-${lesson.id}`}>Applies to</label>
+            <select id={`scope-${lesson.id}`} style={inputStyle} value={scope} onChange={(e) => setScope(e.target.value)}>
+              <option value="">Choose…</option>
+              {SCOPE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            {scope && scope !== "global" ? (
+              <input aria-label="Which one" placeholder={scope === "chain" ? "Chain id" : scope === "site_platform" ? "e.g. wix" : "Which one"} style={{ ...inputStyle, width: 160 }} value={scopeKey} onChange={(e) => setScopeKey(e.target.value)} />
+            ) : null}
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button type="button" style={primaryButtonStyle({ busy, disabled: approveDisabled })} disabled={approveDisabled} onClick={() => decide("approve")}>Approve lesson</button>
+            <TextLink disabled={busy} onClick={() => setEditing(!editing)}>{editing ? "Cancel edit" : "Edit first"}</TextLink>
+            <TextLink tone="bad" disabled={busy} onClick={() => decide("reject")}>Reject</TextLink>
+            <span style={small}>Nothing is used until you approve it.</span>
+          </div>
+        </>
+      ) : lesson.status === "proposed" ? (
+        <div style={{ marginTop: 8 }}><TextLink tone="bad" disabled={busy} onClick={() => decide("reject")}>Reject</TextLink></div>
       ) : lesson.status === "active" ? (
-        <div style={{ marginTop: 8 }}><TextLink tone="bad" disabled={busy} onClick={() => decide("retire")}>Retire</TextLink> <span style={small}>· retrieved in answers and menu reviews</span></div>
+        <div style={{ marginTop: 8, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <TextLink disabled={busy} onClick={() => decide("retire")}>Retire</TextLink>
+          <TextLink tone="bad" disabled={busy} onClick={() => setRevoking(!revoking)}>{revoking ? "Cancel" : "Withdraw approval"}</TextLink>
+          <span style={small}>· retrieved in answers and menu reviews</span>
+          {revoking ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", width: "100%" }}>
+              <input aria-label="Why" placeholder="Why is the approval withdrawn?" style={{ ...inputStyle, width: 280 }} value={revokeNote} onChange={(e) => setRevokeNote(e.target.value)} />
+              <button type="button" style={primaryButtonStyle({ busy, disabled: !revokeNote.trim() })} disabled={busy || !revokeNote.trim()} onClick={() => decide("revoke", { note: revokeNote.trim() })}>Withdraw</button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
       {err ? <div style={errorStyle}>{err}</div> : null}
     </div>
@@ -154,6 +229,8 @@ function AssistantMessage({ m, onLessonDecided }) {
         <strong style={{ fontSize: 13 }}>CK</strong>
         <Tag tone={MODE_TONE[m.mode] || "muted"}>{MODE_LABEL[m.mode] || m.mode}</Tag>
         {s.database_backed ? <Tag tone="info">Database records</Tag> : null}
+        {s.partial_data?.length ? <Tag tone="warn">Partial data</Tag> : null}
+        {s.flagged_facts?.length ? <Tag tone="bad">Source text flagged</Tag> : null}
         {s.unverified ? <Tag tone="warn">Not checked in the database</Tag> : s.basis === "inference_only" && m.mode !== "clarify" && m.mode !== "error" ? <Tag tone="warn">No approved source</Tag> : null}
       </div>
       <div style={{ fontSize: 15, whiteSpace: "pre-wrap" }}>{m.content}</div>
@@ -207,7 +284,8 @@ function AssistantMessage({ m, onLessonDecided }) {
             {lookups.map((l, i) => (
               <li key={i} style={{ marginBottom: 4 }}>
                 <strong>{l.cite || "—"}</strong> {TOOL_LABEL[l.tool] || l.tool} <code style={{ fontSize: 12 }}>{JSON.stringify(l.args)}</code>
-                {l.ok ? <span style={small}> · {l.source} · {l.ms} ms{s.citations?.includes(l.cite) ? " · cited" : " · not cited"}</span> : <span style={{ color: "#b42318" }}> · refused: {l.error}</span>}
+                {l.ok ? <span style={small}> · {l.source} · {l.ms} ms{s.citations?.includes(l.cite) ? " · cited" : " · not cited"}{l.complete === false ? ` · partial (${(l.partial || []).join("; ")})` : ""}</span> : <span style={{ color: "#b42318" }}> · refused: {l.error}</span>}
+                {l.rebound ? <div style={small}>Id corrected: Agent 000 asked for {l.rebound.from.join(", ")}; used {l.rebound.to} ({l.rebound.restaurant}) because it is {l.rebound.reason}.</div> : null}
                 {l.ok && factById.get(l.cite) ? (
                   <details><summary style={{ ...small, cursor: "pointer" }}>Record</summary><div style={{ fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", color: OWNER_COLORS.muted }}>{factById.get(l.cite).text}</div></details>
                 ) : null}
@@ -239,6 +317,8 @@ function AssistantMessage({ m, onLessonDecided }) {
       <div style={{ ...small, marginTop: 8 }}>
         {m.seconds != null ? `${m.seconds} s` : ""}{m.versions?.model_profile ? ` · ${m.versions.model_profile}` : ""}{m.versions?.prompt_version ? ` · ${m.versions.prompt_version}` : ""}{s.db_planner ? ` · ${s.db_planner.calls} lookup-planning call${s.db_planner.calls === 1 ? "" : "s"}` : ""}
         {s.unsupported_claims?.length ? ` · ${s.unsupported_claims.length} citation(s) removed as unsupported` : ""}
+        {s.flagged_facts?.length ? ` · flagged source text in ${s.flagged_facts.map((f) => f.cite).join(", ")} (shown as data only)` : ""}
+        {s.withheld_lessons?.length ? ` · ${s.withheld_lessons.length} approved lesson(s) withheld: they now read like instructions` : ""}
       </div>
     </div>
   );
