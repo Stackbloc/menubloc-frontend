@@ -967,3 +967,13 @@ export const deleteVenueEventTicketType = (rid, eventId, ticketTypeId) =>
   del(
     `/operator/restaurants/${encodeURIComponent(String(rid))}/events/${encodeURIComponent(String(eventId))}/ticket-types/${encodeURIComponent(String(ticketTypeId))}`
   );
+
+// ── Restaurant: Reservations (Social Dining Phase 4, BE mig 0443) ──────────
+/** → { available, enabled, today, requests, confirmed_today, confirmed_later, other_today } */
+export const getReservations = (rid) => get(`/operator/restaurants/${rid}/reservations`);
+export const setReservationsEnabled = (rid, enabled) =>
+  put(`/operator/restaurants/${rid}/reservations/settings`, { enabled: enabled === true });
+export const acceptReservation = (rid, id) => post(`/operator/restaurants/${rid}/reservations/${id}/accept`, {});
+export const declineReservation = (rid, id) => post(`/operator/restaurants/${rid}/reservations/${id}/decline`, {});
+export const markReservationEntered = (rid, id, entered) =>
+  put(`/operator/restaurants/${rid}/reservations/${id}/entered`, { entered: entered === true });

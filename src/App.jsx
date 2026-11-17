@@ -128,6 +128,7 @@ import EventGroupDetailPage, {
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
+import OperatorReservationsPage from "./pages/operator/OperatorReservationsPage.jsx";
 import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
 import OperatorMyAccount from "./pages/operator/OperatorMyAccount.jsx";
 import OperatorMerchantAccountPage from "./pages/operator/OperatorMerchantAccountPage.jsx";
@@ -1159,6 +1160,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/operator/events/manage" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorEventsEditor /></OperatorRoute>} />
         <Route path="/operator/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAnalyticsPage /></OperatorRoute>} />
         <Route path="/operator/hours" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
+        <Route path="/operator/reservations" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorReservationsPage /></OperatorRoute>} />
         <Route path="/operator/intent-based-offers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
         <Route path="/operator/limited-audience-offers" element={<Navigate to="/operator/intent-based-offers" replace />} />
         <Route path="/operator/bid-free-bidding" element={<Navigate to="/operator/intent-based-offers" replace />} />

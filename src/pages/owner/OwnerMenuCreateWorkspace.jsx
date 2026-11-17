@@ -9,6 +9,7 @@ import OwnerMleLocations from "./OwnerMleLocations.jsx";
 import OwnerRestaurantSources from "./OwnerRestaurantSources.jsx";
 import OwnerProfileManager from "./OwnerProfileManager.jsx";
 import OwnerRestaurantDealsPanel from "./OwnerRestaurantDealsPanel.jsx";
+import OwnerRestaurantReservationsPanel from "./OwnerRestaurantReservationsPanel.jsx";
 import OwnerRestaurantEventsPanel from "./OwnerRestaurantEventsPanel.jsx";
 import {
   BusinessTypeConvertPanel,
@@ -455,6 +456,8 @@ const RESTAURANT_SECTIONS = [
   { key: "profile", label: "Public profile" },
   { key: "menus", label: "Menus" },
   { key: "deals", label: "Deals" },
+  // Social Dining Phase 4 (BE mig 0443): table requests from diners' plans.
+  { key: "reservations", label: "Reservations" },
   // Events restore (Andre 2026-11-15): venues make Events too.
   { key: "events", label: "Events" },
 ];
@@ -2406,6 +2409,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       {restaurant && existingRestaurant && section === "events" ? (
         <OwnerRestaurantEventsPanel key={rid} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />
+      ) : null}
+      {restaurant && existingRestaurant && section === "reservations" ? (
+        <OwnerRestaurantReservationsPanel key={`res-${rid}`} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />
       ) : null}
       {restaurant && existingRestaurant && section === "deals" ? (
         <OwnerRestaurantDealsPanel key={rid} restaurantId={rid} restaurantName={restaurant.restaurant_name || restaurant.name || ""} />

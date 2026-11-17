@@ -1520,3 +1520,14 @@ export const deleteOwnerRestaurantEvent = (restaurantId, eventId) => del(ownerEv
 /** → { rsvp_counts: { going, interested, not_going }, rsvps: [{ display_name, status, answered_at }] } */
 export const listOwnerRestaurantEventRsvps = (restaurantId, eventId) =>
   get(ownerEventsPath(restaurantId, `/${eventId}/rsvps`));
+
+// ─── Restaurant Manager → Reservations (Social Dining Phase 4, BE mig 0443) ─────────
+// Same service as the restaurant's own /operator/reservations.
+const ownerReservationsPath = (restaurantId, rest = "") => `/api/owner/restaurants/${restaurantId}/reservations${rest}`;
+export const listOwnerReservations = (restaurantId) => get(ownerReservationsPath(restaurantId));
+export const setOwnerReservationsEnabled = (restaurantId, enabled) =>
+  put(ownerReservationsPath(restaurantId, "/settings"), { enabled: enabled === true });
+export const acceptOwnerReservation = (restaurantId, id) => post(ownerReservationsPath(restaurantId, `/${id}/accept`), {});
+export const declineOwnerReservation = (restaurantId, id) => post(ownerReservationsPath(restaurantId, `/${id}/decline`), {});
+export const markOwnerReservationEntered = (restaurantId, id, entered) =>
+  put(ownerReservationsPath(restaurantId, `/${id}/entered`), { entered: entered === true });

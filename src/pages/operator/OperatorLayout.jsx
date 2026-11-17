@@ -196,6 +196,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   "Display Board": "operator.nav.displayBoard",
   Billboards: "operator.nav.billboards",
   Hours: "operator.hours.title",
+  Reservations: "operator.reservations.title",
   "Order Detail": "operator.orders.detailTitle",
   "Delivery Accounts": "operator.delivery.title",
   "Delivery Portal": "operator.delivery.title",
@@ -375,6 +376,11 @@ export default function OperatorLayout({ title, children }) {
             icon: "⏰",
           },
           {
+            to: "/operator/reservations",
+            label: t("operator.nav.reservations", "Reservations"),
+            icon: "▦",
+          },
+          {
             to: "/operator/distributor-relationships",
             label: t("operator.nav.distributorRelationships", "Distributor Relationships"),
             icon: "⇄",
@@ -391,6 +397,11 @@ export default function OperatorLayout({ title, children }) {
             to: "/operator/hours",
             label: t("operator.nav.hours", "Hours"),
             icon: "⏰",
+          },
+          {
+            to: "/operator/reservations",
+            label: t("operator.nav.reservations", "Reservations"),
+            icon: "▦",
           },
         ],
       });
