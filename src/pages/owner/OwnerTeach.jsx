@@ -119,7 +119,7 @@ function LessonCard({ lesson, onDecided }) {
       await onDecided?.();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
-  const flags = rv?.screening?.flags || [];
+  const flags = [...new Set([...(rv?.screening?.flags || []), ...(rv?.screening?.evidence_flags || [])])];
   const needsKey = scope && scope !== "global" && !scopeKey.trim();
   const approveDisabled = busy || !scope || needsKey || (!rv?.can_approve && !editing);
   return (
