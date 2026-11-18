@@ -32,6 +32,15 @@ export default function AppIcon({ name, size = 18, color = "currentColor", fille
           <circle cx="12" cy="13" r="3.4" {...stroke} />
         </>
       ) : null}
+      {name === 'cluster' ? (
+        // Cluster (Andre's design 2026-11-17, app MenuplyIcon 'cluster'): four rounded squares.
+        <>
+          <rect x="3.5" y="3.5" width="7" height="7" rx="2" {...stroke} />
+          <rect x="13.5" y="3.5" width="7" height="7" rx="2" {...stroke} />
+          <rect x="3.5" y="13.5" width="7" height="7" rx="2" {...stroke} />
+          <rect x="13.5" y="13.5" width="7" height="7" rx="2" {...stroke} />
+        </>
+      ) : null}
       {name === 'check' ? <path d="m5 12.5 4.5 4.5L19 7.5" {...stroke} /> : null}
       {name === 'fork' ? <path d="M6 3v6a2 2 0 0 0 4 0V3M8 3v18M17 21V3c-2.2 1.3-3.5 3.8-3.5 7.5V13H17" {...stroke} /> : null}
       {name === 'comment' ? <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5ZM8 8.5h8M8 11.5h5" {...stroke} /> : null}

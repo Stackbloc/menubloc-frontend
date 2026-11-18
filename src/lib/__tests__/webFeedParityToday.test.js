@@ -40,13 +40,13 @@ test("Today meal windows: 12–4 AM opens on last night's Late night", () => {
   assert.match(todayQuery("dinner", { lat: 1, lng: 2 }, { key: "fast", kind: "style" }, "2026-11-14"), /window=dinner&date=2026-11-14&style=fast&lat=1&lng=2/);
 });
 
-test("Tabs: Today · Feed · Post · Search · Profile only when signed in with today_home", () => {
+test("Tabs: Today · Feed · Post · Clusters · Profile (Clusters took Search's slot 2026-11-18) only when signed in with today_home", () => {
   const off = resolveFeedTabs({ isAuthenticated: true, todayHome: false });
-  assert.deepEqual([...off.left, ...off.right].map((t) => t.label), ["Home", "Deals", "Search", "Profile"]);
+  assert.deepEqual([...off.left, ...off.right].map((t) => t.label), ["Home", "Deals", "Clusters", "Profile"]);
   const guest = resolveFeedTabs({ isAuthenticated: false, todayHome: true });
   assert.equal(guest.left[0].label, "Home");
   const on = resolveFeedTabs({ isAuthenticated: true, todayHome: true });
-  assert.deepEqual([...on.left, ...on.right].map((t) => t.label), ["Today", "Feed", "Search", "Profile"]);
+  assert.deepEqual([...on.left, ...on.right].map((t) => t.label), ["Today", "Feed", "Clusters", "Profile"]);
   assert.ok(on.home.alsoActiveOn.includes("/feed/deals"));
 });
 

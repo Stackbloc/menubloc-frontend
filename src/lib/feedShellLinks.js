@@ -17,6 +17,9 @@ export const FEED_SHELL_PROFILE_NEXT = "/feed/profile";
 export const FEED_SHELL_PROFILE_SIGNUP_PATH = `/diner/signup?next=${encodeURIComponent(FEED_SHELL_PROFILE_NEXT)}`;
 export const FEED_SHELL_PROFILE_LOGIN_PATH = `/account/login?next=${encodeURIComponent(FEED_SHELL_PROFILE_NEXT)}`;
 
+/** The Clusters tab opens the USC cluster page (Andre 2026-11-18). */
+export const FEED_CLUSTERS_TAB_PATH = "/clusters/california/los-angeles/usc";
+
 export const FEED_HOME_TAB = {
   to: "/feed",
   end: true,
@@ -28,7 +31,8 @@ export const FEED_HOME_TAB = {
 };
 
 /**
- * Same tabs as the app (Andre 2026-10-24/29, the app wins): Home · Post (X) · Deals · Search · Profile.
+ * Same tabs as the app (Andre 2026-10-24/29, the app wins): Home · Post (X) · Deals · Clusters · Profile
+ * (Clusters took Search's slot 2026-11-18; /feed/search still works from links).
  * Every tab has an icon and a label. The basket is the cart button beside ☰ (FeedMobileHeader), shown
  * whenever it has items; the desktop rail keeps its own Basket button.
  */
@@ -36,7 +40,8 @@ export const FEED_LEFT_TABS = [FEED_HOME_TAB];
 
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", icon: "deals", testId: "feed-nav-deals" },
-  { to: "/feed/search", end: true, label: "Search", icon: "search", testId: "feed-nav-shop", resetSearch: true },
+  // Clusters (Andre 2026-11-18, as the app): Search's slot is the USC cluster, four-squares icon.
+  { to: FEED_CLUSTERS_TAB_PATH, end: false, label: "Clusters", icon: "cluster", testId: "feed-nav-clusters" },
   { to: "/feed/profile", end: false, label: "Profile", icon: "profile", testId: "feed-nav-profile" },
 ];
 
@@ -77,7 +82,7 @@ export function visibleFeedTabs(tabs, { isAuthenticated = false, desktop = false
 /** All primary tabs in display order (desktop rail). */
 export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 
-/** Desktop rail: Home first, then Deals, Search, Basket, Profile. */
+/** Desktop rail: Home first, then Deals, Clusters, Basket, Profile. */
 export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS.slice(0, 2), FEED_RAIL_BASKET_TAB, ...FEED_RIGHT_TABS.slice(2)];
 
 /** Menu capture return — Yellow Browse owns bookmarked/recent menus. */

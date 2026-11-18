@@ -204,7 +204,8 @@ test("Feed nav is the app's tabs; Menu Browser on video rail; legacy /feed/menus
   const navLinks = read("src/lib/feedShellLinks.js");
   // App wins (Andre 2026-10-29): Home · Post · Deals · Search · Profile, no Share My QR tab.
   assert.doesNotMatch(navLinks, /feed-nav-share-qr/);
-  assert.match(navLinks, /label: "Search", icon: "search"/);
+  // Clusters took Search's slot (Andre 2026-11-18).
+  assert.match(navLinks, /label: "Clusters", icon: "cluster"/);
   assert.doesNotMatch(navLinks, /feed-nav-menus/);
   assert.doesNotMatch(navLinks, /openFeedMenuBrowser/);
   assert.doesNotMatch(navLinks, /My Menu Stack/);

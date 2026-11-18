@@ -23,7 +23,8 @@ test("USC theme is slug-scoped and imported on ClusterPage", () => {
   assert.match(pageSrc, /cluster-theme-usc/);
   assert.match(pageSrc, /isUsc/);
   assert.match(pageSrc, /data-testid="cluster-usc-hero"/);
-  assert.match(pageSrc, /USC powered by Menuply/);
+  assert.match(pageSrc, /USC Cluster powered by Menuply/);
+  assert.match(pageSrc, /<AppIcon name="cluster"/);
   assert.match(pageSrc, /cluster-campus-hero/);
 });
 

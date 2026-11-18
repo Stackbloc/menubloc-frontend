@@ -5,6 +5,7 @@ import { isClusterFoodByTypeEnabled } from "../lib/featureFlags.js";
 import BottomNav from "../components/BottomNav.jsx";
 import useEngagementPage from "../hooks/useEngagementPage.js";
 import useMatchMedia from "../hooks/useMatchMedia.js";
+import AppIcon from "../components/icons/AppIcon.jsx";
 import useClusterFavs from "../hooks/useClusterFavs.js";
 import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
@@ -661,6 +662,7 @@ function ClusterMenuExplorerTab({
   enabled,
   stickyLead = null,
   preContent = null,
+  afterFood = null,
   postContent = null,
   onFoodShown = null,
 }) {
@@ -1499,6 +1501,8 @@ function ClusterMenuExplorerTab({
         >
           {results}
         </main>
+        {/* Food by type first, then the clips (Andre 2026-11-18, as the app). */}
+        {afterFood ? <ClusterSearchActiveContext.Provider value={searchActive}>{afterFood}</ClusterSearchActiveContext.Provider> : null}
         {typeOpen ? (
           <button
             type="button"
@@ -1551,6 +1555,13 @@ export default function ClusterPage() {
     return () => clearTimeout(t);
   }, [wallReleased]);
   useEffect(() => () => clearTimeout(wallTimerRef.current), []);
+  // The food category boxes open first (Andre 2026-11-18: "otherwise users may never see that they
+  // exist"): the clips sit under Food by type and wait until the boxes have shown.
+  const [foodShown, setFoodShown] = useState(false);
+  const onFoodShown = React.useCallback(() => {
+    setFoodShown(true);
+    releaseWall();
+  }, [releaseWall]);
 
   // Set only when the cluster was opened from the search page pill / location panel.
   const exitTo = useMemo(() => resolveClusterExitTo(searchParams, clusterSlug), [searchParams, clusterSlug]);
@@ -1909,7 +1920,11 @@ export default function ClusterPage() {
         ) : null}
         {isUsc ? (
           <div className="cluster-campus-hero" data-testid="cluster-usc-hero">
-            <p className="cluster-campus-powered">USC powered by Menuply</p>
+            {/* Andre 2026-11-18, as the app: the four-squares cluster icon, then "USC Cluster powered by Menuply". */}
+            <p className="cluster-campus-powered" data-testid="cluster-usc-powered" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <AppIcon name="cluster" size={16} strokeWidth={2.2} />
+              <span>USC Cluster powered by Menuply</span>
+            </p>
             {/* USC: the hero line is the page H1 (generic heading + intro were duplicative). */}
             <h1 className="cluster-campus-kicker">Food around University Park</h1>
             <p className="cluster-campus-sub">
@@ -1953,8 +1968,8 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {/* One page, the app's order (Andre 2026-11-05): clips, food by type, restaurants A–Z, then the
-          folded cluster info. The old Food/Restaurants toggle is gone. */}
+      {/* One page, the app's order (Andre 2026-11-05; 2026-11-18 food first): food by type, clips,
+          restaurants A–Z, then the folded cluster info. The old Food/Restaurants toggle is gone. */}
       <ClusterWallColumns>
       <div data-testid="cluster-view-panel-menu">
         <ClusterMenuExplorerTab
@@ -1962,8 +1977,8 @@ export default function ClusterPage() {
           cluster={cluster}
           enabled
           stickyLead={renderStickyLead()}
-          preContent={clusterFoodHero}
-          onFoodShown={releaseWall}
+          afterFood={foodShown ? clusterFoodHero : null}
+          onFoodShown={onFoodShown}
           postContent={
             <>
               {/* Phone: the Wall as a sideways strip right after the food boxes (desktop shows the side column). */}

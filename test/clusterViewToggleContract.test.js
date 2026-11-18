@@ -9,11 +9,15 @@ const pageSrc = readFileSync(join(root, "src/pages/ClusterPage.jsx"), "utf8");
 const themeSrc = readFileSync(join(root, "src/styles/clusterLaLiveTheme.css"), "utf8");
 
 // 2026-11-05 (Andre): the website cluster page follows the app — one page, no Food/Restaurants toggle.
-test("one page in the app's order: clips → Food by type → Restaurants A–Z → folded cluster info", () => {
+// 2026-11-18 (Andre): Food by type opens first; the clips come after the food and wait for it.
+test("one page in the app's order: Food by type → clips → Restaurants A–Z → folded cluster info", () => {
   assert.doesNotMatch(pageSrc, /function ClusterViewToggle/);
   assert.doesNotMatch(pageSrc, /data-testid="cluster-view-panel-restaurants"/);
   const body = pageSrc.slice(pageSrc.indexOf('data-testid="cluster-view-panel-menu"'));
-  const food = body.indexOf("preContent={clusterFoodHero}");
+  assert.doesNotMatch(pageSrc, /preContent=\{clusterFoodHero\}/);
+  const food = body.indexOf("afterFood={foodShown ? clusterFoodHero : null}");
+  const explorer = pageSrc.slice(pageSrc.indexOf("function ClusterMenuExplorerTab"));
+  assert.ok(explorer.indexOf("{results}") < explorer.indexOf("{afterFood ?"));
   const restaurants = body.indexOf("{clusterRestaurantsSection}");
   const extras = body.indexOf("{clusterExtras}");
   assert.ok(food > 0 && restaurants > food && extras > restaurants);
