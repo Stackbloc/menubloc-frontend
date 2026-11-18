@@ -52,8 +52,8 @@ function StatusLine({ status }) {
   const parts = [
     ["Model", model ? (model.available ? `${model.label}: answering` : `${model.label}: ${model.error || "not answering"}`) : "unknown", model?.available],
     ["Vision", status.vision?.configured ? (status.vision.reachable ? `${status.vision.model}: answering` : `${status.vision.model}: not answering`) : "not set up (images read by OCR only)", status.vision?.reachable],
-    ["Database lookups", status.switches?.learning_ck_data ? "on" : "off", status.switches?.learning_ck_data],
   ];
+  // The learning switches are shown (live) by the Talk tab's switch line, not here, so this bar never goes stale.
   if (relay?.token_configured) parts.splice(1, 0, ["Mac relay", relay.online ? `online (seen ${when(relay.last_seen_at)})` : relay.last_seen_at ? `offline since ${when(relay.last_seen_at)}` : "never connected", relay.online]);
   return (
     <div style={{ ...small, display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 12 }}>
