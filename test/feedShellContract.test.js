@@ -204,7 +204,12 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /resetSearch: true/);
   assert.match(feedLinks, /FEED_PRIMARY_TABS/);
   assert.match(feedLinks, /FEED_MORE_SECTIONS/);
-  assert.match(feedLinks, /For Diners/);
+  // ☰ order = the app's (Andre 2026-11-18): Profile + Events pinned, Connects · Account & Settings · Help · Menuply.
+  assert.match(feedLinks, /FEED_MORE_PINNED/);
+  assert.match(feedLinks, /testId: "feed-more-events"/);
+  assert.match(feedLinks, /id: "connects"[\s\S]*id: "account"[\s\S]*id: "help"[\s\S]*id: "menuply"/);
+  assert.match(feedLinks, /title: "Account & Settings"/);
+  assert.match(feedLinks, /FEED_MORE_LEGAL/);
   assert.match(feedLinks, /feed-more-signup/);
   assert.doesNotMatch(feedLinks, /Discover food/);
   assert.doesNotMatch(feedLinks, /feed-more-login/);
@@ -213,10 +218,12 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
   assert.match(feedLinks, /restaurant\/onboarding/);
   assert.match(feedLinks, /feed-nav-home/);
   assert.match(feedLinks, /feed-more-account/);
-  assert.match(feedLinks, /to: "\/account\/find-diners", label: "Connect Search"/);
+  assert.match(feedLinks, /to: "\/account\/find-diners", label: "Find Connects"/);
   const moreLogoutPanel = read("src/components/consumer/feed/FeedMorePanel.jsx");
   assert.match(moreLogoutPanel, /data-testid="feed-more-logout"/);
-  assert.match(moreLogoutPanel, /isAuthenticated \? \(\s*<div style=\{styles\.logoutWrap\}>/);
+  // Sign out is the last row of Account & Settings.
+  assert.match(moreLogoutPanel, /section\.signOut && isAuthenticated \? \(/);
+  assert.match(moreLogoutPanel, /feed-more-profile|FEED_MORE_PINNED\.profile/);
   assert.match(feedLinks, /feed-more-add-menu/);
   assert.doesNotMatch(feedLinks, /feed-more-my-menuply/);
   assert.doesNotMatch(feedLinks, /feed-more-dining-crews/);

@@ -105,42 +105,48 @@ export const FEED_GUEST_PROFILE_CARDS = [
   },
 ];
 
+/**
+ * ☰ order, same as the app (Andre 2026-11-18, the usual app arrangement): the Profile card and Events
+ * are pinned on top (FEED_MORE_PINNED) so they stand out, then the accordions Connects · Account &
+ * Settings (Sign out last) · Help · Menuply, then Terms · Privacy as a small footer line.
+ * The app's Filters, Campus View and Location rows have no web page yet, so they are left out here.
+ */
+export const FEED_MORE_PINNED = {
+  profile: { to: FEED_SHELL_PROFILE_NEXT, guestTo: FEED_SHELL_PROFILE_LOGIN_PATH, testId: "feed-more-profile" },
+  events: { to: "/events", label: "Events", note: "Parties and get-togethers near you", icon: "calendar", testId: "feed-more-events" },
+};
+
 export const FEED_MORE_SECTIONS = [
   {
-    id: "join",
-    title: "Join Menuply",
-    guestOnly: true,
-    groups: [
-      {
-        title: "For Diners",
-        links: [
-          // Log in moved here from the Feed's top bar (Andre 2026-11-13: the top bar matches the app).
-          { to: FEED_SHELL_LOGIN_PATH, label: "Log in", testId: "feed-more-login" },
-          { to: FEED_SHELL_SIGNUP_PATH, label: "Create account", testId: "feed-more-signup" },
-        ],
-      },
+    id: "connects",
+    title: "Connects",
+    authOnly: true,
+    links: [
+      { to: "/account/find-diners", label: "Find Connects", testId: "feed-more-find-connects" },
+      { to: "/account/diner-qr", label: "Share My Profile", testId: "feed-more-share-profile" },
+      { to: "/account/diner-qr/edit", label: "Edit My QR", testId: "feed-more-edit-qr" },
     ],
   },
   {
     id: "account",
-    title: "Your account",
+    title: "Account & Settings",
     authOnly: true,
+    // Sign out is drawn as the last row of this section (FeedMorePanel).
+    signOut: true,
     links: [
-      { to: "/account", label: "Account & settings", testId: "feed-more-account" },
-      // Search other diners by name, phone, or email and connect (was only reachable from the X sheet).
-      { to: "/account/find-diners", label: "Connect Search", testId: "feed-more-connect-search" },
-      { to: "/clusters", label: "Clusters", testId: "feed-more-clusters" },
+      { to: "/account/notifications", label: "Notifications", testId: "feed-more-notifications" },
+      { to: "/checkout", label: "Basket", testId: "feed-more-basket" },
       { to: FEED_MENU_CAPTURE_PATH, label: "Add a menu", testId: "feed-more-add-menu" },
+      { to: "/account", label: "All settings", testId: "feed-more-account" },
     ],
   },
   {
-    id: "business",
-    title: "For businesses",
+    id: "help",
+    title: "Help",
     links: [
-      { to: "/restaurant/onboarding", label: "Restaurants", testId: "feed-more-restaurants" },
-      { to: "/join", label: "Venues", testId: "feed-more-venues" },
-      { to: "/distributors", label: "Food Distributors", testId: "feed-more-distributors" },
-      { to: "/creative-pros", label: "Creators", testId: "feed-more-creators" },
+      // withFrom: the page they were on goes along (Andre 2026-11-07).
+      { to: "/feedback", label: "Feedback", note: "Report a problem or share an idea", testId: "feed-more-feedback", withFrom: true },
+      { to: "/contact", label: "Contact Us", testId: "feed-more-contact" },
     ],
   },
   {
@@ -148,23 +154,26 @@ export const FEED_MORE_SECTIONS = [
     title: "Menuply",
     links: [
       { to: "/about", label: "About Menuply", testId: "feed-more-about" },
-      { to: "/contact", label: "Contact", testId: "feed-more-contact" },
-      { to: "/terms", label: "Terms of Use", testId: "feed-more-terms" },
-      { to: "/privacy", label: "Privacy Policy", testId: "feed-more-privacy" },
+      { to: FEED_SHELL_SIGNUP_PATH, label: "Diner Sign Up", testId: "feed-more-signup", guestOnly: true },
+      { to: "/clusters", label: "Clusters", testId: "feed-more-clusters" },
+      { to: "/restaurant/onboarding", label: "Restaurants", testId: "feed-more-restaurants" },
+      { to: "/join", label: "Venues", testId: "feed-more-venues" },
+      { to: "/creative-pros", label: "Creators", testId: "feed-more-creators" },
+      { to: "/advertise?cluster=usc", label: "Advertise", note: "Available soon", testId: "feed-more-advertise" },
+      { to: "/distributors", label: "Food Distributors", testId: "feed-more-distributors" },
     ],
-  },
-  // Its own topic after Menuply (Andre 2026-11-07). withFrom: the page they were on goes along.
-  {
-    id: "feedback",
-    title: "Feedback",
-    links: [{ to: "/feedback", label: "Send Feedback", testId: "feed-more-feedback", withFrom: true }],
   },
 ];
 
+/** Small footer line under the sections. */
+export const FEED_MORE_LEGAL = [
+  { to: "/terms", label: "Terms of Use", testId: "feed-more-terms" },
+  { to: "/privacy", label: "Privacy Policy", testId: "feed-more-privacy" },
+];
+
 export function resolveFeedMoreSections({ isAuthenticated = false } = {}) {
-  return FEED_MORE_SECTIONS.filter((section) => {
-    if (section.guestOnly && isAuthenticated) return false;
-    if (section.authOnly && !isAuthenticated) return false;
-    return true;
-  });
+  return FEED_MORE_SECTIONS.filter((section) => !(section.authOnly && !isAuthenticated)).map((section) => ({
+    ...section,
+    links: section.links.filter((link) => !(link.guestOnly && isAuthenticated)),
+  }));
 }

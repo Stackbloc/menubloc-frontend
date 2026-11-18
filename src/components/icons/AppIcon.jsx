@@ -25,6 +25,12 @@ export default function AppIcon({ name, size = 18, color = "currentColor", fille
           <circle cx="12" cy="10" r="2.4" {...stroke} />
         </>
       ) : null}
+      {name === 'calendar' ? (
+        <>
+          <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" {...stroke} />
+          <path d="M3.5 10h17M8 3v4M16 3v4M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01" {...stroke} />
+        </>
+      ) : null}
       {name === 'chevronDown' ? <path d="m6 9 6 6 6-6" {...stroke} /> : null}
       {name === 'camera' ? (
         <>

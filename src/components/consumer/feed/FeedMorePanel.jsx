@@ -1,12 +1,20 @@
 /**
- * Feed More menu — mobile drawer + desktop panel (TikTok-style overflow).
+ * Feed ☰ menu — mobile drawer + desktop panel. Same order as the app (Andre 2026-11-18): Profile card
+ * and Events pinned on top, then accordions (Connects opens first), Terms · Privacy footer line.
  */
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import AppIcon from "../../icons/AppIcon.jsx";
 import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
-import { FEED_DESKTOP_RAIL_WIDTH, FEED_MENU_CAPTURE_HINT, resolveFeedMoreSections } from "../../../lib/feedShellLinks.js";
+import {
+  FEED_DESKTOP_RAIL_WIDTH,
+  FEED_MENU_CAPTURE_HINT,
+  FEED_MORE_LEGAL,
+  FEED_MORE_PINNED,
+  resolveFeedMoreSections,
+} from "../../../lib/feedShellLinks.js";
 import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 function FeedMoreLink({ link, onClose }) {
@@ -22,14 +30,24 @@ function FeedMoreLink({ link, onClose }) {
       onClick={onClose}
     >
       {showMenuCaptureIcon ? <FeedMenuCaptureCameraIcon size={18} color="#5eead4" /> : null}
-      {link.label}
+      <span>
+        {link.label}
+        {link.note ? <span style={styles.note}>{link.note}</span> : null}
+      </span>
     </Link>
   );
 }
 
 export default function FeedMorePanel({ open, onClose, isAuthenticated = false, isDesktop = false }) {
   const sections = resolveFeedMoreSections({ isAuthenticated });
-  const { logout } = useConsumer();
+  const { logout, consumer, profile } = useConsumer();
+  const [expanded, setExpanded] = useState(isAuthenticated ? "connects" : "help");
+  const name = isAuthenticated
+    ? profile?.display_name ||
+      [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+      consumer?.email ||
+      "Your profile"
+    : null;
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -79,48 +97,84 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
           </button>
         </div>
         <div style={isDesktop ? styles.body : { ...styles.body, ...styles.bodyMobile }}>
-          {sections.map((section) => (
-            <section key={section.id} style={styles.section} aria-labelledby={`feed-more-${section.id}`}>
-              <h3 id={`feed-more-${section.id}`} style={styles.sectionTitle}>
-                {section.title}
-              </h3>
-              {Array.isArray(section.groups) && section.groups.length > 0
-                ? section.groups.map((group) => (
-                    <div key={group.title} style={styles.group}>
-                      <h4 style={styles.groupTitle}>{group.title}</h4>
-                      <ul style={styles.list}>
-                        {group.links.map((link) => (
-                          <li key={link.to} style={styles.item}>
-                            <FeedMoreLink link={link} onClose={onClose} />
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))
-                : (
-                    <ul style={styles.list}>
-                      {(section.links || []).map((link) => (
-                        <li key={link.to} style={styles.item}>
-                          <FeedMoreLink link={link} onClose={onClose} />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-            </section>
-          ))}
-          {isAuthenticated ? (
-            <div style={styles.logoutWrap}>
-              <button
-                type="button"
-                style={styles.logoutBtn}
-                data-testid="feed-more-logout"
-                disabled={loggingOut}
-                onClick={handleLogout}
-              >
-                {loggingOut ? "Logging out…" : "Log out"}
-              </button>
-            </div>
-          ) : null}
+          {/* Profile card: who you are, first. Signed out it is the way in. */}
+          <Link
+            to={isAuthenticated ? FEED_MORE_PINNED.profile.to : FEED_MORE_PINNED.profile.guestTo}
+            style={styles.pinned}
+            data-testid={FEED_MORE_PINNED.profile.testId}
+            onClick={onClose}
+          >
+            <span style={styles.avatar}>
+              <AppIcon name="profile" size={22} color="#5eead4" />
+            </span>
+            <span style={styles.pinnedText}>
+              <span style={styles.pinnedTitle}>{name || "Sign in"}</span>
+              <span style={styles.note}>{name ? "View profile" : "Sign in or create an account"}</span>
+            </span>
+            <span style={styles.chevron}>›</span>
+          </Link>
+          {/* Events: pinned under Profile so it stands out. */}
+          <Link to={FEED_MORE_PINNED.events.to} style={styles.pinned} data-testid={FEED_MORE_PINNED.events.testId} onClick={onClose}>
+            <span style={styles.eventsIcon}>
+              <AppIcon name={FEED_MORE_PINNED.events.icon} size={20} color="#5eead4" />
+            </span>
+            <span style={styles.pinnedText}>
+              <span style={styles.pinnedTitle}>{FEED_MORE_PINNED.events.label}</span>
+              <span style={styles.note}>{FEED_MORE_PINNED.events.note}</span>
+            </span>
+            <span style={styles.chevron}>›</span>
+          </Link>
+          {sections.map((section) => {
+            const isOpen = expanded === section.id;
+            return (
+              <section key={section.id} style={styles.section}>
+                <button
+                  type="button"
+                  id={`feed-more-${section.id}`}
+                  style={styles.sectionHead}
+                  aria-expanded={isOpen}
+                  data-testid={`feed-more-section-${section.id}`}
+                  onClick={() => setExpanded(isOpen ? null : section.id)}
+                >
+                  <span>{section.title}</span>
+                  <span style={styles.toggle}>{isOpen ? "−" : "+"}</span>
+                </button>
+                {isOpen ? (
+                  <ul style={styles.list} aria-labelledby={`feed-more-${section.id}`}>
+                    {section.links.map((link) => (
+                      <li key={link.to} style={styles.item}>
+                        <FeedMoreLink link={link} onClose={onClose} />
+                      </li>
+                    ))}
+                    {/* Sign out: last row of Account & Settings, quiet red text. */}
+                    {section.signOut && isAuthenticated ? (
+                      <li style={styles.item}>
+                        <button
+                          type="button"
+                          style={styles.logoutBtn}
+                          data-testid="feed-more-logout"
+                          disabled={loggingOut}
+                          onClick={handleLogout}
+                        >
+                          {loggingOut ? "Signing out…" : "Sign out"}
+                        </button>
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
+              </section>
+            );
+          })}
+          <p style={styles.legal}>
+            {FEED_MORE_LEGAL.map((link, i) => (
+              <span key={link.to}>
+                {i > 0 ? " · " : null}
+                <Link to={link.to} style={styles.legalLink} data-testid={link.testId} onClick={onClose}>
+                  {link.label}
+                </Link>
+              </span>
+            ))}
+          </p>
         </div>
       </div>
     </div>
@@ -195,27 +249,51 @@ const styles = {
       "calc(16px + env(safe-area-inset-bottom) + var(--feed-primary-nav-h, 0px) + var(--bottom-nav-h, 0px))",
   },
   section: {
-    margin: "8px 0 12px",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
   },
-  sectionTitle: {
-    margin: "0 0 6px",
-    padding: "0 6px",
-    fontSize: 11,
+  sectionHead: {
+    appearance: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    padding: "14px 10px",
+    border: "none",
+    background: "transparent",
+    color: "#e8f0ec",
+    fontSize: 16,
     fontWeight: 800,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "rgba(232,240,236,0.55)",
+    fontFamily: "inherit",
+    cursor: "pointer",
+    textAlign: "left",
   },
-  group: {
-    marginBottom: 4,
+  toggle: { color: "rgba(232,240,236,0.55)", fontSize: 18, fontWeight: 700 },
+  pinned: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "12px 10px",
+    textDecoration: "none",
+    color: "#e8f0ec",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
   },
-  groupTitle: {
-    margin: "0 0 4px",
-    padding: "0 10px",
-    fontSize: 13,
-    fontWeight: 700,
-    color: "rgba(232,240,236,0.82)",
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    border: "1px solid rgba(255,255,255,0.18)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
+  eventsIcon: { width: 44, display: "flex", justifyContent: "center", flexShrink: 0 },
+  pinnedText: { display: "flex", flexDirection: "column", flex: 1, minWidth: 0 },
+  pinnedTitle: { fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  chevron: { color: "rgba(232,240,236,0.55)", fontSize: 20 },
+  note: { display: "block", fontSize: 12, fontWeight: 500, color: "rgba(232,240,236,0.6)", marginTop: 2 },
+  legal: { margin: "14px 0 4px", textAlign: "center", fontSize: 12, color: "rgba(232,240,236,0.55)" },
+  legalLink: { color: "rgba(232,240,236,0.7)", textDecoration: "none" },
   list: {
     listStyle: "none",
     margin: 0,
@@ -224,16 +302,11 @@ const styles = {
   item: {
     margin: 0,
   },
-  logoutWrap: {
-    margin: "4px 0 12px",
-    paddingTop: 12,
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-  },
   logoutBtn: {
     display: "block",
     width: "100%",
     textAlign: "left",
-    padding: "12px 10px",
+    padding: "12px 10px 12px 22px",
     borderRadius: 10,
     border: "none",
     background: "transparent",
@@ -245,7 +318,7 @@ const styles = {
   },
   link: {
     display: "block",
-    padding: "12px 10px",
+    padding: "11px 10px 11px 22px",
     borderRadius: 10,
     textDecoration: "none",
     color: "#e8f0ec",
@@ -256,7 +329,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 10,
-    padding: "12px 10px",
+    padding: "11px 10px 11px 22px",
     borderRadius: 10,
     textDecoration: "none",
     color: "#e8f0ec",
