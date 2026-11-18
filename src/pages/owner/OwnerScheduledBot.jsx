@@ -1107,12 +1107,17 @@ export default function OwnerScheduledBot({ botKey }) {
     return () => clearTimeout(refreshRef.current);
   }, [bot, load, failedLoads]);
 
-  async function handleRunNow() {
+  // 2026-11-18: Nutribot "Recompute all" (mode 'all'): every non-franchise item, not only new ones.
+  async function handleRunNow(mode) {
+    if (mode === "all" && !window.confirm(
+      "Recompute nutrition for every independent menu item? Franchise items are never included, " +
+      "and items you marked verified are left alone. This replaces current estimates and can take a while."
+    )) return;
     setStarting(true);
     setRunMessage("");
     try {
-      await runOwnerBotNow(botKey);
-      setRunMessage(`${meta.name} started. This page updates on its own while it runs.`);
+      await runOwnerBotNow(botKey, mode === "all" ? { mode: "all" } : {});
+      setRunMessage(`${meta.name} ${mode === "all" ? "recompute all " : ""}started. This page updates on its own while it runs.`);
     } catch (err) {
       setRunMessage(err?.status === 409 ? `${meta.name} is already running.` : err?.message || "Could not start the bot");
     } finally {
@@ -1144,9 +1149,16 @@ export default function OwnerScheduledBot({ botKey }) {
                 title="Status"
                 subtitle={meta.blurb}
                 action={
-                  <button type="button" onClick={handleRunNow} disabled={running || starting} style={primaryButtonStyle({ busy: starting, disabled: running })}>
-                    {running ? "Running…" : starting ? "Starting…" : "Run now"}
-                  </button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {botKey === "nutribot" && !running ? (
+                      <button type="button" onClick={() => handleRunNow("all")} disabled={starting} style={secondaryButtonStyle}>
+                        Recompute all
+                      </button>
+                    ) : null}
+                    <button type="button" onClick={() => handleRunNow()} disabled={running || starting} style={primaryButtonStyle({ busy: starting, disabled: running })}>
+                      {running ? "Running…" : starting ? "Starting…" : "Run now"}
+                    </button>
+                  </div>
                 }
               />
               <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
@@ -1179,7 +1191,7 @@ export default function OwnerScheduledBot({ botKey }) {
               </div>
               {running ? (
                 <div style={{ ...mutedStyle, marginTop: 14 }}>
-                  Running since {formatDateTime(bot.active_run.started_at)} ({triggerLabel(bot.active_run.trigger)}).
+                  {bot.active_run.mode === "all" ? "Recomputing all items. " : ""}Running since {formatDateTime(bot.active_run.started_at)} ({triggerLabel(bot.active_run.trigger)}).
                 </div>
               ) : null}
               {!bot.automatic_runs_allowed ? (
