@@ -355,7 +355,6 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
   const [profile, setProfile] = useState("");
-  const [ownLesson, setOwnLesson] = useState(false);
   const endRef = useRef(null);
   const load = useCallback(() => getConversation(id).then((c) => { setConv(c); setProfile((p) => p || c.model_profile || ""); }).catch((e) => setErr(e.message)), [id]);
   useEffect(() => { setConv(null); load(); }, [load, reloadKey]);
@@ -404,20 +403,21 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
         <div ref={endRef} />
       </div>
       <div style={{ marginTop: 12 }}>
-        <textarea
-          aria-label="Message to Agent 000"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
-          placeholder={switches?.learning_retrieval ? "Ask a question or teach a rule…" : "Turn on “Agent uses approved knowledge” to talk with Agent 000"}
-          style={{ ...inputStyle, width: "100%", minHeight: 70 }}
-        />
-        <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
-          <button type="button" style={primaryButtonStyle({ busy: sending, disabled: !text.trim() })} disabled={sending || !text.trim()} onClick={send}>Send</button>
-          <TextLink onClick={() => setOwnLesson(!ownLesson)}>{ownLesson ? "Close" : "Write a lesson yourself"}</TextLink>
-          <span style={small}>⌘↩ sends</span>
+        {/* Send belongs to the message box (bottom-right, like any chat). Lessons are written in the Lessons box. */}
+        <div style={{ position: "relative" }}>
+          <textarea
+            aria-label="Message to Agent 000"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
+            placeholder={switches?.learning_retrieval ? "Ask a question or teach a rule…" : "Turn on “Agent uses approved knowledge” to talk with Agent 000"}
+            style={{ ...inputStyle, width: "100%", minHeight: 90, paddingBottom: 52, boxSizing: "border-box" }}
+          />
+          <div style={{ position: "absolute", right: 10, bottom: 10, display: "flex", gap: 10, alignItems: "center" }}>
+            <span style={small}>⌘↩</span>
+            <button type="button" style={primaryButtonStyle({ busy: sending, disabled: !text.trim() })} disabled={sending || !text.trim()} onClick={send}>Send</button>
+          </div>
         </div>
-        {ownLesson ? <OwnLessonForm conversationId={id} onDone={async () => { setOwnLesson(false); await onLessonsChanged(); }} /> : null}
         {err ? <div style={errorStyle}>{err}</div> : null}
       </div>
     </div>
@@ -729,13 +729,20 @@ function MenuWorkbench({ conversation, switches, onNewConversation, onLessonsCha
   );
 }
 
-function LessonsPanel({ lessons, reload }) {
+function LessonsPanel({ lessons, reload, conversationId }) {
   const [showAll, setShowAll] = useState(false);
+  const [writing, setWriting] = useState(false);
   if (!lessons) return <div style={mutedStyle}>Loading…</div>;
   const proposed = lessons.filter((l) => l.status === "proposed");
   const active = lessons.filter((l) => l.status === "active");
   return (
     <div>
+      {conversationId ? (
+        <div style={{ marginBottom: 10 }}>
+          <TextLink onClick={() => setWriting(!writing)}>{writing ? "Close" : "Write a lesson yourself"}</TextLink>
+          {writing ? <OwnLessonForm conversationId={conversationId} onDone={async () => { setWriting(false); await reload(); }} /> : null}
+        </div>
+      ) : null}
       {proposed.length ? <div style={{ ...small, fontWeight: 700 }}>Waiting for you ({proposed.length})</div> : null}
       {proposed.map((l) => <LessonCard key={l.id} lesson={l} onDecided={reload} />)}
       <div style={{ ...small, fontWeight: 700, marginTop: 12 }}>Approved and in use ({active.length})</div>
@@ -824,7 +831,7 @@ export default function OwnerTeach({ embedded = false, basePath = "/owner/teach"
           </PageCard>
           <PageCard>
             <SectionTitle title="Lessons" />
-            <LessonsPanel lessons={lessons} reload={lessonsChanged} />
+            <LessonsPanel lessons={lessons} reload={lessonsChanged} conversationId={conversationId} />
           </PageCard>
         </div>
       </div>
