@@ -1,5 +1,8 @@
 /**
- * My Vibe on Profile (web follows the app: AvailabilityCard, plan 41, Andre 2026-11-12/13).
+ * My Availability on Profile (web follows the app: AvailabilityCard, plan 41, Andre 2026-11-12/13).
+ * Plan 58 (Andre 2026-11-18): "Available" is passive (findable; never picked) and vibes are active.
+ * One right-now vibe at a time (Hungry now · ✨ Feeling Social · your own words ≤ 80) for 2, 4 or 8
+ * hours; "I’m up for:" A meal · Coffee · Happy Hour 🍸 (separate choices); Change + Remove on rows.
  * Replaces the old "Your vibe" chips. Being findable is the passive baseline ("Available" is never
  * shown). Rows: Hungry now · Up for a meal or coffee (day + meal) · Eating at home (day + meal, then
  * Just me or who can ask, with a safety note first) · Pause. Active rows report "Open for X · Day",
@@ -20,6 +23,7 @@ import {
   postHungryNow,
   postUpFor,
   setAvailability,
+  setRightNowVibe,
   suggestHungryFor,
 } from "../../../lib/consumerApi.js";
 import {
@@ -27,7 +31,9 @@ import {
   atHomePlans,
   availabilityLine,
   circlesFrom,
+  CUSTOM_VIBE_MAX,
   dayLabel,
+  DEFAULT_VIBE_HOURS,
   homeLine,
   MEAL_KEYS,
   MEAL_NAMES,
@@ -36,7 +42,12 @@ import {
   PAUSE_CHOICES,
   UP_FOR_KEYS,
   UP_FOR_NAMES,
+  UP_FOR_TYPES,
   upForLine,
+  upForTypeOf,
+  untilLabel,
+  VIBE_HOURS,
+  VIBE_KINDS,
   ymd,
 } from "../../../lib/myVibe.js";
 import { discoverLabelOf } from "../../../lib/discoverLevels.js";
@@ -59,8 +70,12 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
-  // One picker open at a time, inline under the rows: "hungry" | "upfor" | "home" | "pause" | null.
+  // One picker open at a time, inline under the rows: "vibe" | "hungry" | "upfor" | "home" | "pause" | null.
   const [panel, setPanel] = useState(null);
+  const [vibeStart, setVibeStart] = useState(null);
+  const [hungryHours, setHungryHours] = useState(DEFAULT_VIBE_HOURS);
+  const [upForType, setUpForType] = useState("meal");
+  const [changingUpFor, setChangingUpFor] = useState(null);
   const [day, setDay] = useState(0);
   const [homeMeal, setHomeMeal] = useState(null);
   const [homeWho, setHomeWho] = useState(null);
@@ -95,6 +110,9 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
 
   function closePanel() {
     setPanel(null);
+    setVibeStart(null);
+    setChangingUpFor(null);
+    setUpForType("meal");
     setDay(0);
     setHomeMeal(null);
     setHomeWho(null);
@@ -119,15 +137,51 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
 
   const shownLevel = discover || level;
   const paused = !!state && !state.available;
-  const active = !!state && (state.hungry || state.upFor.length > 0 || homes.length > 0);
+  const custom = state?.activeVibe?.kind === "custom" ? state.activeVibe : null;
+  const active = !!state && (state.hungry || state.upFor.length > 0 || homes.length > 0 || state.feelingSocial || !!custom);
   const days = nextDays(now);
   const today = ymd(new Date(now));
+  const until = (kind) => (state?.activeVibe?.kind === kind ? untilLabel(state.activeVibe.until, now) : null);
+
+  function openVibe(kind, text = "") {
+    closePanel();
+    setVibeStart({ kind, text });
+    setPanel("vibe");
+  }
+
+  /** Hungry now goes on to "Hungry now for?"; the others are set here (one at a time). */
+  function setVibe(choice) {
+    if (choice.kind === "hungry") {
+      setHungryHours(choice.hours);
+      setVibeStart(null);
+      setPanel("hungry");
+      return;
+    }
+    void run(() => setRightNowVibe(choice));
+  }
+
+  function openUpFor(u) {
+    closePanel();
+    setChangingUpFor(u);
+    setUpForType(u ? upForTypeOf(u.window) : "meal");
+    setDay(u ? Math.max(0, days.indexOf(u.date)) : 0);
+    setPanel("upfor");
+  }
+
+  function pickUpFor(w) {
+    const old = changingUpFor;
+    const date = days[day];
+    void run(async () => {
+      if (old && !(old.date === date && old.window === w)) await clearUpFor(old.window, old.date === today ? null : old.date);
+      await postUpFor(w, day === 0 ? null : date);
+    });
+  }
 
   return (
     <div style={st.card} data-testid="vibe-card">
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={st.eyebrow}>My Vibe</h2>
+          <h2 style={st.eyebrow}>My Availability</h2>
           {paused ? (
             <p style={st.title} data-testid="availability-current">
               {availabilityLine(state, now)}
@@ -159,13 +213,43 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
           {active ? (
             <div data-testid="my-vibe-active">
               {state.hungry ? (
-                <Row label={state.hungryFor ? `Hungry now for ${state.hungryFor}` : "Hungry now"} color={C.hungry} testId="my-vibe-hungry" onRemove={() => run(() => clearHungryNow())} busy={busy} />
+                <Row
+                  label={state.hungryFor ? `Hungry now for ${state.hungryFor}` : "Hungry now"}
+                  until={until("hungry")}
+                  color={C.hungry}
+                  testId="my-vibe-hungry"
+                  onChange={() => openVibe("hungry")}
+                  onRemove={() => run(() => clearHungryNow())}
+                  busy={busy}
+                />
+              ) : null}
+              {state.feelingSocial ? (
+                <Row
+                  label="✨ Feeling Social"
+                  until={until("feeling_social")}
+                  testId="my-vibe-social"
+                  onChange={() => openVibe("feeling_social")}
+                  onRemove={() => run(() => setAvailability({ feeling_social: false }))}
+                  busy={busy}
+                />
+              ) : null}
+              {custom ? (
+                <Row
+                  label={`“${custom.label}”`}
+                  until={until("custom")}
+                  testId="my-vibe-custom"
+                  onChange={() => openVibe("custom", custom.label)}
+                  onRemove={() => run(() => setRightNowVibe({ kind: null }))}
+                  busy={busy}
+                />
               ) : null}
               {state.upFor.map((u) => (
                 <Row
                   key={`${u.date}-${u.window}`}
                   label={upForLine(u, now)}
                   testId={`my-vibe-upfor-${u.date}-${u.window}`}
+                  changeTestId={`my-vibe-upfor-change-${u.date}-${u.window}`}
+                  onChange={() => openUpFor(u)}
                   onRemove={() => run(() => clearUpFor(u.window, u.date === today ? null : u.date))}
                   busy={busy}
                 />
@@ -176,23 +260,51 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
             </div>
           ) : (
             <p style={st.status} data-testid="my-vibe-none">
-              No vibe right now.
+              Available: people can find you. Pick a vibe below to show first.
             </p>
           )}
 
           <div style={st.choices}>
-            {!state.hungry ? (
-              <Choice label="Hungry now" action={panel === "hungry" ? "Close" : "Set ›"} busy={busy} onClick={() => (panel === "hungry" ? closePanel() : (closePanel(), setPanel("hungry")))} testId="my-vibe-set-hungry" />
+            {panel === "vibe" ? (
+              <VibePicker
+                start={vibeStart}
+                replacing={state.activeVibe && state.activeVibe.kind !== vibeStart?.kind ? state.activeVibe.label : null}
+                busy={busy}
+                onCancel={closePanel}
+                onSet={setVibe}
+              />
             ) : null}
-            {panel === "hungry" && !state.hungry ? <HungryFor busy={busy} onSet={(food) => run(() => postHungryNow(food))} /> : null}
-            <Choice label="Up for a meal, coffee or Happy Hour 🍸" action={panel === "upfor" ? "Close" : "Pick ›"} busy={busy} onClick={() => (panel === "upfor" ? closePanel() : (closePanel(), setPanel("upfor")))} testId="my-vibe-set-upfor" />
+            {panel === "hungry" ? <HungryFor busy={busy} onSet={(food) => run(() => postHungryNow(food, hungryHours))} /> : null}
+            {!state.hungry ? (
+              <Choice label="Hungry now" action="Set ›" busy={busy} onClick={() => openVibe("hungry")} testId="my-vibe-set-hungry" />
+            ) : null}
+            <Choice
+              label="I’m up for…"
+              note="A meal, coffee or Happy Hour 🍸, today or later this week"
+              action={panel === "upfor" ? "Close" : "Pick ›"}
+              busy={busy}
+              onClick={() => (panel === "upfor" ? closePanel() : openUpFor(null))}
+              testId="my-vibe-set-upfor"
+            />
             {panel === "upfor" ? (
               <div style={st.panel} data-testid="my-vibe-upfor-sheet">
-                <p style={st.panelTitle}>Up for what?</p>
+                <p style={st.panelTitle}>{changingUpFor ? "Change what you’re up for" : "I’m up for:"}</p>
+                <div role="radiogroup" style={st.radioRow}>
+                  {UP_FOR_TYPES.map((t) => (
+                    <Radio key={t.key} on={upForType === t.key} label={t.label} onClick={() => setUpForType(t.key)} testId={`my-vibe-upfor-type-${t.key}`} />
+                  ))}
+                </div>
                 <DayStrip days={days} now={now} value={day} onChange={setDay} testPrefix="my-vibe-day" />
-                {/* The four meals plus coffee (mig 0430) and Happy Hour 🍸 (mig 0436). */}
-                {UP_FOR_KEYS.map((m) => (
-                  <Choice key={m} label={UP_FOR_NAMES[m]} action="›" busy={busy} onClick={() => run(() => postUpFor(m, day === 0 ? null : days[day]))} testId={`my-vibe-meal-${m}`} />
+                {/* A meal lists the four meals; Coffee (mig 0430) and Happy Hour 🍸 (mig 0436) are one row each. */}
+                {(upForType === "meal" ? UP_FOR_KEYS.filter((m) => upForTypeOf(m) === "meal") : [upForType]).map((m) => (
+                  <Choice
+                    key={m}
+                    label={upForType === "meal" ? UP_FOR_NAMES[m] : `${UP_FOR_NAMES[m]} · ${dayLabel(days[day], now)}`}
+                    action={upForType === "meal" ? "›" : "Set ›"}
+                    busy={busy}
+                    onClick={() => pickUpFor(m)}
+                    testId={`my-vibe-meal-${m}`}
+                  />
                 ))}
               </div>
             ) : null}
@@ -247,6 +359,18 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
                 )}
               </div>
             ) : null}
+            {/* Feeling Social (mig 0445, 18+) and your own words (plan 58) sit with the other vibes. */}
+            {!state.feelingSocial ? (
+              <Choice label="✨ Feeling Social" note="Open to meeting new people" action="Turn on ›" busy={busy} onClick={() => openVibe("feeling_social")} testId="my-vibe-set-social" />
+            ) : null}
+            <Choice
+              label="Write your own vibe"
+              note="Like “Down for late night tacos”"
+              action="Write ›"
+              busy={busy}
+              onClick={() => openVibe("custom", custom?.label || "")}
+              testId="my-vibe-set-custom"
+            />
             {panel === "pause" ? (
               <div style={st.panel} data-testid="availability-pause-list">
                 <p style={st.forLabel}>Pause for</p>
@@ -360,10 +484,18 @@ function HungryFor({ busy, onSet }) {
   );
 }
 
-function Row({ label, color = C.text, onRemove, busy, testId }) {
+function Row({ label, until = null, color = C.text, onChange, onRemove, busy, testId, changeTestId }) {
   return (
     <div style={st.row} data-testid={testId}>
-      <span style={{ ...st.rowText, color }}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ ...st.rowText, color, display: "block" }}>{label}</span>
+        {until ? <span style={st.until}>{until}</span> : null}
+      </span>
+      {onChange ? (
+        <button type="button" style={{ ...st.link, alignSelf: "center" }} disabled={busy} onClick={onChange} data-testid={changeTestId || `${testId}-change`}>
+          Change
+        </button>
+      ) : null}
       <button type="button" style={{ ...st.link, alignSelf: "center" }} disabled={busy} onClick={onRemove} data-testid={`${testId}-remove`}>
         Remove
       </button>
@@ -371,12 +503,90 @@ function Row({ label, color = C.text, onRemove, busy, testId }) {
   );
 }
 
-function Choice({ label, action, onClick, busy, testId }) {
+function Choice({ label, note = null, action, onClick, busy, testId }) {
   return (
     <button type="button" style={st.choice} disabled={busy} onClick={onClick} data-testid={testId}>
-      <span style={{ color: C.text, fontSize: 16 }}>{label}</span>
+      <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+        <span style={{ color: C.text, fontSize: 16 }}>{label}</span>
+        {note ? <span style={{ color: C.muted, fontSize: 13 }}>{note}</span> : null}
+      </span>
       <span style={{ color: C.accent, fontWeight: 700, fontSize: 14 }}>{action}</span>
     </button>
+  );
+}
+
+/** A round radio mark (the same look as How discoverable are you?), never an oval pill. */
+export function RadioMark({ on }) {
+  return <span style={{ ...st.radio, ...(on ? st.radioOn : null) }}>{on ? <span style={st.radioDot} /> : null}</span>;
+}
+
+function Radio({ on, label, note = null, onClick, testId }) {
+  return (
+    <button type="button" role="radio" aria-checked={on} onClick={onClick} style={st.radioOption} data-testid={testId}>
+      <RadioMark on={on} />
+      <span style={{ display: "flex", flexDirection: "column", gap: 1, textAlign: "left" }}>
+        <span style={{ fontSize: 16, color: C.text }}>{label}</span>
+        {note ? <span style={{ fontSize: 13, color: C.muted }}>{note}</span> : null}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Your vibe right now (plan 58): one at a time — Hungry now, ✨ Feeling Social or your own words
+ * (≤ 80) — for 2, 4 or 8 hours (4 to start). Ends by itself; setting one replaces the one you have.
+ */
+function VibePicker({ start, replacing, busy, onCancel, onSet }) {
+  const [kind, setKind] = useState(start?.kind || "hungry");
+  const [text, setText] = useState(start?.kind === "custom" ? start.text || "" : "");
+  const [hours, setHours] = useState(DEFAULT_VIBE_HOURS);
+  const clean = text.replace(/\s+/g, " ").trim();
+  const ready = kind !== "custom" || (clean.length > 0 && [...clean].length <= CUSTOM_VIBE_MAX);
+  return (
+    <div style={st.panel} data-testid="right-now-vibe-sheet">
+      <p style={st.panelTitle}>Your vibe right now</p>
+      <div role="radiogroup">
+        {VIBE_KINDS.map((k) => (
+          <Radio key={k.kind} on={kind === k.kind} label={k.label} note={k.note} onClick={() => setKind(k.kind)} testId={`vibe-kind-${k.kind}`} />
+        ))}
+      </div>
+      {kind === "custom" ? (
+        <>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Down for late night tacos"
+            maxLength={CUSTOM_VIBE_MAX}
+            autoFocus
+            aria-label="Your vibe"
+            style={st.input}
+            data-testid="vibe-custom-input"
+          />
+          <p style={{ ...st.muted, margin: 0, textAlign: "right" }} data-testid="vibe-custom-count">{`${[...text].length}/${CUSTOM_VIBE_MAX}`}</p>
+        </>
+      ) : null}
+      <p style={st.forLabel}>For</p>
+      <div role="radiogroup" style={st.radioRow}>
+        {VIBE_HOURS.map((h) => (
+          <Radio key={h} on={hours === h} label={`${h} hours`} onClick={() => setHours(h)} testId={`vibe-hours-${h}`} />
+        ))}
+      </div>
+      <p style={st.status}>{replacing ? `Ends by itself. Replaces “${replacing}”.` : "Ends by itself. You can change or remove it anytime."}</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 40 }}>
+        <button type="button" style={st.quiet} onClick={onCancel} data-testid="vibe-cancel">
+          Cancel
+        </button>
+        <button
+          type="button"
+          style={{ ...st.link, fontSize: 16, alignSelf: "center", ...(!ready || busy ? { color: C.muted, cursor: "default" } : null) }}
+          disabled={!ready || busy}
+          onClick={() => onSet({ kind, hours, ...(kind === "custom" ? { text: clean } : {}) })}
+          data-testid="vibe-set"
+        >
+          {kind === "hungry" ? "Next ›" : "Set ›"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -409,6 +619,12 @@ const st = {
   body: { margin: 0, fontSize: 15, lineHeight: "21px", color: C.text },
   row: { display: "flex", alignItems: "center", gap: 8, minHeight: 36 },
   rowText: { flex: 1, minWidth: 0, fontSize: 16, fontWeight: 700 },
+  until: { display: "block", fontSize: 13, color: C.muted },
+  radioRow: { display: "flex", flexWrap: "wrap", columnGap: 16 },
+  radioOption: { display: "flex", alignItems: "center", gap: 10, minHeight: 44, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" },
+  radio: { width: 20, height: 20, borderRadius: "50%", border: `2px solid ${C.muted}`, display: "inline-flex", alignItems: "center", justifyContent: "center", boxSizing: "border-box", flexShrink: 0 },
+  radioOn: { borderColor: C.accent },
+  radioDot: { width: 10, height: 10, borderRadius: "50%", background: C.accent },
   choices: { borderTop: `1px solid ${C.border}`, paddingTop: 4 },
   choice: {
     display: "flex",

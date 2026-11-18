@@ -27,6 +27,40 @@ export const PAUSE_CHOICES = [
 const text = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 /** GET/PUT /api/consumer/profile/availability body → { available, pausedUntil, pausedForever, hungry, upFor }. */
+/** Plan 58 (Andre 2026-11-18): one right-now vibe at a time, for 2, 4 or 8 hours (4 to start). */
+export const VIBE_HOURS = [2, 4, 8];
+export const DEFAULT_VIBE_HOURS = 4;
+export const CUSTOM_VIBE_MAX = 80;
+export const VIBE_KINDS = [
+  { kind: "hungry", label: "Hungry now", note: "Ready to eat soon" },
+  { kind: "feeling_social", label: "✨ Feeling Social", note: "Open to meeting new people (18+)" },
+  { kind: "custom", label: "Write your own", note: `Up to ${CUSTOM_VIBE_MAX} characters` },
+];
+
+function parseActiveVibe(v) {
+  const kind = ["hungry", "feeling_social", "custom"].find((k) => k === v?.kind);
+  const label = text(v?.label);
+  return kind && label ? { kind, label, until: text(v?.until) } : null;
+}
+
+/** "until 9:40 PM" (today) or "until Tue 1:00 AM". */
+export function untilLabel(until, now) {
+  if (!until) return null;
+  const end = new Date(until);
+  if (!Number.isFinite(end.getTime())) return null;
+  const t = end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const sameDay = new Date(now).toDateString() === end.toDateString();
+  return sameDay ? `until ${t}` : `until ${end.toLocaleDateString("en-US", { weekday: "short" })} ${t}`;
+}
+
+/** "I’m up for:" (Andre 2026-11-18): A meal · Coffee · Happy Hour 🍸 are separate choices. */
+export const UP_FOR_TYPES = [
+  { key: "meal", label: "A meal" },
+  { key: "coffee", label: "Coffee" },
+  { key: "happy_hour", label: "Happy Hour 🍸" },
+];
+export const upForTypeOf = (w) => (w === "coffee" || w === "happy_hour" ? w : "meal");
+
 export function parseAvailability(body) {
   const a = body?.availability ?? null;
   if (!a || typeof a.available !== "boolean") return null;
@@ -37,6 +71,10 @@ export function parseAvailability(body) {
     hungry: a.hungry === true,
     // "Hungry now for Pizza" (Andre 2026-11-14): the food I gave, if any.
     hungryFor: a.hungry === true ? text(a.hungry_for) : null,
+    // ✨ Feeling Social (mig 0445) and the one right-now vibe with its end time (plan 58, mig 0454).
+    feelingSocial: a.feeling_social === true,
+    noBirthday: a.no_birthday === true,
+    activeVibe: parseActiveVibe(a.active_vibe),
     upFor: (Array.isArray(a.up_for) ? a.up_for : []).flatMap((u) => {
       const date = text(u?.date);
       const w = UP_FOR_KEYS.find((m) => m === u?.window);
@@ -72,7 +110,8 @@ export function dayLabel(date, now) {
 
 /** The active row: "Open for lunch · Today" (set with "Up for", report with "Open for"). */
 export function upForLine(u, now) {
-  return `Open for ${upForWord(u.window)} · ${dayLabel(u.date, now)}`;
+  // Happy Hour is its own vibe (Andre 2026-11-18): "Up for Happy Hour 🍸 · Fri".
+  return `${u.window === "happy_hour" ? "Up for Happy Hour 🍸" : `Open for ${upForWord(u.window)}`} · ${dayLabel(u.date, now)}`;
 }
 
 /** "7:30 PM" for "19:30:00". */

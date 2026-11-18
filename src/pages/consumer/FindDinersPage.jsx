@@ -1,8 +1,11 @@
 /**
  * Find Connects — people search with connection actions, the same as the app (Andre 2026-10-30).
+ * Plan 58 (Andre 2026-11-18): Search ◉ People ○ Vibes. Vibes shows live vibes I may see as I type
+ * (text only); picking one lists the people with it. The server only returns people whose privacy
+ * lets me see them, and people with an active vibe come first ("Available" is passive).
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
@@ -13,7 +16,9 @@ import {
   removeConnection,
   requestConnection,
   searchDiners,
+  suggestVibes,
 } from "../../lib/consumerApi.js";
+import { RadioMark } from "./myMenuply/MyVibeCard.jsx";
 import { formatDinerPeerLabel } from "../../lib/dinerPublicIdentity.js";
 import DinerAvatar from "../../components/social/DinerAvatar.jsx";
 
@@ -70,6 +75,27 @@ export default function FindDinersPage() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [mode, setMode] = useState("people");
+  const [suggestions, setSuggestions] = useState([]);
+  // The vibe picked from the suggestions (exact match), or null for typed text (partial match).
+  const [pickedVibe, setPickedVibe] = useState(null);
+  const asked = useRef(0);
+
+  // Vibes: suggestions as you type.
+  useEffect(() => {
+    const q = query.trim();
+    if (mode !== "vibes" || q.length < 2 || q === pickedVibe) {
+      setSuggestions([]);
+      return undefined;
+    }
+    const n = ++asked.current;
+    const timer = setTimeout(() => {
+      suggestVibes(q)
+        .then((b) => n === asked.current && setSuggestions((Array.isArray(b?.suggestions) ? b.suggestions : []).filter((v) => typeof v === "string" && v.trim()).slice(0, 10)))
+        .catch(() => n === asked.current && setSuggestions([]));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [query, mode, pickedVibe]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -77,18 +103,19 @@ export default function FindDinersPage() {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
-  const runSearch = useCallback(async (nextQuery) => {
+  const runSearch = useCallback(async (nextQuery, exact = pickedVibe != null && String(nextQuery ?? query).trim() === pickedVibe) => {
     const q = String(nextQuery ?? query).trim();
     if (q.length < 2) {
-      setError("Enter at least 2 characters to search.");
+      setError(mode === "vibes" ? "Type at least 2 letters of a vibe." : "Enter at least 2 characters to search.");
       setResults([]);
       setSearched(false);
       return;
     }
     setLoading(true);
     setError("");
+    setSuggestions([]);
     try {
-      const data = await searchDiners(q);
+      const data = mode === "vibes" ? await searchDiners("", null, { vibe: q, vibeExact: exact }) : await searchDiners(q);
       setResults(data.results || []);
       setSearched(true);
     } catch (err) {
@@ -97,7 +124,23 @@ export default function FindDinersPage() {
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, mode, pickedVibe]);
+
+  function pickVibe(v) {
+    setPickedVibe(v);
+    setQuery(v);
+    void runSearch(v, true);
+  }
+
+  function switchMode(next) {
+    if (next === mode) return;
+    setMode(next);
+    setResults([]);
+    setSearched(false);
+    setError("");
+    setSuggestions([]);
+    setPickedVibe(null);
+  }
 
   async function handleAction(diner, action) {
     setBusyId(diner.id);
@@ -124,7 +167,18 @@ export default function FindDinersPage() {
     <div style={styles.page}>
       <StickyPageHeader title="Find Connects" backTo="/feed/profile" />
       <main style={styles.main}>
-        <p style={styles.lead}>Search by name, email, phone, hometown or city.</p>
+        <p style={styles.lead}>
+          {mode === "vibes" ? "Find people by their vibe right now, like “tacos” or “Feeling Social”." : "Search by name, email, phone, hometown or city."}
+        </p>
+        <div role="radiogroup" aria-label="Search" style={styles.modeRow}>
+          <span style={styles.modeLabel}>Search:</span>
+          {["people", "vibes"].map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => switchMode(m)} style={styles.modeOption} data-testid={`find-diners-mode-${m}`}>
+              <RadioMark on={mode === m} />
+              <span>{m === "people" ? "People" : "Vibes"}</span>
+            </button>
+          ))}
+        </div>
 
         <form
           onSubmit={(e) => {
@@ -136,22 +190,40 @@ export default function FindDinersPage() {
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Name, email, phone or city"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (pickedVibe != null && e.target.value !== pickedVibe) setPickedVibe(null);
+            }}
+            placeholder={mode === "vibes" ? "A vibe, like tacos" : "Name, email, phone or city"}
+            maxLength={mode === "vibes" ? 80 : undefined}
+            autoComplete="off"
             style={styles.searchInput}
-            aria-label="Search diners"
+            aria-label={mode === "vibes" ? "Search vibes" : "Search diners"}
+            data-testid="find-diners-input"
           />
           <button type="submit" style={styles.primaryBtn} disabled={loading}>
             {loading ? "Searching…" : "Search"}
           </button>
         </form>
 
+        {suggestions.length ? (
+          <div style={styles.suggestions} data-testid="find-diners-vibe-suggestions">
+            {suggestions.map((v) => (
+              <button key={v} type="button" onClick={() => pickVibe(v)} style={styles.suggestion} data-testid={`find-diners-vibe-suggestion-${v}`}>
+                <span style={{ flex: 1, textAlign: "left" }}>{v}</span>
+                <span style={{ color: "#0f7a24", fontWeight: 700 }}>›</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {error ? <p style={styles.error}>{error}</p> : null}
 
         {searched && !loading && results.length === 0 ? (
           <p style={styles.empty}>
-            No diners matched. Try their exact email or phone, or a name / hometown / city spelling they
-            use on Menuply.
+            {mode === "vibes"
+              ? "No one you can see has that vibe right now."
+              : "No diners matched. Try their exact email or phone, or a name / hometown / city spelling they use on Menuply."}
           </p>
         ) : null}
 
@@ -164,6 +236,11 @@ export default function FindDinersPage() {
                 <DinerAvatar avatarUrl={diner.avatar_url} avatarMotionUrl={diner.avatar_motion_url} displayName={diner.display_name} size={44} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={styles.nameLink}>{formatDinerPeerLabel(diner)}</span>
+                  {diner.active_vibe ? (
+                    <span style={styles.vibe} data-testid={`find-diner-${diner.id}-vibe`}>
+                      {diner.active_vibe === "Feeling Social" ? "✨ Feeling Social" : diner.active_vibe}
+                    </span>
+                  ) : null}
                   {diner.location_label || diner.mutual_connection_count > 0 ? (
                     <span style={styles.location}>
                       {[diner.location_label, diner.mutual_connection_count > 0 ? `${diner.mutual_connection_count} mutual` : null].filter(Boolean).join(" · ")}
@@ -201,4 +278,10 @@ const styles = {
   cardLink: { display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 180, color: "inherit", textDecoration: "none" },
   nameLink: { display: "block", fontSize: 15, fontWeight: 600, color: "#111613" },
   location: { display: "block", fontSize: 13, color: "#5c665f" },
+  vibe: { display: "block", fontSize: 13, fontWeight: 600, color: "#111613" },
+  modeRow: { display: "flex", alignItems: "center", gap: 16, marginBottom: 8 },
+  modeLabel: { fontSize: 13, fontWeight: 700, color: "#5c665f" },
+  modeOption: { display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, color: "#111613" },
+  suggestions: { background: "#fff", border: "1px solid #e1e6e1", borderRadius: 10, marginBottom: 12 },
+  suggestion: { display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "0 12px", border: "none", borderTop: "1px solid #e1e6e1", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 15, color: "#111613" },
 };

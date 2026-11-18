@@ -34,7 +34,7 @@ import { useMyInviteCode } from "../../../hooks/useMyInviteCode.js";
 import { SETUP_MARKS_EVENT, markSetup, readSetupMarks } from "../../../lib/profileSetupMarks.js";
 import { FEED_SHELL_PROFILE_LOGIN_PATH, FEED_SHELL_PROFILE_SIGNUP_PATH } from "../../../lib/feedShellLinks.js";
 import { MY_MENUPLY_MONTH_IN_FOOD_PATH, MY_MENUPLY_PROFILE_PATH } from "../../../lib/myMenuplyRoutes.js";
-import { DISCOVER_LEVELS as LEVELS, discoverLevelOf } from "../../../lib/discoverLevels.js";
+import { DISCOVER_LEVELS as LEVELS, discoverLevelOf, MINOR_CONNECTS_ONLY_NOTE, MINOR_LOCKED_LEVELS } from "../../../lib/discoverLevels.js";
 
 // App tokens (menuply-mobile src/theme/tokens.ts).
 const C = {
@@ -377,12 +377,14 @@ export function AppDiscoverabilityCard({ onChange, startOpen = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirmEveryone, setConfirmEveryone] = useState(false);
+  const [minor, setMinor] = useState(false);
 
   useEffect(() => {
     let alive = true;
     getConsumerProfile()
       .then((data) => {
         if (!alive) return;
+        setMinor(data?.profile?.minor_connects_only === true);
         const l = discoverLevelOf(data?.profile || {});
         setLevel(l);
         onChange?.(l);
@@ -428,18 +430,25 @@ export function AppDiscoverabilityCard({ onChange, startOpen = false }) {
         ) : null}
         <AppIcon name="chevronDown" size={16} color={C.muted} strokeWidth={2.4} style={open ? { transform: "rotate(180deg)" } : null} />
       </button>
+      {open && level && minor ? (
+        <p style={{ ...st.body, margin: "4px 0" }} data-testid="discover-minor-note">
+          {MINOR_CONNECTS_ONLY_NOTE}
+        </p>
+      ) : null}
       {open && level
         ? LEVELS.map((l) => {
             const on = level === l.value;
+            const locked = minor && MINOR_LOCKED_LEVELS.includes(l.value);
             return (
               <button
                 key={l.value}
                 type="button"
                 role="radio"
                 aria-checked={on}
-                disabled={busy}
+                aria-disabled={locked || undefined}
+                disabled={busy || locked}
                 onClick={() => (l.value === "everyone" && !on ? setConfirmEveryone(true) : void choose(l.value))}
-                style={{ ...styles.option, ...(on ? styles.optionOn : null) }}
+                style={{ ...styles.option, ...(on ? styles.optionOn : null), ...(locked ? { opacity: 0.45, cursor: "default" } : null) }}
                 data-testid={`discover-${l.value}`}
               >
                 <span style={{ ...styles.radio, ...(on ? styles.radioOn : null) }}>{on ? <span style={styles.radioDot} /> : null}</span>

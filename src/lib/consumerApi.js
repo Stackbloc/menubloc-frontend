@@ -754,12 +754,17 @@ export const updateCurrentVibe = (body) =>
 /** Who may see my vibe in search: "connects" | "connects_of_connects". */
 export const updateSearchVibeAudience = (audience) =>
   put("/api/consumer/profile/current-vibe", { search_vibe_audience: audience });
-export const searchDiners = (query, cityId = null) => {
+export const searchDiners = (query, cityId = null, filter = {}) => {
   const q = new URLSearchParams();
   if (query) q.set("q", String(query));
   if (cityId) q.set("city_id", String(cityId));
+  // Plan 58 Vibes search: people whose right-now vibe matches (exact for a picked suggestion).
+  if (filter.vibe) q.set("vibe", String(filter.vibe));
+  if (filter.vibe && filter.vibeExact) q.set("vibe_exact", "1");
   return get(`/api/consumer/diners/search?${q}`);
 };
+/** Plan 58: live vibes I may see that match what I type: { suggestions: ["Down for tacos", …] }, text only. */
+export const suggestVibes = (q) => get(`/api/consumer/diners/vibes/suggest?${new URLSearchParams({ q }).toString()}`);
 export const getFollowedRestaurants = ()    => get("/api/consumer/followed-restaurants");
 /** A Connect's restaurant Favs (accepted Connects only). */
 export const listPeerFollowedRestaurants = (userId) =>
@@ -875,8 +880,19 @@ export const getAvailability = () => get("/api/consumer/profile/availability");
 /** { pause: "3h" | "today" | "week" | "month" | "forever" | "resume" } */
 export const setAvailability = (change) => put("/api/consumer/profile/availability", change);
 /** "Hungry now for?" (Andre 2026-11-14): optional food; the server fixes misspellings. */
-export const postHungryNow = (food = null) =>
-  post("/api/consumer/hungry", { when: "now", cravings: [], ...(String(food || "").trim() ? { food: String(food).trim() } : {}) });
+export const postHungryNow = (food = null, hours = null) =>
+  post("/api/consumer/hungry", {
+    when: "now",
+    cravings: [],
+    ...(String(food || "").trim() ? { food: String(food).trim() } : {}),
+    // Plan 58: 2, 4 or 8 hours (none = the server's default).
+    ...(hours ? { hours } : {}),
+  });
+/**
+ * Plan 58: the one right-now vibe. { kind: "feeling_social" | "custom", hours: 2|4|8, text? } sets it
+ * (replacing the one I have); { kind: null } clears it. Returns { availability }.
+ */
+export const setRightNowVibe = (change) => put("/api/consumer/profile/vibe", change);
 /** Typing help for "Hungry now for?": { suggestions: [{ name, kind }] }, names only. */
 export const suggestHungryFor = (q) => get(`/api/consumer/hungry/suggest?${new URLSearchParams({ q }).toString()}`);
 export const clearHungryNow = () => del("/api/consumer/hungry");
