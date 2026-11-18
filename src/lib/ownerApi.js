@@ -975,9 +975,11 @@ export const getFranchiseBotJob = (jobId) => get(`/api/owner/franchise-bot/jobs/
 
 // ─── HealthDeptBot (health department inspection data → facilities matched to Menuply) ─────
 export const previewHealthDeptSource = (url) => post("/api/owner/health-dept-bot/preview", { url });
-/** { url, state?, county?, field_map, run } */
+/** { url, state?, county?, city?, found_on_url?, field_map, run } */
 export const addHealthDeptSource = (body) => post("/api/owner/health-dept-bot/sources", body);
 export const listHealthDeptSources = () => get("/api/owner/health-dept-bot/sources");
+/** { state?, county?, city?, label? }: where a saved health department sits */
+export const updateHealthDeptSource = (id, body) => patch(`/api/owner/health-dept-bot/sources/${encodeURIComponent(id)}`, body);
 /** action: run | pause */
 export const healthDeptSourceAction = (id, action) => post(`/api/owner/health-dept-bot/sources/${encodeURIComponent(id)}/${action}`, {});
 export const listHealthDeptFacilities = (id, filter = "not_on_menuply") => get(`/api/owner/health-dept-bot/sources/${encodeURIComponent(id)}/facilities?filter=${encodeURIComponent(filter)}`);
