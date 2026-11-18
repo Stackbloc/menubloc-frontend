@@ -191,7 +191,7 @@ function AssignmentsTab({ status }) {
                   style={{ ...box, padding: 8, textAlign: "left", cursor: "pointer", borderColor: String(open) === String(a.id) ? OWNER_COLORS.accent : OWNER_COLORS.line }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}><strong>#{a.id}</strong><StatusTag status={a.status} />{a.proposals_pending ? <Tag tone="warn">{a.proposals_pending} to review</Tag> : null}</div>
                   <div style={{ ...small, marginTop: 2 }}>{a.objective_text.slice(0, 120)}</div>
-                  <div style={small}>{(a.counts?.done || 0).toLocaleString()} of {(a.plan?.items || 0).toLocaleString()} · {when(a.created_at)}</div>
+                  <div style={small}>{(a.done_live ?? a.counts?.done ?? 0).toLocaleString()} of {(a.plan?.items || 0).toLocaleString()} · {when(a.created_at)}</div>
                 </button>
               ))}
             </div>
