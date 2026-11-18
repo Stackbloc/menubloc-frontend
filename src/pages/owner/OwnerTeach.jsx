@@ -20,8 +20,8 @@ import {
   queueLabRun,
   reviewLabCorrection,
   reviewLesson,
-  sendConversationMessage,
   setLearningSwitch,
+  startConversationMessage,
 } from "../../lib/ownerApi.js";
 import { StatusTag, Tag, TextLink } from "./knowledgeUi.jsx";
 import { humanClass } from "./knowledgeFormat.js";
@@ -356,25 +356,46 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
   const [err, setErr] = useState("");
   const [profile, setProfile] = useState("");
   const endRef = useRef(null);
-  const load = useCallback(() => getConversation(id).then((c) => { setConv(c); setProfile((p) => p || c.model_profile || ""); }).catch((e) => setErr(e.message)), [id]);
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, [id]);
+  const load = useCallback(() => getConversation(id).then((c) => { if (alive.current) { setConv(c); setProfile((p) => p || c.model_profile || ""); } }).catch((e) => setErr(e.message)), [id]);
   useEffect(() => { setConv(null); load(); }, [load, reloadKey]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "nearest" }); }, [conv?.messages?.length, sending]);
+  const assistantCount = (c) => (c?.messages || []).filter((m) => m.role === "assistant").length;
+  // The answer is written in the background (Cloudflare cuts a request at 100 s): poll until it lands.
+  // A dropped poll just retries; after 6 minutes the page stops waiting but the answer still lands later.
+  const waitForReply = async (before) => {
+    const deadline = Date.now() + 6 * 60 * 1000;
+    while (alive.current && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 3000));
+      let c = null;
+      try { c = await getConversation(id); } catch { continue; }
+      if (assistantCount(c) > before) { if (alive.current) setConv(c); return true; }
+    }
+    return false;
+  };
   const send = async () => {
     const t = text.trim();
     if (!t) return;
+    const before = assistantCount(conv);
     setSending(true);
     setErr("");
     setConv((c) => ({ ...c, messages: [...(c?.messages || []), { id: "pending", role: "owner", content: t }] }));
     setText("");
     try {
-      await sendConversationMessage(id, t, profile || null);
+      const r = await startConversationMessage(id, t, profile || null);
+      // An older backend answers in this request (r.message); a current one replies { accepted }.
+      if (r?.accepted) {
+        const got = await waitForReply(Number(r.assistant_messages_before ?? before));
+        if (!got && alive.current) setErr("Agent 000 is still working on this. Its answer will appear in this conversation when it's ready.");
+      }
       await load();
       await onLessonsChanged();
     } catch (e) {
       setErr(e.payload?.code === "LEARNING_FLAG_OFF" ? "The agent can't use approved knowledge while that switch is off. Turn it on above." : e.message);
       await load();
       setText(t);
-    } finally { setSending(false); }
+    } finally { if (alive.current) setSending(false); }
   };
   if (!conv) return <div style={mutedStyle}>{err || "Loading…"}</div>;
   return (
@@ -399,7 +420,7 @@ function Conversation({ id, profiles, switches, onLessonsChanged, reloadKey }) {
         ) : (
           <AssistantMessage key={m.id} m={m} onLessonDecided={async () => { await load(); await onLessonsChanged(); }} />
         )))}
-        {sending ? <div style={mutedStyle}>Agent 000 is thinking on the Mac (usually 5–60 s)…</div> : null}
+        {sending ? <div style={mutedStyle}>Agent 000 is thinking on the Mac (usually 10–40 s)…</div> : null}
         <div ref={endRef} />
       </div>
       <div style={{ marginTop: 12 }}>

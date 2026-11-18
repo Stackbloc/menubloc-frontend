@@ -1572,6 +1572,9 @@ export const createConversation = (body) => post("/api/owner/knowledge/conversat
 export const getConversation = (id) => get(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}`);
 export const sendConversationMessage = (id, text, modelProfile) =>
   post(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/messages`, { text, model_profile: modelProfile || null }, { timeoutMs: 400000 });
+// Agent 000 answers in the background and the page polls the conversation (Cloudflare cuts requests at 100 s).
+export const startConversationMessage = (id, text, modelProfile) =>
+  post(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/messages`, { text, model_profile: modelProfile || null, background: true }, { timeoutMs: 60000 });
 export const proposeConversationLesson = (id, body) => post(`/api/owner/knowledge/conversations/${encodeURIComponent(id)}/lessons`, body);
 export const listLessons = (status) => get(`/api/owner/knowledge/lessons${qs(status ? { status } : {})}`);
 export const reviewLesson = (id, decision, body = {}) => post(`/api/owner/knowledge/lessons/${id}/${decision}`, body);
