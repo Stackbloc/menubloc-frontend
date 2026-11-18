@@ -1399,6 +1399,10 @@ export const listOwnerDeals = (restaurantId, params = {}) => {
   return get(`/api/owner/restaurants/${restaurantId}/deals${qs ? `?${qs}` : ""}`);
 };
 
+/** 2026-11-18: /owner/deals default view — every deal's live status + deal analytics. */
+export const getOwnerDealsOverview = ({ days = 30 } = {}) =>
+  get(`/api/owner/deals/overview?days=${encodeURIComponent(days)}`);
+
 export const createOwnerDeal = (restaurantId, body) =>
   post(`/api/owner/restaurants/${restaurantId}/deals`, body);
 
