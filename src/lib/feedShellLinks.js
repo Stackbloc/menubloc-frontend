@@ -113,7 +113,7 @@ export const FEED_GUEST_PROFILE_CARDS = [
  */
 export const FEED_MORE_PINNED = {
   profile: { to: FEED_SHELL_PROFILE_NEXT, guestTo: FEED_SHELL_PROFILE_LOGIN_PATH, testId: "feed-more-profile" },
-  events: { to: "/events", label: "Events", note: "Parties and get-togethers near you", icon: "calendar", testId: "feed-more-events" },
+  events: { to: "/events", label: "Events", note: "Create your own event or discover nearby pending events.", icon: "calendar", testId: "feed-more-events" },
 };
 
 export const FEED_MORE_SECTIONS = [

@@ -23,7 +23,7 @@ describe("FeedMorePanel order", () => {
     consumerState.profile = { display_name: "Maya" };
     open(true);
     expect(screen.getByTestId("feed-more-profile").textContent).toMatch(/Maya.*View profile/);
-    expect(screen.getByTestId("feed-more-events").textContent).toMatch(/Parties and get-togethers near you/);
+    expect(screen.getByTestId("feed-more-events").textContent).toMatch(/Create your own event or discover nearby pending events\./);
     const heads = screen.getAllByTestId(/^feed-more-section-/).map((n) => n.textContent.replace(/[+−]$/, ""));
     expect(heads).toEqual(["Connects", "Account & Settings", "Help", "Menuply"]);
     expect(screen.getByTestId("feed-more-find-connects")).toBeTruthy();
