@@ -1,13 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, EmptyState } from "./OwnerLayout.jsx";
-import { getOwnerMimsFacets, searchOwnerMimsItems, getOwnerMimsItem } from "../../lib/ownerApi.js";
+import {
+  getOwnerMimsFacets,
+  searchOwnerMimsItems,
+  getOwnerMimsItem,
+  updateOwnerMimsItem,
+  getOwnerMimsItemChanges,
+  undoOwnerMimsItemChange,
+} from "../../lib/ownerApi.js";
 
 /**
  * Owner → Menu Items (MIMS v1, plan 65 MIMS-1). Created 2026-11-19.
  * System-wide menu item catalog: search, filters, grid, and a read-only item inspector.
  * One row = one location dish (Common Knowledge row). Filters live in the URL so a view can be shared.
- * Read-only in v1. Editing (MIMS-2) comes next and will go through one write adapter on the backend.
+ * MIMS-2 (2026-11-19): edit one dish (name, section, description, price, availability, review), see its edit log,
+ * undo an edit. Every save goes through the backend write adapter (mimsWriteAdapter.js), never straight to tables.
  */
 
 const FILTER_KEYS = [
@@ -303,22 +311,232 @@ function MiniTable({ cols, rows, empty }) {
   );
 }
 
+const FIELD_LABELS = {
+  item_name: "Name",
+  section_name: "Section",
+  description: "Description",
+  price: "Price",
+  menu_status: "Availability",
+  needs_review: "Needs review",
+  review_notes: "Review notes",
+};
+
+function showValue(field, v) {
+  if (v === null || v === undefined || v === "") return "—";
+  if (field === "price") return money(v);
+  if (field === "needs_review") return v ? "Yes" : "No";
+  return String(v);
+}
+
+const fieldBox = { ...inputStyle, width: "100%", boxSizing: "border-box" };
+
+function formFrom(it) {
+  return {
+    item_name: it.item_name || "",
+    section_name: it.section_name || "",
+    description: it.description || "",
+    price: it.price === null || it.price === undefined ? "" : Number(it.price).toFixed(2),
+    menu_status: it.menu_status || "",
+    needs_review: Boolean(it.needs_review),
+    review_notes: it.review_notes || "",
+  };
+}
+
+function EditForm({ item, onSaved, onCancel }) {
+  const franchise = Boolean(item.is_franchise_menu_item);
+  const start = useMemo(() => formFrom(item), [item]);
+  const [form, setForm] = useState(start);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState(null);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const changed = Object.keys(form).filter((k) => {
+    if (franchise && k !== "needs_review" && k !== "review_notes") return false;
+    return String(form[k]) !== String(start[k]);
+  });
+
+  async function save(confirmDuplicate = false) {
+    if (!changed.length) return;
+    setBusy(true);
+    setProblem(null);
+    const changes = {};
+    for (const k of changed) changes[k] = form[k];
+    try {
+      await updateOwnerMimsItem(item.id, {
+        changes,
+        based_on_updated_at: item.updated_at,
+        reason: reason.trim() || undefined,
+        confirm_duplicate: confirmDuplicate || undefined,
+      });
+      onSaved();
+    } catch (e) {
+      setProblem({ message: e.message, code: e.payload?.code, duplicates: e.payload?.duplicates || null });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const row = (label, el) => (
+    <label style={{ display: "grid", gap: 4, fontSize: 12, color: C.muted }}>
+      {label}
+      {el}
+    </label>
+  );
+
+  return (
+    <div style={{ marginTop: 16, padding: 14, border: `1px solid ${C.line}`, borderRadius: 12, background: "#fbfbfa", display: "grid", gap: 10 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>Edit dish</div>
+      {franchise ? (
+        <div style={{ fontSize: 12, color: C.muted }}>
+          This is a chain store&apos;s copy of the chain dish, so only review fields can change here. Edit the chain menu for name or price.
+        </div>
+      ) : (
+        <>
+          {row("Name", <input value={form.item_name} onChange={(e) => set("item_name", e.target.value)} style={fieldBox} />)}
+          {row("Section", <input value={form.section_name} onChange={(e) => set("section_name", e.target.value)} style={fieldBox} />)}
+          {row(
+            "Description",
+            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} style={{ ...fieldBox, height: "auto", padding: 8 }} />
+          )}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ width: 120 }}>
+              {row("Price ($)", <input inputMode="decimal" value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="none" style={fieldBox} />)}
+            </div>
+            <div style={{ width: 150 }}>
+              {row(
+                "Availability",
+                <select value={form.menu_status} onChange={(e) => set("menu_status", e.target.value)} style={fieldBox}>
+                  {start.menu_status && start.menu_status !== "visible" && start.menu_status !== "hidden" ? (
+                    <option value={start.menu_status}>{start.menu_status} (current)</option>
+                  ) : null}
+                  <option value="visible">Visible</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink }}>
+        <input type="checkbox" checked={form.needs_review} onChange={(e) => set("needs_review", e.target.checked)} />
+        Needs review
+      </label>
+      {row("Review notes", <input value={form.review_notes} onChange={(e) => set("review_notes", e.target.value)} style={fieldBox} />)}
+      {row("Why (optional, shown in the edit log)", <input value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} style={fieldBox} />)}
+
+      {problem ? (
+        <div style={{ padding: "10px 12px", borderRadius: 10, background: "#fef3f2", color: "#b42318", fontSize: 13, display: "grid", gap: 8 }}>
+          <div>{problem.message}</div>
+          {problem.code === "duplicate_warning" && problem.duplicates ? (
+            <>
+              <div style={{ color: C.ink }}>
+                {problem.duplicates.map((x) => `#${x.id} ${x.item_name} (${x.section_name || "no section"}, ${money(x.price)})`).join(" · ")}
+              </div>
+              <div>
+                <button type="button" style={buttonStyle} disabled={busy} onClick={() => save(true)}>
+                  Save anyway
+                </button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <button
+          type="button"
+          onClick={() => save(false)}
+          disabled={busy || !changed.length}
+          style={{ ...buttonStyle, background: C.ink, color: "#fff", borderColor: C.ink, opacity: busy || !changed.length ? 0.5 : 1 }}
+        >
+          {busy ? "Saving…" : changed.length ? `Save ${changed.length} change${changed.length === 1 ? "" : "s"}` : "No changes"}
+        </button>
+        <button type="button" onClick={onCancel} style={buttonStyle} disabled={busy}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditLog({ itemId, changes, onUndone }) {
+  const [busyId, setBusyId] = useState(null);
+  const [problem, setProblem] = useState(null);
+  if (!changes) return <div style={{ fontSize: 13, color: C.muted }}>Loading…</div>;
+  if (!changes.length) return <div style={{ fontSize: 13, color: C.muted }}>No edits made in Menu Items yet.</div>;
+
+  async function undo(changeId) {
+    setBusyId(changeId);
+    setProblem(null);
+    try {
+      await undoOwnerMimsItemChange(itemId, changeId);
+      onUndone();
+    } catch (e) {
+      setProblem(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      {problem ? <div style={{ fontSize: 13, color: "#b42318" }}>{problem}</div> : null}
+      {changes.map((c) => (
+        <div key={c.id} style={{ padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 10, fontSize: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: C.muted }}>
+            <span>
+              {when(c.created_at)} · {c.actor_email || "owner"}
+              {c.undo_of ? ` · undo of #${c.undo_of}` : ""}
+            </span>
+            {!c.undo_of && !c.undone_at ? (
+              <button type="button" style={{ ...buttonStyle, height: 24, padding: "0 8px", fontSize: 12 }} disabled={busyId === c.id} onClick={() => undo(c.id)}>
+                {busyId === c.id ? "Undoing…" : "Undo"}
+              </button>
+            ) : c.undone_at ? (
+              <span>Undone</span>
+            ) : null}
+          </div>
+          {Object.entries(c.changes || {}).map(([f, v]) => (
+            <div key={f} style={{ color: C.ink, marginTop: 4 }}>
+              {FIELD_LABELS[f] || f}: <span style={{ color: C.muted, textDecoration: "line-through" }}>{showValue(f, v.before)}</span> → {showValue(f, v.after)}
+            </div>
+          ))}
+          {c.reason ? <div style={{ color: C.muted, marginTop: 4 }}>Why: {c.reason}</div> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const mono = (v) => (v ? <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12 }}>{v}</span> : null);
 
-function Inspector({ id, onClose, onOpen }) {
-  // Mounted with key={id}, so each item starts fresh.
+function Inspector({ id, onClose, onOpen, onChanged }) {
+  // Mounted with key={id}, so each item starts fresh. `version` reloads it after a save or undo.
   const [state, setState] = useState({ loading: true });
   const [showAll, setShowAll] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [version, setVersion] = useState(0);
+  const [log, setLog] = useState({ version: -1, changes: null });
 
   useEffect(() => {
     let live = true;
     getOwnerMimsItem(id)
       .then((d) => live && setState({ data: d }))
       .catch((e) => live && setState({ error: e.message }));
+    getOwnerMimsItemChanges(id)
+      .then((d) => live && setLog({ version, changes: d.changes || [] }))
+      .catch(() => live && setLog({ version, changes: [] }));
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, version]);
+
+  const reload = () => {
+    setEditing(false);
+    setVersion((v) => v + 1);
+    if (onChanged) onChanged();
+  };
 
   const d = state.data;
   const it = d?.item || {};
@@ -329,10 +547,18 @@ function Inspector({ id, onClose, onOpen }) {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{it.item_name || (state.loading ? "Loading…" : "Menu item")}</div>
-          <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Item #{id} · read-only</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Item #{id}</div>
         </div>
-        <button type="button" onClick={onClose} style={buttonStyle} aria-label="Close item">Close</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {d && !editing ? (
+            <button type="button" onClick={() => setEditing(true)} style={buttonStyle}>
+              Edit
+            </button>
+          ) : null}
+          <button type="button" onClick={onClose} style={buttonStyle} aria-label="Close item">Close</button>
+        </div>
       </div>
+      {d && editing ? <EditForm key={String(it.updated_at)} item={it} onSaved={reload} onCancel={() => setEditing(false)} /> : null}
 
       {state.error ? <div style={{ marginTop: 14, color: "#b42318", fontSize: 13 }}>{state.error}</div> : null}
 
@@ -504,6 +730,10 @@ function Inspector({ id, onClose, onOpen }) {
             />
           </Section>
 
+          <Section title="Edits in Menu Items">
+            <EditLog itemId={id} changes={log.version === version ? log.changes : null} onUndone={reload} />
+          </Section>
+
           <Section title="History">
             <MiniTable
               empty="No recorded changes."
@@ -549,7 +779,8 @@ export default function OwnerMenuItems() {
     getOwnerMimsFacets().then(setFacets).catch(() => setFacets({}));
   }, []);
 
-  const key = JSON.stringify(params);
+  const [refresh, setRefresh] = useState(0);
+  const key = JSON.stringify(params) + "#" + refresh;
   useEffect(() => {
     let live = true;
     searchOwnerMimsItems({ ...params, limit: 50 })
@@ -590,7 +821,7 @@ export default function OwnerMenuItems() {
     <OwnerLayout title="Menu Items">
       <div style={{ display: "grid", gap: 16 }}>
         <div style={{ fontSize: 13, color: C.muted }}>
-          Every location dish across Menubloc. Read-only for now; editing comes next.
+          Every location dish across Menubloc. Open a dish to see everything about it, edit it, or undo an edit.
         </div>
 
         <Filters params={params} setParam={setParam} facets={facets} onClear={clear} />
@@ -622,7 +853,7 @@ export default function OwnerMenuItems() {
             )}
           </PageCard>
 
-          {openId ? <Inspector key={openId} id={openId} onClose={() => open(null)} onOpen={open} /> : null}
+          {openId ? <Inspector key={openId} id={openId} onClose={() => open(null)} onOpen={open} onChanged={() => setRefresh((n) => n + 1)} /> : null}
         </div>
       </div>
       <style>{`@media (max-width: 980px) { .mims-layout { grid-template-columns: minmax(0, 1fr) !important; } }`}</style>

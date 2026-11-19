@@ -498,6 +498,11 @@ export const searchOwnerMimsItems = (params = {}) => {
   return get(`/api/owner/mims/items?${qs.toString()}`);
 };
 export const getOwnerMimsItem = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}`);
+// MIMS-2 (2026-11-19): edits go through the backend write adapter only.
+export const updateOwnerMimsItem = (id, body) => patch(`/api/owner/mims/items/${encodeURIComponent(id)}`, body);
+export const getOwnerMimsItemChanges = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}/changes`);
+export const undoOwnerMimsItemChange = (id, changeId) =>
+  post(`/api/owner/mims/items/${encodeURIComponent(id)}/changes/${encodeURIComponent(changeId)}/undo`, {});
 export const getOwnerMenuPipelineRegistry = () => get("/api/owner/menu-pipeline/registry");
 export const getOwnerMenuPipelineMetrics = (days = 7) => get(`/api/owner/menu-pipeline/metrics?days=${encodeURIComponent(days)}`);
 export const searchOwnerMenuPipelineRestaurants = (q) => get(`/api/owner/menu-pipeline/restaurants?q=${encodeURIComponent(q)}`);
