@@ -1,11 +1,17 @@
+import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import DinerAvatar from "../social/DinerAvatar.jsx";
-import OpenInvitesSection from "../openInvite/OpenInvitesSection.jsx";
+import { SearchPeopleSection } from "./SearchSocialSections.jsx";
 
 /**
  * Social on the search results switch (Andre 2026-11-01, same as the app): every social result for
  * this search — Available now, Want it, Love it — from `social_summary` on the search response.
  * Who's in it is the backend's call (each person's own settings); this only lays it out.
+ *
+ * Unified search (Andre 2026-11-19): people for the search words from GET /search/social come in
+ * as `groups`. Order: Available now · People · Want it · Love it. People already in the food lines
+ * show once, there. Open Invites, Plans and Events have their own Events radio (SearchEventsView,
+ * Andre 2026-11-19: "plans goes under events").
  */
 
 // One color per vibe, same as Who's Available (app src/features/social/vibeColors.ts).
@@ -33,6 +39,26 @@ export function socialSummaryPeopleCount(summary) {
   return ids.size;
 }
 
+function summaryPeopleIds(summary) {
+  if (!summary || typeof summary !== "object") return new Set();
+  return new Set(
+    SECTIONS.flatMap(([key]) => (Array.isArray(summary[key]) ? summary[key] : []))
+      .map((e) => Number(e?.consumer_user_id))
+      .filter((id) => Number.isInteger(id) && id > 0)
+  );
+}
+
+/** Unified search people not already in the food lines (2026-11-19). */
+export function newSearchPeople(summary, groups) {
+  const seen = summaryPeopleIds(summary);
+  return (groups?.people || []).filter((p) => !seen.has(p.id));
+}
+
+/** Count on the Social radio: food-line people + new people (2026-11-19). */
+export function socialViewCount(summary, groups) {
+  return socialSummaryPeopleCount(summary) + newSearchPeople(summary, groups).length;
+}
+
 function personHref(row) {
   const id = Number(row?.consumer_user_id);
   if (!Number.isInteger(id) || id <= 0) return null;
@@ -44,26 +70,29 @@ function placeHref(row) {
   return Number.isInteger(id) && id > 0 ? `/restaurants/${id}` : null;
 }
 
-export default function SearchSocialSummary({ summary }) {
+export default function SearchSocialSummary({ summary, groups = null }) {
   const people = socialSummaryPeopleCount(summary);
-  if (!people) return null;
-  const available = Number(summary.available_count) || (summary.available || []).length;
+  const newPeople = newSearchPeople(summary, groups);
+  if (!people && !newPeople.length) return null;
+  const available = people ? Number(summary.available_count) || (summary.available || []).length : 0;
 
   return (
     <div data-testid="search-social-view" style={styles.wrap}>
-      <p style={styles.summary} data-testid="search-social-summary">
-        {[`${people} ${people === 1 ? "person" : "people"}`, available ? `${available} available now` : null]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-      {Array.isArray(summary.open_invites) && summary.open_invites.length ? (
-        <OpenInvitesSection invites={summary.open_invites} />
+      {people ? (
+        <p style={styles.summary} data-testid="search-social-summary">
+          {[`${people} ${people === 1 ? "person" : "people"}`, available ? `${available} available now` : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       ) : null}
       {SECTIONS.map(([key, title]) => {
-        const rows = Array.isArray(summary[key]) ? summary[key].filter((r) => r && String(r.line || "").trim()) : [];
-        if (!rows.length) return null;
+        const rows = Array.isArray(summary?.[key]) ? summary[key].filter((r) => r && String(r.line || "").trim()) : [];
+        // People (unified search) sit right after Available now (2026-11-19).
+        const after = key === "available" ? <SearchPeopleSection people={newPeople} /> : null;
+        if (!rows.length) return after ? <Fragment key={key}>{after}</Fragment> : null;
         return (
-          <section key={key} style={styles.card} data-testid={`search-social-${key}`}>
+          <Fragment key={key}>
+          <section style={styles.card} data-testid={`search-social-${key}`}>
             <h3 style={styles.heading}>{title}</h3>
             {rows.map((row) => {
               const href = personHref(row);
@@ -115,6 +144,8 @@ export default function SearchSocialSummary({ summary }) {
               );
             })}
           </section>
+          {after}
+          </Fragment>
         );
       })}
     </div>

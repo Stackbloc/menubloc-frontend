@@ -23,7 +23,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
-import SearchSocialSummary, { socialSummaryPeopleCount } from "../components/search/SearchSocialSummary.jsx";
+import SearchSocialSummary, { socialViewCount } from "../components/search/SearchSocialSummary.jsx";
+import SearchEventsView, { eventsViewCount } from "../components/search/SearchEventsView.jsx";
+import { EMPTY_SOCIAL_GROUPS, fetchSearchSocial } from "../lib/searchSocial.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -95,7 +97,7 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
-function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange, showViewChoice = true, socialCount = 0 }) {
+function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange, showViewChoice = true, socialCount = 0, eventsCount = 0 }) {
   const dishLabel = `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`;
   const restaurantLabel = `${restaurantCount} ${restaurantCount === 1 ? "Restaurant" : "Restaurants"}`;
   // Without a Dishes / Restaurants choice, the first option is the results as they are.
@@ -159,6 +161,19 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
             style={radioStyle}
           />
           {`Social · ${socialCount}`}
+        </label>
+      ) : null}
+      {/* Events (Andre 2026-11-19): its own radio — Open Invites, Plans and Events for this search. */}
+      {eventsCount > 0 ? (
+        <label style={optionStyle(mode === "events")} data-testid="search-view-events">
+          <input
+            type="radio"
+            name="search-result-mode"
+            checked={mode === "events"}
+            onChange={() => onModeChange("events")}
+            style={radioStyle}
+          />
+          {`Events · ${eventsCount}`}
         </label>
       ) : null}
     </div>
@@ -2214,6 +2229,9 @@ export default function GrubbidSearchResults({
   const [queryMeta, setQueryMeta] = useState(null);
   const [searchMeta, setSearchMeta] = useState(null);
   const [socialSummary, setSocialSummary] = useState(null);
+  // Unified search (Andre 2026-11-19; same as app 65cbffb): plans, events and people for these
+  // words, under Social. Asked right after the food results, so food is never slowed down.
+  const [socialGroups, setSocialGroups] = useState(EMPTY_SOCIAL_GROUPS);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
@@ -2758,6 +2776,29 @@ export default function GrubbidSearchResults({
         setSearchMeta(json?.search_meta || null);
         // Load more pages carry their own summary; keep the first page's (it names the top results).
         if (pageOffset === 0) setSocialSummary(json?.social_summary && typeof json.social_summary === "object" ? json.social_summary : null);
+        // Unified search (2026-11-19): plans, events, people. Extra: food stays as is if it fails.
+        setSocialGroups(EMPTY_SOCIAL_GROUPS);
+        if (q) {
+          const socialIds = [
+            ...(Array.isArray(json?.restaurants) ? json.restaurants.map((r) => pickFirst(r, ["restaurant_id", "id"], null)) : []),
+            ...resultRows.map((r) => r?.restaurant_id),
+          ];
+          // Same place the food search used (the URL it ran with).
+          const usedSp = new URL(usedFallback ? fallbackUrl : primaryUrl).searchParams;
+          const usedLat = Number(usedSp.get("lat"));
+          const usedLng = Number(usedSp.get("lng"));
+          const socialWhere =
+            usedSp.get("lat") && usedSp.get("lng") && Number.isFinite(usedLat) && Number.isFinite(usedLng)
+              ? { lat: usedLat, lng: usedLng }
+              : usedSp.get("city")
+              ? { city: usedSp.get("city"), state: usedSp.get("state") || "" }
+              : null;
+          fetchSearchSocial(API, q, socialWhere, socialIds)
+            .then((g) => {
+              if (alive) setSocialGroups(g);
+            })
+            .catch(() => undefined);
+        }
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
@@ -2902,9 +2943,14 @@ export default function GrubbidSearchResults({
     }),
     [searchMeta, dishResultCount, restaurantResultCount]
   );
-  const socialCount = socialSummaryPeopleCount(socialSummary);
-  const showSocialView = searchViewMode === "social" && socialCount > 0;
-  const showModeRadios = showResultModeSelector || socialCount > 0;
+  const socialCount = socialViewCount(socialSummary, socialGroups);
+  // Events radio (Andre 2026-11-19: "plans goes under events"): Open Invites, Plans, Events.
+  const eventsCount = eventsViewCount(socialSummary, socialGroups);
+  const showPeopleView = searchViewMode === "social" && socialCount > 0;
+  const showEventsView = searchViewMode === "events" && eventsCount > 0;
+  // Either non-food view hides the food results.
+  const showSocialView = showPeopleView || showEventsView;
+  const showModeRadios = showResultModeSelector || socialCount > 0 || eventsCount > 0;
   const preferRestaurantView = showResultModeSelector && searchViewMode === "restaurants";
   const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
   const restaurantBrowseRows = useMemo(() => {
@@ -3391,17 +3437,19 @@ export default function GrubbidSearchResults({
             <SearchResultModeSelector
               dishCount={dishResultCount}
               restaurantCount={restaurantResultCount}
-              mode={showSocialView ? "social" : searchViewMode === "social" ? "dishes" : searchViewMode}
+              mode={showPeopleView ? "social" : showEventsView ? "events" : searchViewMode === "social" || searchViewMode === "events" ? "dishes" : searchViewMode}
               onModeChange={setSearchViewMode}
               showViewChoice={showResultModeSelector}
               socialCount={socialCount}
+              eventsCount={eventsCount}
             />
           ) : null}
           <SearchResultsShareControl copied={shareCopied} onShare={handleShareResults} />
         </div>
       )}
 
-      {!loading && !err && showSocialView ? <SearchSocialSummary summary={socialSummary} /> : null}
+      {!loading && !err && showPeopleView ? <SearchSocialSummary summary={socialSummary} groups={socialGroups} /> : null}
+      {!loading && !err && showEventsView ? <SearchEventsView summary={socialSummary} groups={socialGroups} /> : null}
 
       {!loading && !err && !showSocialView && preferRestaurantView && restaurantBrowseRows.length > 0 && (
         <div style={styles.grid}>

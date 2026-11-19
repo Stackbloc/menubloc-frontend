@@ -2,6 +2,8 @@
  * The button on a Connect's plan (Andre approved 2026-10-28, menuply-mobile docs/15 Phase B):
  *   Join / Ask to Join → asks (an open plan lets you in straight away)
  *   Requested ✓ → click again to take the ask back · Going ✓ → opens the plan
+ * `plain` (2026-11-19, unified search; same as app PlanActionButton `plain`): a text action,
+ * no pill — for rows in Search → Social.
  */
 
 import { useState } from "react";
@@ -11,13 +13,13 @@ import * as s from "./myMenuplyStyles.js";
 
 const LABEL = { join: "Join", ask: "Ask to Join", asked: "Requested ✓", going: "Going ✓" };
 
-export default function SocialPlanActionButton({ plan, testId }) {
+export default function SocialPlanActionButton({ plan, testId, plain = false }) {
   const [action, setAction] = useState(plan.action);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const inApp = plan.source && plan.ref;
   const quiet = action === "asked" || action === "going";
-  const style = quiet ? styles.quiet : styles.button;
+  const style = plain ? (quiet ? styles.plainQuiet : styles.plain) : quiet ? styles.quiet : styles.button;
 
   if (action === "going" || !inApp) {
     return plan.href ? (
@@ -67,4 +69,7 @@ const base = {
 const styles = {
   button: { ...base, background: s.GREEN_BRIGHT, color: "#fff" },
   quiet: { ...base, background: "#dcfce7", color: s.GREEN },
+  // 2026-11-19: plain text action for Search → Social rows.
+  plain: { padding: 4, fontWeight: 700, fontSize: 13, textDecoration: "none", flexShrink: 0, background: "transparent", color: "var(--gb-color-accent)" },
+  plainQuiet: { padding: 4, fontWeight: 700, fontSize: 13, textDecoration: "none", flexShrink: 0, background: "transparent", color: "#9CA3AF" },
 };
