@@ -18,6 +18,7 @@
       a Chrome tab. An old Operator install (scope "/", landscape-primary, X icons) cannot
       be fixed by server HTML — the splash/orientation are baked into that app.
       Detect standalone consumer launches early and show uninstall instructions.
+      Updated 2026-11-19: Android standalone only (desktop full-screen Chrome was gated).
     -->
     <script>
       (function () {
@@ -43,18 +44,22 @@
           }
         } catch (e) {}
 
+        // 2026-11-19 (Andre): the gate is for the old Operator WebAPK on Android only.
+        // It used to fire on any display-mode standalone/fullscreen/minimal-ui, so a desktop
+        // Chrome window in macOS full screen ("display-mode: fullscreen") got this screen.
+        // Now: Android + display-mode standalone + not /operator. Never desktop, never iOS.
         var pathName = (location.pathname || "/");
         var onOperator = pathName.indexOf("/operator") === 0;
+        var isAndroid = false;
+        try {
+          isAndroid = /Android/i.test(navigator.userAgent || "");
+        } catch (e) {}
         var standalone = false;
         try {
-          standalone =
-            window.matchMedia("(display-mode: standalone)").matches ||
-            window.matchMedia("(display-mode: fullscreen)").matches ||
-            window.matchMedia("(display-mode: minimal-ui)").matches ||
-            window.navigator.standalone === true;
+          standalone = window.matchMedia("(display-mode: standalone)").matches;
         } catch (e) {}
 
-        if (!standalone || onOperator) return;
+        if (!isAndroid || !standalone || onOperator) return;
 
         document.documentElement.setAttribute("data-menuply-stale-pwa", "1");
         document.addEventListener("DOMContentLoaded", function () {
