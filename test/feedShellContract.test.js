@@ -163,16 +163,15 @@ test("Feed shell: Home|Waiter|Share My QR|X|Deals|Shop|Profile + slim X sheet", 
 
   const desktopRail = read("src/components/consumer/feed/FeedDesktopRail.jsx");
   assert.match(desktopRail, /feed-desktop-rail/);
-  assert.match(desktopRail, /feed-desktop-login/);
-  assert.match(desktopRail, /feed-more-open-desktop/);
-  assert.match(desktopRail, /FEED_HOME_TAB/);
-  assert.match(desktopRail, /FEED_RAIL_TABS_AFTER_HOME/);
+  // 2026-11-19: the rail is the app's tabs + the app's ☰ accordion inline (no Log in / Add menu / More).
+  assert.match(desktopRail, /FeedMenuContent/);
+  assert.match(desktopRail, /feed-desktop-menu/);
+  assert.doesNotMatch(desktopRail, /feed-more-open-desktop|feed-desktop-login|feed-desktop-add-menu/);
+  assert.match(desktopRail, /resolveFeedTabs/);
   assert.match(desktopRail, /feed-nav-share-qr-desktop|openShareQr/);
-  assert.match(desktopRail, /feed-desktop-add-menu/);
-  assert.match(desktopRail, /FEED_MENU_CAPTURE_HINT/);
   assert.match(desktopRail, /Share My QR/);
   assert.doesNotMatch(desktopRail, /feed-desktop-share-my-menuply/);
-  // Basket shows on every Feed screen on the desktop rail (Andre, 2026-10-12).
+  // Cart by the logo when the basket has items, as the app's CartButton.
   assert.doesNotMatch(desktopRail, /showShopBasket/);
   assert.match(desktopRail, /feed-desktop-shop-basket/);
   const feedLinksBasket = read("src/lib/feedShellLinks.js");

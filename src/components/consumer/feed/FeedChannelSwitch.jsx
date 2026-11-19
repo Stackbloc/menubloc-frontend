@@ -2,8 +2,11 @@
  * "Clips | Deals" at the top of the Feed, as the app (HomeScreen showChannels): only when Today has
  * taken the Deals tab's place, so deals stay one tap away (Andre 2026-11-11 / 2026-11-13). Plain
  * words, the chosen one white and underlined — no pills.
+ * Updated 2026-11-19: shown on every Feed (not only with Today on), and the deal mark sits over
+ * "Deals" as the app (DealIcon, app commit 7ed50cc).
  */
 import { useLocation, useNavigate } from "react-router-dom";
+import DealIcon from "../../icons/DealIcon.jsx";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
 const CHANNELS = [
@@ -36,6 +39,11 @@ export default function FeedChannelSwitch({ leftInset = 0 }) {
               navigate(c.to);
             }}
           >
+            {c.to === "/feed/deals" ? (
+              <span style={styles.icon} data-testid="channel-deals-icon">
+                <DealIcon size={22} />
+              </span>
+            ) : null}
             {c.label}
           </button>
         );
@@ -53,6 +61,7 @@ const styles = {
     zIndex: 1300,
     display: "flex",
     justifyContent: "center",
+    alignItems: "flex-end",
     gap: 24,
     pointerEvents: "none",
   },
@@ -67,6 +76,11 @@ const styles = {
     fontFamily: "inherit",
     textShadow: "0 1px 4px rgba(0,0,0,0.6)",
     cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 2,
   },
+  icon: { display: "block", lineHeight: 0 },
   tabOn: { color: "#fff", fontWeight: 800, textDecoration: "underline", textUnderlineOffset: 4 },
 };

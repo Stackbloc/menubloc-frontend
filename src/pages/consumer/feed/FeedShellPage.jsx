@@ -38,7 +38,9 @@ export default function FeedShellPage({ children = null }) {
   const { todayHome } = useConsumerFeatureFlags();
   const todayOn = Boolean(isAuthenticated && todayHome);
   const onToday = location.pathname === "/feed/today";
-  const showChannels = todayOn && (location.pathname === "/feed" || location.pathname === "/feed/" || location.pathname.startsWith("/feed/deals"));
+  // "Clips | Deals" shows on the Feed for everyone, as the app's Feed (Andre 2026-11-19: "feed page does
+  // not show deals option"); it used to need Today on.
+  const showChannels = (location.pathname === "/feed" || location.pathname === "/feed/" || location.pathname.startsWith("/feed/deals"));
   useEffect(() => {
     if (!todayOn) return;
     if (location.pathname !== "/feed" && location.pathname !== "/feed/") return;
@@ -241,7 +243,6 @@ export default function FeedShellPage({ children = null }) {
         <FeedDesktopRail
           onCreateClick={openCreateSheet}
           createActive={createActive}
-          onMoreClick={() => setMoreOpen(true)}
           onShareMyMenuply={() =>
             handleShareMyMenuply({
               guestTo: "/account/signup?next=%2Ffeed",
@@ -285,6 +286,7 @@ export default function FeedShellPage({ children = null }) {
         onClose={() => setMoreOpen(false)}
         isAuthenticated={isAuthenticated}
         isDesktop={isDesktop}
+        showLocation={showChannels}
       />
 
       <FeedVideoCreateSheet

@@ -6,7 +6,8 @@
 import { MENU_BROWSER_PATH } from "./searchShopMode.js";
 
 export const FEED_DESKTOP_MIN_WIDTH = 900;
-export const FEED_DESKTOP_RAIL_WIDTH = 240;
+// 280 (was 240) so the ☰ accordion fits in the rail (2026-11-19).
+export const FEED_DESKTOP_RAIL_WIDTH = 280;
 
 export const FEED_SHELL_LOGIN_NEXT = "/feed";
 export const FEED_SHELL_SIGNUP_PATH = `/diner/signup?next=${encodeURIComponent(FEED_SHELL_LOGIN_NEXT)}`;

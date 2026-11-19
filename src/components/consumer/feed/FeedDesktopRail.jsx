@@ -1,23 +1,26 @@
 /**
- * TikTok desktop-style left rail — same Feed primary tabs + guest auth + More.
+ * Desktop left rail, as the app (2026-11-19, Andre: "update the website feed to match the app,
+ * including the accordion set up"): the app's tabs with the app's icons in the app's order
+ * (Home · Post · Deals · Clusters · Profile; Today first when it is on), then the app's ☰ accordion
+ * right in the rail (FeedMenuContent: Profile card, Events, location, Connects · Account & Settings ·
+ * Help · Menuply, Terms · Privacy). Replaces the flat list + Add menu + Log in/Sign up + "More" pop-out;
+ * sign-in is the Profile card, Add a menu is in Account & Settings. The cart shows by the logo when
+ * the basket has items, as the app's CartButton beside ☰.
  */
 
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../BrandLogo.jsx";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
-import FeedMenuCaptureCameraIcon from "./FeedMenuCaptureCameraIcon.jsx";
+import AppIcon from "../../icons/AppIcon.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
-import {
-  FEED_DESKTOP_RAIL_WIDTH,
-  resolveFeedTabs,
-  FEED_MENU_CAPTURE_HINT,
-  FEED_MENU_CAPTURE_PATH,
-  visibleFeedTabs,
-  FEED_SHELL_LOGIN_PATH,
-  FEED_SHELL_SIGNUP_PATH,
-} from "../../../lib/feedShellLinks.js";
+import { FeedMenuContent } from "./FeedMorePanel.jsx";
+import { useOrderCart } from "../../../context/OrderCartContext.jsx";
+import { FEED_DESKTOP_RAIL_WIDTH, resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
+
+const ACCENT = "#5eead4";
+const MUTED = "rgba(255,255,255,0.72)";
 
 function RailTab({ tab, onShareQr }) {
   const location = useLocation();
@@ -45,27 +48,24 @@ function RailTab({ tab, onShareQr }) {
       aria-label={tab.openShareQr ? "Share My QR" : tab.label}
       aria-current={active && !tab.openShareQr ? "page" : undefined}
       onClick={go}
-      style={{
-        ...styles.tab,
-        ...styles.tabButton,
-        ...(active && !tab.openShareQr ? styles.tabActive : null),
-      }}
+      style={{ ...styles.tab, ...(active && !tab.openShareQr ? styles.tabActive : null) }}
     >
-      {tab.label}
+      {tab.icon ? <AppIcon name={tab.icon} size={22} color={active ? ACCENT : MUTED} /> : null}
+      <span>{tab.label}</span>
     </button>
   );
 }
 
-export default function FeedDesktopRail({
-  onCreateClick,
-  createActive = false,
-  onMoreClick,
-  onShareMyMenuply,
-  isAuthenticated = false,
-}) {
-  // Signed in with Today on: Today first, Home is "Feed", Deals moves into the Feed (as the app).
+export default function FeedDesktopRail({ onCreateClick, createActive = false, onShareMyMenuply, isAuthenticated = false }) {
+  // Signed in with Today on: Today · Feed · Post · Clusters · Profile, as the app's bar.
   const { todayHome } = useConsumerFeatureFlags();
+  const { itemCount } = useOrderCart();
+  const { pathname } = useLocation();
   const tabs = resolveFeedTabs({ isAuthenticated, todayHome });
+  const leftTabs = visibleFeedTabs(tabs.left, { isAuthenticated, desktop: true });
+  const rightTabs = visibleFeedTabs(tabs.right, { isAuthenticated, desktop: true });
+  // The app shows the location row in ☰ on the Feed only.
+  const onFeed = pathname === "/feed" || pathname === "/feed/" || pathname.startsWith("/feed/deals");
   return (
     <aside style={styles.rail} data-testid="feed-desktop-rail" aria-label="Feed navigation">
       <div style={styles.logoWrap}>
@@ -78,75 +78,40 @@ export default function FeedDesktopRail({
           wordmarkColor="#FFFFFF"
           ariaLabel="Menuply Feed home"
         />
+        {itemCount > 0 ? (
+          <span data-testid="feed-desktop-shop-basket">
+            <FeedShopBasketButton variant="feedDark" />
+          </span>
+        ) : null}
       </div>
 
       <nav style={styles.tabs} aria-label="Primary">
-        {(tabs.railBeforeHome || []).map((tab) => (
+        {leftTabs.map((tab) => (
           <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
         ))}
-        <RailTab tab={tabs.home} onShareQr={onShareMyMenuply} />
-
-        <Link
-          to={FEED_MENU_CAPTURE_PATH}
-          style={styles.menuCaptureLink}
-          data-testid="feed-desktop-add-menu"
-          title={FEED_MENU_CAPTURE_HINT}
-          aria-label={FEED_MENU_CAPTURE_HINT}
-        >
-          <FeedMenuCaptureCameraIcon size={18} color="#5eead4" />
-          <span>Add menu</span>
-        </Link>
-
-        {/* Basket sits between Search & Shop and Profile (same order as the mobile bar); it opens
-            the existing order cart (OrderCartContext / OrderCartDrawer → /checkout). */}
-        {visibleFeedTabs(tabs.railAfterHome, { isAuthenticated }).map((tab) =>
-          tab.openCart ? (
-            <div key={tab.testId} style={styles.shopBasketWrap} data-testid="feed-desktop-shop-basket">
-              <FeedShopBasketButton variant="feedDark" />
-              <span style={styles.shopBasketLabel}>Basket</span>
-            </div>
-          ) : (
-            <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
-          )
-        )}
-      </nav>
-
-      <button
-        type="button"
-        data-testid="feed-nav-create-x-desktop"
-        aria-label="Open Multiplier/Post menu"
-        aria-haspopup="dialog"
-        aria-expanded={createActive}
-        onClick={() => onCreateClick?.()}
-        style={{
-          ...styles.createBtn,
-          ...(createActive ? styles.createBtnActive : null),
-        }}
-      >
-        <MenuplyXMark size={24} active={createActive} />
-        <span style={styles.createLabel}>Multiplier/Post</span>
-      </button>
-
-      {!isAuthenticated ? (
-        <div style={styles.authBlock} data-testid="feed-desktop-guest-auth">
-          <Link to={FEED_SHELL_LOGIN_PATH} style={styles.loginBtn} data-testid="feed-desktop-login">
-            Log in
-          </Link>
-          <Link to={FEED_SHELL_SIGNUP_PATH} style={styles.signupBtn} data-testid="feed-desktop-signup">
-            Sign up
-          </Link>
-        </div>
-      ) : null}
-
-      <div style={styles.footer}>
         <button
           type="button"
-          style={styles.moreBtn}
-          data-testid="feed-more-open-desktop"
-          onClick={() => onMoreClick?.()}
+          data-testid="feed-nav-create-x-desktop"
+          aria-label="Post"
+          aria-haspopup="dialog"
+          aria-expanded={createActive}
+          onClick={() => {
+            clearStuckMediaChrome();
+            onCreateClick?.();
+          }}
+          style={{ ...styles.tab, ...(createActive ? styles.tabActive : null) }}
         >
-          More
+          <MenuplyXMark size={22} active={createActive} />
+          <span>Post</span>
         </button>
+        {rightTabs.map((tab) => (
+          <RailTab key={tab.testId} tab={tab} onShareQr={onShareMyMenuply} />
+        ))}
+      </nav>
+
+      {/* The app's ☰ accordion, open in the rail (no "More" button). */}
+      <div style={styles.menu} data-testid="feed-desktop-menu">
+        <FeedMenuContent isAuthenticated={isAuthenticated} showLocation={onFeed} />
       </div>
     </aside>
   );
@@ -164,154 +129,53 @@ const styles = {
     zIndex: 1300,
     display: "flex",
     flexDirection: "column",
-    padding: "16px 12px calc(12px + env(safe-area-inset-bottom))",
+    padding: "16px 10px 0",
     background: "#050705",
+    color: "#e8f0ec",
     borderRight: "1px solid rgba(255,255,255,0.1)",
     boxSizing: "border-box",
   },
   logoWrap: {
-    padding: "4px 8px 16px",
-  },
-  shareBtn: {
-    display: "block",
-    width: "100%",
-    margin: "0 0 8px",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid rgba(94, 234, 212, 0.35)",
-    background: "rgba(16, 40, 32, 0.85)",
-    color: "#e8f0ec",
-    fontWeight: 800,
-    fontSize: 14,
-    textAlign: "left",
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  menuCaptureLink: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    width: "100%",
-    margin: "0 0 12px",
-    padding: "8px 12px",
-    borderRadius: 10,
-    textDecoration: "none",
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 14,
-    fontWeight: 700,
-    boxSizing: "border-box",
+    justifyContent: "space-between",
+    gap: 8,
+    padding: "4px 8px 12px",
   },
   tabs: {
     display: "flex",
     flexDirection: "column",
-    gap: 4,
-    flex: 1,
-    minHeight: 0,
+    gap: 2,
+    paddingBottom: 10,
+    borderBottom: "1px solid rgba(255,255,255,0.1)",
   },
   tab: {
-    display: "block",
-    padding: "10px 12px",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    width: "100%",
+    padding: "9px 12px",
     borderRadius: 10,
-    textDecoration: "none",
-    color: "rgba(255,255,255,0.78)",
-    fontSize: 15,
-    fontWeight: 650,
-  },
-  tabButton: {
     border: "none",
     background: "transparent",
+    color: MUTED,
+    fontSize: 15,
+    fontWeight: 650,
+    fontFamily: "inherit",
+    textAlign: "left",
     cursor: "pointer",
     appearance: "none",
     WebkitAppearance: "none",
-    width: "100%",
-    textAlign: "left",
-    fontFamily: "inherit",
   },
   tabActive: {
-    color: "#5eead4",
+    color: ACCENT,
     fontWeight: 800,
     background: "rgba(94, 234, 212, 0.08)",
   },
-  createBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    margin: "8px 0 12px",
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "2px solid rgba(94, 234, 212, 0.35)",
-    background: "rgba(16, 40, 32, 0.85)",
-    color: "#fff",
-    cursor: "pointer",
-    appearance: "none",
-    fontFamily: "inherit",
-    fontSize: 15,
-    fontWeight: 700,
-  },
-  createBtnActive: {
-    borderColor: "rgba(94, 234, 212, 0.75)",
-    background: "rgba(16, 40, 32, 1)",
-  },
-  createLabel: {
+  menu: {
     flex: 1,
-    textAlign: "left",
-  },
-  authBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    marginBottom: 12,
-  },
-  loginBtn: {
-    display: "block",
-    textAlign: "center",
-    padding: "11px 14px",
-    borderRadius: 999,
-    background: "transparent",
-    color: "#0f7a24",
-    fontWeight: 800,
-    fontSize: 15,
-    textDecoration: "none",
-  },
-  signupBtn: {
-    display: "block",
-    textAlign: "center",
-    padding: "10px 14px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.18)",
-    color: "#e8f0ec",
-    fontWeight: 700,
-    fontSize: 14,
-    textDecoration: "none",
-  },
-  footer: {
-    marginTop: "auto",
-    paddingTop: 8,
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  shopBasketWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "4px 8px",
-  },
-  shopBasketLabel: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.85)",
-  },
-  moreBtn: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.04)",
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "inherit",
+    minHeight: 0,
+    overflowY: "auto",
+    padding: "4px 2px calc(12px + env(safe-area-inset-bottom))",
   },
 };

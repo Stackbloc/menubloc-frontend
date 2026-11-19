@@ -1,6 +1,8 @@
 /**
  * Feed ☰ menu — mobile drawer + desktop panel. Same order as the app (Andre 2026-11-18): Profile card
  * and Events pinned on top, then accordions (Connects opens first), Terms · Privacy footer line.
+ * Updated 2026-11-19: FeedMenuContent is the accordion on its own, so the desktop rail draws it
+ * inline (no "More" pop-out); the Feed adds the app's location row under Events.
  */
 
 import { useEffect, useState } from "react";
@@ -16,6 +18,7 @@ import {
   resolveFeedMoreSections,
 } from "../../../lib/feedShellLinks.js";
 import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
+import { feedHeaderLocationLabel } from "./FeedMobileHeader.jsx";
 
 function FeedMoreLink({ link, onClose }) {
   const { pathname } = useLocation();
@@ -38,7 +41,29 @@ function FeedMoreLink({ link, onClose }) {
   );
 }
 
-export default function FeedMorePanel({ open, onClose, isAuthenticated = false, isDesktop = false }) {
+/** Feed only: the app's location row under Events (AppMenuButton showLocation, 2026-11-19). */
+function FeedMenuLocationRow({ onClose }) {
+  const place = feedHeaderLocationLabel(typeof window !== "undefined" ? window.localStorage : null);
+  return (
+    <Link
+      to="/feed/search"
+      style={styles.locRow}
+      data-testid="feed-more-location"
+      aria-label={`Location: ${place}. Change location`}
+      onClick={onClose}
+    >
+      <AppIcon name="pin" size={18} color="#5eead4" />
+      <span style={styles.locText}>{place}</span>
+      <span style={styles.locChange}>Change</span>
+    </Link>
+  );
+}
+
+/**
+ * The ☰ accordion itself (2026-11-19): drawn in the phone sheet and, on desktop, right inside the
+ * left rail, so the website reads like the app's ☰ everywhere.
+ */
+export function FeedMenuContent({ isAuthenticated = false, onClose, showLocation = false }) {
   const sections = resolveFeedMoreSections({ isAuthenticated });
   const { logout, consumer, profile } = useConsumer();
   const [expanded, setExpanded] = useState(isAuthenticated ? "connects" : "help");
@@ -63,6 +88,92 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
     }
   }
 
+  return (
+    <>
+      {/* Profile card: who you are, first. Signed out it is the way in. */}
+      <Link
+        to={isAuthenticated ? FEED_MORE_PINNED.profile.to : FEED_MORE_PINNED.profile.guestTo}
+        style={styles.pinned}
+        data-testid={FEED_MORE_PINNED.profile.testId}
+        onClick={onClose}
+      >
+        <span style={styles.avatar}>
+          <AppIcon name="profile" size={22} color="#5eead4" />
+        </span>
+        <span style={styles.pinnedText}>
+          <span style={styles.pinnedTitle}>{name || "Sign in"}</span>
+          <span style={styles.note}>{name ? "View profile" : "Sign in or create an account"}</span>
+        </span>
+        <span style={styles.chevron}>›</span>
+      </Link>
+      {/* Events: pinned under Profile so it stands out. */}
+      <Link to={FEED_MORE_PINNED.events.to} style={styles.pinned} data-testid={FEED_MORE_PINNED.events.testId} onClick={onClose}>
+        <span style={styles.eventsIcon}>
+          <AppIcon name={FEED_MORE_PINNED.events.icon} size={20} color="#5eead4" />
+        </span>
+        <span style={styles.pinnedText}>
+          <span style={styles.pinnedTitle}>{FEED_MORE_PINNED.events.label}</span>
+          <span style={styles.note}>{FEED_MORE_PINNED.events.note}</span>
+        </span>
+        <span style={styles.chevron}>›</span>
+      </Link>
+      {showLocation ? <FeedMenuLocationRow onClose={onClose} /> : null}
+      {sections.map((section) => {
+        const isOpen = expanded === section.id;
+        return (
+          <section key={section.id} style={styles.section}>
+            <button
+              type="button"
+              id={`feed-more-${section.id}`}
+              style={styles.sectionHead}
+              aria-expanded={isOpen}
+              data-testid={`feed-more-section-${section.id}`}
+              onClick={() => setExpanded(isOpen ? null : section.id)}
+            >
+              <span>{section.title}</span>
+              <span style={styles.toggle}>{isOpen ? "−" : "+"}</span>
+            </button>
+            {isOpen ? (
+              <ul style={styles.list} aria-labelledby={`feed-more-${section.id}`}>
+                {section.links.map((link) => (
+                  <li key={link.to} style={styles.item}>
+                    <FeedMoreLink link={link} onClose={onClose} />
+                  </li>
+                ))}
+                {/* Sign out: last row of Account & Settings, quiet red text. */}
+                {section.signOut && isAuthenticated ? (
+                  <li style={styles.item}>
+                    <button
+                      type="button"
+                      style={styles.logoutBtn}
+                      data-testid="feed-more-logout"
+                      disabled={loggingOut}
+                      onClick={handleLogout}
+                    >
+                      {loggingOut ? "Signing out…" : "Sign out"}
+                    </button>
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
+      <p style={styles.legal}>
+        {FEED_MORE_LEGAL.map((link, i) => (
+          <span key={link.to}>
+            {i > 0 ? " · " : null}
+            <Link to={link.to} style={styles.legalLink} data-testid={link.testId} onClick={onClose}>
+              {link.label}
+            </Link>
+          </span>
+        ))}
+      </p>
+    </>
+  );
+}
+
+export default function FeedMorePanel({ open, onClose, isAuthenticated = false, isDesktop = false, showLocation = false }) {
   useEffect(() => {
     if (!open) return undefined;
     function onKeyDown(event) {
@@ -87,94 +198,17 @@ export default function FeedMorePanel({ open, onClose, isAuthenticated = false, 
         }}
         role="dialog"
         aria-modal="true"
-        aria-label="More"
+        aria-label="Menu"
         onClick={(event) => event.stopPropagation()}
       >
+        {/* The app's ☰ sheet has no title, only the menu (2026-11-19); × stays for the web. */}
         <div style={styles.head}>
-          <h2 style={styles.title}>More</h2>
           <button type="button" style={styles.closeBtn} onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
         <div style={isDesktop ? styles.body : { ...styles.body, ...styles.bodyMobile }}>
-          {/* Profile card: who you are, first. Signed out it is the way in. */}
-          <Link
-            to={isAuthenticated ? FEED_MORE_PINNED.profile.to : FEED_MORE_PINNED.profile.guestTo}
-            style={styles.pinned}
-            data-testid={FEED_MORE_PINNED.profile.testId}
-            onClick={onClose}
-          >
-            <span style={styles.avatar}>
-              <AppIcon name="profile" size={22} color="#5eead4" />
-            </span>
-            <span style={styles.pinnedText}>
-              <span style={styles.pinnedTitle}>{name || "Sign in"}</span>
-              <span style={styles.note}>{name ? "View profile" : "Sign in or create an account"}</span>
-            </span>
-            <span style={styles.chevron}>›</span>
-          </Link>
-          {/* Events: pinned under Profile so it stands out. */}
-          <Link to={FEED_MORE_PINNED.events.to} style={styles.pinned} data-testid={FEED_MORE_PINNED.events.testId} onClick={onClose}>
-            <span style={styles.eventsIcon}>
-              <AppIcon name={FEED_MORE_PINNED.events.icon} size={20} color="#5eead4" />
-            </span>
-            <span style={styles.pinnedText}>
-              <span style={styles.pinnedTitle}>{FEED_MORE_PINNED.events.label}</span>
-              <span style={styles.note}>{FEED_MORE_PINNED.events.note}</span>
-            </span>
-            <span style={styles.chevron}>›</span>
-          </Link>
-          {sections.map((section) => {
-            const isOpen = expanded === section.id;
-            return (
-              <section key={section.id} style={styles.section}>
-                <button
-                  type="button"
-                  id={`feed-more-${section.id}`}
-                  style={styles.sectionHead}
-                  aria-expanded={isOpen}
-                  data-testid={`feed-more-section-${section.id}`}
-                  onClick={() => setExpanded(isOpen ? null : section.id)}
-                >
-                  <span>{section.title}</span>
-                  <span style={styles.toggle}>{isOpen ? "−" : "+"}</span>
-                </button>
-                {isOpen ? (
-                  <ul style={styles.list} aria-labelledby={`feed-more-${section.id}`}>
-                    {section.links.map((link) => (
-                      <li key={link.to} style={styles.item}>
-                        <FeedMoreLink link={link} onClose={onClose} />
-                      </li>
-                    ))}
-                    {/* Sign out: last row of Account & Settings, quiet red text. */}
-                    {section.signOut && isAuthenticated ? (
-                      <li style={styles.item}>
-                        <button
-                          type="button"
-                          style={styles.logoutBtn}
-                          data-testid="feed-more-logout"
-                          disabled={loggingOut}
-                          onClick={handleLogout}
-                        >
-                          {loggingOut ? "Signing out…" : "Sign out"}
-                        </button>
-                      </li>
-                    ) : null}
-                  </ul>
-                ) : null}
-              </section>
-            );
-          })}
-          <p style={styles.legal}>
-            {FEED_MORE_LEGAL.map((link, i) => (
-              <span key={link.to}>
-                {i > 0 ? " · " : null}
-                <Link to={link.to} style={styles.legalLink} data-testid={link.testId} onClick={onClose}>
-                  {link.label}
-                </Link>
-              </span>
-            ))}
-          </p>
+          <FeedMenuContent isAuthenticated={isAuthenticated} onClose={onClose} showLocation={showLocation} />
         </div>
       </div>
     </div>
@@ -218,9 +252,8 @@ const styles = {
   head: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px 18px 12px",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    justifyContent: "flex-end",
+    padding: "12px 14px 4px",
   },
   title: {
     margin: 0,
@@ -292,6 +325,16 @@ const styles = {
   pinnedTitle: { fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   chevron: { color: "rgba(232,240,236,0.55)", fontSize: 20 },
   note: { display: "block", fontSize: 12, fontWeight: 500, color: "rgba(232,240,236,0.6)", marginTop: 2 },
+  locRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "12px 10px",
+    textDecoration: "none",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+  },
+  locText: { flex: 1, minWidth: 0, color: "#e8f0ec", fontSize: 15, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  locChange: { color: "#5eead4", fontSize: 14, fontWeight: 700 },
   legal: { margin: "14px 0 4px", textAlign: "center", fontSize: 12, color: "rgba(232,240,236,0.55)" },
   legalLink: { color: "rgba(232,240,236,0.7)", textDecoration: "none" },
   list: {
