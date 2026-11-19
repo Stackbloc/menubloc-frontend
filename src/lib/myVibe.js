@@ -69,7 +69,7 @@ export function parseAvailability(body) {
     pausedUntil: text(a.paused_until),
     pausedForever: a.paused_forever === true,
     hungry: a.hungry === true,
-    // "Hungry now for Pizza" (Andre 2026-11-14): the food I gave, if any.
+    // "Hungry Now - Pizza" (Andre 2026-11-14): the food I gave, if any.
     hungryFor: a.hungry === true ? text(a.hungry_for) : null,
     // ✨ Feeling Social (mig 0445) and the one right-now vibe with its end time (plan 58, mig 0454).
     feelingSocial: a.feeling_social === true,

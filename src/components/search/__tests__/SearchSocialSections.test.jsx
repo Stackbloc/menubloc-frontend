@@ -24,7 +24,7 @@ const BODY = {
     { key: "no-link", kind: "venue_event", title: "Missing slug" },
   ],
   people: [
-    { id: 61, name: "Maya T.", vibe: "Hungry now for Tacos", is_connect: true },
+    { id: 61, name: "Maya T.", vibe: "Hungry Now - Tacos", is_connect: true },
     { id: 80, name: "Sam R.", location_label: "Los Angeles, CA", is_connect: false },
   ],
 };

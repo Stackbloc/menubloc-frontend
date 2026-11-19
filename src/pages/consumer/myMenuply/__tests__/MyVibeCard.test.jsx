@@ -81,7 +81,7 @@ describe("MyVibeCard", () => {
     expect(screen.getByTestId("vibe-kind-hungry").getAttribute("aria-checked")).toBe("true");
     expect(screen.getByTestId("vibe-hours-4").getAttribute("aria-checked")).toBe("true");
     fireEvent.click(screen.getByTestId("vibe-set"));
-    expect(screen.getByText("Hungry now for?")).toBeTruthy();
+    expect(screen.getByText("Hungry Now -")).toBeTruthy();
     expect(api.postHungryNow).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("hungry-for-skip"));
     await waitFor(() => expect(api.postHungryNow).toHaveBeenCalledWith(null, 4));
@@ -102,7 +102,7 @@ describe("MyVibeCard", () => {
     api.getAvailability.mockResolvedValue(avail({ hungry: true, hungry_for: "Pizza" }));
     fireEvent.click(screen.getByTestId("hungry-for-done"));
     await waitFor(() => expect(api.postHungryNow).toHaveBeenCalledWith("Pizza", 8));
-    expect((await screen.findByTestId("my-vibe-hungry")).textContent).toMatch(/^Hungry now for Pizza/);
+    expect((await screen.findByTestId("my-vibe-hungry")).textContent).toMatch(/^Hungry Now - Pizza/);
   });
 
   it("Up for Happy Hour 🍸 (mig 0436): its own choice; the row says Up for Happy Hour 🍸", async () => {

@@ -9,7 +9,7 @@ import { formatWhen } from "../../lib/searchSocial.js";
  * line, one text action on the right (no pills, no full-width buttons).
  *   Plan:   "Maya · Tacos at Guisados · Fri, Nov 20 · 7:00 PM"  [Ask to Join]
  *   Event:  "Taco Night · Guisados · Sat, Nov 21 · 7:00 PM"      [View]
- *   Person: "Maya T. · Hungry now for Tacos"                     [Invite] (Connect) / [Connect]
+ *   Person: "Maya T. · Hungry Now - Tacos"                     [Invite] (Connect) / [Connect]
  * Sections with nothing are left out.
  */
 

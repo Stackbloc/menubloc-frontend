@@ -214,7 +214,8 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
             <div data-testid="my-vibe-active">
               {state.hungry ? (
                 <Row
-                  label={state.hungryFor ? `Hungry now for ${state.hungryFor}` : "Hungry now"}
+                  // 2026-11-19 (Andre): "Hungry Now - [food]".
+                  label={state.hungryFor ? `Hungry Now - ${state.hungryFor}` : "Hungry now"}
                   until={until("hungry")}
                   color={C.hungry}
                   testId="my-vibe-hungry"
@@ -433,8 +434,9 @@ function HungryFor({ busy, onSet }) {
   const shown = q.length >= 2 && q !== picked ? matches.slice(0, 5) : [];
   return (
     <div style={st.panel} data-testid="hungry-for-sheet">
-      <p style={st.panelTitle}>Hungry now for?</p>
-      <p style={st.status}>Optional. A food, a restaurant or a dish.</p>
+      {/* 2026-11-19 (Andre): "Hungry Now - [food]", as few words as possible. */}
+      <p style={st.panelTitle}>Hungry Now -</p>
+      <p style={st.status}>Optional</p>
       <input
         value={food}
         onChange={(e) => {
@@ -449,7 +451,7 @@ function HungryFor({ busy, onSet }) {
         maxLength={40}
         autoComplete="off"
         autoFocus
-        aria-label="Hungry now for"
+        aria-label="Hungry Now - food"
         style={st.input}
         data-testid="hungry-for-input"
       />
