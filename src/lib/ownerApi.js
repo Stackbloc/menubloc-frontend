@@ -491,6 +491,13 @@ export const startOwnerClusterCheck = (body) => post("/api/owner/cluster-check/r
 export const getOwnerClusterCheckRun = (runId) => get(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}`);
 export const undoOwnerClusterCheck = (runId) => post(`/api/owner/cluster-check/runs/${encodeURIComponent(runId)}/undo`, {});
 // Owner → Menu Pipeline explorer (read-only GETs).
+// MIMS v1 (plan 65, 2026-11-19): menu item catalog, read-only.
+export const getOwnerMimsFacets = () => get("/api/owner/mims/facets");
+export const searchOwnerMimsItems = (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+  return get(`/api/owner/mims/items?${qs.toString()}`);
+};
+export const getOwnerMimsItem = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}`);
 export const getOwnerMenuPipelineRegistry = () => get("/api/owner/menu-pipeline/registry");
 export const getOwnerMenuPipelineMetrics = (days = 7) => get(`/api/owner/menu-pipeline/metrics?days=${encodeURIComponent(days)}`);
 export const searchOwnerMenuPipelineRestaurants = (q) => get(`/api/owner/menu-pipeline/restaurants?q=${encodeURIComponent(q)}`);

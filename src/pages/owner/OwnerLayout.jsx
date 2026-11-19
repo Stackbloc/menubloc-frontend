@@ -139,6 +139,8 @@ export default function OwnerLayout({ title, children, actions = null }) {
         items: [
           { to: "/owner/restaurant-manager", label: "Restaurants" },
           { to: "/owner/deals", label: "Deals" },
+          // MIMS v1 (plan 65, 2026-11-19): system-wide menu item catalog, read-only.
+          { to: "/owner/menu-items", label: "Menu Items" },
         ],
       },
       {

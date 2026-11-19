@@ -220,6 +220,7 @@ import OwnerLocationBot from "./pages/owner/OwnerLocationBot.jsx";
 import OwnerClusterCheck from "./pages/owner/OwnerClusterCheck.jsx";
 // Pipeline Explorer pulls in React Flow; load it only when an owner opens the page.
 const OwnerMenuPipeline = React.lazy(() => import("./pages/owner/OwnerMenuPipeline.jsx"));
+const OwnerMenuItems = React.lazy(() => import("./pages/owner/OwnerMenuItems.jsx")); // 2026-11-19 MIMS v1 (plan 65)
 import OwnerMealTimeSearch from "./pages/owner/OwnerMealTimeSearch.jsx";
 import OwnerHealthDeptBot from "./pages/owner/OwnerHealthDeptBot.jsx";
 import OwnerAgent from "./pages/owner/OwnerAgent.jsx";
@@ -1243,6 +1244,7 @@ function AppShell({ easyMenu, crmHost, venuesHost }) {
         <Route path="/owner/bots/location-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerLocationBot /></OwnerRoute>} />
         <Route path="/owner/bots/cluster-check" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerClusterCheck /></OwnerRoute>} />
         <Route path="/owner/menu-pipeline" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><React.Suspense fallback={null}><OwnerMenuPipeline /></React.Suspense></OwnerRoute>} />
+        <Route path="/owner/menu-items" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><React.Suspense fallback={null}><OwnerMenuItems /></React.Suspense></OwnerRoute>} />
         <Route path="/owner/search/meal-time" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMealTimeSearch /></OwnerRoute>} />
         <Route path="/owner/bots/health-dept-bot" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerHealthDeptBot /></OwnerRoute>} />
         <Route path="/owner/bots/agent" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerAgent /></OwnerRoute>} />

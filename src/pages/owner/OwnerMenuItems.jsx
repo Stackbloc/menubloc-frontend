@@ -1,0 +1,631 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import OwnerLayout, { OWNER_COLORS, PageCard, EmptyState } from "./OwnerLayout.jsx";
+import { getOwnerMimsFacets, searchOwnerMimsItems, getOwnerMimsItem } from "../../lib/ownerApi.js";
+
+/**
+ * Owner → Menu Items (MIMS v1, plan 65 MIMS-1). Created 2026-11-19.
+ * System-wide menu item catalog: search, filters, grid, and a read-only item inspector.
+ * One row = one location dish (Common Knowledge row). Filters live in the URL so a view can be shared.
+ * Read-only in v1. Editing (MIMS-2) comes next and will go through one write adapter on the backend.
+ */
+
+const FILTER_KEYS = [
+  "q", "chain_id", "cluster_id", "market_id", "city", "state", "kind", "price_min", "price_max",
+  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page",
+];
+
+const C = OWNER_COLORS;
+const PROBLEM_TEXT = {
+  no_restaurant: "No restaurant",
+  restaurant_inactive: "Restaurant inactive",
+  location_merged: "Location merged",
+  location_retired_duplicate: "Location retired",
+};
+
+const inputStyle = {
+  height: 34,
+  padding: "0 10px",
+  border: `1px solid ${C.line}`,
+  borderRadius: 8,
+  background: "#fff",
+  color: C.ink,
+  fontSize: 13,
+  minWidth: 0,
+};
+
+const buttonStyle = {
+  height: 32,
+  padding: "0 12px",
+  border: `1px solid ${C.line}`,
+  borderRadius: 8,
+  background: "#fff",
+  color: C.ink,
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+function money(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = Number(v);
+  return Number.isFinite(n) ? `$${n.toFixed(2)}` : "—";
+}
+
+function minorMoney(v) {
+  if (v === null || v === undefined) return "—";
+  return `$${(Number(v) / 100).toFixed(2)}`;
+}
+
+function when(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function Select({ label, value, onChange, children, width = 150 }) {
+  return (
+    <label style={{ display: "grid", gap: 4, fontSize: 11, color: C.muted, width }}>
+      {label}
+      <select value={value || ""} onChange={(e) => onChange(e.target.value)} style={inputStyle}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function Text({ label, value, onChange, width = 120, placeholder, type = "text" }) {
+  return (
+    <label style={{ display: "grid", gap: 4, fontSize: 11, color: C.muted, width }}>
+      {label}
+      <input type={type} value={value || ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} style={inputStyle} />
+    </label>
+  );
+}
+
+function Filters({ params, setParam, facets, onClear }) {
+  const [q, setQ] = useState(params.q || "");
+  const [urlQ, setUrlQ] = useState(params.q || "");
+  const timer = useRef(null);
+  // Follow the URL when it changes from outside (Clear, back button), without fighting the typing.
+  if ((params.q || "") !== urlQ) {
+    setUrlQ(params.q || "");
+    if ((params.q || "") !== q.trim()) setQ(params.q || "");
+  }
+  const typeQ = (v) => {
+    setQ(v);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setParam("q", v.trim()), 350);
+  };
+  const f = facets || {};
+
+  return (
+    <PageCard style={{ padding: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+        <label style={{ display: "grid", gap: 4, fontSize: 11, color: C.muted, flex: "1 1 260px", minWidth: 200 }}>
+          Search dish name or item ID
+          <input
+            value={q}
+            onChange={(e) => typeQ(e.target.value)}
+            placeholder="e.g. spicy noodles"
+            style={{ ...inputStyle, width: "100%" }}
+            aria-label="Search dish name or item ID"
+          />
+        </label>
+        <Select label="Chain" value={params.chain_id} onChange={(v) => setParam("chain_id", v)} width={170}>
+          <option value="">All chains</option>
+          {(f.chains || []).map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </Select>
+        <Select label="Cluster" value={params.cluster_id} onChange={(v) => setParam("cluster_id", v)} width={170}>
+          <option value="">All clusters</option>
+          {(f.clusters || []).map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </Select>
+        <Select label="Market" value={params.market_id} onChange={(v) => setParam("market_id", v)} width={150}>
+          <option value="">All markets</option>
+          {(f.markets || []).map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </Select>
+        <Text label="City" value={params.city} onChange={(v) => setParam("city", v)} width={130} />
+        <Select label="State" value={params.state} onChange={(v) => setParam("state", v)} width={90}>
+          <option value="">All</option>
+          {(f.states || []).map((s) => (
+            <option key={s.state} value={s.state}>{s.state}</option>
+          ))}
+        </Select>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end", marginTop: 12 }}>
+        <Select label="Type" value={params.kind} onChange={(v) => setParam("kind", v)} width={130}>
+          <option value="">All</option>
+          <option value="independent">Independent</option>
+          <option value="franchise">Franchise store</option>
+        </Select>
+        <Text label="Price from" type="number" value={params.price_min} onChange={(v) => setParam("price_min", v)} width={90} />
+        <Text label="Price to" type="number" value={params.price_max} onChange={(v) => setParam("price_max", v)} width={90} />
+        <Select label="Calories" value={params.calories} onChange={(v) => setParam("calories", v)} width={110}>
+          <option value="">Any</option>
+          <option value="yes">Has calories</option>
+          <option value="no">No calories</option>
+        </Select>
+        <Select label="Classification" value={params.classified} onChange={(v) => setParam("classified", v)} width={140}>
+          <option value="">Any</option>
+          <option value="yes">Classified</option>
+          <option value="low">Low confidence</option>
+          <option value="no">Not classified</option>
+        </Select>
+        <Select label="Location" value={params.location} onChange={(v) => setParam("location", v)} width={150}>
+          <option value="">Any</option>
+          <option value="inactive">Restaurant inactive</option>
+          <option value="missing">No restaurant</option>
+        </Select>
+        <Select label="Menu status" value={params.menu_status} onChange={(v) => setParam("menu_status", v)} width={120}>
+          <option value="">Any</option>
+          <option value="visible">Visible</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="hidden">Hidden</option>
+          <option value="archived">Archived</option>
+        </Select>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink, height: 34 }}>
+          <input type="checkbox" checked={params.needs_review === "1"} onChange={(e) => setParam("needs_review", e.target.checked ? "1" : "")} />
+          Needs review
+        </label>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink, height: 34 }}>
+          <input type="checkbox" checked={params.no_price === "1"} onChange={(e) => setParam("no_price", e.target.checked ? "1" : "")} />
+          No price
+        </label>
+        <Select label="Sort" value={params.sort || "newest"} onChange={(v) => setParam("sort", v)} width={130}>
+          <option value="newest">Newest</option>
+          <option value="updated">Recently updated</option>
+          <option value="name">Name A–Z</option>
+          <option value="price_low">Price low–high</option>
+          <option value="price_high">Price high–low</option>
+          <option value="oldest">Oldest</option>
+        </Select>
+        <button type="button" onClick={onClear} style={buttonStyle}>Clear</button>
+      </div>
+    </PageCard>
+  );
+}
+
+const TH = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 600, color: C.muted, borderBottom: `1px solid ${C.line}`, whiteSpace: "nowrap" };
+const TD = { padding: "9px 10px", fontSize: 13, color: C.ink, borderBottom: `1px solid ${C.line}`, verticalAlign: "top" };
+
+function Grid({ items, selectedId, onOpen }) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
+        <thead>
+          <tr>
+            <th style={TH}>Dish</th>
+            <th style={TH}>Restaurant</th>
+            <th style={TH}>Chain</th>
+            <th style={{ ...TH, textAlign: "right" }}>Price</th>
+            <th style={{ ...TH, textAlign: "right" }}>Calories</th>
+            <th style={TH}>Class</th>
+            <th style={TH}>Cuisine</th>
+            <th style={TH}>Status</th>
+            <th style={TH}>Universal ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it) => {
+            const on = String(selectedId) === String(it.id);
+            return (
+              <tr
+                key={it.id}
+                onClick={() => onOpen(it.id)}
+                onKeyDown={(e) => (e.key === "Enter" ? onOpen(it.id) : null)}
+                tabIndex={0}
+                style={{ cursor: "pointer", background: on ? C.accentSoft : "transparent" }}
+              >
+                <td style={TD}>
+                  <div style={{ fontWeight: 600 }}>{it.item_name || "(no name)"}</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>{it.section_name || "—"} · #{it.id}</div>
+                </td>
+                <td style={TD}>
+                  <div>{it.restaurant_name || "—"}</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>{[it.city, it.state].filter(Boolean).join(", ") || "—"}</div>
+                  {it.location_problem ? (
+                    <div style={{ fontSize: 11, color: "#b42318", fontWeight: 600 }}>{PROBLEM_TEXT[it.location_problem] || it.location_problem}</div>
+                  ) : null}
+                </td>
+                <td style={TD}>{it.chain_name || (it.is_franchise_menu_item ? "Franchise" : "Independent")}</td>
+                <td style={{ ...TD, textAlign: "right" }}>{money(it.price)}</td>
+                <td style={{ ...TD, textAlign: "right" }}>{it.calories_kcal === null ? "—" : Math.round(it.calories_kcal)}</td>
+                <td style={TD}>
+                  {it.mks_code ? (
+                    <>
+                      <div>{it.mks_code}</div>
+                      <div style={{ fontSize: 11, color: it.mks_confidence !== null && it.mks_confidence < 0.6 ? "#b42318" : C.muted }}>
+                        {it.mks_confidence === null ? "" : `${Math.round(it.mks_confidence * 100)}% · `}{it.mks_status || ""}
+                      </div>
+                    </>
+                  ) : (
+                    <span style={{ color: C.muted }}>—</span>
+                  )}
+                </td>
+                <td style={TD}>{it.cuisine || "—"}</td>
+                <td style={TD}>
+                  <div>{it.menu_status || "—"}</div>
+                  {it.needs_review ? <div style={{ fontSize: 11, color: "#b54708", fontWeight: 600 }}>Needs review</div> : null}
+                </td>
+                <td style={{ ...TD, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12 }}>{it.universal_id || "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function Fields({ rows }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(110px, 38%) 1fr", gap: "6px 12px", fontSize: 13 }}>
+      {rows.map(([k, v]) => (
+        <React.Fragment key={k}>
+          <div style={{ color: C.muted }}>{k}</div>
+          <div style={{ color: C.ink, wordBreak: "break-word" }}>{v === null || v === undefined || v === "" ? "—" : v}</div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function MiniTable({ cols, rows, empty }) {
+  if (!rows || !rows.length) return <div style={{ fontSize: 13, color: C.muted }}>{empty}</div>;
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>{cols.map((c) => <th key={c[0]} style={{ ...TH, padding: "6px 8px" }}>{c[0]}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>{cols.map((c) => <td key={c[0]} style={{ ...TD, padding: "6px 8px", fontSize: 12 }}>{c[1](r) ?? "—"}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const mono = (v) => (v ? <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12 }}>{v}</span> : null);
+
+function Inspector({ id, onClose, onOpen }) {
+  // Mounted with key={id}, so each item starts fresh.
+  const [state, setState] = useState({ loading: true });
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    getOwnerMimsItem(id)
+      .then((d) => live && setState({ data: d }))
+      .catch((e) => live && setState({ error: e.message }));
+    return () => {
+      live = false;
+    };
+  }, [id]);
+
+  const d = state.data;
+  const it = d?.item || {};
+  const r = d?.restaurant;
+
+  return (
+    <PageCard style={{ padding: 18, position: "sticky", top: 12, maxHeight: "calc(100vh - 24px)", overflowY: "auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: C.ink }}>{it.item_name || (state.loading ? "Loading…" : "Menu item")}</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Item #{id} · read-only</div>
+        </div>
+        <button type="button" onClick={onClose} style={buttonStyle} aria-label="Close item">Close</button>
+      </div>
+
+      {state.error ? <div style={{ marginTop: 14, color: "#b42318", fontSize: 13 }}>{state.error}</div> : null}
+
+      {d ? (
+        <>
+          {d.location_problem ? (
+            <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: "#fef3f2", color: "#b42318", fontSize: 13 }}>
+              Location problem: {PROBLEM_TEXT[d.location_problem] || d.location_problem}
+            </div>
+          ) : null}
+
+          <Section title="Identity">
+            <Fields
+              rows={[
+                ["Universal ID", mono(d.identity.universal_id)],
+                ["Location ID", mono(d.identity.location_universal_id)],
+                ["Location status", d.identity.location_status],
+                ["Chain product ID", mono(d.identity.product_universal_id)],
+                ["Common Knowledge row", `#${it.id}`],
+                ["Item UID", mono(it.menu_item_uid)],
+              ]}
+            />
+          </Section>
+
+          <Section title="Dish">
+            <Fields
+              rows={[
+                ["Name", it.item_name],
+                ["Section", it.section_name],
+                ["Description", it.description],
+                ["Price", money(it.price)],
+                ["Type", it.is_franchise_menu_item ? "Franchise store dish" : "Independent dish"],
+                ["Menu status", it.menu_status],
+                ["Needs review", it.needs_review ? "Yes" : "No"],
+                ["Review notes", it.review_notes],
+                ["Source", it.source_label],
+                ["Created", when(it.created_at)],
+                ["Updated", when(it.updated_at)],
+              ]}
+            />
+          </Section>
+
+          <Section title="Restaurant location">
+            {r ? (
+              <Fields
+                rows={[
+                  ["Restaurant", `${r.restaurant_name} (#${r.id})`],
+                  ["Address", [r.address_line1, r.address_line2].filter(Boolean).join(", ")],
+                  ["City", [r.city, r.state, r.postal_code].filter(Boolean).join(", ")],
+                  ["Chain", r.chain_name],
+                  ["Store code", r.store_code],
+                  ["Market", r.market_name],
+                  ["Clusters", (d.clusters || []).map((c) => c.name + (c.membership_status !== "active" ? " (inactive)" : "")).join(", ")],
+                  ["Active", r.active ? "Yes" : "No"],
+                  ["Claim", r.claim_status],
+                ]}
+              />
+            ) : (
+              <div style={{ fontSize: 13, color: "#b42318" }}>This dish isn't attached to a restaurant.</div>
+            )}
+            {d.menu ? (
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>
+                Menu: {d.menu.display_name || d.menu.name || `#${d.menu.id}`} · {d.menu.status || "—"} · {d.menu.source_type || "—"}
+              </div>
+            ) : null}
+          </Section>
+
+          {d.chain_product ? (
+            <Section title="Chain product">
+              <Fields
+                rows={[
+                  ["Product", `${d.chain_product.name} (#${d.chain_product.id})`],
+                  ["Chain code", mono(d.chain_product.external_item_id)],
+                  ["Base price", money(d.chain_product.base_price)],
+                  ["This store's price", d.store_override ? money(d.store_override.price) : "No store price"],
+                  ["Available here", d.store_override ? (d.store_override.is_available === false ? "No" : "Yes") : "—"],
+                  ["Category", d.chain_product.category],
+                ]}
+              />
+            </Section>
+          ) : null}
+
+          <Section title="Price history">
+            <MiniTable
+              empty="No price history recorded."
+              rows={d.price_history}
+              cols={[
+                ["Scope", (x) => x.scope],
+                ["Price", (x) => minorMoney(x.price_minor_units)],
+                ["From", (x) => when(x.effective_start_date)],
+                ["To", (x) => when(x.effective_end_date)],
+                ["Source", (x) => x.source_type],
+              ]}
+            />
+          </Section>
+
+          <Section title="Nutrition">
+            {d.nutrition ? (
+              <Fields
+                rows={[
+                  ["Calories", d.nutrition.calories_kcal === null ? null : Math.round(Number(d.nutrition.calories_kcal))],
+                  ["Protein / fat / carbs (g)", [d.nutrition.protein_g, d.nutrition.fat_g, d.nutrition.carbs_g].map((v) => (v === null ? "—" : Number(v))).join(" / ")],
+                  ["Sodium (mg)", d.nutrition.sodium_mg],
+                  ["Source", d.nutrition.source],
+                  ["Confidence", d.nutrition.confidence_score],
+                  ["Computed", when(d.nutrition.computed_at)],
+                ]}
+              />
+            ) : (
+              <div style={{ fontSize: 13, color: C.muted }}>No nutrition on file.</div>
+            )}
+          </Section>
+
+          <Section title="Classification">
+            {d.classification ? (
+              <Fields
+                rows={[
+                  ["MKS key", mono(d.classification.mks_code)],
+                  ["Confidence", d.classification.confidence === null ? null : `${Math.round(Number(d.classification.confidence) * 100)}%`],
+                  ["Method", d.classification.mapping_method],
+                  ["Status", d.classification.mapping_status],
+                  ["Reviewed", when(d.classification.reviewed_at)],
+                ]}
+              />
+            ) : (
+              <div style={{ fontSize: 13, color: C.muted }}>Not classified.</div>
+            )}
+            <div style={{ marginTop: 10 }}>
+              <MiniTable
+                empty="No classification history."
+                rows={d.classification_history}
+                cols={[
+                  ["When", (x) => when(x.created_at)],
+                  ["Why", (x) => x.change_reason],
+                  ["Review", (x) => x.review_status],
+                  ["Manual", (x) => (x.manual_override_applied ? "Yes" : "")],
+                ]}
+              />
+            </div>
+          </Section>
+
+          <Section title="Problems">
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>Same name at this location</div>
+            <MiniTable
+              empty="None."
+              rows={d.possible_duplicates}
+              cols={[
+                ["Item", (x) => (
+                  <button type="button" onClick={() => onOpen(x.id)} style={{ ...buttonStyle, height: 26, padding: "0 8px", fontSize: 12 }}>
+                    #{x.id}
+                  </button>
+                )],
+                ["Name", (x) => x.item_name],
+                ["Section", (x) => x.section_name],
+                ["Price", (x) => money(x.price)],
+                ["Status", (x) => x.menu_status],
+              ]}
+            />
+            <div style={{ fontSize: 12, color: C.muted, margin: "12px 0 6px" }}>Import exceptions</div>
+            <MiniTable
+              empty="None."
+              rows={d.exceptions}
+              cols={[
+                ["Type", (x) => x.failure_type],
+                ["Reason", (x) => x.ai_reason],
+                ["Suggested", (x) => x.suggested_resolution],
+                ["Status", (x) => x.status],
+              ]}
+            />
+          </Section>
+
+          <Section title="History">
+            <MiniTable
+              empty="No recorded changes."
+              rows={d.audit_events}
+              cols={[
+                ["When", (x) => when(x.created_at)],
+                ["Event", (x) => x.event_type],
+                ["By", (x) => [x.actor_type, x.source].filter(Boolean).join(" · ")],
+                ["Status", (x) => (x.previous_status || x.new_status ? `${x.previous_status || "—"} → ${x.new_status || "—"}` : "")],
+              ]}
+            />
+          </Section>
+
+          <Section title="All fields">
+            <button type="button" onClick={() => setShowAll((v) => !v)} style={buttonStyle}>
+              {showAll ? "Hide" : "Show"} every stored field
+            </button>
+            {showAll ? (
+              <pre style={{ marginTop: 10, fontSize: 11, background: "#f7f7f5", padding: 10, borderRadius: 8, overflowX: "auto", whiteSpace: "pre-wrap" }}>
+                {JSON.stringify(it, null, 2)}
+              </pre>
+            ) : null}
+          </Section>
+        </>
+      ) : null}
+    </PageCard>
+  );
+}
+
+export default function OwnerMenuItems() {
+  const [search, setSearch] = useSearchParams();
+  const params = useMemo(() => {
+    const o = {};
+    for (const k of FILTER_KEYS) if (search.get(k)) o[k] = search.get(k);
+    return o;
+  }, [search]);
+  const openId = search.get("item");
+
+  const [facets, setFacets] = useState(null);
+  const [result, setResult] = useState({ key: null, items: [] });
+
+  useEffect(() => {
+    getOwnerMimsFacets().then(setFacets).catch(() => setFacets({}));
+  }, []);
+
+  const key = JSON.stringify(params);
+  useEffect(() => {
+    let live = true;
+    searchOwnerMimsItems({ ...params, limit: 50 })
+      .then((d) => live && setResult({ key, ...d }))
+      .catch((e) => live && setResult({ key, items: [], error: e.message }));
+    return () => {
+      live = false;
+    };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  // While a new search runs, the last results stay on screen.
+  const state = { ...result, loading: result.key !== key, error: result.key === key ? result.error : null };
+
+  const setParam = useCallback(
+    (k, v) => {
+      const next = new URLSearchParams(search);
+      if (v === "" || v === null || v === undefined) next.delete(k);
+      else next.set(k, v);
+      if (k !== "page") next.delete("page");
+      setSearch(next, { replace: true });
+    },
+    [search, setSearch]
+  );
+
+  const open = (id) => {
+    const next = new URLSearchParams(search);
+    if (id) next.set("item", id);
+    else next.delete("item");
+    setSearch(next, { replace: true });
+  };
+
+  const clear = () => setSearch(new URLSearchParams(), { replace: true });
+
+  const page = Number(params.page || 1);
+  const total = state.total || 0;
+  const pages = Math.max(1, Math.ceil(total / (state.limit || 50)));
+
+  return (
+    <OwnerLayout title="Menu Items">
+      <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ fontSize: 13, color: C.muted }}>
+          Every location dish across Menubloc. Read-only for now; editing comes next.
+        </div>
+
+        <Filters params={params} setParam={setParam} facets={facets} onClear={clear} />
+
+        <div style={{ display: "grid", gridTemplateColumns: openId ? "minmax(0, 1.6fr) minmax(320px, 1fr)" : "minmax(0, 1fr)", gap: 16, alignItems: "start" }} className="mims-layout">
+          <PageCard style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderBottom: `1px solid ${C.line}`, gap: 12, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 13, color: C.ink }}>
+                {state.loading ? "Searching…" : `${total.toLocaleString()}${state.total_capped ? "+" : ""} dishes`}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: C.muted }}>
+                <button type="button" style={buttonStyle} disabled={page <= 1 || state.loading} onClick={() => setParam("page", String(page - 1))}>
+                  Previous
+                </button>
+                Page {page} of {pages.toLocaleString()}{state.total_capped ? "+" : ""}
+                <button type="button" style={buttonStyle} disabled={page >= pages || state.loading} onClick={() => setParam("page", String(page + 1))}>
+                  Next
+                </button>
+              </div>
+            </div>
+            {state.error ? (
+              <div style={{ padding: 16, color: "#b42318", fontSize: 13 }}>{state.error}</div>
+            ) : !state.loading && !(state.items || []).length ? (
+              <div style={{ padding: 16 }}>
+                <EmptyState>No dishes match these filters.</EmptyState>
+              </div>
+            ) : (
+              <Grid items={state.items || []} selectedId={openId} onOpen={open} />
+            )}
+          </PageCard>
+
+          {openId ? <Inspector key={openId} id={openId} onClose={() => open(null)} onOpen={open} /> : null}
+        </div>
+      </div>
+      <style>{`@media (max-width: 980px) { .mims-layout { grid-template-columns: minmax(0, 1fr) !important; } }`}</style>
+    </OwnerLayout>
+  );
+}
