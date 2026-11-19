@@ -662,7 +662,6 @@ function ClusterMenuExplorerTab({
   enabled,
   stickyLead = null,
   preContent = null,
-  afterFood = null,
   postContent = null,
   onFoodShown = null,
 }) {
@@ -1501,8 +1500,6 @@ function ClusterMenuExplorerTab({
         >
           {results}
         </main>
-        {/* Food by type first, then the clips (Andre 2026-11-18, as the app). */}
-        {afterFood ? <ClusterSearchActiveContext.Provider value={searchActive}>{afterFood}</ClusterSearchActiveContext.Provider> : null}
         {typeOpen ? (
           <button
             type="button"
@@ -1556,7 +1553,8 @@ export default function ClusterPage() {
   }, [wallReleased]);
   useEffect(() => () => clearTimeout(wallTimerRef.current), []);
   // The food category boxes open first (Andre 2026-11-18: "otherwise users may never see that they
-  // exist"): the clips sit under Food by type and wait until the boxes have shown.
+  // exist"): the clips wait until the boxes have shown. Updated 2026-11-19 (Andre: load order only,
+  // "not to relocate the video screens"): the clips are back in their place above Food by type.
   const [foodShown, setFoodShown] = useState(false);
   const onFoodShown = React.useCallback(() => {
     setFoodShown(true);
@@ -1968,8 +1966,9 @@ export default function ClusterPage() {
         ) : null}
       </header>
 
-      {/* One page, the app's order (Andre 2026-11-05; 2026-11-18 food first): food by type, clips,
-          restaurants A–Z, then the folded cluster info. The old Food/Restaurants toggle is gone. */}
+      {/* One page, the app's order (Andre 2026-11-05): clips, food by type, restaurants A–Z, then the
+          folded cluster info. The old Food/Restaurants toggle is gone. 2026-11-19: the clips keep this
+          place but only mount once the food boxes have shown (food loads first). */}
       <ClusterWallColumns>
       <div data-testid="cluster-view-panel-menu">
         <ClusterMenuExplorerTab
@@ -1977,7 +1976,7 @@ export default function ClusterPage() {
           cluster={cluster}
           enabled
           stickyLead={renderStickyLead()}
-          afterFood={foodShown ? clusterFoodHero : null}
+          preContent={foodShown ? clusterFoodHero : null}
           onFoodShown={onFoodShown}
           postContent={
             <>
