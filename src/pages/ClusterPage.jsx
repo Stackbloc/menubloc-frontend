@@ -47,7 +47,9 @@ import {
   resolveClusterSearchPlaceholder,
   resolveClusterDocumentMeta,
 } from "../lib/clusterSeoContent.js";
-import { toConsumerErrorMessage } from "../lib/api.js";
+import { API_BASE, toConsumerErrorMessage } from "../lib/api.js";
+import { EMPTY_SOCIAL_GROUPS, fetchSearchSocial } from "../lib/searchSocial.js";
+import { SearchEventsSection, SearchPeopleSection, SearchPlansSection } from "../components/search/SearchSocialSections.jsx";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
   applyClusterZoneAndPriceSort,
@@ -656,6 +658,35 @@ function clusterSortPriceCents(item) {
   return deal?.dealCents != null ? deal.dealCents : getConsumerDisplayPrice(item);
 }
 
+/** Dishes · Social · Events on a cluster search (2026-11-19), same as the Search page's radios. */
+function ClusterSearchViewRadios({ dishCount, socialCount, eventsCount, view, onChange }) {
+  const options = [
+    ["dishes", `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`],
+    ...(socialCount ? [["social", `Social · ${socialCount}`]] : []),
+    ...(eventsCount ? [["events", `Events · ${eventsCount}`]] : []),
+  ];
+  return (
+    <div role="radiogroup" aria-label="Search result view" data-testid="cluster-view-toggle" style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", flexBasis: "100%" }}>
+      {options.map(([v, label]) => (
+        <label
+          key={v}
+          data-testid={`cluster-view-${v}`}
+          style={{ display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer", fontSize: 13, fontWeight: view === v ? 800 : 600, color: view === v ? "#111827" : "#6B7280", userSelect: "none" }}
+        >
+          <input
+            type="radio"
+            name="cluster-search-view"
+            checked={view === v}
+            onChange={() => onChange(v)}
+            style={{ width: 14, height: 14, margin: 0, accentColor: "#22C55E", cursor: "pointer" }}
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function ClusterMenuExplorerTab({
   clusterSlug,
   cluster,
@@ -686,6 +717,11 @@ function ClusterMenuExplorerTab({
   const [searchError, setSearchError] = useState("");
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchLoadingMore, setSearchLoadingMore] = useState(false);
+  // A cluster search gets the Search page's radios too, same as the app (Andre 2026-11-19: "I see no
+  // signs of social search results on the cluster screen"): Dishes · Social (people) · Events (plans +
+  // events), from GET /search/social with the words, the cluster's city and the matching places.
+  const [searchSocialGroups, setSearchSocialGroups] = useState(EMPTY_SOCIAL_GROUPS);
+  const [searchView, setSearchView] = useState("dishes");
   const lastTrackedSearchRef = useRef(null);
   const [priceSort, setPriceSort] = useState(DEFAULT_CLUSTER_PRICE_SORT);
   const [selectedZone, setSelectedZone] = useState(null);
@@ -1032,6 +1068,8 @@ function ClusterMenuExplorerTab({
     setSearchStatus("loading");
     setSearchError("");
     setSearchHasMore(false);
+    setSearchSocialGroups(EMPTY_SOCIAL_GROUPS);
+    setSearchView("dishes");
 
     searchCluster(clusterSlug, {
       q: submittedSearch.trim(),
@@ -1045,6 +1083,17 @@ function ClusterMenuExplorerTab({
         setSearchQueryMeta(data.query || null);
         setSearchHasMore(Boolean(data.pagination?.has_more));
         setSearchStatus("ok");
+        // Social for this search, after the dishes so food is never slowed down; extra, never fatal (2026-11-19).
+        fetchSearchSocial(
+          API_BASE,
+          submittedSearch.trim(),
+          cluster?.city ? { city: cluster.city, state: cluster.state || "" } : null,
+          (data.menu_items || []).map((row) => row?.restaurant_id)
+        )
+          .then((g) => {
+            if (!controller.signal.aborted) setSearchSocialGroups(g);
+          })
+          .catch(() => undefined);
         // Owner Analytics: one finished search with its result count (sorting re-fetches aren't new searches).
         const searchKey = submittedSearch.trim().toLowerCase();
         if (lastTrackedSearchRef.current !== searchKey) {
@@ -1059,7 +1108,7 @@ function ClusterMenuExplorerTab({
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, searchActive, submittedSearch, priceSort]);
+  }, [clusterSlug, enabled, searchActive, submittedSearch, priceSort, cluster?.city, cluster?.state]);
 
   // A new search starts on the default price order (changing the sort re-fetches above).
   useEffect(() => {
@@ -1178,11 +1227,28 @@ function ClusterMenuExplorerTab({
     Boolean(selectedCategory) && !searchActive && (chipsOn ? dishListPending : status === "loading");
   // Nutrition chips + the open type's back/title/price sort (or the search result count/sort) pin
   // under the sticky search while the dish list scrolls, and let go where Food by type ends.
+  const searchSocialCount = searchActive ? searchSocialGroups.people.length : 0;
+  const searchEventsCount = searchActive ? searchSocialGroups.plans.length + searchSocialGroups.events.length : 0;
+  const showSearchSocial = searchView === "social" && searchSocialCount > 0;
+  const showSearchEvents = searchView === "events" && searchEventsCount > 0;
+  const searchViewRadios =
+    searchActive && searchStatus === "ok" && (searchSocialCount || searchEventsCount) ? (
+      <ClusterSearchViewRadios
+        dishCount={displaySearchItems.length}
+        socialCount={searchSocialCount}
+        eventsCount={searchEventsCount}
+        view={showSearchSocial ? "social" : showSearchEvents ? "events" : "dishes"}
+        onChange={setSearchView}
+      />
+    ) : null;
   let foodStickyRow = null;
   if (searchActive) {
-    if (searchStatus === "ok" && searchMenuItems.length > 0) {
+    if (searchViewRadios && (showSearchSocial || showSearchEvents)) {
+      foodStickyRow = searchViewRadios;
+    } else if (searchStatus === "ok" && searchMenuItems.length > 0) {
       foodStickyRow = (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+          {searchViewRadios}
           <p
             data-testid="cluster-food-search-result-count"
             style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}
@@ -1232,7 +1298,16 @@ function ClusterMenuExplorerTab({
           {foodStickyRow}
         </div>
       ) : null}
-      {searchActive ? (
+      {searchActive && showSearchSocial ? (
+        <div style={{ display: "grid", gap: "0.75rem" }} data-testid="cluster-social-view">
+          <SearchPeopleSection people={searchSocialGroups.people} />
+        </div>
+      ) : searchActive && showSearchEvents ? (
+        <div style={{ display: "grid", gap: "0.75rem" }} data-testid="cluster-events-view">
+          <SearchPlansSection plans={searchSocialGroups.plans} />
+          <SearchEventsSection events={searchSocialGroups.events} />
+        </div>
+      ) : searchActive ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
