@@ -132,7 +132,9 @@ function Filters({ params, setParam, facets, onClear }) {
           />
         </label>
         <Select label="Chain" value={params.chain_id} onChange={(v) => setParam("chain_id", v)} width={170}>
-          <option value="">All chains</option>
+          {/* 2026-11-19: "Any" = no chain filter (independents included); "No chain" = independents only. */}
+          <option value="">Any (chain or not)</option>
+          <option value="none">No chain (independent)</option>
           {(f.chains || []).map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
