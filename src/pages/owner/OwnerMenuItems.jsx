@@ -139,13 +139,13 @@ function Filters({ params, setParam, facets, onClear }) {
     <PageCard style={{ padding: 16 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
         <label style={{ display: "grid", gap: 4, fontSize: 11, color: C.muted, flex: "1 1 260px", minWidth: 200 }}>
-          Search dish name or item ID
+          Search dish, restaurant, or item ID
           <input
             value={q}
             onChange={(e) => typeQ(e.target.value)}
-            placeholder="e.g. spicy noodles"
+            placeholder="e.g. spicy noodles or a restaurant name"
             style={{ ...inputStyle, width: "100%" }}
-            aria-label="Search dish name or item ID"
+            aria-label="Search dish, restaurant, or item ID"
           />
         </label>
         <Select label="Chain" value={params.chain_id} onChange={(v) => setParam("chain_id", v)} width={170}>
