@@ -4,6 +4,7 @@ import dagre from "@dagrejs/dagre";
 import "@xyflow/react/dist/style.css";
 import { useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
+import MenuPipelineReport from "./MenuPipelineReport.jsx";
 import {
   getOwnerMenuPipelineRegistry,
   getOwnerMenuPipelineMetrics,
@@ -771,6 +772,7 @@ function OwnerMenuPipelineInner() {
   // Page and stage live in the address (?page=2&stage=capture_job_queue) so a view can be
   // bookmarked or shared. Changes replace the history entry instead of adding one.
   const [params, setParams] = useSearchParams();
+  const diagramRef = useRef(null);
   const selectedId = params.get("stage") || null;
   // A link to a problem fixer (resolver_…) only makes sense with problem routing shown.
   const [showProblems, setShowProblems] = useState(() => (params.get("stage") || "").startsWith("resolver_"));
@@ -849,6 +851,7 @@ function OwnerMenuPipelineInner() {
         (prev) => {
           const next = new URLSearchParams(prev);
           if (n) next.set("page", String(n));
+          if ((id || null) !== (prev.get("stage") || null)) next.delete("rpage"); // the report's table page
           if (id) next.set("stage", id);
           else next.delete("stage");
           return next;
@@ -869,7 +872,7 @@ function OwnerMenuPipelineInner() {
 
   return (
     <OwnerLayout title="Menu Pipeline">
-      <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
         <PageCard style={{ padding: 18 }}>
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
             <div style={{ fontSize: 13, color: OWNER_COLORS.muted, maxWidth: 720, lineHeight: 1.45 }}>
@@ -907,7 +910,7 @@ function OwnerMenuPipelineInner() {
           {metricsError ? <div style={{ marginTop: 8, color: RED }}>{metricsError}</div> : null}
         </PageCard>
 
-        <div>
+        <div ref={diagramRef}>
           <PageCard style={{ padding: 0, overflow: "hidden" }}>
             {graph ? <PageTabs page={page} onPage={(n) => goTo(n, null)} graph={graph} metrics={metrics} traceByStage={traceByStage} /> : null}
             <div style={{ height: 760, position: "relative" }}>
@@ -944,6 +947,20 @@ function OwnerMenuPipelineInner() {
             </div>
           </PageCard>
         </div>
+
+        {graph ? (
+          <MenuPipelineReport
+            selectedId={selectedId}
+            stagesById={stagesById}
+            resolversById={resolversById}
+            onPickStage={(id) => goTo(stagesById[id] ? pageOfStage(stagesById[id]) : null, id)}
+            onShowAll={() => goTo(null, null)}
+            onTrace={(id) => {
+              pickRestaurant(id);
+              diagramRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          />
+        ) : null}
 
         <PageCard style={{ padding: 18 }}>
           <h3 style={{ margin: "0 0 4px", fontSize: 15 }}>Problems: where they start, who resolves them</h3>

@@ -515,6 +515,13 @@ export const getOwnerMenuPipelineMetrics = (days = 7) => get(`/api/owner/menu-pi
 export const searchOwnerMenuPipelineRestaurants = (q) => get(`/api/owner/menu-pipeline/restaurants?q=${encodeURIComponent(q)}`);
 export const getOwnerMenuPipelineTrace = (restaurantId) =>
   get(`/api/owner/menu-pipeline/trace?restaurant_id=${encodeURIComponent(restaurantId)}`);
+// Plan 67 (2026-11-20): Menu Pipeline reports — one table for the whole pipeline (by run) or one step.
+export const getOwnerMenuPipelineReport = (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString();
+  return get(`/api/owner/menu-pipeline/report${qs ? `?${qs}` : ""}`);
+};
+export const getOwnerMenuPipelineRun = (kind, id) =>
+  get(`/api/owner/menu-pipeline/report/run?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`);
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
 export const getOwnerRestaurantProfileStyle = (restaurantId) =>
