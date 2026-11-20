@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ReactFlow, Background, Controls, Handle, Position, MarkerType, useReactFlow, ReactFlowProvider } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import "@xyflow/react/dist/style.css";
+import { useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
 import {
   getOwnerMenuPipelineRegistry,
@@ -767,12 +768,15 @@ function OwnerMenuPipelineInner() {
   const [days, setDays] = useState(7);
   const [error, setError] = useState("");
   const [metricsError, setMetricsError] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
-  const [showProblems, setShowProblems] = useState(false);
+  // Page and stage live in the address (?page=2&stage=capture_job_queue) so a view can be
+  // bookmarked or shared. Changes replace the history entry instead of adding one.
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get("stage") || null;
+  // A link to a problem fixer (resolver_…) only makes sense with problem routing shown.
+  const [showProblems, setShowProblems] = useState(() => (params.get("stage") || "").startsWith("resolver_"));
   const [trace, setTrace] = useState(null);
   const [traceError, setTraceError] = useState("");
   const [selectedRun, setSelectedRun] = useState(null);
-  const [page, setPage] = useState(1);
 
   useEffect(() => {
     getOwnerMenuPipelineRegistry()
@@ -807,6 +811,17 @@ function OwnerMenuPipelineInner() {
   const stagesById = useMemo(() => Object.fromEntries((graph?.nodes || []).map((n) => [n.id, n])), [graph]);
   const resolversById = useMemo(() => Object.fromEntries((graph?.resolvers || []).map((n) => [n.id, n])), [graph]);
 
+  // No valid ?page= → the page of the linked stage (a problem fixer: the page its problem starts on), else page 1.
+  const pageParam = Number(params.get("page"));
+  const resolverOrigin = (graph?.problem_classes || []).find((p) => p.resolvers.includes(selectedId))?.origin;
+  const page = PAGES.some((pg) => pg.n === pageParam)
+    ? pageParam
+    : stagesById[selectedId]
+      ? pageOfStage(stagesById[selectedId])
+      : stagesById[resolverOrigin]
+        ? pageOfStage(stagesById[resolverOrigin])
+        : 1;
+
   const run = trace?.runs?.find((r) => r.id === selectedRun) || null;
   const traceByStage = useMemo(() => {
     if (!run) return null;
@@ -824,17 +839,26 @@ function OwnerMenuPipelineInner() {
   useEffect(() => {
     if (!traceByStage || !graph) return;
     const pages = graph.nodes.filter((n) => traceByStage[n.id]).map(pageOfStage);
-    if (pages.length && !pages.includes(page)) setPage(Math.min(...pages));
+    if (pages.length && !pages.includes(page)) goTo(Math.min(...pages), selectedId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [traceByStage, graph]);
 
   const goTo = useCallback(
     (n, id) => {
-      setPage(n);
-      setSelectedId(id || null);
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (n) next.set("page", String(n));
+          if (id) next.set("stage", id);
+          else next.delete("stage");
+          return next;
+        },
+        { replace: true }
+      );
     },
-    []
+    [setParams]
   );
+  const setSelectedId = useCallback((id) => goTo(null, id), [goTo]);
 
   const selectedNode = stagesById[selectedId] || resolversById[selectedId] || null;
   const selectedMetric = metrics ? metrics.stages?.[selectedId] || metrics.resolvers?.[selectedId] : null;
