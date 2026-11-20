@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import OwnerTodayCheckPanel from "./OwnerTodayCheckPanel.jsx";
 import OwnerRestaurantEditPanel from "./OwnerRestaurantEditPanel.jsx";
+import OwnerRestaurantPanel from "./OwnerRestaurantPanel.jsx";
 import OwnerRestaurantBulkPanel, { OwnerRestaurantBulkHistory } from "./OwnerRestaurantBulkPanel.jsx";
 
 const MAX_BULK = 300; // server cap per bulk edit (ownerRestaurantBulkService.MAX_BULK)
@@ -64,6 +65,7 @@ export default function OwnerRestaurantManagement() {
   const [chains, setChains] = useState([]);
   const [checking, setChecking] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null); // 2026-11-20 (plan 68 step 3): restaurant panel
   const [reloadKey, setReloadKey] = useState(0);
   // Bulk selection: picked ids (kept across pages) or "all matching this filter".
   const [picked, setPicked] = useState(() => new Set());
@@ -314,6 +316,7 @@ export default function OwnerRestaurantManagement() {
                     onPick={() => togglePick(r.restaurant_id)}
                     onCheck={() => setChecking(r)}
                     onEdit={() => setEditing(r)}
+                    onView={() => setViewing(r)}
                   />
                 ))}
               </tbody>
@@ -336,6 +339,16 @@ export default function OwnerRestaurantManagement() {
           </button>
         </div>
       </PageCard>
+      {viewing ? (
+        <OwnerRestaurantPanel
+          restaurant={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={() => {
+            setEditing(viewing);
+            setViewing(null);
+          }}
+        />
+      ) : null}
       {editing ? <OwnerRestaurantEditPanel restaurant={editing} onClose={() => setEditing(null)} onSaved={() => setReloadKey((k) => k + 1)} /> : null}
       {bulkOpen ? (
         <OwnerRestaurantBulkPanel
@@ -474,7 +487,7 @@ function CoverageCard({ filter, reloadKey, current, onShow }) {
   );
 }
 
-function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
+function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit, onView }) {
   const muted = { fontSize: 12, color: OWNER_COLORS.muted };
   const service = [r.service.dine_in && "Dine-in", r.service.pickup && "Pickup", r.service.delivery && "Delivery"].filter(Boolean);
   return (
@@ -483,9 +496,15 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
         <input type="checkbox" aria-label={`Select ${r.restaurant_name}`} checked={picked} disabled={pickDisabled} onChange={onPick} />
       </td>
       <td style={tdStyle}>
-        <a href={r.public_url} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: OWNER_COLORS.ink, textDecoration: "none" }}>
+        {/* 2026-11-20 (plan 68 step 3): the name opens the restaurant panel (public page link is inside it). */}
+        <button
+          type="button"
+          onClick={onView}
+          title="See everything about this restaurant"
+          style={{ ...linkBtnStyle, fontSize: 13, color: OWNER_COLORS.ink, textAlign: "left" }}
+        >
           {r.restaurant_name}
-        </a>{" "}
+        </button>{" "}
         <span style={{ fontWeight: 600, color: OWNER_COLORS.ink, whiteSpace: "nowrap" }}>#{r.restaurant_id}</span>
         {r.chain_name ? <div style={muted}>{r.chain_name}</div> : null}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
