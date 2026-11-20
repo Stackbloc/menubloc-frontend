@@ -233,7 +233,9 @@ function Filters({ params, setParam, facets, onClear }) {
           <input type="checkbox" checked={params.no_price === "1"} onChange={(e) => setParam("no_price", e.target.checked ? "1" : "")} />
           No price
         </label>
-        <Select label="Sort" value={params.sort || "newest"} onChange={(v) => setParam("sort", v)} width={130}>
+        {/* 2026-11-20: Restaurant A–Z is the default, so one big menu can't fill every page (Dothan / Smokey Joe's). */}
+        <Select label="Sort" value={params.sort || "restaurant"} onChange={(v) => setParam("sort", v)} width={140}>
+          <option value="restaurant">Restaurant A–Z</option>
           <option value="newest">Newest</option>
           <option value="updated">Recently updated</option>
           <option value="name">Name A–Z</option>
@@ -1090,7 +1092,12 @@ export default function OwnerMenuItems() {
           <PageCard style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderBottom: `1px solid ${C.line}`, gap: 12, flexWrap: "wrap" }}>
               <div style={{ fontSize: 13, color: C.ink }}>
-                {state.loading ? "Searching…" : `${total.toLocaleString()}${state.total_capped ? "+" : ""} dishes`}
+                {state.loading
+                  ? "Searching…"
+                  : `${total.toLocaleString()}${state.total_capped ? "+" : ""} dishes` +
+                    (typeof state.restaurants === "number"
+                      ? ` · ${state.restaurants.toLocaleString()}${state.total_capped ? "+" : ""} restaurant${state.restaurants === 1 ? "" : "s"}`
+                      : "")}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: C.muted }}>
                 <button type="button" style={buttonStyle} disabled={page <= 1 || state.loading} onClick={() => setParam("page", String(page - 1))}>
