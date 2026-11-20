@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, EmptyState } from "./OwnerLayout.jsx";
 import {
   getOwnerMimsFacets,
@@ -258,6 +258,9 @@ const TD = { padding: "9px 10px", fontSize: 13, color: C.ink, borderBottom: `1px
  * 2026-11-20 (Andre: "about 3 to four total independent restaurants in Los Angeles"): one row per restaurant
  * under the current filters, with its dish count. Clicking a row lists that restaurant's dishes.
  */
+/** 2026-11-20: where a restaurant's settings are edited (Owner → Restaurant Manager, Details). */
+const restaurantManagerHref = (id) => `/owner/restaurant-manager?restaurant=${encodeURIComponent(id)}&section=details`;
+
 function RestaurantsTable({ rows, onPick }) {
   return (
     <div style={{ overflowX: "auto" }}>
@@ -268,6 +271,7 @@ function RestaurantsTable({ rows, onPick }) {
             <th style={TH}>Chain</th>
             <th style={{ ...TH, textAlign: "right" }}>Dishes</th>
             <th style={TH}>Last updated</th>
+            <th style={TH} aria-label="Edit restaurant" />
           </tr>
         </thead>
         <tbody>
@@ -284,6 +288,13 @@ function RestaurantsTable({ rows, onPick }) {
               <td style={TD}>{r.chain_name || "Independent"}</td>
               <td style={{ ...TD, textAlign: "right" }}>{Number(r.dishes).toLocaleString()}</td>
               <td style={TD}>{when(r.last_updated)}</td>
+              <td style={{ ...TD, whiteSpace: "nowrap" }}>
+                {r.id ? (
+                  <Link to={restaurantManagerHref(r.id)} onClick={(e) => e.stopPropagation()} style={{ color: C.accent, fontSize: 12, fontWeight: 600 }}>
+                    Edit restaurant ›
+                  </Link>
+                ) : null}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -910,6 +921,19 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
             ) : (
               <div style={{ fontSize: 13, color: "#b42318" }}>This dish isn't attached to a restaurant.</div>
             )}
+            {r ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                <Link to={restaurantManagerHref(r.id)} style={{ ...buttonStyle, height: 28, display: "inline-flex", alignItems: "center", textDecoration: "none", color: C.ink, fontSize: 12 }}>
+                  Edit restaurant ›
+                </Link>
+                <Link
+                  to={`/owner/menu-items?metro_id=all&restaurant_id=${encodeURIComponent(r.id)}`}
+                  style={{ ...buttonStyle, height: 28, display: "inline-flex", alignItems: "center", textDecoration: "none", color: C.ink, fontSize: 12 }}
+                >
+                  All its dishes
+                </Link>
+              </div>
+            ) : null}
             {d.menu ? (
               <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>
                 Menu: {d.menu.display_name || d.menu.name || `#${d.menu.id}`} · {d.menu.status || "—"} · {d.menu.source_type || "—"}
@@ -1173,7 +1197,10 @@ export default function OwnerMenuItems() {
                     Only {oneRestaurant}{" "}
                     <button type="button" style={{ ...buttonStyle, height: 26, padding: "0 8px", fontSize: 12 }} onClick={() => setParam("restaurant_id", "")}>
                       Show all
-                    </button>
+                    </button>{" "}
+                    <Link to={restaurantManagerHref(params.restaurant_id)} style={{ color: C.accent, fontSize: 12, fontWeight: 600 }}>
+                      Edit restaurant ›
+                    </Link>
                   </div>
                 ) : null}
               </div>

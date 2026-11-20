@@ -2389,6 +2389,14 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           {existingRestaurant
             ? <RestaurantSectionTabs current={section} onChange={setSection} />
             : <StepHeader current={step} />}
+          {/* 2026-11-20: the same restaurant's dishes in Owner → Menu Items. */}
+          {existingRestaurant && rid ? (
+            <div style={{ margin: "-6px 0 14px", fontSize: 13 }}>
+              <Link to={`/owner/menu-items?metro_id=all&restaurant_id=${encodeURIComponent(rid)}`} style={{ color: OWNER_COLORS.accent, fontWeight: 600 }}>
+                See its dishes in Menu Items ›
+              </Link>
+            </div>
+          ) : null}
           {profileFormCard}
         </>
       )}
