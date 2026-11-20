@@ -20,7 +20,7 @@ import {
 
 const FILTER_KEYS = [
   "q", "chain_id", "cluster_id", "market_id", "city", "state", "kind", "price_min", "price_max",
-  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view",
+  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view", "metro_id",
 ];
 
 // MIMS-2b (2026-11-19): chain dishes are one row under the chain; store copies hidden unless asked for.
@@ -143,9 +143,15 @@ function Filters({ params, setParam, facets, onClear }) {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
-        <Select label="Market" value={params.market_id} onChange={(v) => setParam("market_id", v)} width={150}>
-          <option value="">All markets</option>
-          {(f.markets || []).map((m) => (
+        {/* Metro (2026-11-19): replaces Market; a restaurant is in a metro by its map location. Los Angeles is the default. */}
+        <Select
+          label="Metro"
+          value={params.metro_id || (f.default_metro_id ? String(f.default_metro_id) : "all")}
+          onChange={(v) => setParam("metro_id", f.default_metro_id && String(f.default_metro_id) === v ? "" : v)}
+          width={160}
+        >
+          <option value="all">All metros</option>
+          {(f.metros || []).map((m) => (
             <option key={m.id} value={m.id}>{m.name}</option>
           ))}
         </Select>
@@ -702,7 +708,6 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
                   ["City", [r.city, r.state, r.postal_code].filter(Boolean).join(", ")],
                   ["Chain", r.chain_name],
                   ["Store code", r.store_code],
-                  ["Market", r.market_name],
                   ["Clusters", (d.clusters || []).map((c) => c.name + (c.membership_status !== "active" ? " (inactive)" : "")).join(", ")],
                   ["Active", r.active ? "Yes" : "No"],
                   ["Claim", r.claim_status],
@@ -871,11 +876,22 @@ export default function OwnerMenuItems() {
     getOwnerMimsFacets().then(setFacets).catch(() => setFacets({}));
   }, []);
 
+  // Metro default (2026-11-19): no metro in the URL means Los Angeles; "all" means every metro.
+  // The first search waits for the metro list so it doesn't run unfiltered and then again for LA.
+  const query = useMemo(() => {
+    if (!facets) return null;
+    const q = { ...params };
+    if (!q.metro_id && facets.default_metro_id) q.metro_id = String(facets.default_metro_id);
+    if (q.metro_id === "all") delete q.metro_id;
+    return q;
+  }, [params, facets]);
+
   const [refresh, setRefresh] = useState(0);
-  const key = JSON.stringify(params) + "#" + refresh;
+  const key = JSON.stringify(query) + "#" + refresh;
   useEffect(() => {
+    if (!query) return undefined;
     let live = true;
-    searchOwnerMimsItems({ ...params, limit: 50 })
+    searchOwnerMimsItems({ ...query, limit: 50 })
       .then((d) => live && setResult({ key, ...d }))
       .catch((e) => live && setResult({ key, items: [], error: e.message }));
     return () => {
