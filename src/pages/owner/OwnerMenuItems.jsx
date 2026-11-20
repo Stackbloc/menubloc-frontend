@@ -20,14 +20,26 @@ import {
 
 const FILTER_KEYS = [
   "q", "chain_id", "cluster_id", "market_id", "city", "state", "kind", "price_min", "price_max",
-  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page",
+  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view",
 ];
+
+// MIMS-2b (2026-11-19): chain dishes are one row under the chain; store copies hidden unless asked for.
+const ROW_KIND_TEXT = { chain_dish: "Chain dish", store_only: "Store-only dish", store_copy: "Store copy", dish: "Independent dish" };
+
+function storesLine(chain) {
+  if (!chain) return null;
+  const bits = [`${chain.store_count.toLocaleString()} store${chain.store_count === 1 ? "" : "s"}`];
+  if (chain.price_differs) bits.push(`${chain.price_differs} price${chain.price_differs === 1 ? "" : "s"} differ`);
+  if (chain.not_sold) bits.push(`not sold at ${chain.not_sold}`);
+  return bits.join(" · ");
+}
 
 const C = OWNER_COLORS;
 const PROBLEM_TEXT = {
   no_restaurant: "No restaurant",
   restaurant_inactive: "Restaurant inactive",
   location_merged: "Location merged",
+  location_closed: "Location closed",
   location_retired_duplicate: "Location retired",
 };
 
@@ -146,10 +158,11 @@ function Filters({ params, setParam, facets, onClear }) {
         </Select>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end", marginTop: 12 }}>
-        <Select label="Type" value={params.kind} onChange={(v) => setParam("kind", v)} width={130}>
+        <Select label="Type" value={params.kind} onChange={(v) => setParam("kind", v)} width={150}>
           <option value="">All</option>
           <option value="independent">Independent</option>
-          <option value="franchise">Franchise store</option>
+          <option value="chain">Chain dish</option>
+          <option value="store_only">Store-only (chain store)</option>
         </Select>
         <Text label="Price from" type="number" value={params.price_min} onChange={(v) => setParam("price_min", v)} width={90} />
         <Text label="Price to" type="number" value={params.price_max} onChange={(v) => setParam("price_max", v)} width={90} />
@@ -180,6 +193,10 @@ function Filters({ params, setParam, facets, onClear }) {
         <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink, height: 34 }}>
           <input type="checkbox" checked={params.needs_review === "1"} onChange={(e) => setParam("needs_review", e.target.checked ? "1" : "")} />
           Needs review
+        </label>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink, height: 34 }}>
+          <input type="checkbox" checked={params.view === "store_copies"} onChange={(e) => setParam("view", e.target.checked ? "store_copies" : "")} />
+          Store copies only
         </label>
         <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.ink, height: 34 }}>
           <input type="checkbox" checked={params.no_price === "1"} onChange={(e) => setParam("no_price", e.target.checked ? "1" : "")} />
@@ -235,14 +252,26 @@ function Grid({ items, selectedId, onOpen }) {
                   <div style={{ fontSize: 11, color: C.muted }}>{it.section_name || "—"} · #{it.id}</div>
                 </td>
                 <td style={TD}>
-                  <div>{it.restaurant_name || "—"}</div>
-                  <div style={{ fontSize: 11, color: C.muted }}>{[it.city, it.state].filter(Boolean).join(", ") || "—"}</div>
-                  {it.location_problem ? (
+                  {it.row_kind === "chain_dish" ? (
+                    <>
+                      <div>{it.chain_name || "Chain"} · all stores</div>
+                      <div style={{ fontSize: 11, color: C.muted }}>{storesLine(it.chain)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div>{it.restaurant_name || "—"}</div>
+                      <div style={{ fontSize: 11, color: C.muted }}>{[it.city, it.state].filter(Boolean).join(", ") || "—"}</div>
+                    </>
+                  )}
+                  {it.row_kind === "store_only" || it.row_kind === "store_copy" ? (
+                    <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{ROW_KIND_TEXT[it.row_kind]}</div>
+                  ) : null}
+                  {it.row_kind !== "chain_dish" && it.location_problem ? (
                     <div style={{ fontSize: 11, color: "#b42318", fontWeight: 600 }}>{PROBLEM_TEXT[it.location_problem] || it.location_problem}</div>
                   ) : null}
                 </td>
-                <td style={TD}>{it.chain_name || (it.is_franchise_menu_item ? "Franchise" : "Independent")}</td>
-                <td style={{ ...TD, textAlign: "right" }}>{money(it.price)}</td>
+                <td style={TD}>{it.chain_name || "Independent"}</td>
+                <td style={{ ...TD, textAlign: "right" }}>{money(it.row_kind === "chain_dish" ? it.chain?.chain_price : it.price)}</td>
                 <td style={{ ...TD, textAlign: "right" }}>{it.calories_kcal === null ? "—" : Math.round(it.calories_kcal)}</td>
                 <td style={TD}>
                   {it.mks_code ? (
@@ -564,7 +593,16 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
 
       {d ? (
         <>
-          {d.location_problem ? (
+          {d.chain_dish_for_copy ? (
+            <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: C.accentSoft, fontSize: 13, color: C.ink }}>
+              This is one store&apos;s copy of a chain dish. The chain dish is the one to look at and edit.{" "}
+              <button type="button" style={{ ...buttonStyle, height: 26, padding: "0 10px", fontSize: 12 }} onClick={() => onOpen(d.chain_dish_for_copy.id)}>
+                Open chain dish #{d.chain_dish_for_copy.id}
+              </button>
+            </div>
+          ) : null}
+
+          {d.row_kind !== "chain_dish" && d.location_problem ? (
             <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: "#fef3f2", color: "#b42318", fontSize: 13 }}>
               Location problem: {PROBLEM_TEXT[d.location_problem] || d.location_problem}
             </div>
@@ -590,7 +628,7 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
                 ["Section", it.section_name],
                 ["Description", it.description],
                 ["Price", money(it.price)],
-                ["Type", it.is_franchise_menu_item ? "Franchise store dish" : "Independent dish"],
+                ["Type", ROW_KIND_TEXT[d.row_kind] || "Dish"],
                 ["Menu status", it.menu_status],
                 ["Needs review", it.needs_review ? "Yes" : "No"],
                 ["Review notes", it.review_notes],
@@ -601,7 +639,61 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
             />
           </Section>
 
-          <Section title="Restaurant location">
+          {d.chain_view ? (
+            <Section title={`Chain: ${r?.chain_name || "chain"} · all stores`}>
+              <Fields
+                rows={[
+                  ["Chain price", money(d.chain_view.chain_price)],
+                  ["Stores", d.chain_view.store_count.toLocaleString()],
+                  ["Price differs at", `${d.chain_view.price_differs} store${d.chain_view.price_differs === 1 ? "" : "s"}`],
+                  ["Not sold at", `${d.chain_view.not_sold} store${d.chain_view.not_sold === 1 ? "" : "s"}`],
+                ]}
+              />
+              <div style={{ fontSize: 12, color: C.muted, margin: "8px 0" }}>
+                Every store sells this dish as the chain does, except where listed below. Edits here apply to all stores.
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: "10px 0 6px" }}>Stores with a different price</div>
+              <MiniTable
+                empty="None. Every store uses the chain price."
+                rows={d.chain_view.price_differences}
+                cols={[
+                  ["Store", (x) => `${x.restaurant_name} #${x.restaurant_id}`],
+                  ["Where", (x) => [x.city, x.state].filter(Boolean).join(", ")],
+                  ["Price", (x) => money(x.price)],
+                  ["From", (x) => x.via],
+                ]}
+              />
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: "12px 0 6px" }}>Stores that don&apos;t sell it</div>
+              <MiniTable
+                empty="None. Every store sells it."
+                rows={d.chain_view.not_sold_at}
+                cols={[
+                  ["Store", (x) => `${x.restaurant_name} #${x.restaurant_id}`],
+                  ["Where", (x) => [x.city, x.state].filter(Boolean).join(", ")],
+                  ["From", (x) => x.via],
+                ]}
+              />
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, margin: "12px 0 6px" }}>Store-only items at this chain</div>
+              <MiniTable
+                empty="None."
+                rows={d.chain_view.store_only_items}
+                cols={[
+                  ["Item", (x) =>
+                    x.menu_item_id ? (
+                      <button type="button" style={{ ...buttonStyle, height: 24, padding: "0 8px", fontSize: 12 }} onClick={() => onOpen(x.menu_item_id)}>
+                        {x.item_name}
+                      </button>
+                    ) : (
+                      x.item_name
+                    )],
+                  ["Store", (x) => `${[x.city, x.state].filter(Boolean).join(", ")} #${x.restaurant_id}`],
+                  ["Price", (x) => money(x.price)],
+                ]}
+              />
+            </Section>
+          ) : null}
+
+          <Section title={d.row_kind === "chain_dish" ? "Where the chain menu is kept" : "Restaurant location"}>
             {r ? (
               <Fields
                 rows={[
