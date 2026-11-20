@@ -63,6 +63,10 @@ export default function OwnerRestaurantManagement() {
   const [clusters, setClusters] = useState([]);
   const [metros, setMetros] = useState([]);
   const [chains, setChains] = useState([]);
+  // 2026-11-20 (Andre): Metro defaults to Los Angeles, like Menu Items. metro_id "" = the default metro
+  // (from the Menu Items facets), "all" = every metro. The grid waits for the facets so it doesn't load twice.
+  const [defaultMetroId, setDefaultMetroId] = useState(null);
+  const [facetsReady, setFacetsReady] = useState(false);
   const [checking, setChecking] = useState(null);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null); // 2026-11-20 (plan 68 step 3): restaurant panel
@@ -82,11 +86,13 @@ export default function OwnerRestaurantManagement() {
         const fx = r?.facets || r || {};
         setMetros(Array.isArray(fx.metros) ? fx.metros : []);
         setChains(Array.isArray(fx.chains) ? fx.chains : []);
+        setDefaultMetroId(fx.default_metro_id != null ? String(fx.default_metro_id) : null);
       })
       .catch(() => {
         setMetros([]);
         setChains([]);
-      });
+      })
+      .finally(() => setFacetsReady(true));
   }, []);
 
   // Search box: wait for typing to pause, then go back to page 1.
@@ -98,10 +104,13 @@ export default function OwnerRestaurantManagement() {
   const params = useMemo(() => {
     const out = {};
     for (const [k, v] of Object.entries(filters)) if (v !== "" && v != null) out[k] = String(v);
+    if (!out.metro_id && defaultMetroId) out.metro_id = defaultMetroId;
+    if (out.metro_id === "all") delete out.metro_id;
     return out;
-  }, [filters]);
+  }, [filters, defaultMetroId]);
 
   useEffect(() => {
+    if (!facetsReady) return undefined;
     let live = true;
     setLoading(true);
     setError("");
@@ -112,7 +121,7 @@ export default function OwnerRestaurantManagement() {
     return () => {
       live = false;
     };
-  }, [params, reloadKey]);
+  }, [params, reloadKey, facetsReady]);
 
   // The filter without paging/sort: what "all matching" means. Changing it clears the selection.
   const filterOnly = useMemo(() => {
@@ -180,8 +189,15 @@ export default function OwnerRestaurantManagement() {
             <input style={{ ...inputStyle, width: 220 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, city or #ID" />
           </Field>
           <Field label="Metro">
-            <select style={inputStyle} value={filters.metro_id} onChange={set("metro_id")}>
-              <option value="">Any</option>
+            <select
+              style={inputStyle}
+              value={filters.metro_id || defaultMetroId || "all"}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFilters((f) => ({ ...f, metro_id: defaultMetroId && v === defaultMetroId ? "" : v, page: 1 }));
+              }}
+            >
+              <option value="all">All metros</option>
               {metros.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}{m.state && !String(m.name || "").includes(m.state) ? `, ${m.state}` : ""}</option>
               ))}
@@ -254,6 +270,7 @@ export default function OwnerRestaurantManagement() {
       </PageCard>
 
       <CoverageCard
+        ready={facetsReady}
         filter={coverageFilter}
         reloadKey={reloadKey}
         current={{ missing: filters.missing, active: filters.active }}
@@ -383,13 +400,14 @@ function Field({ label, children }) {
  */
 const BOT_LABEL = { hours: "Hours Bot", address: "Address Bot", menubot: "Menubot" };
 
-function CoverageCard({ filter, reloadKey, current, onShow }) {
+function CoverageCard({ ready, filter, reloadKey, current, onShow }) {
   const [cov, setCov] = useState(null);
   const [err, setErr] = useState("");
   const [sending, setSending] = useState("");
   const [note, setNote] = useState(null);
   const key = JSON.stringify(filter);
   useEffect(() => {
+    if (!ready) return undefined;
     let live = true;
     setErr("");
     getOwnerRestaurantCoverage(filter)
@@ -399,7 +417,7 @@ function CoverageCard({ filter, reloadKey, current, onShow }) {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, reloadKey]);
+  }, [key, reloadKey, ready]);
   useEffect(() => setNote(null), [key]);
 
   const isOn = (g) => (g.filter.missing || "") === (current.missing || "") && (g.filter.active || "") === (current.active || "");
