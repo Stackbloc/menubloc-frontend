@@ -340,13 +340,34 @@ function Section({ title, children }) {
   );
 }
 
+// 2026-11-20: a value from the database can be an object (an import exception's suggested_resolution is
+// {action, portion_class}). React can't render a plain object and the whole page failed, so show it as text.
+function cellText(v) {
+  if (v === null || v === undefined || v === "") return null;
+  if (React.isValidElement(v) || typeof v !== "object") return v;
+  if (Array.isArray(v)) return v.map((x) => (typeof x === "object" && x !== null ? JSON.stringify(x) : String(x))).join(", ");
+  return Object.entries(v)
+    .filter(([, x]) => x !== null && x !== undefined && x !== "")
+    .map(([k, x]) => `${k.replace(/_/g, " ")}: ${typeof x === "object" ? JSON.stringify(x) : String(x)}`)
+    .join(" · ");
+}
+
+/** An import exception's suggested fix, e.g. {action: "review_portion_class", portion_class: "unknown"}. */
+function resolutionText(r) {
+  if (!r || typeof r !== "object") return cellText(r);
+  const { action, ...rest } = r;
+  const head = action ? String(action).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "";
+  const tail = cellText(rest);
+  return [head, tail].filter(Boolean).join(" · ") || null;
+}
+
 function Fields({ rows }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(110px, 38%) 1fr", gap: "6px 12px", fontSize: 13 }}>
       {rows.map(([k, v]) => (
         <React.Fragment key={k}>
           <div style={{ color: C.muted }}>{k}</div>
-          <div style={{ color: C.ink, wordBreak: "break-word" }}>{v === null || v === undefined || v === "" ? "—" : v}</div>
+          <div style={{ color: C.ink, wordBreak: "break-word" }}>{cellText(v) ?? "—"}</div>
         </React.Fragment>
       ))}
     </div>
@@ -363,7 +384,7 @@ function MiniTable({ cols, rows, empty }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i}>{cols.map((c) => <td key={c[0]} style={{ ...TD, padding: "6px 8px", fontSize: 12 }}>{c[1](r) ?? "—"}</td>)}</tr>
+            <tr key={i}>{cols.map((c) => <td key={c[0]} style={{ ...TD, padding: "6px 8px", fontSize: 12 }}>{cellText(c[1](r)) ?? "—"}</td>)}</tr>
           ))}
         </tbody>
       </table>
@@ -952,7 +973,7 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
               cols={[
                 ["Type", (x) => x.failure_type],
                 ["Reason", (x) => x.ai_reason],
-                ["Suggested", (x) => x.suggested_resolution],
+                ["Suggested", (x) => resolutionText(x.suggested_resolution)],
                 ["Status", (x) => x.status],
               ]}
             />
