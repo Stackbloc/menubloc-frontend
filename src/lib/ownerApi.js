@@ -497,6 +497,11 @@ export const searchOwnerMimsItems = (params = {}) => {
   const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
   return get(`/api/owner/mims/items?${qs.toString()}`);
 };
+// 2026-11-20: Restaurants view (same filters as items; one row per restaurant).
+export const searchOwnerMimsRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+  return get(`/api/owner/mims/restaurants?${qs.toString()}`);
+};
 export const getOwnerMimsItem = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}`);
 // MIMS-2 (2026-11-19): edits go through the backend write adapter only.
 export const updateOwnerMimsItem = (id, body) => patch(`/api/owner/mims/items/${encodeURIComponent(id)}`, body);

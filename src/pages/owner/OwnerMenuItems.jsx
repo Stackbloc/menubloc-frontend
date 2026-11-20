@@ -4,6 +4,7 @@ import OwnerLayout, { OWNER_COLORS, PageCard, EmptyState } from "./OwnerLayout.j
 import {
   getOwnerMimsFacets,
   searchOwnerMimsItems,
+  searchOwnerMimsRestaurants,
   getOwnerMimsItem,
   updateOwnerMimsItem,
   getOwnerMimsItemChanges,
@@ -26,6 +27,7 @@ import {
 const FILTER_KEYS = [
   "q", "chain_id", "cluster_id", "market_id", "city", "state", "kind", "price_min", "price_max",
   "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view", "metro_id", "course",
+  "list", "restaurant_id",
 ];
 
 // 2026-11-20: used until the backend sends facets.courses.
@@ -251,6 +253,44 @@ function Filters({ params, setParam, facets, onClear }) {
 
 const TH = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 600, color: C.muted, borderBottom: `1px solid ${C.line}`, whiteSpace: "nowrap" };
 const TD = { padding: "9px 10px", fontSize: 13, color: C.ink, borderBottom: `1px solid ${C.line}`, verticalAlign: "top" };
+
+/**
+ * 2026-11-20 (Andre: "about 3 to four total independent restaurants in Los Angeles"): one row per restaurant
+ * under the current filters, with its dish count. Clicking a row lists that restaurant's dishes.
+ */
+function RestaurantsTable({ rows, onPick }) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={TH}>Restaurant</th>
+            <th style={TH}>Chain</th>
+            <th style={{ ...TH, textAlign: "right" }}>Dishes</th>
+            <th style={TH}>Last updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id ?? "none"} onClick={() => r.id && onPick(r)} style={{ cursor: r.id ? "pointer" : "default" }}>
+              <td style={TD}>
+                <div style={{ fontWeight: 600 }}>{r.restaurant_name || (r.id ? `Restaurant #${r.id}` : "No restaurant")}</div>
+                <div style={{ fontSize: 11, color: C.muted }}>
+                  {[r.city, r.state].filter(Boolean).join(", ") || "—"}
+                  {r.id ? ` · #${r.id}` : ""}
+                  {r.active === false ? " · inactive" : ""}
+                </div>
+              </td>
+              <td style={TD}>{r.chain_name || "Independent"}</td>
+              <td style={{ ...TD, textAlign: "right" }}>{Number(r.dishes).toLocaleString()}</td>
+              <td style={TD}>{when(r.last_updated)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function Grid({ items, selectedId, onOpen }) {
   return (
@@ -1045,7 +1085,9 @@ export default function OwnerMenuItems() {
   useEffect(() => {
     if (!query) return undefined;
     let live = true;
-    searchOwnerMimsItems({ ...query, limit: 50 })
+    const restaurantsView = query.list === "restaurants";
+    const { list: _list, ...rest } = query;
+    (restaurantsView ? searchOwnerMimsRestaurants(rest) : searchOwnerMimsItems({ ...rest, limit: 50 }))
       .then((d) => live && setResult({ key, ...d }))
       .catch((e) => live && setResult({ key, items: [], error: e.message }));
     return () => {
@@ -1076,8 +1118,28 @@ export default function OwnerMenuItems() {
   const clear = () => setSearch(new URLSearchParams(), { replace: true });
 
   const page = Number(params.page || 1);
+  const restaurantsView = params.list === "restaurants";
   const total = state.total || 0;
   const pages = Math.max(1, Math.ceil(total / (state.limit || 50)));
+  const switchView = (v) => {
+    const next = new URLSearchParams(search);
+    if (v === "restaurants") {
+      next.set("list", "restaurants");
+      next.delete("restaurant_id");
+      next.delete("item");
+    } else next.delete("list");
+    next.delete("page");
+    setSearch(next, { replace: true });
+  };
+  const pickRestaurant = (r) => {
+    const next = new URLSearchParams(search);
+    next.delete("list");
+    next.delete("page");
+    next.set("restaurant_id", String(r.id));
+    setSearch(next, { replace: true });
+  };
+  const oneRestaurant = !restaurantsView && params.restaurant_id ? (state.items || [])[0]?.restaurant_name || `#${params.restaurant_id}` : null;
+  const seg = (on) => ({ ...buttonStyle, background: on ? C.accentSoft : "transparent", fontWeight: on ? 700 : 500 });
 
   return (
     <OwnerLayout title="Menu Items">
@@ -1091,13 +1153,29 @@ export default function OwnerMenuItems() {
         <div style={{ display: "grid", gridTemplateColumns: openId ? "minmax(0, 1.6fr) minmax(320px, 1fr)" : "minmax(0, 1fr)", gap: 16, alignItems: "start" }} className="mims-layout">
           <PageCard style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderBottom: `1px solid ${C.line}`, gap: 12, flexWrap: "wrap" }}>
-              <div style={{ fontSize: 13, color: C.ink }}>
-                {state.loading
-                  ? "Searching…"
-                  : `${total.toLocaleString()}${state.total_capped ? "+" : ""} dishes` +
-                    (typeof state.restaurants === "number"
-                      ? ` · ${state.restaurants.toLocaleString()}${state.total_capped ? "+" : ""} restaurant${state.restaurants === 1 ? "" : "s"}`
-                      : "")}
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 4 }} role="group" aria-label="List">
+                  <button type="button" style={seg(!restaurantsView)} aria-pressed={!restaurantsView} onClick={() => switchView("dishes")}>Dishes</button>
+                  <button type="button" style={seg(restaurantsView)} aria-pressed={restaurantsView} onClick={() => switchView("restaurants")}>Restaurants</button>
+                </div>
+                <div style={{ fontSize: 13, color: C.ink }}>
+                  {state.loading
+                    ? "Searching…"
+                    : restaurantsView
+                      ? `${total.toLocaleString()} restaurant${total === 1 ? "" : "s"} · ${Number(state.dishes || 0).toLocaleString()} dishes`
+                      : `${total.toLocaleString()}${state.total_capped ? "+" : ""} dishes` +
+                        (typeof state.restaurants === "number"
+                          ? ` · ${state.restaurants.toLocaleString()}${state.total_capped ? "+" : ""} restaurant${state.restaurants === 1 ? "" : "s"}`
+                          : "")}
+                </div>
+                {oneRestaurant ? (
+                  <div style={{ fontSize: 13, color: C.muted }}>
+                    Only {oneRestaurant}{" "}
+                    <button type="button" style={{ ...buttonStyle, height: 26, padding: "0 8px", fontSize: 12 }} onClick={() => setParam("restaurant_id", "")}>
+                      Show all
+                    </button>
+                  </div>
+                ) : null}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: C.muted }}>
                 <button type="button" style={buttonStyle} disabled={page <= 1 || state.loading} onClick={() => setParam("page", String(page - 1))}>
@@ -1111,6 +1189,14 @@ export default function OwnerMenuItems() {
             </div>
             {state.error ? (
               <div style={{ padding: 16, color: "#b42318", fontSize: 13 }}>{state.error}</div>
+            ) : restaurantsView ? (
+              !state.loading && !(state.restaurants || []).length ? (
+                <div style={{ padding: 16 }}>
+                  <EmptyState>No restaurants have dishes that match these filters.</EmptyState>
+                </div>
+              ) : (
+                <RestaurantsTable rows={Array.isArray(state.restaurants) ? state.restaurants : []} onPick={pickRestaurant} />
+              )
             ) : !state.loading && !(state.items || []).length ? (
               <div style={{ padding: 16 }}>
                 <EmptyState>No dishes match these filters.</EmptyState>
