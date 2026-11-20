@@ -501,6 +501,8 @@ export const getOwnerMimsItem = (id) => get(`/api/owner/mims/items/${encodeURICo
 // MIMS-2 (2026-11-19): edits go through the backend write adapter only.
 export const updateOwnerMimsItem = (id, body) => patch(`/api/owner/mims/items/${encodeURIComponent(id)}`, body);
 export const getOwnerMimsItemChanges = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}/changes`);
+// 2026-11-20: a dish's meal times (food-type fit + pins/hides). Changes use the meal-time override calls above.
+export const getOwnerMimsItemMealTimes = (id) => get(`/api/owner/mims/items/${encodeURIComponent(id)}/meal-times`);
 export const undoOwnerMimsItemChange = (id, changeId) =>
   post(`/api/owner/mims/items/${encodeURIComponent(id)}/changes/${encodeURIComponent(changeId)}/undo`, {});
 export const getOwnerMenuPipelineRegistry = () => get("/api/owner/menu-pipeline/registry");

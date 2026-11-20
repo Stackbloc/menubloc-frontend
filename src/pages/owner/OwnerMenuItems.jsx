@@ -8,6 +8,9 @@ import {
   updateOwnerMimsItem,
   getOwnerMimsItemChanges,
   undoOwnerMimsItemChange,
+  getOwnerMimsItemMealTimes,
+  addOwnerMealTimeOverride,
+  removeOwnerMealTimeOverride,
 } from "../../lib/ownerApi.js";
 
 /**
@@ -16,11 +19,25 @@ import {
  * One row = one location dish (Common Knowledge row). Filters live in the URL so a view can be shared.
  * MIMS-2 (2026-11-19): edit one dish (name, section, description, price, availability, review), see its edit log,
  * undo an edit. Every save goes through the backend write adapter (mimsWriteAdapter.js), never straight to tables.
+ * 2026-11-20: Course filter (Entrée / Side / Beverage …, read from the Section) and a Meal times box on each dish:
+ * pin or hide it per meal, the same pins/hides as Owner → Search → Right now meals (plan 43).
  */
 
 const FILTER_KEYS = [
   "q", "chain_id", "cluster_id", "market_id", "city", "state", "kind", "price_min", "price_max",
-  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view", "metro_id",
+  "no_price", "calories", "classified", "needs_review", "menu_status", "location", "sort", "page", "view", "metro_id", "course",
+];
+
+// 2026-11-20: used until the backend sends facets.courses.
+const COURSE_FALLBACK = [
+  { key: "entree", label: "Entrée" },
+  { key: "side", label: "Side" },
+  { key: "beverage", label: "Beverage" },
+  { key: "appetizer", label: "Appetizer" },
+  { key: "soup_salad", label: "Soup or salad" },
+  { key: "dessert", label: "Dessert" },
+  { key: "other", label: "Sauces, add-ons, kids, catering" },
+  { key: "none", label: "No section" },
 ];
 
 // MIMS-2b (2026-11-19): chain dishes are one row under the chain; store copies hidden unless asked for.
@@ -172,6 +189,12 @@ function Filters({ params, setParam, facets, onClear }) {
           <option value="chain">Chain dish</option>
           <option value="store_only">Store-only (chain store)</option>
         </Select>
+        <Select label="Course" value={params.course} onChange={(v) => setParam("course", v)} width={130}>
+          <option value="">Any</option>
+          {(facets?.courses || COURSE_FALLBACK).map((c) => (
+            <option key={c.key} value={c.key}>{c.label}</option>
+          ))}
+        </Select>
         <Text label="Price from" type="number" value={params.price_min} onChange={(v) => setParam("price_min", v)} width={90} />
         <Text label="Price to" type="number" value={params.price_max} onChange={(v) => setParam("price_max", v)} width={90} />
         <Select label="Calories" value={params.calories} onChange={(v) => setParam("calories", v)} width={110}>
@@ -257,7 +280,7 @@ function Grid({ items, selectedId, onOpen }) {
               >
                 <td style={TD}>
                   <div style={{ fontWeight: 600 }}>{it.item_name || "(no name)"}</div>
-                  <div style={{ fontSize: 11, color: C.muted }}>{it.section_name || "—"} · #{it.id}</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>{it.section_name || "—"}{it.course ? ` · ${it.course.label}` : ""} · #{it.id}</div>
                 </td>
                 <td style={TD}>
                   {it.row_kind === "chain_dish" ? (
@@ -548,6 +571,109 @@ function EditLog({ itemId, changes, onUndone }) {
 
 const mono = (v) => (v ? <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12 }}>{v}</span> : null);
 
+const FIT_TEXT = { good: "Good fit", ok: "Fits a little", no: "Not a fit", unknown: "Not sure" };
+
+/**
+ * 2026-11-20 (Andre: "i need a convenient place to change that setting"): this dish at each meal.
+ * Pin = goes first on its card at that meal; Hide = left out at that meal; Default = the food-type fit decides.
+ * Saves to the same pins/hides as Owner → Search → Right now meals.
+ */
+function MealTimes({ itemId, version }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState("");
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    let live = true;
+    getOwnerMimsItemMealTimes(itemId)
+      .then((d) => live && (setData(d), setError("")))
+      .catch((e) => live && setError(e.message));
+    return () => {
+      live = false;
+    };
+  }, [itemId, version, tick]);
+
+  async function choose(m, action) {
+    const current = m.override?.action || "";
+    if (action === current) return;
+    setBusy(m.meal);
+    setError("");
+    try {
+      if (!action) await removeOwnerMealTimeOverride(m.override.id);
+      else
+        await addOwnerMealTimeOverride({
+          meal: m.meal,
+          target_kind: "dish",
+          restaurant_id: data.restaurant_id,
+          menu_item_id: data.search_id,
+          action,
+          note: "Menu Items",
+        });
+      setTick((t) => t + 1);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  const seg = (on) => ({
+    ...buttonStyle,
+    height: 26,
+    padding: "0 10px",
+    fontSize: 12,
+    background: on ? C.accentSoft : "transparent",
+    fontWeight: on ? 700 : 500,
+  });
+
+  return (
+    <Section title="Meal times">
+      {error ? <div style={{ color: "#b42318", fontSize: 13, marginBottom: 8 }}>{error}</div> : null}
+      {!data ? (
+        <div style={{ fontSize: 13, color: C.muted }}>{error ? "" : "Loading…"}</div>
+      ) : !data.restaurant_id ? (
+        <div style={{ fontSize: 13, color: C.muted }}>This dish has no restaurant, so it can&apos;t be pinned or hidden.</div>
+      ) : (
+        <>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+            Pin: first on its card at that meal. Hide: left out at that meal. Default: its food type decides.
+            {data.brand_dish ? " This is a chain dish, so it applies at every store of the chain." : ""}
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            {data.meals.map((m) => {
+              const cur = m.override?.action || "";
+              return (
+                <div key={m.meal} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ width: 82, fontSize: 13, fontWeight: 600, color: C.ink }}>{m.label}</div>
+                  <div style={{ width: 92, fontSize: 12, color: C.muted }}>{FIT_TEXT[m.fit] || m.fit}</div>
+                  <div style={{ display: "flex", gap: 4 }} role="group" aria-label={`${m.label} setting`}>
+                    {[["", "Default"], ["pin", "Pin"], ["hide", "Hide"]].map(([a, label]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        style={seg(cur === a)}
+                        aria-pressed={cur === a}
+                        disabled={busy === m.meal}
+                        onClick={() => choose(m, a)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 12, marginTop: 8 }}>
+            <a href="/owner/search/meal-time" style={{ color: C.accent || C.ink }}>All pins and hides</a>
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
 function Inspector({ id, onClose, onOpen, onChanged }) {
   // Mounted with key={id}, so each item starts fresh. `version` reloads it after a save or undo.
   const [state, setState] = useState({ loading: true });
@@ -634,6 +760,7 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
               rows={[
                 ["Name", it.item_name],
                 ["Section", it.section_name],
+                ["Course", d.course ? `${d.course.label}${d.course.from === "name" ? " (from the dish name)" : d.course.from ? " (from Section)" : ""}` : null],
                 ["Description", it.description],
                 ["Price", money(it.price)],
                 ["Type", ROW_KIND_TEXT[d.row_kind] || "Dish"],
@@ -646,6 +773,8 @@ function Inspector({ id, onClose, onOpen, onChanged }) {
               ]}
             />
           </Section>
+
+          <MealTimes itemId={id} version={version} />
 
           {d.chain_view ? (
             <Section title={`Chain: ${r?.chain_name || "chain"} · all stores`}>
