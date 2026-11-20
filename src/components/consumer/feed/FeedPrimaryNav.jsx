@@ -11,7 +11,7 @@
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuplyXMark from "../../MenuplyXMark.jsx";
-import { resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
+import { resolveFeedTabTarget, resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
 import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
 import AppIcon from "../../icons/AppIcon.jsx";
@@ -42,7 +42,8 @@ function TabControl({ tab, onShareQr }) {
       onShareQr?.();
       return;
     }
-    navigate(tab.to, { replace: Boolean(tab.resetSearch) });
+    // 2026-11-20: resolveFeedTabTarget sends the Clusters tab to /clusters outside California.
+    navigate(resolveFeedTabTarget(tab), { replace: Boolean(tab.resetSearch) });
   }
 
   return (

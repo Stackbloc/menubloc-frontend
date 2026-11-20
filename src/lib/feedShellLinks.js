@@ -3,6 +3,7 @@
  * Mobile bottom nav and desktop left rail read from the same config.
  */
 
+import { clustersTabTarget, resolveClusterMarketFromStoredLocation } from "./clusterLocation.js";
 import { MENU_BROWSER_PATH } from "./searchShopMode.js";
 
 export const FEED_DESKTOP_MIN_WIDTH = 900;
@@ -20,6 +21,14 @@ export const FEED_SHELL_PROFILE_LOGIN_PATH = `/account/login?next=${encodeURICom
 
 /** The Clusters tab opens the USC cluster page (Andre 2026-11-18). */
 export const FEED_CLUSTERS_TAB_PATH = "/clusters/california/los-angeles/usc";
+
+/** 2026-11-20: where a tab goes on tap. Only the Clusters tab depends on the diner's market. */
+export function resolveFeedTabTarget(tab) {
+  if (tab?.resolveTarget === "clusters") {
+    return clustersTabTarget(resolveClusterMarketFromStoredLocation(), tab.to);
+  }
+  return tab?.to;
+}
 
 export const FEED_HOME_TAB = {
   to: "/feed",
@@ -42,7 +51,16 @@ export const FEED_LEFT_TABS = [FEED_HOME_TAB];
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", icon: "deals", testId: "feed-nav-deals" },
   // Clusters (Andre 2026-11-18, as the app): Search's slot is the USC cluster, four-squares icon.
-  { to: FEED_CLUSTERS_TAB_PATH, end: false, label: "Clusters", icon: "cluster", testId: "feed-nav-clusters" },
+  // 2026-11-20: outside California the tab opens /clusters instead (resolveFeedTabTarget).
+  {
+    to: FEED_CLUSTERS_TAB_PATH,
+    end: false,
+    label: "Clusters",
+    icon: "cluster",
+    testId: "feed-nav-clusters",
+    resolveTarget: "clusters",
+    alsoActiveOn: ["/clusters"],
+  },
   { to: "/feed/profile", end: false, label: "Profile", icon: "profile", testId: "feed-nav-profile" },
 ];
 

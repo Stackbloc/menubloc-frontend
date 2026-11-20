@@ -15,7 +15,7 @@ import AppIcon from "../../icons/AppIcon.jsx";
 import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import { FeedMenuContent } from "./FeedMorePanel.jsx";
 import { useOrderCart } from "../../../context/OrderCartContext.jsx";
-import { FEED_DESKTOP_RAIL_WIDTH, resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
+import { FEED_DESKTOP_RAIL_WIDTH, resolveFeedTabTarget, resolveFeedTabs, visibleFeedTabs } from "../../../lib/feedShellLinks.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
 import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 
@@ -38,7 +38,8 @@ function RailTab({ tab, onShareQr }) {
       onShareQr?.();
       return;
     }
-    navigate(tab.to, { replace: Boolean(tab.resetSearch) });
+    // 2026-11-20: resolveFeedTabTarget sends the Clusters tab to /clusters outside California.
+    navigate(resolveFeedTabTarget(tab), { replace: Boolean(tab.resetSearch) });
   }
 
   return (

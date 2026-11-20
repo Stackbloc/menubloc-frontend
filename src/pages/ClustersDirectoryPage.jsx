@@ -9,7 +9,12 @@ import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../component
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS, clusterDirectoryPath, groupClustersByStateCity } from "../lib/clusterUrl.js";
 import { sortClustersForNav } from "../lib/clusterNavigation.js";
-import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
+import {
+  marketHasCluster,
+  resolveClusterAutoOpenPath,
+  resolveClusterMarketFromStoredLocation,
+} from "../lib/clusterLocation.js";
+import NoClustersNotice from "../components/cluster/NoClustersNotice.jsx";
 
 const DIRECTORY_PAGE_TITLE = "Menuply Clusters — Destination Dining Guides";
 const DIRECTORY_META_DESCRIPTION =
@@ -272,6 +277,11 @@ export default function ClustersDirectoryPage() {
               </Link>
             </p>
           </section>
+        ) : null}
+
+        {/* 2026-11-20: no Cluster in the diner's market → point them to Search. */}
+        {!loading && !error && storedMarket && !marketHasCluster(clusters, storedMarket) ? (
+          <NoClustersNotice city={storedMarket.city} state={storedMarket.state} />
         ) : null}
 
         {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}

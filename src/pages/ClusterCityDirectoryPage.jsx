@@ -16,6 +16,7 @@ import { fetchClusterCityPage, searchClusterCity, submitClusterContribution } fr
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { clusterLifecycleLabel, groupClustersForCitySections } from "../lib/clusterCityPresentation.js";
 import { clusterMatchesMarket, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
+import NoClustersNotice from "../components/cluster/NoClustersNotice.jsx";
 import { clusterDirectoryPath, stateDisplayName, CLUSTER_VIEW_PROMPTS } from "../lib/clusterUrl.js";
 
 const TYPE_ACCENTS = {
@@ -280,7 +281,8 @@ export default function ClusterCityDirectoryPage() {
           </section>
         ) : null}
 
-        {error ? <p style={{ color: "#b91c1c" }} role="alert">{error}</p> : null}
+        {/* 2026-11-20: "not found" is the no-Clusters case, covered by the notice below. */}
+        {error && !/not found/i.test(error) ? <p style={{ color: "#b91c1c" }} role="alert">{error}</p> : null}
 
         <section style={{ ...sectionShellStyle, marginBottom: "1rem" }}>
           <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem", color: "#0B0F0C" }}>Find a Cluster</h2>
@@ -361,15 +363,14 @@ export default function ClusterCityDirectoryPage() {
 
         {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
 
+        {/* 2026-11-20: city with no Clusters → "No Clusters in [City, ST] yet" + Search link. */}
         {!loading && !page ? (
-          <section style={sectionShellStyle}>
-            <p style={{ margin: 0, color: "#475569" }}>
-              Menuply does not have a Cluster City for this location yet.
-            </p>
-            <Link to={clusterDirectoryPath()} style={{ color: "#1d4ed8", marginTop: "0.75rem", display: "inline-block" }}>
+          <>
+            <NoClustersNotice city={cityLabel} state={stateSlug} />
+            <Link to={clusterDirectoryPath()} style={{ color: "#1d4ed8", display: "inline-block", marginBottom: "1rem" }}>
               View all clusters →
             </Link>
-          </section>
+          </>
         ) : null}
 
         {!loading && page && !searchActive ? (
@@ -397,10 +398,9 @@ export default function ClusterCityDirectoryPage() {
               ) : null}
             </ClusterCitySection>
 
+            {/* 2026-11-20: empty city → "No Clusters in [City, ST] yet" + Search link (was a dead end). */}
             {liveClusters.length === 0 && starterClusters.length === 0 ? (
-              <ClusterCitySection id="clusters" title={`Clusters in ${cityLabel}`}>
-                <p style={{ margin: 0, color: "#64748b" }}>No public clusters here yet.</p>
-              </ClusterCitySection>
+              <NoClustersNotice city={page?.city || cityLabel} state={page?.state || stateSlug} />
             ) : null}
 
             <section style={sectionShellStyle}>
