@@ -461,6 +461,12 @@ export const saveOwnerRestaurantEdit = (restaurantId, body) =>
 // Restaurant Management bulk edits (plan 42 step 4): preview → apply (one transaction) → undo.
 export const getOwnerRestaurantBulkOps = () => get("/api/owner/restaurants/operations/bulk");
 export const previewOwnerRestaurantBulk = (body) => post("/api/owner/restaurants/operations/bulk/preview", body);
+// 2026-11-20 (plan 68 step 2): Coverage counts for the grid's filters, and hand a gap to a bot.
+export const getOwnerRestaurantCoverage = (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+  return get(`/api/owner/restaurants/operations/coverage?${qs.toString()}`);
+};
+export const sendOwnerRestaurantCoverage = (body) => post("/api/owner/restaurants/operations/coverage/send", body);
 export const applyOwnerRestaurantBulk = (opId) =>
   post(`/api/owner/restaurants/operations/bulk/${encodeURIComponent(opId)}/apply`, {});
 export const undoOwnerRestaurantBulk = (opId) =>

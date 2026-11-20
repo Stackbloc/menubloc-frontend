@@ -8,7 +8,9 @@ const MAX_BULK = 300; // server cap per bulk edit (ownerRestaurantBulkService.MA
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerMimsFacets,
+  getOwnerRestaurantCoverage,
   getOwnerRestaurantMarkets,
+  sendOwnerRestaurantCoverage,
   getOwnerRestaurantOperations,
   getOwnerRestaurantOperationClusters,
 } from "../../lib/ownerApi.js";
@@ -29,6 +31,8 @@ const MISSING = [
   ["service", "Dine-in / pickup / delivery"],
   ["dishes", "Dishes (Today needs them)"],
   ["latlng", "Coordinates"],
+  ["address", "Street address"],
+  ["menu_with_dishes", "Published menu (has dishes)"],
   ["website", "Website"],
   ["menu", "Published menu"],
 ];
@@ -117,6 +121,11 @@ export default function OwnerRestaurantManagement() {
     return out;
   }, [params]);
   const filterKey = JSON.stringify(filterOnly);
+  // Coverage counts ignore the gap pickers themselves (Missing, Active): tapping a gap must not change the counts.
+  const coverageFilter = useMemo(() => {
+    const { missing: _m, active: _a, ...rest } = filterOnly;
+    return rest;
+  }, [filterOnly]);
   useEffect(() => {
     setPicked(new Set());
     setAllMatching(false);
@@ -242,6 +251,15 @@ export default function OwnerRestaurantManagement() {
         </div>
       </PageCard>
 
+      <CoverageCard
+        filter={coverageFilter}
+        reloadKey={reloadKey}
+        current={{ missing: filters.missing, active: filters.active }}
+        onShow={(gapFilter) =>
+          setFilters((f) => ({ ...f, missing: gapFilter.missing || "", active: gapFilter.active || "", page: 1 }))
+        }
+      />
+
       <PageCard style={{ padding: 18 }}>
         <SectionTitle
           title="Restaurants"
@@ -341,6 +359,118 @@ function Field({ label, children }) {
       {label}
       {children}
     </label>
+  );
+}
+
+/**
+ * 2026-11-20 (plan 68 step 2): Coverage. For the filters above (not the Missing/Active pickers), how many
+ * restaurants have each gap. Tap a count to list them below; a gap a bot can fix has a Send button
+ * (the bot's own run and review rules; at most send_max active restaurants per send).
+ */
+const BOT_LABEL = { hours: "Hours Bot", address: "Address Bot", menubot: "Menubot" };
+
+function CoverageCard({ filter, reloadKey, current, onShow }) {
+  const [cov, setCov] = useState(null);
+  const [err, setErr] = useState("");
+  const [sending, setSending] = useState("");
+  const [note, setNote] = useState(null);
+  const key = JSON.stringify(filter);
+  useEffect(() => {
+    let live = true;
+    setErr("");
+    getOwnerRestaurantCoverage(filter)
+      .then((r) => live && setCov(r))
+      .catch((e) => live && setErr(e?.message || "Could not load coverage"));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, reloadKey]);
+  useEffect(() => setNote(null), [key]);
+
+  const isOn = (g) => (g.filter.missing || "") === (current.missing || "") && (g.filter.active || "") === (current.active || "");
+  const send = async (g) => {
+    const max = cov?.send_max || 300;
+    const n = Math.min(g.count, max);
+    const what =
+      g.bot === "menubot"
+        ? "Menubot looks for menus in this cluster, 10 restaurants at a time. Menus wait for your review."
+        : `${BOT_LABEL[g.bot]} gets up to ${n.toLocaleString()} active restaurants with "${g.label.toLowerCase()}"${g.count > max ? ` (of ${g.count.toLocaleString()}; send again for more)` : ""}.`;
+    if (!window.confirm(`${what}\n\nStart it now?`)) return;
+    setSending(g.key);
+    setNote(null);
+    try {
+      const r = await sendOwnerRestaurantCoverage({ bot: g.bot, filter });
+      setNote(
+        r.ok
+          ? { ok: true, text: `${r.bot_label} started: ${Number(r.sent || 0).toLocaleString()} restaurant${r.sent === 1 ? "" : "s"}${r.capped ? ` (of ${Number(r.total).toLocaleString()})` : ""}. Follow it in Owner → Bots.` }
+          : { ok: false, text: r.reason === "already_running" ? `${r.bot_label || BOT_LABEL[g.bot]} is already running. Try again when it finishes.` : r.message || "Nothing was started." }
+      );
+    } catch (e) {
+      setNote({ ok: false, text: e?.message || "Could not start the bot" });
+    } finally {
+      setSending("");
+    }
+  };
+
+  return (
+    <PageCard style={{ padding: 18, marginBottom: 16 }}>
+      <SectionTitle
+        title="Coverage"
+        subtitle={
+          cov
+            ? `${Number(cov.total).toLocaleString()} restaurants match the filters above. Tap a number to list them.`
+            : err || "Counting…"
+        }
+      />
+      {cov ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 10 }}>
+          {cov.gaps.map((g) => {
+            const on = isOn(g);
+            const needsCluster = g.bot === "menubot" && !filter.cluster_id;
+            return (
+              <div
+                key={g.key}
+                style={{
+                  border: `1px solid ${on ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  background: on ? "rgba(0,0,0,0.02)" : "#fff",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => onShow(on ? {} : g.filter)}
+                  aria-pressed={on}
+                  style={{ ...linkBtnStyle, color: OWNER_COLORS.ink, textAlign: "left", display: "block", width: "100%" }}
+                  title={on ? "Show all again" : "List these restaurants below"}
+                >
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>{Number(g.count).toLocaleString()}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.muted }}>{g.label}</div>
+                </button>
+                {g.bot && g.count > 0 ? (
+                  needsCluster ? (
+                    <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 6 }}>Pick one cluster to send to Menubot</div>
+                  ) : (
+                    <button
+                      type="button"
+                      style={{ ...linkBtnStyle, fontSize: 12, marginTop: 6 }}
+                      disabled={Boolean(sending)}
+                      onClick={() => send(g)}
+                    >
+                      {sending === g.key ? "Starting…" : `Send to ${BOT_LABEL[g.bot]} ›`}
+                    </button>
+                  )
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      {note ? (
+        <div style={{ marginTop: 10, fontSize: 13, color: note.ok ? OWNER_COLORS.ink : "#9f3a22" }}>{note.text}</div>
+      ) : null}
+    </PageCard>
   );
 }
 
