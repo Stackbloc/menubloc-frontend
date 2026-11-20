@@ -7,6 +7,7 @@ import OwnerRestaurantBulkPanel, { OwnerRestaurantBulkHistory } from "./OwnerRes
 const MAX_BULK = 300; // server cap per bulk edit (ownerRestaurantBulkService.MAX_BULK)
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
+  getOwnerMimsFacets,
   getOwnerRestaurantMarkets,
   getOwnerRestaurantOperations,
   getOwnerRestaurantOperationClusters,
@@ -18,7 +19,8 @@ import {
  * diner's location. Paging, filtering and sorting all run on the server.
  */
 
-const DEFAULTS = { q: "", state: "", city: "", market: "", cluster_id: "", missing: "", active: "", claim_status: "", sort: "name", page: 1, page_size: 10 };
+// 2026-11-20 (plan 68 step 1): metro_id + chain_id use the same rules as Owner → Menu Items.
+const DEFAULTS = { q: "", metro_id: "", chain_id: "", state: "", city: "", market: "", cluster_id: "", missing: "", active: "", claim_status: "", sort: "name", page: 1, page_size: 10 };
 
 const MISSING = [
   ["", "Any"],
@@ -54,6 +56,8 @@ export default function OwnerRestaurantManagement() {
   const [error, setError] = useState("");
   const [markets, setMarkets] = useState([]);
   const [clusters, setClusters] = useState([]);
+  const [metros, setMetros] = useState([]);
+  const [chains, setChains] = useState([]);
   const [checking, setChecking] = useState(null);
   const [editing, setEditing] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -66,6 +70,17 @@ export default function OwnerRestaurantManagement() {
   useEffect(() => {
     getOwnerRestaurantMarkets().then((r) => setMarkets(Array.isArray(r?.markets) ? r.markets : [])).catch(() => setMarkets([]));
     getOwnerRestaurantOperationClusters().then((r) => setClusters(Array.isArray(r?.clusters) ? r.clusters : [])).catch(() => setClusters([]));
+    // Same Metro and Chain lists as Menu Items.
+    getOwnerMimsFacets()
+      .then((r) => {
+        const fx = r?.facets || r || {};
+        setMetros(Array.isArray(fx.metros) ? fx.metros : []);
+        setChains(Array.isArray(fx.chains) ? fx.chains : []);
+      })
+      .catch(() => {
+        setMetros([]);
+        setChains([]);
+      });
   }, []);
 
   // Search box: wait for typing to pause, then go back to page 1.
@@ -151,7 +166,24 @@ export default function OwnerRestaurantManagement() {
         />
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
           <Field label="Search">
-            <input style={{ ...inputStyle, width: 220 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, city or ID" />
+            <input style={{ ...inputStyle, width: 220 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, city or #ID" />
+          </Field>
+          <Field label="Metro">
+            <select style={inputStyle} value={filters.metro_id} onChange={set("metro_id")}>
+              <option value="">Any</option>
+              {metros.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}{m.state && !String(m.name || "").includes(m.state) ? `, ${m.state}` : ""}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Chain">
+            <select style={{ ...inputStyle, maxWidth: 180 }} value={filters.chain_id} onChange={set("chain_id")}>
+              <option value="">Any</option>
+              <option value="none">No chain</option>
+              {chains.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </Field>
           <Field label="State">
             <input style={{ ...inputStyle, width: 70 }} value={filters.state} onChange={set("state")} placeholder="CA" maxLength={2} />
@@ -326,7 +358,16 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit }) {
         </a>{" "}
         <span style={{ fontWeight: 600, color: OWNER_COLORS.ink, whiteSpace: "nowrap" }}>#{r.restaurant_id}</span>
         {r.chain_name ? <div style={muted}>{r.chain_name}</div> : null}
-        <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onEdit}>Edit</button>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onEdit}>Edit</button>
+          {/* 2026-11-20 (plan 68 step 1): the same restaurant in Menu Items and in Restaurant Manager. */}
+          <Link to={`/owner/menu-items?metro_id=all&restaurant_id=${encodeURIComponent(r.restaurant_id)}`} style={{ ...linkBtnStyle, fontSize: 12, textDecoration: "none" }}>
+            Dishes ›
+          </Link>
+          <Link to={`/owner/restaurant-manager?restaurant=${encodeURIComponent(r.restaurant_id)}&section=details`} style={{ ...linkBtnStyle, fontSize: 12, textDecoration: "none" }}>
+            Open ›
+          </Link>
+        </div>
       </td>
       <td style={tdStyle}>
         <div>{[r.city, r.state].filter(Boolean).join(", ") || "—"}</div>
