@@ -343,6 +343,7 @@ export default function OwnerRestaurantManagement() {
         <OwnerRestaurantPanel
           restaurant={viewing}
           onClose={() => setViewing(null)}
+          onChanged={() => setReloadKey((k) => k + 1)}
           onEdit={() => {
             setEditing(viewing);
             setViewing(null);

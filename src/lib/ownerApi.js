@@ -456,6 +456,9 @@ export const getOwnerRestaurantOperationClusters = () => get("/api/owner/restaur
 // 2026-11-20 (plan 68 step 3): restaurant panel, read only.
 export const getOwnerRestaurantPanel = (restaurantId) =>
   get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/panel`);
+// 2026-11-20 (plan 68 step 4, mig 0470): Undo one single edit from the change log.
+export const undoOwnerRestaurantChange = (restaurantId, changeId, body = {}) =>
+  post(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/changes/${encodeURIComponent(changeId)}/undo`, body);
 // Restaurant Management single edit (plan 42 step 3): existing writers, one transaction, audited.
 export const getOwnerRestaurantEdit = (restaurantId) =>
   get(`/api/owner/restaurants/operations/${encodeURIComponent(restaurantId)}/edit`);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { OWNER_COLORS } from "./OwnerLayout.jsx";
-import { getOwnerRestaurantPanel } from "../../lib/ownerApi.js";
+import { getOwnerRestaurantPanel, undoOwnerRestaurantChange } from "../../lib/ownerApi.js";
 
 /**
  * 2026-11-20 (plan 68 step 3): Owner → Restaurant Management → restaurant panel. READ ONLY.
@@ -36,14 +36,16 @@ function host(url) {
   }
 }
 
-export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit }) {
+export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit, onChanged }) {
   const id = restaurant.restaurant_id;
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [undoing, setUndoing] = useState(null);
+  const [undoNote, setUndoNote] = useState(null);
 
   useEffect(() => {
     let live = true;
-    setData(null);
     setError("");
     getOwnerRestaurantPanel(id)
       .then((r) => live && setData(r))
@@ -51,7 +53,43 @@ export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit }) {
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, reloadKey]);
+
+  // 2026-11-20 (plan 68 step 4): Undo one single edit. Same rules as Menu Items: only when every field still
+  // holds what that edit wrote; a claimed restaurant asks a second time, like Edit does.
+  const undo = async (c) => {
+    if (!window.confirm(`Undo this change (${describe(c)})?`)) return;
+    setUndoing(c.id);
+    setUndoNote(null);
+    const run = (body) => undoOwnerRestaurantChange(id, c.id, body);
+    try {
+      try {
+        await run({});
+      } catch (e) {
+        if (e?.payload?.code !== "claimed_confirm") throw e;
+        if (!window.confirm("This restaurant is claimed: its owner manages it. Undo anyway?")) return;
+        await run({ confirm_claimed: true });
+      }
+      setUndoNote({ ok: true, text: "Undone." });
+      setReloadKey((k) => k + 1);
+      onChanged?.();
+    } catch (e) {
+      const code = e?.payload?.code;
+      const fields = (e?.payload?.fields || []).map((f) => FIELD[f] || f).join(", ");
+      setUndoNote({
+        ok: false,
+        text:
+          code === "undo_conflict"
+            ? `Can't undo: ${fields || "these fields"} changed again after that edit. Edit them by hand instead.`
+            : code === "already_undone"
+              ? "That change was already undone."
+              : e?.message || "Could not undo",
+      });
+      setReloadKey((k) => k + 1);
+    } finally {
+      setUndoing(null);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -237,15 +275,36 @@ export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit }) {
               {data.changes.length ? (
                 data.changes.map((c) => (
                   <Line key={`${c.kind}:${c.id}`} label={date(c.at)}>
-                    {c.kind === "bulk" ? `Bulk edit #${c.id}${c.undone_at ? " (undone)" : ""}` : ACTION[c.action] || c.action.replace(/^restaurant_management\./, "").replace(/_/g, " ")}
-                    {c.fields.length ? `: ${c.fields.map((f) => FIELD[f] || f.replace(/_/g, " ")).join(", ")}` : ""}
-                    {c.by ? <span style={muted}> · {c.by}</span> : null}
+                    {c.kind === "change" ? (
+                      <>
+                        {c.undo_of ? `Undo of change #${c.undo_of}` : "Edit"}: {describe(c)}
+                        {c.undone_at ? <span style={muted}> · undone</span> : null}
+                        {c.by ? <span style={muted}> · {c.by}</span> : null}
+                        {c.can_undo ? (
+                          <>
+                            {" "}
+                            <button type="button" style={{ ...linkBtn, fontSize: 12 }} disabled={undoing != null} onClick={() => undo(c)}>
+                              {undoing === c.id ? "Undoing…" : "Undo"}
+                            </button>
+                          </>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        {c.kind === "bulk" ? `Bulk edit #${c.id}${c.undone_at ? " (undone)" : ""}` : ACTION[c.action] || c.action.replace(/^restaurant_management\./, "").replace(/_/g, " ")}
+                        {c.fields.length ? `: ${c.fields.map((f) => FIELD[f] || f.replace(/_/g, " ")).join(", ")}` : ""}
+                        {c.by ? <span style={muted}> · {c.by}</span> : null}
+                      </>
+                    )}
                   </Line>
                 ))
               ) : (
                 <div style={{ ...muted, fontSize: 13 }}>No changes made in Restaurant Management yet</div>
               )}
-              <div style={{ ...muted, marginTop: 6 }}>Single edits can't be undone here yet; bulk edits can, from Recent bulk edits.</div>
+              {undoNote ? <div style={{ marginTop: 6, fontSize: 13, color: undoNote.ok ? OWNER_COLORS.ink : "#9f3a22" }}>{undoNote.text}</div> : null}
+              <div style={{ ...muted, marginTop: 6 }}>
+                Undo puts an edit back only if nothing has changed those fields since. Bulk edits are undone from Recent bulk edits.
+              </div>
             </Section>
           </>
         )}
@@ -253,6 +312,25 @@ export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit }) {
     </div>,
     document.body
   );
+}
+
+/** "Cuisine Tacos → Mexican, Pickup on → off, Hours" for one change-log row. */
+function show(v) {
+  if (v === true) return "on";
+  if (v === false) return "off";
+  if (v == null || v === "") return "none";
+  if (Array.isArray(v)) return v.join(", ") || "none";
+  return String(v);
+}
+function describe(c) {
+  return (c.fields || [])
+    .map((f) => {
+      const label = FIELD[f] || f.replace(/_/g, " ");
+      const v = c.changes?.[f];
+      if (!v || f === "hours") return label;
+      return `${label} ${show(v.before)} → ${show(v.after)}`;
+    })
+    .join(", ");
 }
 
 function Section({ title, children }) {
