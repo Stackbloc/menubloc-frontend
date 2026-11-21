@@ -41,7 +41,7 @@ function TabButton({ active, label, onClick }) {
 }
 
 /**
- * Restaurant Manager (2026-10-20, Andre: "Search, Add Restaurant, Profile Manager, and Menu
+ * Profiles & Menus (renamed from Restaurant Manager 2026-11-20, plan 70). Built 2026-10-20 ( Andre: "Search, Add Restaurant, Profile Manager, and Menu
  * Manager should be a cohesive workflow. Every restaurant addition starts with search.").
  * One page: search → pick a restaurant (Details · Public profile · Menus) or, when search
  * finds nothing, Add Restaurant. Needs review is the held-OCR inbox. No separate left-nav
@@ -76,7 +76,7 @@ export default function OwnerMenuUploads() {
 
   return (
     <OwnerLayout
-      title="Restaurant Manager"
+      title="Profiles & Menus"
       subtitle="Search first. Found → Details, Public profile, Menus. Not found → Add Restaurant. Upload a PDF or photos under Menus."
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>

@@ -177,8 +177,9 @@ export default function OwnerRestaurantManagement() {
   const to = Math.min(total, page * pageSize);
   const anyFilter = Object.keys(DEFAULTS).some((k) => !["sort", "page", "page_size"].includes(k) && filters[k] !== DEFAULTS[k]);
 
+  // 2026-11-20 (plan 70): titled "Restaurants" in the Restaurant Manager section.
   return (
-    <OwnerLayout title="Restaurant Management">
+    <OwnerLayout title="Restaurants">
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <SectionTitle
           title="Find restaurants"
@@ -528,12 +529,12 @@ function Row({ r, picked, pickDisabled, onPick, onCheck, onEdit, onView }) {
         {r.chain_name ? <div style={muted}>{r.chain_name}</div> : null}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button type="button" style={{ ...linkBtnStyle, fontSize: 12 }} onClick={onEdit}>Edit</button>
-          {/* 2026-11-20 (plan 68 step 1): the same restaurant in Menu Items and in Restaurant Manager. */}
+          {/* 2026-11-20 (plan 68 step 1): the same restaurant in Menu Items and in Profiles & Menus (plan 70 label). */}
           <Link to={`/owner/menu-items?metro_id=all&restaurant_id=${encodeURIComponent(r.restaurant_id)}`} style={{ ...linkBtnStyle, fontSize: 12, textDecoration: "none" }}>
             Dishes ›
           </Link>
           <Link to={`/owner/restaurant-manager?restaurant=${encodeURIComponent(r.restaurant_id)}&section=details`} style={{ ...linkBtnStyle, fontSize: 12, textDecoration: "none" }}>
-            Open ›
+            Profile & menus ›
           </Link>
         </div>
       </td>

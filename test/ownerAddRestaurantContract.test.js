@@ -18,7 +18,11 @@ describe("owner Add Restaurant restore", () => {
   it("Restaurant Manager nav is one search-first entry (2026-10-20: no separate Add / Profile / Menu Manager)", () => {
     const layout = read("src/pages/owner/OwnerLayout.jsx");
     const section = layout.match(/id:\s*"restaurant-manager"[\s\S]*?id:\s*"bots"/)?.[0] || "";
-    assert.match(section, /to:\s*"\/owner\/restaurant-manager", label:\s*"Restaurants"/);
+    // 2026-11-20 (plan 70): the hub is "Profiles & Menus"; "Restaurants" is the plan 68 grid.
+    assert.match(section, /to:\s*"\/owner\/restaurant-manager", label:\s*"Profiles & Menus"/);
+    assert.match(section, /to:\s*"\/owner\/restaurant-management", label:\s*"Restaurants"/);
+    assert.match(section, /to:\s*"\/owner\/menu-items", label:\s*"Menu Items"/);
+    assert.doesNotMatch(layout.match(/id:\s*"growth"[\s\S]*?id:\s*"support"/)?.[0] || "", /restaurant-management/);
     assert.doesNotMatch(section, /label:\s*"Add Restaurant"/);
     assert.doesNotMatch(section, /label:\s*"Profile Manager"/);
     assert.doesNotMatch(section, /label:\s*"Menu Manager"/);
@@ -31,7 +35,7 @@ describe("owner Add Restaurant restore", () => {
   it("Restaurant Manager shell: Restaurants + Needs review tabs, no Add Restaurant CTA of its own", () => {
     const shell = read("src/pages/owner/OwnerMenuUploads.jsx");
     assert.doesNotMatch(shell, /data-testid="owner-add-restaurant"/);
-    assert.match(shell, /title="Restaurant Manager"/);
+    assert.match(shell, /title="Profiles & Menus"/);
     assert.match(shell, /label="Restaurants"/);
     assert.match(shell, /label="Needs review"/);
     assert.match(shell, /workspaceKey/);

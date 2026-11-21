@@ -119,7 +119,7 @@ export default function OwnerDeals() {
                     to={`/owner/restaurant-manager?restaurant=${rid}&section=details`}
                     style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
                   >
-                    Open in Restaurant Manager →
+                    Open in Profiles & Menus →
                   </Link>
                 ) : null
               }

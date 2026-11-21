@@ -87,7 +87,6 @@ const NAV_SECTIONS_STATIC = [
     label: "Growth",
     items: [
       { to: "/owner/restaurants", label: "Restaurant Intelligence" },
-      { to: "/owner/restaurant-management", label: "Restaurant Management" },
       { to: "/owner/search/meal-time", label: "Right now meals" },
       { to: "/owner/revenue", label: "Revenue" },
       { to: "/owner/subscription-designer", label: "Subscription Designer" },
@@ -134,13 +133,16 @@ export default function OwnerLayout({ title, children, actions = null }) {
       {
         id: "restaurant-manager",
         label: "Restaurant Manager",
-        // One search-first workspace (search → Details · Public profile · Menus · Deals, or Add);
-        // Deals also has its own page for jumping straight to a restaurant's deals.
+        // 2026-11-20 (plan 70, Andre): one Restaurant Manager section.
+        // Restaurants = plan 68 grid (primary, moved out of Growth); Profiles & Menus = the
+        // 2026-10-20 search-first hub (Details · Public profile · Menus · Deals …), renamed;
+        // Menu Items = MIMS. Deals also has its own page for jumping straight to a restaurant's deals.
         items: [
-          { to: "/owner/restaurant-manager", label: "Restaurants" },
-          { to: "/owner/deals", label: "Deals" },
-          // MIMS v1 (plan 65, 2026-11-19): system-wide menu item catalog, read-only.
+          { to: "/owner/restaurant-management", label: "Restaurants" },
+          { to: "/owner/restaurant-manager", label: "Profiles & Menus" },
+          // MIMS v1 (plan 65, 2026-11-19): system-wide menu item catalog.
           { to: "/owner/menu-items", label: "Menu Items" },
+          { to: "/owner/deals", label: "Deals" },
         ],
       },
       {

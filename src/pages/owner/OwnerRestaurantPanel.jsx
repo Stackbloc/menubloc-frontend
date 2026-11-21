@@ -117,7 +117,7 @@ export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit, onCh
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
           <button type="button" style={linkBtn} onClick={onEdit}>Edit</button>
           <Link to={`/owner/menu-items?metro_id=all&restaurant_id=${encodeURIComponent(id)}`} style={linkA}>Dishes ›</Link>
-          <Link to={`/owner/restaurant-manager?restaurant=${encodeURIComponent(id)}&section=details`} style={linkA}>Open in Restaurant Manager ›</Link>
+          <Link to={`/owner/restaurant-manager?restaurant=${encodeURIComponent(id)}&section=details`} style={linkA}>Profile & menus ›</Link>
           {r.public_url ? <a href={r.public_url} target="_blank" rel="noreferrer" style={linkA}>Public page ↗</a> : null}
         </div>
 
@@ -299,7 +299,7 @@ export default function OwnerRestaurantPanel({ restaurant, onClose, onEdit, onCh
                   </Line>
                 ))
               ) : (
-                <div style={{ ...muted, fontSize: 13 }}>No changes made in Restaurant Management yet</div>
+                <div style={{ ...muted, fontSize: 13 }}>No changes made in Restaurants yet</div>
               )}
               {undoNote ? <div style={{ marginTop: 6, fontSize: 13, color: undoNote.ok ? OWNER_COLORS.ink : "#9f3a22" }}>{undoNote.text}</div> : null}
               <div style={{ ...muted, marginTop: 6 }}>
