@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { API_BASE, apiPost, apiPostForm } from "../lib/api.js";
@@ -225,6 +225,8 @@ export default function MenuCapturePage() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated, loading: authLoading, consumer } = useConsumer();
   const menuInputRef = useRef(null);
+  const location = useLocation();
+  const signInRedirected = useRef(false);
   const lockedRestaurantId = Number(searchParams.get("restaurant_id") || "");
   const restaurantLocked = Number.isFinite(lockedRestaurantId) && lockedRestaurantId > 0;
 
@@ -461,12 +463,18 @@ export default function MenuCapturePage() {
     };
   }, [phase, captureSessionId]);
 
+  // 2026-11-22: signed out → sign in, then back here. Once, and from this page's own address (the
+  // router's location, not window.location): opened from inside the site the effect could run again
+  // after the address had already changed to /account/login and wrap next twice
+  // (/account/login?next=/account/login?next=/menu-capture).
   useEffect(() => {
     if (authLoading) return;
     if (isAuthenticated) return;
-    const next = `${window.location.pathname}${window.location.search}`;
+    if (signInRedirected.current) return;
+    signInRedirected.current = true;
+    const next = `${location.pathname}${location.search}`;
     navigate(buildAddMenuLoginPath(next), { replace: true, state: { redirectTo: next } });
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     if (consumer?.email && !email) setEmail(String(consumer.email));
