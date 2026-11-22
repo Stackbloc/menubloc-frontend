@@ -19,6 +19,8 @@ vi.mock("../../../../hooks/useHomeBrowseFeed.js", () => ({
 vi.mock("../../../../hooks/useMarketClusters.js", () => ({ useMarketClusters: () => ({ market: null, clusters: [] }) }));
 vi.mock("../../../homeNext/HomeNextLocationSelector.jsx", () => ({ default: () => null }));
 vi.mock("../../../../services/posthog.js", () => ({ captureEvent: () => {} }));
+// 2026-11-22: the camera (Add a menu) reads sign-in state.
+vi.mock("../../../../context/ConsumerContext.jsx", () => ({ useConsumer: () => ({ isAuthenticated: false }) }));
 
 import AppSearchHome from "../AppSearchHome.jsx";
 

@@ -13,7 +13,7 @@
  * sits where Share used to sit and the circles above it move up.
  */
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppIcon from "../../icons/AppIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
@@ -23,6 +23,35 @@ import useRestaurantFollow from "../../../hooks/useRestaurantFollow.js";
 import useMenuItemLike from "../../../hooks/useMenuItemLike.js";
 import useWishListEntry from "../../../hooks/useWishListEntry.js";
 import { WISH_LIST_ADD, WISH_LIST_ADDED } from "../../WishListMenuItemButton.jsx";
+
+/**
+ * 2026-11-22 (Andre: "Fav and mute are stacked onto one another"): on short screens (iPhone Safari
+ * with its toolbars) the 7-circle rail reached the speaker button at the top right, so Fav sat on
+ * it and +Wish List went off the top. The rail keeps its place at the bottom; when it would come
+ * closer than this to the top, it shrinks evenly from its bottom edge until it fits under the speaker.
+ */
+const RAIL_MIN_TOP = 64;
+const RAIL_MIN_SCALE = 0.6;
+
+/** Top edge (px from the rail's positioned parent) the rail must stay under: the speaker's bottom + 10. */
+function railTopLimit(rail) {
+  const parent = rail.offsetParent;
+  if (!parent) return RAIL_MIN_TOP;
+  let limit = RAIL_MIN_TOP;
+  const speaker = parent.querySelector('[data-testid$="sound-toggle"]');
+  if (speaker && speaker.offsetParent === parent && speaker.offsetHeight > 0) {
+    limit = Math.max(limit, speaker.offsetTop + speaker.offsetHeight + 10);
+  }
+  return limit;
+}
+
+/** Scale (≤ 1) that keeps the bottom-anchored rail under the speaker. transform doesn't change offset*. */
+export function fitRailScale({ railBottomEdge, railHeight, topLimit }) {
+  if (!(railHeight > 0)) return 1;
+  const room = railBottomEdge - topLimit;
+  if (room >= railHeight) return 1;
+  return Math.max(RAIL_MIN_SCALE, Math.round((room / railHeight) * 1000) / 1000);
+}
 
 /**
  * Rail icon + short label. `hint` is the full explanation ("Add this item to your Wish List")
@@ -198,6 +227,33 @@ export default function FeedVideoActionRail({
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const navigate = useNavigate();
+  const railRef = useRef(null);
+  const [railScale, setRailScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return undefined;
+    const measure = () => {
+      const next = fitRailScale({
+        railBottomEdge: rail.offsetTop + rail.offsetHeight,
+        railHeight: rail.offsetHeight,
+        topLimit: railTopLimit(rail),
+      });
+      setRailScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : next));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    let ro = null;
+    if (typeof ResizeObserver === "function") {
+      ro = new ResizeObserver(measure);
+      ro.observe(rail);
+      if (rail.offsetParent) ro.observe(rail.offsetParent);
+    }
+    return () => {
+      window.removeEventListener("resize", measure);
+      ro?.disconnect();
+    };
+  });
 
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
@@ -234,7 +290,9 @@ export default function FeedVideoActionRail({
     <>
       <style>{MENU_PULSE_CSS}</style>
       <div
+        ref={railRef}
         data-testid="feed-video-action-rail"
+        data-rail-scale={railScale}
         style={{
           ...styles.rail,
           // 2026-11-22: with Wall + Clusters the rail has 7 circles; it stays anchored where it was (the
@@ -244,6 +302,8 @@ export default function FeedVideoActionRail({
           // Raised so the rail sits well clear of the Report flag under it (Andre 2026-11-04): 124 px
           // on tall phones, less on short ones (iPhone SE) so +Wish List stays under the ☰ button.
           bottom: `calc(${inset}px + max(clamp(92px, 15vh, 124px), env(safe-area-inset-bottom) + 72px))`,
+          // 2026-11-22: shrink from the bottom edge only when the rail would reach the speaker.
+          ...(railScale < 1 ? { transform: `scale(${railScale})`, transformOrigin: "bottom center" } : null),
         }}
       >
         {topSlot}

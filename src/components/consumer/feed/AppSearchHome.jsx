@@ -23,6 +23,13 @@ import {
 } from "../../../lib/appSearchHome.js";
 import HomeNextLocationSelector from "../../homeNext/HomeNextLocationSelector.jsx";
 import AppIcon from "../../icons/AppIcon.jsx";
+import AddMenuIcon from "../../icons/AddMenuIcon.jsx";
+import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { buildAddMenuLoginPath } from "../../../lib/addMenuContribution.js";
+
+/** 2026-11-22: the search field's camera = Add a menu (photograph a restaurant's menu). */
+export const SEARCH_MENU_CAMERA_PATH = "/menu-capture";
+export const SEARCH_MENU_CAMERA_HINT = "Add a menu: photograph a restaurant's menu to add it to Menuply";
 
 const INK = "#111613";
 const INK_MUTED = "#5c665f";
@@ -96,7 +103,8 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
   const navigate = useNavigate();
   const isFeedDesktop = useFeedShellDesktop();
   const [text, setTextState] = useState(() => String(initialQuery || ""));
-  const [photoNote, setPhotoNote] = useState(false);
+  const [cameraHint, setCameraHint] = useState(false);
+  const { isAuthenticated } = useConsumer();
   const inputRef = useRef(null);
   const setText = (v) => {
     setTextState(v);
@@ -206,18 +214,43 @@ export default function AppSearchHome({ modeToggleSlot = null, initialQuery = ""
               ×
             </button>
           ) : null}
-          <button
-            type="button"
-            aria-label="Search with a photo"
-            onClick={() => setPhotoNote(true)}
-            style={styles.camera}
-            data-testid="search-camera"
+          {/* 2026-11-22 (Andre): the camera opens Add a menu (photograph a menu, /menu-capture) with
+              the camera + menu card icon restaurants with no menu items use; hover explains it. */}
+          <span
+            style={styles.cameraWrap}
+            onMouseEnter={() => setCameraHint(true)}
+            onMouseLeave={() => setCameraHint(false)}
           >
-            <AppIcon name="camera" size={22} color={INK} />
-          </button>
+            <button
+              type="button"
+              aria-label={SEARCH_MENU_CAMERA_HINT}
+              title={SEARCH_MENU_CAMERA_HINT}
+              onClick={() => {
+                captureEvent("search_menu_camera_opened", { surface: "feed_search" });
+                // Signed out: straight to sign in, then back to Add a menu (as AddMenuAction does).
+                if (!isAuthenticated) {
+                  navigate(buildAddMenuLoginPath(SEARCH_MENU_CAMERA_PATH), {
+                    state: { redirectTo: SEARCH_MENU_CAMERA_PATH },
+                  });
+                  return;
+                }
+                navigate(SEARCH_MENU_CAMERA_PATH);
+              }}
+              onFocus={() => setCameraHint(true)}
+              onBlur={() => setCameraHint(false)}
+              style={styles.camera}
+              data-testid="search-camera"
+            >
+              <AddMenuIcon size={24} color={INK} />
+            </button>
+            {cameraHint ? (
+              <span role="tooltip" style={styles.cameraHint} data-testid="search-camera-hint">
+                {SEARCH_MENU_CAMERA_HINT}
+              </span>
+            ) : null}
+          </span>
         </div>
       </form>
-      {photoNote ? <p style={styles.photoNote}>Photo search is coming soon.</p> : null}
 
       <section style={styles.section}>
         <h2 style={styles.sectionLabel}>HEALTH GOALS</h2>
@@ -387,7 +420,25 @@ const styles = {
     cursor: "pointer",
     flexShrink: 0,
   },
-  photoNote: { margin: 0, fontSize: 13, color: INK_MUTED },
+  cameraWrap: { position: "relative", display: "inline-flex", flexShrink: 0 },
+  /** Opens above the camera, right-aligned with it, so it never runs off the right edge. */
+  cameraHint: {
+    position: "absolute",
+    right: 0,
+    bottom: "calc(100% + 10px)",
+    width: "max-content",
+    maxWidth: 240,
+    padding: "6px 10px",
+    borderRadius: 8,
+    background: "#1D1D1F",
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: 600,
+    lineHeight: 1.35,
+    pointerEvents: "none",
+    zIndex: 20,
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.14)",
+  },
   section: { display: "flex", flexDirection: "column", gap: 10, marginTop: 10 },
   sectionLabel: { margin: 0, fontSize: 12, lineHeight: "16px", letterSpacing: 0.7, fontWeight: 700, color: INK_MUTED },
   chips: { display: "flex", gap: 8, overflowX: "auto", margin: "0 -16px", padding: "0 16px" },
