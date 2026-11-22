@@ -658,12 +658,11 @@ function clusterSortPriceCents(item) {
   return deal?.dealCents != null ? deal.dealCents : getConsumerDisplayPrice(item);
 }
 
-/** Dishes · Social · Events on a cluster search (2026-11-19), same as the Search page's radios. */
-function ClusterSearchViewRadios({ dishCount, socialCount, eventsCount, view, onChange }) {
+/** Dishes · Social on a cluster search, same as the Search page's radios (2026-11-19; events under Social 2026-11-22). */
+function ClusterSearchViewRadios({ dishCount, socialCount, view, onChange }) {
   const options = [
     ["dishes", `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`],
     ...(socialCount ? [["social", `Social · ${socialCount}`]] : []),
-    ...(eventsCount ? [["events", `Events · ${eventsCount}`]] : []),
   ];
   return (
     <div role="radiogroup" aria-label="Search result view" data-testid="cluster-view-toggle" style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", flexBasis: "100%" }}>
@@ -1227,23 +1226,23 @@ function ClusterMenuExplorerTab({
     Boolean(selectedCategory) && !searchActive && (chipsOn ? dishListPending : status === "loading");
   // Nutrition chips + the open type's back/title/price sort (or the search result count/sort) pin
   // under the sticky search while the dish list scrolls, and let go where Food by type ends.
-  const searchSocialCount = searchActive ? searchSocialGroups.people.length : 0;
-  const searchEventsCount = searchActive ? searchSocialGroups.plans.length + searchSocialGroups.events.length : 0;
+  // People, then plans and events, under one Social radio (Andre 2026-11-22: "lose the event radio").
+  const searchSocialCount = searchActive
+    ? searchSocialGroups.people.length + searchSocialGroups.plans.length + searchSocialGroups.events.length
+    : 0;
   const showSearchSocial = searchView === "social" && searchSocialCount > 0;
-  const showSearchEvents = searchView === "events" && searchEventsCount > 0;
   const searchViewRadios =
-    searchActive && searchStatus === "ok" && (searchSocialCount || searchEventsCount) ? (
+    searchActive && searchStatus === "ok" && searchSocialCount ? (
       <ClusterSearchViewRadios
         dishCount={displaySearchItems.length}
         socialCount={searchSocialCount}
-        eventsCount={searchEventsCount}
-        view={showSearchSocial ? "social" : showSearchEvents ? "events" : "dishes"}
+        view={showSearchSocial ? "social" : "dishes"}
         onChange={setSearchView}
       />
     ) : null;
   let foodStickyRow = null;
   if (searchActive) {
-    if (searchViewRadios && (showSearchSocial || showSearchEvents)) {
+    if (searchViewRadios && showSearchSocial) {
       foodStickyRow = searchViewRadios;
     } else if (searchStatus === "ok" && searchMenuItems.length > 0) {
       foodStickyRow = (
@@ -1301,9 +1300,6 @@ function ClusterMenuExplorerTab({
       {searchActive && showSearchSocial ? (
         <div style={{ display: "grid", gap: "0.75rem" }} data-testid="cluster-social-view">
           <SearchPeopleSection people={searchSocialGroups.people} />
-        </div>
-      ) : searchActive && showSearchEvents ? (
-        <div style={{ display: "grid", gap: "0.75rem" }} data-testid="cluster-events-view">
           <SearchPlansSection plans={searchSocialGroups.plans} />
           <SearchEventsSection events={searchSocialGroups.events} />
         </div>
