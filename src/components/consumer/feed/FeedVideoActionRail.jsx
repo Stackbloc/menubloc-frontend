@@ -8,9 +8,13 @@
  * Hide (do not gray-out) actions that do not apply.
  * Icons are the app's own drawings (AppIcon = MenuplyIcon), 22 px in an outlined circle, white
  * when on (filled), the same as the app's feed rail (Andre 2026-11-15).
+ * 2026-11-22 (app dd4b302 + d36bd97, Andre 2026-11-21): Wall (red brick wall) and Clusters circles
+ * under Share, only where the diner's city has them. The rail stays where it was, so the last circle
+ * sits where Share used to sit and the circles above it move up.
  */
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppIcon from "../../icons/AppIcon.jsx";
 import ShareModal from "../../share/ShareModal.jsx";
 import { trackShareEvent } from "../../share/shareUtils.js";
@@ -48,7 +52,7 @@ function RailButton({ testId, label, hint, disabled, onClick, children, pressed,
         ...(disabled ? styles.btnDisabled : null),
       }}
     >
-      <span className={circleClassName} style={{ ...styles.iconCircle, ...circleStyle }}>{children}</span>
+      <span className={circleClassName} style={{ ...styles.iconCircle, ...circleStyle, width: "var(--mp-rail-circle, 48px)", height: "var(--mp-rail-circle, 48px)" }}>{children}</span>
       <span style={styles.label}>{label}</span>
       {hovered ? (
         <span role="tooltip" data-testid={`${testId}-hint`} style={styles.hint}>
@@ -70,6 +74,26 @@ function ConnectGlyph({ size = 22 }) {
         strokeLinecap="round"
       />
       <path d="M18 7v4M16 9h4" stroke="#5eead4" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * 2026-11-22: red brick wall, the app's RedBrickWall (menuply-mobile icons/RedBrickWall.tsx, Andre
+ * 2026-11-21): brick red #B4442F, staggered rows.
+ */
+const BRICK_ROWS = [
+  [[2, 9], [13, 9]],
+  [[2, 4], [8, 8], [18, 4]],
+  [[2, 9], [13, 9]],
+  [[2, 4], [8, 8], [18, 4]],
+];
+export function RedBrickWallGlyph({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" data-testid="feed-rail-wall-bricks">
+      {BRICK_ROWS.map((row, r) =>
+        row.map(([x, w]) => <rect key={`${r}-${x}`} x={x} y={3 + r * 4.75} width={w} height={3.75} rx={0.6} fill="#B4442F" />)
+      )}
     </svg>
   );
 }
@@ -146,6 +170,8 @@ function RestaurantFavButton({ restaurantId, restaurantName, followSource }) {
  * @param {string} [props.followSource]
  * @param {number|null} [props.commentCount] Feed comments (mig 0423): a number = comments are on → Comment button
  * @param {() => void} [props.onComments] opens the comments sheet
+ * @param {string|null} [props.wallHref] 2026-11-22: Wall circle under Share (hidden without it)
+ * @param {string|null} [props.clustersHref] 2026-11-22: Clusters circle under Wall (hidden without it)
  */
 export default function FeedVideoActionRail({
   bottomInset = 0,
@@ -165,10 +191,13 @@ export default function FeedVideoActionRail({
   followSource = "feed_video_rail",
   commentCount = null,
   onComments,
+  wallHref = null,
+  clustersHref = null,
   /** Optional control above the buttons (Feed play/pause circle) — thumb-reachable. */
   topSlot = null,
 }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const navigate = useNavigate();
 
   const restaurantId = restaurantRef?.restaurant_id;
   const restaurantName = String(restaurantRef?.restaurant_name || "").trim();
@@ -188,7 +217,10 @@ export default function FeedVideoActionRail({
   const showLike = hasRestaurant;
   const showShare = Boolean(shareData);
   const showComments = typeof commentCount === "number" && typeof onComments === "function";
-  const anyVisible = showConnect || showWannaGo || showInvite || showLike || showComments || showShare || showMenu;
+  const showWall = Boolean(wallHref);
+  const showClusters = Boolean(clustersHref);
+  const anyVisible =
+    showConnect || showWannaGo || showInvite || showLike || showComments || showShare || showWall || showClusters || showMenu;
   if (!anyVisible) return null;
 
   function setShare(open) {
@@ -205,6 +237,10 @@ export default function FeedVideoActionRail({
         data-testid="feed-video-action-rail"
         style={{
           ...styles.rail,
+          // 2026-11-22: with Wall + Clusters the rail has 7 circles; it stays anchored where it was (the
+          // last circle sits where Share sat), so circles and gaps shrink with the screen height to keep
+          // +Wish List clear of the speaker button at the top right (375×812: 41 px; iPhone SE: 33 px).
+          ...(showWall || showClusters ? styles.railCompact : null),
           // Raised so the rail sits well clear of the Report flag under it (Andre 2026-11-04): 124 px
           // on tall phones, less on short ones (iPhone SE) so +Wish List stays under the ☰ button.
           bottom: `calc(${inset}px + max(clamp(92px, 15vh, 124px), env(safe-area-inset-bottom) + 72px))`,
@@ -281,6 +317,19 @@ export default function FeedVideoActionRail({
           </RailButton>
         ) : null}
 
+        {/* 2026-11-22 (app dd4b302): Wall + Clusters under Share, only where the city has them. */}
+        {showWall ? (
+          <RailButton testId="feed-rail-wall" label="Wall" hint="Open the Wall" onClick={() => navigate(wallHref)}>
+            <RedBrickWallGlyph size={24} />
+          </RailButton>
+        ) : null}
+
+        {showClusters ? (
+          <RailButton testId="feed-rail-clusters" label="Clusters" hint="Open Clusters" onClick={() => navigate(clustersHref)}>
+            <AppIcon name="cluster" size={22} color="#fff" />
+          </RailButton>
+        ) : null}
+
         {showMenu ? (
           <RailButton
             testId="feed-rail-menu"
@@ -331,12 +380,19 @@ const styles = {
     gap: "min(14px, 1.6vh)",
     pointerEvents: "auto",
   },
+  /** 2026-11-22: 7-circle rail (Wall + Clusters). Sets the circle size used by RailButton. */
+  railCompact: {
+    gap: "min(8px, 0.8vh)",
+    "--mp-rail-circle": "clamp(32px, 5vh, 48px)",
+    "--mp-rail-label-gap": "2px",
+    "--mp-rail-label-lh": 1,
+  },
   btn: {
     position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 4,
+    gap: "var(--mp-rail-label-gap, 4px)",
     border: "none",
     background: "transparent",
     padding: 0,
@@ -363,7 +419,7 @@ const styles = {
   label: {
     fontSize: 12,
     fontWeight: 600,
-    lineHeight: 1.15,
+    lineHeight: "var(--mp-rail-label-lh, 1.15)",
     textShadow: "0 1px 3px rgba(0,0,0,0.6)",
     maxWidth: 64,
     textAlign: "center",

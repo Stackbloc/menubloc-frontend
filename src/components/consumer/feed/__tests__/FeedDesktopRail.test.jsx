@@ -21,7 +21,8 @@ describe("FeedDesktopRail", () => {
       </MemoryRouter>
     );
     const tabs = [...screen.getByRole("navigation", { name: "Primary" }).querySelectorAll("button")].map((b) => b.textContent);
-    expect(tabs).toEqual(["Home", "Post", "Deals", "Clusters", "Profile"]);
+    // 2026-11-22: Search back where Clusters was (app dd4b302).
+    expect(tabs).toEqual(["Home", "Post", "Deals", "Search", "Profile"]);
     expect(screen.getByTestId("feed-more-profile").textContent).toMatch(/Sign in/);
     expect(screen.getByTestId("feed-more-events")).toBeTruthy();
     expect(screen.getByTestId("feed-more-location").textContent).toMatch(/Change/);

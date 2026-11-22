@@ -12,7 +12,7 @@ import {
   resolveClusterMarketFromStoredLocation,
   clustersTabTarget,
 } from "../../../lib/clusterLocation.js";
-import { FEED_CLUSTERS_TAB_PATH, FEED_RIGHT_TABS, resolveFeedTabTarget } from "../../../lib/feedShellLinks.js";
+import { FEED_CLUSTERS_TAB, FEED_CLUSTERS_TAB_PATH, resolveFeedTabTarget } from "../../../lib/feedShellLinks.js";
 import { DETECTED_LOCATION_KEY } from "../../../lib/discoveryLocationPersistence.js";
 
 const USC = { slug: "usc", city: "Los Angeles", state: "CA", name: "USC" };
@@ -97,7 +97,8 @@ describe("Clusters tab rule (2026-11-20): USC in California, /clusters elsewhere
     window.sessionStorage.clear();
     window.localStorage.clear();
   });
-  const tab = FEED_RIGHT_TABS.find((t) => t.testId === "feed-nav-clusters");
+  // 2026-11-22: the Clusters tab left the bar (Search is back, app dd4b302); its rule stays.
+  const tab = FEED_CLUSTERS_TAB;
 
   it("keeps USC for California and for no known location", () => {
     expect(clustersTabTarget(null, FEED_CLUSTERS_TAB_PATH)).toBe(FEED_CLUSTERS_TAB_PATH);

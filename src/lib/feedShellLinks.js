@@ -41,26 +41,32 @@ export const FEED_HOME_TAB = {
 };
 
 /**
- * Same tabs as the app (Andre 2026-10-24/29, the app wins): Home · Post (X) · Deals · Clusters · Profile
- * (Clusters took Search's slot 2026-11-18; /feed/search still works from links).
+ * Same tabs as the app (Andre 2026-10-24/29, the app wins): Home · Post (X) · Deals · Search · Profile.
+ * 2026-11-22 (app dd4b302, Andre 2026-11-21): Search is back in the bar where Clusters was; Clusters
+ * moved to the Feed clip rail (a circle under Share, FeedVideoActionRail). /clusters stays in ☰.
  * Every tab has an icon and a label. The basket is the cart button beside ☰ (FeedMobileHeader), shown
  * whenever it has items; the desktop rail keeps its own Basket button.
  */
 export const FEED_LEFT_TABS = [FEED_HOME_TAB];
 
+/**
+ * The old Clusters tab (2026-11-18 → 2026-11-22). Off the bar since 2026-11-22; kept so
+ * resolveFeedTabTarget's California rule (2026-11-20) still has one definition.
+ */
+export const FEED_CLUSTERS_TAB = {
+  to: FEED_CLUSTERS_TAB_PATH,
+  end: false,
+  label: "Clusters",
+  icon: "cluster",
+  testId: "feed-nav-clusters",
+  resolveTarget: "clusters",
+  alsoActiveOn: ["/clusters"],
+};
+
 export const FEED_RIGHT_TABS = [
   { to: "/feed/deals", end: false, label: "Deals", icon: "deals", testId: "feed-nav-deals" },
-  // Clusters (Andre 2026-11-18, as the app): Search's slot is the USC cluster, four-squares icon.
-  // 2026-11-20: outside California the tab opens /clusters instead (resolveFeedTabTarget).
-  {
-    to: FEED_CLUSTERS_TAB_PATH,
-    end: false,
-    label: "Clusters",
-    icon: "cluster",
-    testId: "feed-nav-clusters",
-    resolveTarget: "clusters",
-    alsoActiveOn: ["/clusters"],
-  },
+  // 2026-11-22: Search back in Clusters' slot, as the app (dd4b302). Same tab as before 2026-11-18.
+  { to: "/feed/search", end: true, label: "Search", icon: "search", testId: "feed-nav-shop", resetSearch: true },
   { to: "/feed/profile", end: false, label: "Profile", icon: "profile", testId: "feed-nav-profile" },
 ];
 
@@ -101,7 +107,7 @@ export function visibleFeedTabs(tabs, { isAuthenticated = false, desktop = false
 /** All primary tabs in display order (desktop rail). */
 export const FEED_PRIMARY_TABS = [...FEED_LEFT_TABS, ...FEED_RIGHT_TABS];
 
-/** Desktop rail: Home first, then Deals, Clusters, Basket, Profile. */
+/** Desktop rail: Home first, then Deals, Search, Basket, Profile (2026-11-22: Search back). */
 export const FEED_RAIL_TABS_AFTER_HOME = [...FEED_LEFT_TABS.slice(1), ...FEED_RIGHT_TABS.slice(0, 2), FEED_RAIL_BASKET_TAB, ...FEED_RIGHT_TABS.slice(2)];
 
 /** Menu capture return — Yellow Browse owns bookmarked/recent menus. */

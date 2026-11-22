@@ -152,3 +152,10 @@ export function clustersTabTarget(market, homeClusterPath) {
   if (!state || state === CLUSTERS_TAB_HOME_STATE) return homeClusterPath;
   return "/clusters";
 }
+
+// 2026-11-22: true when the market is a known city outside California (the Clusters home state).
+// Same rule as clustersTabTarget; the Feed rail's Wall + Clusters circles use it (app dd4b302).
+export function marketOutsideClustersHome(market) {
+  const state = market?.state ? stateAbbreviation(market.state) : "";
+  return Boolean(market?.city && state && state !== CLUSTERS_TAB_HOME_STATE);
+}

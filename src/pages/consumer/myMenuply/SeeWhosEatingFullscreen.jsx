@@ -13,8 +13,8 @@ import InviteToEatModal from "../../../components/InviteToEatModal.jsx";
 import FeedMenuBrowserPipOverlay from "../../../components/consumer/feed/FeedMenuBrowserPipOverlay.jsx";
 import FeedPipExpandButton from "../../../components/consumer/feed/FeedPipExpandButton.jsx";
 import FeedVideoActionRail from "../../../components/consumer/feed/FeedVideoActionRail.jsx";
-import FeedClipClusterBadge from "../../../components/consumer/feed/FeedClipClusterBadge.jsx";
-import useFeedClipClusters from "../../../hooks/useFeedClipClusters.js";
+// 2026-11-22: no "USC Cluster" chip on clips (app dd4b302); the rail's Wall + Clusters circles instead.
+import useFeedRailClusterLinks from "../../../hooks/useFeedRailClusterLinks.js";
 import {
   MENUPY_CLOSE_LIVE_FEED_FULLSCREEN,
   stripMediaUrlFragment,
@@ -189,8 +189,8 @@ export default function SeeWhosEatingFullscreen({
   }, [index, item?.id, item?.play_muted, variant]);
 
   const restaurantRef = restaurantRefFromFeedItem(item);
-  const clusterForRestaurant = useFeedClipClusters();
-  const clipCluster = isFeedHome && restaurantRef?.restaurant_id ? clusterForRestaurant(restaurantRef.restaurant_id) : null;
+  // 2026-11-22: Wall + Clusters circles under Share, only where the diner's city has them (app dd4b302).
+  const { wallHref: railWallHref, clustersHref: railClustersHref } = useFeedRailClusterLinks();
   const menuBrowserOpen = Boolean(browseSession);
   // Ordering from the Feed menu (Andre, 2026-10-12): once something is in the basket the clip
   // loops instead of auto-advancing, so the menu never switches restaurants mid-order. Arrows /
@@ -946,20 +946,14 @@ export default function SeeWhosEatingFullscreen({
       ) : null}
 
 
-      {clipCluster && !menuBrowserOpen ? (
-        <FeedClipClusterBadge cluster={clipCluster} desktop={isDesktopViewport} />
-      ) : null}
-
       {!menuBrowserOpen && isFeedHome && !managerForcedMute ? (
-        // The app's speaker button (Andre 2026-10-24 / 2026-11-13): round, top right, under the
-        // cluster chip when there is one. Tapping the clip still turns sound on or off.
+        // The app's speaker button (Andre 2026-10-24 / 2026-11-13): round, top right. 2026-11-22: no
+        // cluster chip above it any more (app dd4b302). Tapping the clip still turns sound on or off.
         <button
           type="button"
           style={{
             ...styles.soundRound,
-            top: clipCluster
-              ? "calc(max(12px, env(safe-area-inset-top)) + 42px)"
-              : "max(12px, env(safe-area-inset-top))",
+            top: "max(12px, env(safe-area-inset-top))",
           }}
           aria-label={videoMuted ? "Turn sound on" : "Turn sound off"}
           data-testid="see-whos-eating-sound-toggle"
@@ -1082,6 +1076,8 @@ export default function SeeWhosEatingFullscreen({
           followSource="feed_home_video"
           commentCount={itemCommentCount}
           onComments={() => setCommentsOpen(true)}
+          wallHref={railWallHref}
+          clustersHref={railClustersHref}
         />
       ) : null}
 
