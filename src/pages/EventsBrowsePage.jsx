@@ -149,9 +149,9 @@ export default function EventsBrowsePage() {
       <StickyPageHeader title="Events" />
       <main style={styles.main} data-testid="events-browse-page">
         <p style={styles.lead}>
-          {/* Same words as ☰ → Events (Andre 2026-11-18). Diners create events in the app; the web lists them. */}
+          {/* Same words as ☰ → Events (Andre 2026-11-18). Diners create events in the app; the web lists them. 2026-11-23 Andre: public = "discoverable on Menuply". */}
           Discover nearby pending events at restaurants, venues and clusters. Create your own event in the Menuply app and make it
-          public to add it to the USC Cluster.
+          public so anyone can discover it on Menuply.
           {coords.source === "device" ? "" : " Showing Los Angeles area until location is available."}
         </p>
 
