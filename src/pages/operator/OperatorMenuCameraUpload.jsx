@@ -374,15 +374,18 @@ export default function OperatorMenuCameraUpload() {
   };
 
   const handleFinalize = async () => {
-    if (!window.confirm("Publish all confirmed pages to your menu as unverified?")) return;
+    if (!window.confirm("Send all confirmed pages to Menuply? Menuply checks every menu before it goes live.")) return;
     setBusy(true);
     setError("");
     try {
       const result = await finalizeMenuCameraSession(sessionId, restaurantId);
       await refreshSession();
       setView("done");
+      // 2026-11-22: held until approved (CK); nothing is published from here.
       setMessage(
-        `Menu published (${result.total_written} items). Items are unverified until you complete restaurant verification.`
+        result.held_for_ck
+          ? `Menu received (${Number(result.items_found) || 0} items). Menuply checks every menu before it goes live on your profile.`
+          : `Menu published (${result.total_written} items). Items are unverified until you complete restaurant verification.`
       );
     } catch (err) {
       setError(err.message || "Could not finalize menu");
@@ -428,7 +431,7 @@ export default function OperatorMenuCameraUpload() {
         </button>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>Camera menu upload</h1>
         <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16, lineHeight: 1.5 }}>
-          Select all menu photos, then upload once. Review items on your phone, then publish one combined menu. You can
+          Select all menu photos, then upload once. Review items on your phone, then send one combined menu. You can
           leave and return anytime — your session is saved.
         </p>
 
@@ -445,9 +448,10 @@ export default function OperatorMenuCameraUpload() {
 
         {view === "done" ? (
           <div style={{ border: "1px solid #bbf7d0", borderRadius: 12, padding: 16, background: "#f0fdf4" }}>
-            <p style={{ margin: 0, fontWeight: 700 }}>Menu published</p>
+            {/* 2026-11-22: held until approved (CK); it is not live yet. */}
+            <p style={{ margin: 0, fontWeight: 700 }}>Menu received</p>
             <p style={{ fontSize: 14, color: "#166534", marginTop: 8 }}>
-              Items are live as unverified (UV). Complete verification when Menuply prompts you.
+              Menuply checks every menu before it goes live on your profile.
             </p>
             <button
               type="button"
@@ -517,7 +521,7 @@ export default function OperatorMenuCameraUpload() {
             </button>
             {allConfirmed ? (
               <button type="button" disabled={busy} onClick={handleFinalize} style={{ ...primaryBtn(busy), marginTop: 10 }}>
-                Finalize menu ({summary?.total_items || 0} items)
+                Send menu ({summary?.total_items || 0} items)
               </button>
             ) : (
               <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 12 }}>

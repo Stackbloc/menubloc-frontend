@@ -1502,6 +1502,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
       let activeMenuId = mid || null;
       let totalInserted = 0;
+      let totalHeld = 0;
       let totalReview = 0;
       let totalSuperseded = 0;
       let lastUploadId = null;
@@ -1534,11 +1535,18 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             lastUploadId = uploadId;
             setPendingUploadId(uploadId);
           }
+          // 2026-11-22: uploads are held until approved (CK); nothing is added to the menu yet.
+          const heldFound = json.held_for_ck === true ? Number(json.items_found) || 0 : 0;
           totalInserted += inserted;
+          totalHeld += heldFound;
           totalReview += reviewCount;
           totalSuperseded += superseded;
           succeededFiles.push(nextFile);
-          fileSummaries.push(`${nextFile.name}: ${inserted} item${inserted === 1 ? "" : "s"}`);
+          fileSummaries.push(
+            json.held_for_ck === true
+              ? `${nextFile.name}: ${heldFound} dish${heldFound === 1 ? "" : "es"} found`
+              : `${nextFile.name}: ${inserted} item${inserted === 1 ? "" : "s"}`
+          );
           if (publicMenuId && succeededFiles.length === 1) {
             await reloadMenus(publicMenuId);
           }
@@ -1578,6 +1586,20 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
               : "Upload failed. Restaurant was kept — retry the upload without recreating it.",
         });
         // Keep queue for retry.
+      } else if (totalInserted === 0 && totalHeld > 0) {
+        setUploadMsg({
+          ok: true,
+          restaurantId: rid,
+          menuId: activeMenuId || mid,
+          uploadId: lastUploadId,
+          parseStatus: "held_for_ck",
+          message:
+            `Menu received from ${fromFilesLabel}: ${totalHeld} dish${totalHeld === 1 ? "" : "es"} found. ` +
+            "Menuply checks every menu before it goes live on your profile." +
+            failedNote,
+        });
+        setFiles(failedFiles.map((f) => f.file));
+        clearOwnerUploadInputRefs(photoFileRef, pdfFileRef);
       } else if (totalInserted === 0 && (totalReview > 0 || succeededFiles.length > 0)) {
         setUploadMsg({
           ok: false,

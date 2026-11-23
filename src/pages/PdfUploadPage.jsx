@@ -13,6 +13,7 @@ import {
 } from "../lib/restaurantOnboardingState.js";
 import { markOnboardingStage } from "../lib/operatorApi.js";
 import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
+import { uploadHasDishes } from "../lib/ownerUploadHeld.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
@@ -1000,10 +1001,7 @@ export default function PdfUploadPage() {
         }
 
         if (startData.result) {
-          const itemsSaved =
-            (Number(startData.result.inserted_items) || 0) +
-            (Number(startData.result.updated_items) || 0);
-          if (itemsSaved <= 0) {
+          if (!uploadHasDishes(startData.result)) {
             throw new Error(
               "Upload finished but no imported menu items were saved. Try a clearer PDF, clearer menu photos, or contact support."
             );
@@ -1056,9 +1054,7 @@ export default function PdfUploadPage() {
           throw new Error("Menu processing finished without a result. Please try again.");
         }
 
-        const itemsSaved =
-          (Number(pollResult.inserted_items) || 0) + (Number(pollResult.updated_items) || 0);
-        if (itemsSaved <= 0) {
+        if (!uploadHasDishes(pollResult)) {
           throw new Error(
             "Upload finished but no imported menu items were saved. Try a clearer PDF, clearer menu photos, or contact support."
           );
@@ -1232,19 +1228,30 @@ export default function PdfUploadPage() {
           <div style={s.successIcon}>✓</div>
           {(() => {
             const pageCount = Number(result.page_count || result.pages || 0) || 0;
-            const itemsProcessed =
-              (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
+            // 2026-11-22: uploads are held until approved (CK); nothing is imported yet.
+            const held = result.held_for_ck === true;
+            const itemsProcessed = held
+              ? Number(result.items_found) || 0
+              : (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
             const summaryParts = [];
             if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
             if (itemsProcessed > 0) {
-              summaryParts.push(`${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`);
+              summaryParts.push(
+                held
+                  ? `${itemsProcessed} dish${itemsProcessed === 1 ? "" : "es"} found`
+                  : `${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`
+              );
             }
             const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
             return (
               <>
-                <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
+                <div style={s.successTitle} data-testid="menu-upload-success-title">
+                  {held ? `Menu received${dash}.` : `Menu uploaded successfully${dash}.`}
+                </div>
                 <p style={s.successSub}>
-                  Your menu is being reviewed. Once approved, it will appear on your Menuply profile.
+                  {held
+                    ? "Menuply checks every menu before it goes live. Once approved, it will appear on your Menuply profile."
+                    : "Your menu is being reviewed. Once approved, it will appear on your Menuply profile."}
                 </p>
               </>
             );
