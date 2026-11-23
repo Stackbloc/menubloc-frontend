@@ -52,6 +52,8 @@ export default function FeedHomePage() {
   const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState("");
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
+  // 2026-11-23: the player copies its clip list once, so it restarts when a new city's clips land.
+  const [loadedMarketKey, setLoadedMarketKey] = useState("");
   const loadingMoreRef = useRef(false);
   const itemsRef = useRef([]);
   // 2026-11-23: re-read the place when ☰ → location changes it in place.
@@ -89,6 +91,7 @@ export default function FeedHomePage() {
           }
           setShowEmptyFirstVisitPrompt(showPrompt);
           setItems(rows);
+          setLoadedMarketKey(`${market.city}|${market.state}`);
           setNextCursor(data?.next_cursor || null);
         })
         .catch((err) => {
@@ -169,6 +172,7 @@ export default function FeedHomePage() {
   return (
     <div data-testid="feed-home">
       <SeeWhosEatingFullscreen
+        key={loadedMarketKey}
         variant="feedHome"
         items={items}
         startIndex={startIndex}

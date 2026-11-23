@@ -45,6 +45,8 @@ export default function FeedDealsPage() {
   useFeedLocationVersion();
   const market = resolveMarket();
   const [allItems, setAllItems] = useState([]);
+  // 2026-11-23: the reel copies its list once, so it restarts when a new city's deals land.
+  const [loadedMarketKey, setLoadedMarketKey] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mealFilter, setMealFilter] = useState(() => defaultDealMealPeriod());
@@ -87,6 +89,7 @@ export default function FeedDealsPage() {
         if (cancelled) return;
         // Order (meal sort + random) is applied in `items`; the reel reshuffles after each full pass.
         setAllItems(mapDealsToFeedVideoItems(data?.deals));
+        setLoadedMarketKey(`${market.city}|${market.state}`);
       } catch (err) {
         if (cancelled) return;
         setAllItems([]);
@@ -160,7 +163,7 @@ export default function FeedDealsPage() {
   return (
     <div style={styles.page} data-testid="feed-deals-page">
       <DealVideoSwipe
-        key={effectiveMealFilter}
+        key={`${effectiveMealFilter}|${loadedMarketKey}`}
         items={items}
         reshuffle={reshuffleForMeal}
         startIndex={startIndex}
