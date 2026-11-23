@@ -1,6 +1,6 @@
 /**
- * Feed ☰ location row (2026-11-23, Andre): "Change" drops down right here with a field to type a city,
- * state or zip, the last 3 places and "Use my current location". It no longer opens Search.
+ * Feed ☰ location row (2026-11-23, Andre): "Change" drops down right here with a field to type a city
+ * (matching cities appear as you type), the last 3 places and "Use my current location". It no longer opens Search.
  * Picking a place saves it and the Feed reloads for that city in place.
  */
 
@@ -9,12 +9,15 @@ import AppIcon from "../../icons/AppIcon.jsx";
 import { feedHeaderLocationLabel } from "./FeedMobileHeader.jsx";
 import {
   applyFeedLocation,
+  cityQuery,
+  cityRowToPlace,
   loadRecentLocations,
   removeRecentLocation,
   resolveTypedLocation,
   useFeedLocationVersion,
 } from "../../../lib/feedLocationChange.js";
 import { reverseGeocode, formatLocationLabel } from "../../../lib/locationUtils.js";
+import { searchUsCities } from "../../../lib/locationReferenceApi.js";
 
 function storage() {
   return typeof window !== "undefined" ? window.localStorage : null;
@@ -28,7 +31,27 @@ export default function FeedMenuLocationRow({ onDone }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recent, setRecent] = useState(() => loadRecentLocations(storage()));
+  const [suggestions, setSuggestions] = useState([]);
   const inputRef = useRef(null);
+
+  // Matching cities as you type (our US city table), after a short pause.
+  useEffect(() => {
+    const query = open ? cityQuery(text) : null;
+    if (!query) {
+      setSuggestions([]);
+      return undefined;
+    }
+    let live = true;
+    const t = setTimeout(() => {
+      searchUsCities(query.q, query.state, 5)
+        .then((rows) => live && setSuggestions(rows.map(cityRowToPlace).filter(Boolean)))
+        .catch(() => live && setSuggestions([]));
+    }, 200);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [open, text]);
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +63,7 @@ export default function FeedMenuLocationRow({ onDone }) {
 
   function finish(resolved) {
     if (!resolved || !applyFeedLocation(resolved)) {
-      setError("We couldn't find that place. Try City, ST or a zip code.");
+      setError("We couldn't find that city. Try City, ST (e.g. Austin, TX).");
       return;
     }
     setOpen(false);
@@ -114,8 +137,8 @@ export default function FeedMenuLocationRow({ onDone }) {
               onKeyDown={(e) => {
                 if (e.key === "Escape") setOpen(false);
               }}
-              placeholder="City, state or zip code"
-              aria-label="Type a city, state or zip code"
+              placeholder="City, state"
+              aria-label="Type a city"
               data-testid="feed-location-input"
               autoComplete="off"
               style={s.input}
@@ -125,7 +148,18 @@ export default function FeedMenuLocationRow({ onDone }) {
             </button>
           </form>
           {error ? <p style={s.error} role="alert">{error}</p> : null}
-          {recent.length > 0 ? (
+          {suggestions.length > 0 ? (
+            <ul style={s.list} aria-label="Matching cities" data-testid="feed-location-suggestions">
+              {suggestions.map((p) => (
+                <li key={p.label}>
+                  <button type="button" style={s.recentBtn} disabled={busy} onClick={() => finish(p)}>
+                    {p.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {recent.length > 0 && suggestions.length === 0 ? (
             <ul style={s.list} aria-label="Recent places">
               {recent.map((label) => (
                 <li key={label} style={s.recentItem}>

@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-vi.mock("../../../../lib/geocodeUtils.js", () => ({ forwardGeocode: vi.fn(async () => ({ lat: 30.27, lng: -97.74 })) }));
+const AUSTIN = { city_name: "Austin", state_code: "TX", lat: 30.29, lng: -97.75 };
+vi.mock("../../../../lib/locationReferenceApi.js", () => ({ searchUsCities: vi.fn(async () => [AUSTIN]) }));
 
 import FeedMenuLocationRow from "../FeedMenuLocationRow.jsx";
 import { FEED_LOCATION_EVENT, resolveTypedLocation } from "../../../../lib/feedLocationChange.js";
@@ -44,10 +45,25 @@ describe("FeedMenuLocationRow", () => {
     window.removeEventListener(FEED_LOCATION_EVENT, heard);
   });
 
-  it("zip or city alone takes city/state from the reverse lookup; unknown place → null", async () => {
-    const reverse = vi.fn(async () => ({ city: "Los Angeles", state: "CA" }));
-    const r = await resolveTypedLocation("90007", { geocode: async () => ({ lat: 34.02, lng: -118.28 }), reverse });
-    expect(r).toMatchObject({ label: "Los Angeles, CA", city: "Los Angeles", state: "CA" });
-    expect(await resolveTypedLocation("zzzz", { geocode: async () => null, reverse })).toBeNull();
+  it("picks the exact city name from our city table; zips and unknown places → null", async () => {
+    const rows = [{ city_name: "East Pasadena", state_code: "CA", lat: 34.1, lng: -118.0 }, { city_name: "Pasadena", state_code: "CA", lat: 34.16, lng: -118.14 }];
+    const search = vi.fn(async () => rows);
+    expect(await resolveTypedLocation("pasadena ca", { search })).toMatchObject({ label: "Pasadena, CA", lat: 34.16 });
+    expect(search).toHaveBeenCalledWith("Pasadena", "CA", 10);
+    expect(await resolveTypedLocation("90007", { search })).toBeNull();
+    expect(await resolveTypedLocation("zzzz", { search: async () => [] })).toBeNull();
+  });
+
+  it("shows matching cities as you type; clicking one sets the place", async () => {
+    render(
+      <MemoryRouter>
+        <FeedMenuLocationRow />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByTestId("feed-more-location"));
+    fireEvent.change(screen.getByTestId("feed-location-input"), { target: { value: "aus" } });
+    const list = await screen.findByTestId("feed-location-suggestions");
+    fireEvent.click(list.querySelector("button"));
+    expect(readDetectedLocation(window.localStorage).city).toBe("Austin");
   });
 });
