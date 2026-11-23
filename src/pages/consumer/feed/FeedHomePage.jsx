@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { listSeeWhosEating } from "../../../lib/consumerApi.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { useFeedLocationVersion } from "../../../lib/feedLocationChange.js";
 import { FEED_VIDEO_POSTED_EVENT } from "../../../lib/feedVideoCompose.js";
 import {
   hasSeenFeedBefore,
@@ -53,6 +54,8 @@ export default function FeedHomePage() {
   const [showEmptyFirstVisitPrompt, setShowEmptyFirstVisitPrompt] = useState(false);
   const loadingMoreRef = useRef(false);
   const itemsRef = useRef([]);
+  // 2026-11-23: re-read the place when ☰ → location changes it in place.
+  useFeedLocationVersion();
   const market = resolveMarket();
 
   useEffect(() => {

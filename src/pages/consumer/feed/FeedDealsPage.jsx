@@ -15,6 +15,7 @@ import {
   defaultDealMealPeriod,
 } from "../../../lib/dealMealPeriods.js";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
+import { useFeedLocationVersion } from "../../../lib/feedLocationChange.js";
 import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { markSetup } from "../../../lib/profileSetupMarks.js";
@@ -40,7 +41,9 @@ export default function FeedDealsPage() {
   const { isAuthenticated } = useConsumer();
   const { todayHome } = useConsumerFeatureFlags();
   const underSwitch = Boolean(isAuthenticated && todayHome);
-  const market = useMemo(() => resolveMarket(), []);
+  // 2026-11-23: re-read the place when ☰ → location changes it in place.
+  useFeedLocationVersion();
+  const market = resolveMarket();
   const [allItems, setAllItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

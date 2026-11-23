@@ -18,7 +18,8 @@ import {
   resolveFeedMoreSections,
 } from "../../../lib/feedShellLinks.js";
 import { restoreDocumentScroll } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
-import { feedHeaderLocationLabel } from "./FeedMobileHeader.jsx";
+// 2026-11-23: the location row drops down in place (FeedMenuLocationRow), no trip to Search.
+import FeedMenuLocationRow from "./FeedMenuLocationRow.jsx";
 
 function FeedMoreLink({ link, onClose }) {
   const { pathname } = useLocation();
@@ -37,24 +38,6 @@ function FeedMoreLink({ link, onClose }) {
         {link.label}
         {link.note ? <span style={styles.note}>{link.note}</span> : null}
       </span>
-    </Link>
-  );
-}
-
-/** Feed only: the app's location row under Events (AppMenuButton showLocation, 2026-11-19). */
-function FeedMenuLocationRow({ onClose }) {
-  const place = feedHeaderLocationLabel(typeof window !== "undefined" ? window.localStorage : null);
-  return (
-    <Link
-      to="/feed/search"
-      style={styles.locRow}
-      data-testid="feed-more-location"
-      aria-label={`Location: ${place}. Change location`}
-      onClick={onClose}
-    >
-      <AppIcon name="pin" size={18} color="#5eead4" />
-      <span style={styles.locText}>{place}</span>
-      <span style={styles.locChange}>Change</span>
     </Link>
   );
 }
@@ -117,7 +100,7 @@ export function FeedMenuContent({ isAuthenticated = false, onClose, showLocation
         </span>
         <span style={styles.chevron}>›</span>
       </Link>
-      {showLocation ? <FeedMenuLocationRow onClose={onClose} /> : null}
+      {showLocation ? <FeedMenuLocationRow onDone={onClose} /> : null}
       {sections.map((section) => {
         const isOpen = expanded === section.id;
         return (
@@ -325,16 +308,6 @@ const styles = {
   pinnedTitle: { fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   chevron: { color: "rgba(232,240,236,0.55)", fontSize: 20 },
   note: { display: "block", fontSize: 12, fontWeight: 500, color: "rgba(232,240,236,0.6)", marginTop: 2 },
-  locRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "12px 10px",
-    textDecoration: "none",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-  },
-  locText: { flex: 1, minWidth: 0, color: "#e8f0ec", fontSize: 15, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  locChange: { color: "#5eead4", fontSize: 14, fontWeight: 700 },
   legal: { margin: "14px 0 4px", textAlign: "center", fontSize: 12, color: "rgba(232,240,236,0.55)" },
   legalLink: { color: "rgba(232,240,236,0.7)", textDecoration: "none" },
   list: {

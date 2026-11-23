@@ -10,6 +10,7 @@ import FeedShopBasketButton from "./FeedShopBasketButton.jsx";
 import { useOrderCart } from "../../../context/OrderCartContext.jsx";
 import { readDetectedLocation } from "../../../lib/discoveryLocationPersistence.js";
 import { clearStuckMediaChrome } from "../../../pages/consumer/myMenuply/pendingHighlightMedia.js";
+import { useFeedLocationVersion } from "../../../lib/feedLocationChange.js";
 
 /** City the Feed plays from (same source as FeedHomePage), e.g. "Los Angeles". */
 export function feedHeaderLocationLabel(storage) {
@@ -21,6 +22,7 @@ export function feedHeaderLocationLabel(storage) {
 /** hideLocation: the Feed's "Clips | Deals" switch needs the top middle (Today shows the location). */
 export default function FeedMobileHeader({ onMoreClick, showShopBasket = false, hideLocation = false }) {
   const { itemCount } = useOrderCart();
+  useFeedLocationVersion(); // 2026-11-23: label follows ☰ → location changes
   const place = feedHeaderLocationLabel(typeof window !== "undefined" ? window.localStorage : null);
   return (
     <header style={styles.header} data-testid="feed-mobile-header">
