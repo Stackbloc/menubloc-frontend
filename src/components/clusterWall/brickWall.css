@@ -205,6 +205,18 @@
   text-transform: uppercase;
   opacity: 0.85;
 }
+.bw-event-tag {
+  /* Plan 74 (2026-11-22): bottom left, beside the signature. */
+  position: absolute;
+  left: 6px;
+  bottom: 5px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font: 700 10px/1 system-ui, sans-serif;
+  padding: 4px 6px;
+  border-radius: 3px;
+}
+.bw-brick:has(.bw-event-tag) .bw-sign { max-width: 52%; }
 .bw-review {
   position: absolute;
   left: 6px;

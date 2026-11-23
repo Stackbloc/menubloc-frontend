@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { WALL_MATERIALS, WALL_THEMES, cleanWallEmoji, randomWallTilt, wallAgo, wallStyle } from "../src/lib/clusterWallStyles.js";
+import { WALL_MATERIALS, WALL_THEMES, cleanWallEmoji, randomWallTilt, wallAgo, wallEventPath, wallStyle } from "../src/lib/clusterWallStyles.js";
 
 // 2026-11-06 Wall redesign: subtle ages, one emoji, ±3° tilt, six author-picked materials.
 test("wallAgo: now / m / h / d / w / mo / y", () => {
@@ -29,4 +29,14 @@ test("one emoji only; tilt stays within ±3; materials all have textures", () =>
   for (const m of WALL_MATERIALS) assert.ok(WALL_THEMES[m]?.texture);
   const s = wallStyle({ theme: "stucco", tilt: 9, underline: "blue", emoji: "<b>" });
   assert.deepEqual([s.theme, s.tilt, s.underline, s.emoji], ["stucco", 0, "none", null]);
+});
+
+// Plan 74 (2026-11-22): an event's brick links only to its own event page.
+test("wallEventPath: only /join-event/<token>", () => {
+  const token = "6f1c2a54-0b7e-4f7e-9a51-2d1f0c9b3e11";
+  assert.equal(wallEventPath({ event: { path: `/join-event/${token}` } }), `/join-event/${token}`);
+  assert.equal(wallEventPath({}), null);
+  assert.equal(wallEventPath({ event: null }), null);
+  assert.equal(wallEventPath({ event: { path: "https://evil.example/join-event/x" } }), null);
+  assert.equal(wallEventPath({ event: { path: "/join-event/x/../../account" } }), null);
 });

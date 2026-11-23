@@ -1,5 +1,6 @@
 import { useRef } from "react";
-import { WALL_FONTS, WALL_THEMES, WALL_UNDERLINES, wallAgo, wallInk, wallStyle, wallSurfaceStyle } from "../../lib/clusterWallStyles.js";
+import { useNavigate } from "react-router-dom";
+import { WALL_FONTS, WALL_THEMES, WALL_UNDERLINES, wallAgo, wallEventPath, wallInk, wallStyle, wallSurfaceStyle } from "../../lib/clusterWallStyles.js";
 import useFitText from "../../hooks/useWallFitText.js";
 
 /** One brick on the Wall (2026-11-06 redesign): words on a material, a photo, or a clip thumbnail. */
@@ -68,6 +69,10 @@ export default function Brick({ block, onOpen, onShare, tall = false }) {
   const picture = isPhoto ? block.photo_url : block.poster_url;
   const name = authorName(block);
   const label = `${isClip ? "Clip" : isPhoto ? "Photo" : "Brick"}${block.body ? `: ${block.body}` : ""} — ${name}`;
+  const navigate = useNavigate();
+  // Plan 74 (2026-11-22): an event's brick opens the event page (RSVP there).
+  const eventPath = wallEventPath(block);
+  const open = () => (eventPath ? navigate(eventPath) : onOpen?.(block));
   return (
     <div
       role="button"
@@ -75,12 +80,12 @@ export default function Brick({ block, onOpen, onShare, tall = false }) {
       className={`bw-brick${media ? " bw-media" : ""}${tall ? " bw-tall" : ""}`}
       data-testid="wall-brick"
       data-wall-id={block.public_id}
-      aria-label={label}
-      onClick={() => onOpen(block)}
+      aria-label={eventPath ? `Event: ${block.event?.title || ""}. ${label}` : label}
+      onClick={open}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onOpen(block);
+          open();
         }
       }}
       style={media ? { background: "#111" } : wallSurfaceStyle(s.theme)}
@@ -98,6 +103,11 @@ export default function Brick({ block, onOpen, onShare, tall = false }) {
           <Signature block={block} color={theme.ink} />
         </>
       )}
+      {eventPath ? (
+        <span className="bw-event-tag" data-testid="wall-brick-event">
+          📅 See event
+        </span>
+      ) : null}
       {block.pinned ? <span className="bw-pin-tag" style={{ color: media ? "#fff" : theme.ink }}>📌 Pinned</span> : null}
       {block.is_mine && block.status && block.status !== "published" ? <span className="bw-review">In review · only you see this</span> : null}
       {onShare && (!block.status || block.status === "published") ? (

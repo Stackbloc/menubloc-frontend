@@ -199,3 +199,12 @@ export function wallTextFontSize(size, length, { scale = 1 } = {}) {
 export function wallName(label) {
   return `Menuply Wall @ ${label || "USC"}`;
 }
+
+/**
+ * Plan 74 (Andre 2026-11-22): a brick for a public event links to the event page.
+ * Only a same-site "/join-event/<token>" path counts; anything else = no link.
+ */
+export function wallEventPath(block) {
+  const path = block?.event?.path;
+  return typeof path === "string" && /^\/join-event\/[A-Za-z0-9-]+$/.test(path) ? path : null;
+}
