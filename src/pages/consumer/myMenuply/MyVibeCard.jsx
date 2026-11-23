@@ -12,6 +12,7 @@
  * Plain text links only: no oval pills, no green pills, no full-width buttons (Andre 2026-11-06/12).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import AskForReview from "../../../components/AskForReview.jsx";
 import {
   clearHungryNow,
   clearUpFor,
@@ -69,6 +70,8 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
   const [circles, setCircles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // 2026-11-23 (plan 73 PM1b): the custom vibe text CK blocked, for "Ask for review".
+  const [blocked, setBlocked] = useState(null); // { code, text }
   const [now, setNow] = useState(() => Date.now());
   // One picker open at a time, inline under the rows: "vibe" | "hungry" | "upfor" | "home" | "pause" | null.
   const [panel, setPanel] = useState(null);
@@ -118,9 +121,10 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
     setHomeWho(null);
   }
 
-  async function run(change) {
+  async function run(change, blockedText = null) {
     setBusy(true);
     setError("");
+    setBlocked(null);
     try {
       await change();
       const { a, plans } = await loadAll();
@@ -130,6 +134,8 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
       closePanel();
     } catch (err) {
       setError(err?.message || "Something went wrong. Try again.");
+      const code = err?.payload?.code || err?.code;
+      if (blockedText && code) setBlocked({ code, text: blockedText });
     } finally {
       setBusy(false);
     }
@@ -157,7 +163,7 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
       setPanel("hungry");
       return;
     }
-    void run(() => setRightNowVibe(choice));
+    void run(() => setRightNowVibe(choice), choice.kind === "custom" ? choice.text : null);
   }
 
   function openUpFor(u) {
@@ -396,6 +402,7 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
           {error}
         </p>
       ) : null}
+      {error && blocked ? <AskForReview surface="vibe" code={blocked.code} text={blocked.text} /> : null}
 
       <button type="button" aria-expanded={discoverOpen} onClick={() => setDiscoverOpen((v) => !v)} style={st.who} data-testid="vibe-who-sees">
         <span style={{ flex: 1, textAlign: "left", color: C.muted }}>Who can find you</span>

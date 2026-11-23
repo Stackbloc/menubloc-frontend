@@ -5,6 +5,7 @@ import { formatApiErrorForDisplay } from "../../lib/apiErrorDisplay.js";
 import OwnerWallReview from "./OwnerWallReview.jsx";
 import OwnerWallBricks from "./OwnerWallBricks.jsx";
 import OwnerWallHouseBrick from "./OwnerWallHouseBrick.jsx";
+import OwnerCkAppeals from "./OwnerCkAppeals.jsx";
 
 /**
  * Owner → Reports (Play Store safety, Andre approved 2026-11-02, plan 18). Diners report a clip or a dish
@@ -60,6 +61,7 @@ export default function OwnerContentReports() {
         </select>
       )}
     >
+      <OwnerCkAppeals status={status} />
       {status === "open" ? <OwnerWallReview /> : null}
       {status === "open" ? <OwnerWallBricks slug="usc" /> : null}
       {status === "open" ? <OwnerWallHouseBrick slug="usc" /> : null}

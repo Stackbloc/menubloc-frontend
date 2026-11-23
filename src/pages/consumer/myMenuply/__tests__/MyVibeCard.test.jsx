@@ -165,6 +165,30 @@ describe("MyVibeCard", () => {
     expect(screen.getByTestId("availability-current").textContent).toBe("Paused until you turn it back on");
   });
 
+  it("a custom vibe CK blocks shows Ask for review (2026-11-23, plan 73 PM1b)", async () => {
+    api.setRightNowVibe.mockRejectedValueOnce(
+      Object.assign(new Error("That can't be a vibe."), { status: 400, payload: { code: "custom_vibe_hateful" } })
+    );
+    render(<MyVibeCard discover="connects" />);
+    fireEvent.click(await screen.findByTestId("my-vibe-set-custom"));
+    fireEvent.change(screen.getByTestId("vibe-custom-input"), { target: { value: "flame retardant demo" } });
+    fireEvent.click(screen.getByTestId("vibe-set"));
+    expect((await screen.findByTestId("availability-error")).textContent).toBe("That can't be a vibe.");
+    expect(screen.getByTestId("ask-for-review")).toBeTruthy();
+  });
+
+  it("a form error on a custom vibe has no Ask for review", async () => {
+    api.setRightNowVibe.mockRejectedValueOnce(
+      Object.assign(new Error("Keep it to 80 characters."), { status: 400, payload: { code: "custom_vibe_too_long" } })
+    );
+    render(<MyVibeCard discover="connects" />);
+    fireEvent.click(await screen.findByTestId("my-vibe-set-custom"));
+    fireEvent.change(screen.getByTestId("vibe-custom-input"), { target: { value: "tacos" } });
+    fireEvent.click(screen.getByTestId("vibe-set"));
+    await screen.findByTestId("availability-error");
+    expect(screen.queryByTestId("ask-for-review")).toBeNull();
+  });
+
   it("write your own vibe (≤ 80), 2/4/8 hours; Change opens my words; Remove clears it", async () => {
     render(<MyVibeCard discover="connects" />);
     fireEvent.click(await screen.findByTestId("my-vibe-set-custom"));

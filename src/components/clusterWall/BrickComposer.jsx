@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createWallBlock, uploadWallClip, uploadWallPhoto } from "../../lib/clusterWallApi.js";
+import AskForReview from "../AskForReview.jsx";
 import { createGuestWallBlock } from "../../lib/clusterWallGuest.js";
 import {
   wallName,
@@ -86,6 +87,8 @@ export default function BrickComposer({ clusterSlug, clusterLabel = "USC", isSig
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
+  // 2026-11-23 (plan 73 PM1b): what CK blocked, so a signed-in diner can ask for review.
+  const [blocked, setBlocked] = useState(null); // { code, text, size, caption }
   const [done, setDone] = useState(null);
   const token = useRef(newToken());
   const photoInput = useRef(null);
@@ -147,6 +150,7 @@ export default function BrickComposer({ clusterSlug, clusterLabel = "USC", isSig
     if (!canPost) return;
     setBusy(true);
     setError("");
+    setBlocked(null);
     try {
       if (!ack) {
         writeAck(ackId);
@@ -174,6 +178,7 @@ export default function BrickComposer({ clusterSlug, clusterLabel = "USC", isSig
     } catch (err) {
       if (!isSignedIn && err?.status === 401 && onNeedAccount) return needAccount();
       setError(err?.message || "Couldn't post. Try again.");
+      if (err?.code) setBlocked({ code: err.code, text: body.trim(), size: kind === "text" && count <= 80 ? "small" : "medium", caption: kind !== "text" });
       if (err?.status && err.status < 500) token.current = newToken();
     } finally {
       setBusy(false);
@@ -308,6 +313,9 @@ export default function BrickComposer({ clusterSlug, clusterLabel = "USC", isSig
           </label>
         ) : null}
         {error ? <p className="bc-error" role="alert">{error}</p> : null}
+        {error && blocked ? (
+          <AskForReview signedIn={isSignedIn} surface="wall" code={blocked.code} text={blocked.text} size={blocked.size} caption={blocked.caption} />
+        ) : null}
         <div className="bc-actions">
           {progress != null ? <span className="bc-sub">Uploading… {Math.round(progress * 100)}%</span> : null}
           <button type="button" className="bc-post" onClick={post} disabled={!canPost} data-testid="wall-post">
