@@ -65,7 +65,7 @@ import {
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import MenuInfoButton from "../components/menu/MenuInfoButton.jsx";
-import { MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
+import { MenuAddressPinContext, MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "../components/menuCatalog/menuHeaderTrailingActionContext.js";
 import OrderingUnavailableBanner from "../components/menu/OrderingUnavailableBanner.jsx";
 import MenuRestaurantContextualVideo from "../components/menu/MenuRestaurantContextualVideo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
@@ -1408,6 +1408,7 @@ export default function PublicMenuPage() {
     addressLine2,
     addressLine,
     directionsHref,
+    isBrandHq: isBrandHqAddress = false,
   } = resolvePublicMenuAddressDisplay(data, { isFoodTruck });
   // Use tabSections if a menu with a real day+time schedule is currently active.
   // tabSections?.sections may still show a prior menu's content during a background fetch —
@@ -2036,6 +2037,7 @@ export default function PublicMenuPage() {
 
         <MenuHeaderShareContext.Provider value={shareHeaderValue}>
           <MenuHeaderTrailingActionContext.Provider value={menuInfoAction}>
+          <MenuAddressPinContext.Provider value={!isBrandHqAddress}>
         {applyMenuAppearance && appearanceTokens ? (
           <div
             style={{
@@ -2058,6 +2060,7 @@ export default function PublicMenuPage() {
             <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
           </MenuRowActionsContext.Provider>
         )}
+          </MenuAddressPinContext.Provider>
         </MenuHeaderTrailingActionContext.Provider>
           </MenuHeaderShareContext.Provider>
       </div>

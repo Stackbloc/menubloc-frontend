@@ -13,3 +13,9 @@ export const MenuHeaderTrailingActionContext = createContext(null);
  * 2026-10-29: menuply-mobile MenuScreen header is ‹ name ⓘ + Share menu).
  */
 export const MenuHeaderShareContext = createContext(null);
+
+/**
+ * Whether the menu header address shows its map pin. False on a franchise canonical (HQ)
+ * record, whose line is "Franchise HQ: City, ST" with no pin and no link (Andre 2026-11-27).
+ */
+export const MenuAddressPinContext = createContext(true);

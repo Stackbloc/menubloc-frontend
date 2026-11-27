@@ -198,11 +198,54 @@ export function resolvePublicMenuAddressDisplay(data, { isFoodTruck = false } = 
     directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressLine)}`;
   }
 
+  // One format on every menu (Andre 2026-11-27): street on line 1, "City, ST" alone on the
+  // last line. ZIP stays in the maps link only (many stores have none, so showing it varied).
+  const displayStreet = formatMenuStreet(addressLine1);
+  const displayCityState = formatCityState(normalized.city, normalized.state) || stripZip(addressLine2);
   return {
-    addressLine1,
-    addressLine2,
-    addressLine,
+    addressLine1: displayStreet,
+    addressLine2: displayCityState,
+    addressLine: [displayStreet, displayCityState].filter(Boolean).join(", "),
     directionsHref,
     usedCurrentPickup: usePickup,
   };
+}
+
+/** "City, ST" — never a ZIP. */
+export function formatCityState(city, state) {
+  return [asStr(city), asStr(state).toUpperCase()].filter(Boolean).join(", ");
+}
+
+function stripZip(line) {
+  return asStr(line).replace(/\s+\d{5}(?:-\d{4})?\s*$/, "").trim();
+}
+
+const STREET_KEEP_UPPER = new Set(["N", "S", "E", "W", "NE", "NW", "SE", "SW", "US", "FM", "SR", "CR", "PO"]);
+
+/**
+ * Same street style on every menu: ALL-CAPS rows become normal capitals ("644 VETERANS PKWY" →
+ * "644 Veterans Pkwy"), abbreviation periods drop ("110 N. Carpenter St." → "110 N Carpenter St"),
+ * extra spaces collapse. Mixed-case streets keep their own capitals.
+ */
+export function formatMenuStreet(street) {
+  let s = asStr(street).replace(/\s+/g, " ");
+  if (!s) return "";
+  const letters = s.replace(/[^A-Za-z]/g, "");
+  if (letters.length >= 3 && letters === letters.toUpperCase()) {
+    s = s
+      .split(" ")
+      .map((word) => {
+        const bare = word.replace(/[^A-Za-z]/g, "");
+        if (STREET_KEEP_UPPER.has(bare)) return word;
+        // 1ST → 1st, 22ND → 22nd
+        if (/^\d+(ST|ND|RD|TH)[.,]?$/i.test(word)) return word.toLowerCase();
+        // Unit numbers stay as written: 4B, 12A
+        if (/^\d+[A-Za-z][.,]?$/.test(word)) return word;
+        return word.toLowerCase().replace(/(^|[-(/])([a-z])/g, (_, pre, ch) => pre + ch.toUpperCase());
+      })
+      .join(" ");
+  }
+  // "N." → "N", "St." → "St" (abbreviations only: a letter run followed by a period).
+  s = s.replace(/\b([A-Za-z]{1,4})\.(?=\s|,|$)/g, "$1");
+  return s.replace(/\s+,/g, ",").trim();
 }

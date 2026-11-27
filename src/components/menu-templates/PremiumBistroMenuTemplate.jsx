@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoogleMapsPinIcon from "./GoogleMapsPinIcon.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
@@ -285,7 +286,8 @@ export default function PremiumBistroMenuTemplate(ctx) {
           {addressLine ? (
             <div style={{ marginTop: 16, color: "rgba(255,255,255,0.66)", fontSize: 13, fontWeight: 700 }}>
               {directionsHref ? (
-                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex" }}>
+                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}>
+                  <GoogleMapsPinIcon size={13} />
                   <MenuAddressLines
                     addressLine1={addressLine1}
                     addressLine2={addressLine2}

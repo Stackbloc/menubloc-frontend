@@ -41,7 +41,7 @@ import { MenuRowActionsContext } from "./menuRowActionsContext.js";
 import MenuTapToOrderHint from "./MenuTapToOrderHint.jsx";
 import MenuOrderBar from "./MenuOrderBar.jsx";
 import MenuHeaderBookmarkAction from "./MenuHeaderBookmarkAction.jsx";
-import { MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
+import { MenuAddressPinContext, MenuHeaderShareContext, MenuHeaderTrailingActionContext } from "./menuHeaderTrailingActionContext.js";
 import {
   FEED_ORDER_UNKNOWN_LOCATION_MESSAGE,
   withFeedOrderMarketGate,
@@ -975,6 +975,7 @@ export default function CatalogMenuRenderer({
         }}>
           <MenuHeaderShareContext.Provider value={shareHeaderValue}>
           <MenuHeaderTrailingActionContext.Provider value={headerBookmarkAction}>
+          <MenuAddressPinContext.Provider value={!addressDisplay.isBrandHq}>
           <MenuRowActionsContext.Provider value={menuBrowserRowActions}>
           {templateContext ? (
             applyMenuAppearance && appearanceTokens ? (
@@ -996,6 +997,7 @@ export default function CatalogMenuRenderer({
             )
           ) : null}
           </MenuRowActionsContext.Provider>
+          </MenuAddressPinContext.Provider>
           </MenuHeaderTrailingActionContext.Provider>
           </MenuHeaderShareContext.Provider>
           <MenuOrderBar

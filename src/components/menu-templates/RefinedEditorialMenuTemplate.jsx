@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoogleMapsPinIcon from "./GoogleMapsPinIcon.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -171,8 +172,9 @@ export default function RefinedEditorialMenuTemplate(ctx) {
                       target="_blank"
                       rel="noreferrer"
                       aria-label={`Get directions to ${restaurantName}`}
-                      style={{ color: "inherit", textDecoration: "none" }}
+                      style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}
                     >
+                      <GoogleMapsPinIcon size={13} />
                       <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} addressLine={addressLine} />
                     </a>
                   ) : (

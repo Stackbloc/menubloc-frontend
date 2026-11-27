@@ -66,7 +66,23 @@ function ShareMenuPill({ share }) {
  * data (Menu Browser, public menu page) the row is the app's: Share menu pill + ⓘ / bookmark;
  * elsewhere the template's icons (like + share + comment) as before.
  */
+/**
+ * Share menu pill on its own line under the address (Andre 2026-11-27: "the share can go below
+ * address"), matching the app, where Share sits under the name and address. Renders nothing when
+ * the menu provides no share data (the template's own icons stay in the name row).
+ */
+export function MenuHeaderShareBelowAddress() {
+  const share = useContext(MenuHeaderShareContext);
+  if (!share?.shareData) return null;
+  return (
+    <div data-testid="menu-share-below-address" style={{ marginTop: 10 }}>
+      <ShareMenuPill share={share} />
+    </div>
+  );
+}
+
 export default function MenuHeaderNameWithActions({
+  shareBelowAddress = false,
   nameSlot,
   onActionsClick,
   leadingAction = null,
@@ -143,7 +159,7 @@ export default function MenuHeaderNameWithActions({
         }}
       >
         {share?.shareData ? (
-          <ShareMenuPill share={share} />
+          shareBelowAddress ? null : <ShareMenuPill share={share} />
         ) : (
           <>
             {leadingAction}

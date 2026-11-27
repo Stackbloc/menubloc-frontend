@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import GoogleMapsPinIcon from "../menu-templates/GoogleMapsPinIcon.jsx";
+import MenuAddressLines from "../menu-templates/MenuAddressLines.jsx";
+import { resolvePublicMenuAddressDisplay } from "../../lib/displayAddress.js";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { API_BASE, toConsumerErrorMessage } from "../../lib/api.js";
@@ -8,7 +11,6 @@ import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight
 import {
   asFiniteNumber,
   asStr,
-  buildAddressLocalityLine,
   buildGoogleMapsUrlForRestaurant,
   resolveRestaurantProfileHref,
 } from "../../lib/catalogMenuUtils.js";
@@ -278,17 +280,23 @@ export default function CatalogDrinksMenuRenderer({
   const restaurantName = asStr(
     restaurant.restaurant_name || data?.restaurant_name || entry?.restaurant_name || `Restaurant ${restaurantId}`
   ).trim();
-  const addressLine1 = asStr(restaurant.address_line1 || data?.address_line1).trim();
-  const addressLine2 = buildAddressLocalityLine(
-    restaurant.city || data?.city,
-    restaurant.state || data?.state,
-    restaurant.postal_code || data?.postal_code
-  );
-  const addressLine = [addressLine1, addressLine2].filter(Boolean).join(", ");
+  // Same address format as every menu (Andre 2026-11-27): street, then "City, ST" as the last line.
+  const addressDisplay = resolvePublicMenuAddressDisplay({
+    ...data,
+    is_canonical_parent: restaurant.is_canonical_parent ?? data?.is_canonical_parent,
+    address_line1: restaurant.address_line1 || data?.address_line1,
+    address: restaurant.address || data?.address,
+    city: restaurant.city || data?.city,
+    state: restaurant.state || data?.state,
+    postal_code: restaurant.postal_code || data?.postal_code,
+  });
+  const addressLine1 = addressDisplay.addressLine1;
+  const addressLine2 = addressDisplay.addressLine2;
+  const addressLine = addressDisplay.addressLine;
   const distanceMiles = asFiniteNumber(
     restaurant.distance_miles ?? data?.distance_miles ?? entry?.distance_miles
   );
-  const directionsHref = buildGoogleMapsUrlForRestaurant({
+  const directionsHref = addressDisplay.isBrandHq ? "" : addressDisplay.directionsHref || buildGoogleMapsUrlForRestaurant({
     addressLine,
     addressLine1,
     addressLine2,
@@ -421,10 +429,13 @@ export default function CatalogDrinksMenuRenderer({
         {addressLine ? (
           <div style={{ fontSize: 14, color: mutedColor, lineHeight: 1.45 }}>
             {directionsHref ? (
-              <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
-                {addressLine}
+              <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}>
+                <GoogleMapsPinIcon size={13} />
+                <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} />
               </a>
-            ) : addressLine}
+            ) : (
+              <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} />
+            )}
           </div>
         ) : null}
         {distanceMiles != null ? (

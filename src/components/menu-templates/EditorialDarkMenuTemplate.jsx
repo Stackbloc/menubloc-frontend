@@ -6,12 +6,12 @@ import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
-import MapPinIcon from "./MapPinIcon.jsx";
+import GoogleMapsPinIcon from "./GoogleMapsPinIcon.jsx";
 import MenuAddressLines from "./MenuAddressLines.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
+import MenuHeaderNameWithActions, { MenuHeaderShareBelowAddress } from "./MenuHeaderIconRail.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
@@ -166,7 +166,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
             </RestaurantProfileLogoLink>
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <MenuHeaderNameWithActions
+            <MenuHeaderNameWithActions shareBelowAddress
               leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
@@ -250,7 +250,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
                     cursor: "pointer",
                   }}
                 >
-                  <MapPinIcon size={13} stroke={SUBTLE} />
+                  <GoogleMapsPinIcon size={13} />
                   <MenuAddressLines
                     addressLine1={addressLine1}
                     addressLine2={addressLine2}
@@ -259,7 +259,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
                 </a>
               ) : (
                 <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 4, display: "flex", alignItems: "flex-start", gap: 5 }}>
-                  <MapPinIcon size={13} stroke={SUBTLE} />
+                  <GoogleMapsPinIcon size={13} />
                   <MenuAddressLines
                     addressLine1={addressLine1}
                     addressLine2={addressLine2}
@@ -268,6 +268,7 @@ export default function EditorialDarkMenuTemplate(ctx) {
                 </div>
               )
             ) : null}
+            <MenuHeaderShareBelowAddress />
 
             {showDistanceBelowAddress ? (
               <MenuRestaurantDistanceLine miles={distanceMiles} color={SUBTLE} />

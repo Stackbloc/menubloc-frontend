@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoogleMapsPinIcon from "./GoogleMapsPinIcon.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -6,7 +7,7 @@ import { shouldShowItemImages } from "./menuThemeSettings.js";
 import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuAddressLines from "./MenuAddressLines.jsx";
-import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
+import MenuHeaderNameWithActions, { MenuHeaderShareBelowAddress } from "./MenuHeaderIconRail.jsx";
 
 function DinerLogo({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -107,7 +108,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
           <div style={{ color: accent, fontSize: 11, fontWeight: 850, letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 4 }}>
             {menuTypeLabel || "Sample menu design"}
           </div>
-          <MenuHeaderNameWithActions
+          <MenuHeaderNameWithActions shareBelowAddress
             leadingAction={menuHeaderLeadingAction}
             tone={tone}
             claimStatus={claimStatus}
@@ -147,7 +148,8 @@ export default function FamilyDinerMenuTemplate(ctx) {
           {addressLine1 || addressLine2 ? (
             <div style={{ marginTop: 7, color: "#667085", fontSize: 13, fontWeight: 650 }}>
               {directionsHref ? (
-                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex" }}>
+                <a href={directionsHref} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}>
+                  <GoogleMapsPinIcon size={13} />
                   <MenuAddressLines addressLine1={addressLine1} addressLine2={addressLine2} />
                 </a>
               ) : (
@@ -155,6 +157,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
               )}
             </div>
           ) : null}
+          <MenuHeaderShareBelowAddress />
         </div>
       </header>
 

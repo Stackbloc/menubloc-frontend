@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoogleMapsPinIcon from "./GoogleMapsPinIcon.jsx";
 import ShareButton from "../share/ShareButton.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
@@ -7,7 +8,7 @@ import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
+import MenuHeaderNameWithActions, { MenuHeaderShareBelowAddress } from "./MenuHeaderIconRail.jsx";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 48, accentBorder = "rgba(34,197,94,0.22)" }) {
   if (logoUrl) {
@@ -167,7 +168,7 @@ export default function RefinedDarkMenuTemplate(ctx) {
             accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.22)"}
           />}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <MenuHeaderNameWithActions
+            <MenuHeaderNameWithActions shareBelowAddress
               leadingAction={menuHeaderLeadingAction}
               tone={tone}
               claimStatus={claimStatus}
@@ -247,7 +248,7 @@ export default function RefinedDarkMenuTemplate(ctx) {
                       gap: 4,
                     }}
                   >
-                    <span style={{ flexShrink: 0, fontSize: 12 }}>📍</span>
+                    <GoogleMapsPinIcon size={12} />
                     <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                       {addressLine1 ? <span>{addressLine1}</span> : null}
                       {addressLine2 ? <span>{addressLine2}</span> : null}
@@ -261,6 +262,7 @@ export default function RefinedDarkMenuTemplate(ctx) {
                 )}
               </div>
             ) : null}
+            <MenuHeaderShareBelowAddress />
 
             <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {scheduledActiveMenuLabel ? (
