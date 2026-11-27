@@ -12,11 +12,12 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 
-test("menu page hides the header address only for Classic/Fine and provides the ⓘ", () => {
+// 2026-11-27 (Andre): menus include the address + Google Maps link again, Classic/Fine included.
+test("Classic/Fine keep the ⓘ and now also show the header address + maps link", () => {
   const page = read("src/pages/PublicMenuPage.jsx");
   assert.match(page, /const compactMenuHeader = \["v1", "v16", "v17"\]\.includes\(menuPresentationStyle\)/);
-  assert.match(page, /addressLine: compactMenuHeader \? "" : addressLine/);
-  assert.match(page, /directionsHref: compactMenuHeader \? null : directionsHref/);
+  assert.doesNotMatch(page, /addressLine: compactMenuHeader \? "" : addressLine/);
+  assert.match(page, /directionsHref: directionsHref \|\| null/);
   assert.match(page, /<MenuHeaderTrailingActionContext\.Provider value=\{menuInfoAction\}>/);
 });
 

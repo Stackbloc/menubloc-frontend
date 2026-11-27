@@ -1797,10 +1797,12 @@ export default function PublicMenuPage() {
           restaurantProfileHref,
           menuTypeLabel,
           scheduledActiveMenuLabel,
-          addressLine1: compactMenuHeader ? "" : addressLine1,
-          addressLine2: compactMenuHeader ? "" : addressLine2,
-          addressLine: compactMenuHeader ? "" : addressLine,
-          directionsHref: compactMenuHeader ? null : directionsHref,
+          // Andre 2026-11-27: every menu shows the address + Google Maps link again, compact
+          // headers (Classic/Fine) included; franchise HQ record shows "Franchise HQ: City, ST".
+          addressLine1,
+          addressLine2,
+          addressLine,
+          directionsHref: directionsHref || null,
           logoUrl: data?.logo_url || null,
           logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,

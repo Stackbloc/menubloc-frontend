@@ -435,8 +435,10 @@ export default function CatalogMenuRenderer({
   const addressLine1 = addressDisplay.addressLine1;
   const addressLine2 = addressDisplay.addressLine2;
   const addressLine = addressDisplay.addressLine;
-  const directionsHref =
-    addressDisplay.directionsHref ||
+  // Franchise HQ record: no maps link to the corporate address (Andre 2026-11-27).
+  const directionsHref = addressDisplay.isBrandHq
+    ? ""
+    : addressDisplay.directionsHref ||
     buildGoogleMapsUrlForRestaurant({
       addressLine,
       addressLine1,

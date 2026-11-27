@@ -141,9 +141,12 @@ export function isBrandPageRecord(data) {
  */
 export function resolvePublicMenuAddressDisplay(data, { isFoodTruck = false } = {}) {
   // Brand page (franchise canonical/HQ record): the corporate address is not a place to
-  // eat — never show it to diners. The franchise banner shows the chosen store.
+  // eat — never show the street or a maps link. Andre 2026-11-27: show "Franchise HQ: City, ST"
+  // only. The franchise banner shows the chosen store.
   if (isBrandPageRecord(data)) {
-    return { addressLine1: "", addressLine2: "", addressLine: "", directionsHref: "", usedCurrentPickup: false };
+    const area = [asStr(data?.city), asStr(data?.state).toUpperCase()].filter(Boolean).join(", ");
+    const hq = area ? `Franchise HQ: ${area}` : "";
+    return { addressLine1: hq, addressLine2: "", addressLine: hq, directionsHref: "", usedCurrentPickup: false, isBrandHq: true };
   }
   const pickup = data?.current_pickup_location || null;
   const pickupStreet = firstNonEmpty(

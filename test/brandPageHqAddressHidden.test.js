@@ -26,12 +26,26 @@ test("Brand page record is detected only by is_canonical_parent", () => {
   assert.equal(isBrandPageRecord(null), false);
 });
 
-test("menu header shows no HQ address or directions on the Brand page", () => {
+// 2026-11-27 (Andre): the Brand page menu header shows "Franchise HQ: City, ST" — never the street or a maps link.
+test("menu header shows only Franchise HQ city/state on the Brand page, no street or directions", () => {
   const display = resolvePublicMenuAddressDisplay(ihopBrand);
-  assert.equal(display.addressLine, "");
-  assert.equal(display.addressLine1, "");
+  assert.equal(display.addressLine, "Franchise HQ: Glendale, CA");
+  assert.equal(display.addressLine1, "Franchise HQ: Glendale, CA");
   assert.equal(display.addressLine2, "");
   assert.equal(display.directionsHref, "");
+  assert.doesNotMatch(display.addressLine, /Brand Blvd|91203/);
+});
+
+test("Brand page with no city/state shows nothing", () => {
+  const display = resolvePublicMenuAddressDisplay({ ...ihopBrand, city: "", state: "" });
+  assert.equal(display.addressLine, "");
+});
+
+test("menu header passes the address and maps link to every template, compact headers included", () => {
+  const src = read("src/pages/PublicMenuPage.jsx");
+  assert.doesNotMatch(src, /addressLine: compactMenuHeader \? "" : addressLine/);
+  const catalog = read("src/components/menuCatalog/CatalogMenuRenderer.jsx");
+  assert.match(catalog, /const directionsHref = addressDisplay\.isBrandHq\s*\?\s*""/);
 });
 
 test("regular restaurant menu header still shows its address", () => {
