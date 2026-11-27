@@ -457,6 +457,10 @@ export default function OwnerKnowledgeBot() {
     } catch (err) {
       if (err?.payload?.code === "confirmation_required") {
         setError("This is a franchise-wide or large change. Tick the confirmation box, then publish again.");
+      } else if (err instanceof TypeError || /failed to fetch|load failed|networkerror/i.test(String(err?.message || ""))) {
+        // Plan 76 A2 (2026-11-27): a dropped connection isn't the answer. If publishing started,
+        // the job keeps going on the server and this page follows it.
+        setError("Lost the connection to Menuply. If publishing had started, it keeps going — this page updates by itself.");
       } else {
         setError(err?.payload?.error || err?.message || "Something went wrong.");
       }
@@ -651,12 +655,34 @@ export default function OwnerKnowledgeBot() {
   const restaurantConflict = (preview.conflicts || []).find((c) => c.entity === "restaurant_match");
   const needsRestaurantChoice = Boolean(restaurantConflict) && !row?.restaurant_id;
   const published = row?.status === "completed" && applyResult;
+  // Plan 76 A2 (2026-11-27): chain-store and franchise publishes run in the background on the
+  // server; the page polls the job until it finishes, then until the other stores are done.
+  const applying = row?.status === "applying";
+  const fanoutProgress = row?.progress?.chain_fanout || null;
+  const fanoutRunning = fanoutProgress?.status === "running";
   // Chain stores use the chain's menu and price updates have their own list; everything else can be corrected.
   const canEditMenu = !published && !pricePlan && !chainStore && !isFranchise && row?.status !== "applying";
   const publishBlocked =
+    applying ||
     (pricePlan ? !priceChangeCount : !items.length && !isFranchise) ||
     needsRestaurantChoice ||
     (preview.requires_confirmation && !confirmLarge);
+  useEffect(() => {
+    if (!jobId || !(applying || fanoutRunning)) return undefined;
+    let stopped = false;
+    const timer = setInterval(() => {
+      getKnowledgeBotJob(jobId)
+        .then((data) => {
+          if (!stopped) hydrate(data);
+        })
+        .catch(() => {});
+    }, applying ? 4000 : 10000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [jobId, applying, fanoutRunning, hydrate]);
+
   const clusterName = useMemo(() => {
     const slug = research.cluster_slug || form.cluster_slug;
     if (!slug) return null;
@@ -890,14 +916,23 @@ export default function OwnerKnowledgeBot() {
                   })()}
                   {(() => {
                     const fanout = (applyResult.updated || []).find((u) => u.entity === "chain_menu_fanout");
-                    return fanout
-                      ? ` It is now going onto the other ${fanout.stores_queued} ${chainStore?.chain_name || "chain"} stores in the background (a few minutes for hundreds of stores).`
-                      : null;
+                    if (!fanout) return null;
+                    const chainName = chainStore?.chain_name || "chain";
+                    if (fanoutProgress?.status === "completed") {
+                      return fanoutProgress.failed
+                        ? ` ${fanoutProgress.published} of ${fanoutProgress.total} other ${chainName} stores updated; ${fanoutProgress.failed} failed (see History).`
+                        : ` All ${fanoutProgress.total} other ${chainName} stores are updated too.`;
+                    }
+                    if (fanoutProgress?.status === "failed") {
+                      return ` Updating the other ${chainName} stores stopped after ${fanoutProgress.published} of ${fanoutProgress.total}: ${fanoutProgress.error || "see History"}.`;
+                    }
+                    const done = fanoutProgress ? (fanoutProgress.published || 0) + (fanoutProgress.failed || 0) : 0;
+                    return ` Now updating the other ${fanout.stores_queued} ${chainName} stores in the background${done ? ` (${done} of ${fanout.stores_queued} done)` : ""}.`;
                   })()}
                 </Notice>
               )
             ) : row?.status === "applying" ? (
-              <Notice>Publishing in the background (large franchise job). Check History for progress.</Notice>
+              <Notice>Publishing… This page updates by itself when it's done. You can leave; History shows the result.</Notice>
             ) : row?.status === "failed" && row?.error_message ? (
               <Notice tone="error"><strong>Not published:</strong> {row.error_message}</Notice>
             ) : null}
