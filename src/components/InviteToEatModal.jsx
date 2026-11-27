@@ -21,6 +21,7 @@ import {
   pickInviteCopySeed,
 } from "../lib/eatInviteShareCopy.js";
 import { unlistedPlaceName } from "../lib/unlistedPlace.js";
+import { HoursAtNote, confirmIfClosed, useHoursAt } from "../lib/hoursAt.jsx";
 import { chunk } from "../lib/quickInviteWho.js";
 import { CLEAR_STUCK_MEDIA_CHROME_EVENT } from "../pages/consumer/myMenuply/pendingHighlightMedia.js";
 
@@ -224,11 +225,16 @@ export default function InviteToEatModal({
     shareMessageLead,
   ]);
 
+  // Plan 77: the place's known hours at the picked day + time (organizer picks the time).
+  const hoursName = menuItemId ? "The restaurant" : restaurantName || "The restaurant";
+  const hours = useHoursAt(open && scheduleMode === "organizer" ? restaurantId : null, date, time);
+
   if (!open) return null;
 
   async function handleCreate(e) {
     e.preventDefault();
     if (busy || !inviteKind) return;
+    if (scheduleMode === "organizer" && restaurantId && !confirmIfClosed(hoursName, hours, date, time, "Send anyway")) return;
     setBusy(true);
     setError("");
     try {
@@ -662,6 +668,7 @@ export default function InviteToEatModal({
                       style={inputStyle}
                     />
                   </label>
+                  {restaurantId ? <HoursAtNote name={hoursName} hours={hours} date={date} testId="invite-hours" /> : null}
                 </>
               ) : (
                 <p

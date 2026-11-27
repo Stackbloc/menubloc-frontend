@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
+import { HoursAtNote, confirmIfClosed, useHoursAt } from "../../lib/hoursAt.jsx";
 import DiningCrewFoodEntityPicker from "../../components/diningCrews/DiningCrewFoodEntityPicker.jsx";
 import {
   audienceChips,
@@ -73,6 +74,10 @@ export default function OpenInvitePage() {
   );
   const helper = chips.find((c) => c.value === audience)?.helper || "";
   const ready = hasPlace && date && time && (!placeIsTyped || city.trim()) && !busy;
+  // Plan 77: the place's known hours at the picked day + time.
+  const hoursPlaceId = keptPlace ? existing.restaurant_id || null : pickedId;
+  const hoursName = (keptPlace ? existing.restaurant_name : selected?.restaurant_name || selected?.name) || "The restaurant";
+  const hours = useHoursAt(hoursPlaceId, date, time);
 
   function placeBody() {
     if (keptPlace) {
@@ -86,6 +91,7 @@ export default function OpenInvitePage() {
   async function submit(e) {
     e.preventDefault();
     if (!ready) return;
+    if (hoursPlaceId && !confirmIfClosed(hoursName, hours, date, time, "Post anyway")) return;
     setBusy(true);
     setError("");
     const body = {
@@ -147,6 +153,7 @@ export default function OpenInvitePage() {
           <input type="date" aria-label="Day" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...styles.input, flex: 2 }} data-testid="open-invite-date" />
           <input type="time" aria-label="Time" value={time} onChange={(e) => setTime(e.target.value)} style={{ ...styles.input, flex: 1 }} data-testid="open-invite-time" />
         </div>
+        {hoursPlaceId ? <HoursAtNote name={hoursName} hours={hours} date={date} testId="open-invite-hours" /> : null}
 
         <div style={styles.step}>How many people can join?</div>
         <div style={styles.chips}>

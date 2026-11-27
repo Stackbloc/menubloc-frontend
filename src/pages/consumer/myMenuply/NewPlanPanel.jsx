@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createSocialPlan } from "../../../lib/consumerApi.js";
+import { HoursAtNote, confirmIfClosed, useHoursAt } from "../../../lib/hoursAt.jsx";
 import { searchReportPlaces } from "../../../lib/foodActivityApi.js";
 import { dayChoices } from "../../../lib/socialPlanTags.js";
 import { WhoCanCome } from "./SocialPlanSharing.jsx";
@@ -63,8 +64,12 @@ export default function NewPlanPanel({ day, initialKind = "meal", onClose, onAdd
 
   const typed = query.trim().replace(/\s+/g, " ").slice(0, 120);
   const ready = Boolean(date) && (kind === "meal" || title.trim());
+  // Plan 77: the place's known hours at the picked day + time.
+  const placeName = place?.restaurant_name || place?.name || "";
+  const hours = useHoursAt(place?.restaurant_id || null, date, time);
 
   async function add() {
+    if (place?.restaurant_id && time && !confirmIfClosed(placeName, hours, date, time, "Add anyway")) return;
     setBusy(true);
     setError("");
     try {
@@ -173,6 +178,7 @@ export default function NewPlanPanel({ day, initialKind = "meal", onClose, onAdd
           <Chip key={t.time} label={t.label} on={time === t.time} onClick={() => setTime(time === t.time ? null : t.time)} testId={`new-plan-time-${t.time}`} />
         ))}
       </div>
+      {place?.restaurant_id ? <HoursAtNote name={placeName} hours={hours} date={date} testId="new-plan-hours" /> : null}
 
       <span style={styles.label}>Who can come</span>
       <WhoCanCome value={who} onChange={(v) => v !== "just_me" && setWho(v)} testId="new-plan-who" />
