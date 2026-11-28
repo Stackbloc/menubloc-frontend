@@ -1456,6 +1456,20 @@ export const updateOwnerDeal = (restaurantId, dealId, body) =>
 export const publishOwnerDeal = (restaurantId, dealId, body = {}) =>
   post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/publish`, body);
 
+// ─── Diner deal reports (plan 78, 2026-11-27): informational use only, never a deal ─
+// CK decides every write. "Create my deal" = the normal deal editor, then response made_own_deal.
+export const listOwnerDealReports = (restaurantId) =>
+  get(`/api/owner/deal-reports/restaurants/${restaurantId}`);
+export const listOwnerUnlistedDealReports = () => get(`/api/owner/deal-reports/unlisted`);
+export const extendOwnerDealReport = (reportId, showUntil) =>
+  post(`/api/owner/deal-reports/${reportId}/extend`, { show_until: showUntil });
+export const respondOwnerDealReport = (reportId, response, ownerDealId = null) =>
+  post(`/api/owner/deal-reports/${reportId}/response`, ownerDealId ? { response, owner_deal_id: ownerDealId } : { response });
+export const linkOwnerDealReportRestaurant = (reportId, restaurantId) =>
+  post(`/api/owner/deal-reports/${reportId}/link-restaurant`, { restaurant_id: restaurantId });
+export const linkOwnerDealReportDish = (reportId, menuItemId, linkedItemsSource) =>
+  post(`/api/owner/deal-reports/${reportId}/link-dish`, { menu_item_id: menuItemId, linked_items_source: linkedItemsSource });
+
 export const pauseOwnerDeal = (restaurantId, dealId) =>
   post(`/api/owner/restaurants/${restaurantId}/deals/${dealId}/pause`, {});
 

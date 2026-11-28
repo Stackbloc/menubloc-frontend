@@ -110,8 +110,75 @@ function shuffleList(list) {
   return next;
 }
 
-export function mapDealsToFeedVideoItems(deals) {
-  return (Array.isArray(deals) ? deals : [])
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Reported Nov 27" (local date). */
+export function reportedOnLabel(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `Reported ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+
+/**
+ * Diner deal report (plan 78, Andre 2026-11-27): "informational use only", never a deal. Same reel item
+ * shape with no deal id, no discount, no deal link, never Sponsored; shown with "User Reported" +
+ * "Subject to restaurant confirmation" + the date. A restaurant not on Menuply shows its typed name, no link.
+ */
+export function mapDealReportToFeedVideoItem(row) {
+  const videoUrl = String(row?.video_url || "").trim();
+  if (!videoUrl || row?.informational !== true || row?.deal_report_id == null) return null;
+  const listed = row.restaurant_listed === true;
+  const slug = row.restaurant_slug || null;
+  const city = row.city || null;
+  const state = row.state || null;
+  const dish = String(row.dish_name || "").trim();
+  return {
+    id: `report:${row.deal_report_id}`,
+    deal_id: null,
+    deal_report_id: row.deal_report_id,
+    is_deal_report: true,
+    clip_id: row.clip_id,
+    reported_by: row.reported_by ?? null,
+    report_label: row.label || "User Reported",
+    report_disclaimer: row.disclaimer || "Subject to restaurant confirmation",
+    reported_on: reportedOnLabel(row.reported_at),
+    reported_at: row.reported_at || null,
+    video_url: videoUrl,
+    photo_url: String(row.photo_url || "").trim() || null,
+    title: dish || "Deal report",
+    meal_time_caption: null,
+    headline: dish || "Deal report",
+    description: String(row.description || "").trim(),
+    schedule_label: null,
+    restaurant_name: String(row.restaurant_name || "").trim() || "Restaurant",
+    restaurant_id: listed ? row.restaurant_id : null,
+    restaurant_slug: listed ? slug : null,
+    city,
+    state,
+    meal_periods: [],
+    meal_period_labels: [],
+    menu_item_name: dish,
+    menu_item_id: row.dish_listed === true ? row.menu_item_id : null,
+    eligible_item_names: [],
+    menu_items: row.dish_listed === true && row.menu_item_id != null ? [{ id: row.menu_item_id, name: dish || null }] : [],
+    discount_label: "",
+    feed_promoted: false,
+    play_muted: false,
+    poster_name: row.reporter_name || null,
+    restaurant_href: listed
+      ? restaurantPath({ slug, city, state }) || (row.restaurant_id ? `/restaurants/${encodeURIComponent(String(row.restaurant_id))}` : null)
+      : null,
+    deal_href: null,
+  };
+}
+
+export function mapDealsToFeedVideoItems(deals, dealReports = []) {
+  const items = (Array.isArray(deals) ? deals : [])
     .map(mapDealRowToFeedVideoItem)
     .filter(Boolean);
+  const reports = (Array.isArray(dealReports) ? dealReports : [])
+    .map(mapDealReportToFeedVideoItem)
+    .filter(Boolean);
+  return reports.length ? [...items, ...reports] : items;
 }

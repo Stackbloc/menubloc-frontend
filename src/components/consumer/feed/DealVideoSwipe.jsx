@@ -43,6 +43,7 @@ import {
 } from "../../../lib/feedVerticalReelNavigationCopy.js";
 import { wrapEndlessFeedNext } from "../../../lib/shuffleProfileVideos.js";
 import DealIcon from "../../icons/DealIcon.jsx";
+import DealReportBox from "./DealReportBox.jsx";
 
 const SWIPE_MIN_PX = 56;
 
@@ -90,11 +91,16 @@ export default function DealVideoSwipe({
     browseTrail.length
   );
   const browseRestaurantRef = browseTrail[browseTrailIndex] || null;
+  // Plan 78 (2026-11-27): a diner deal report has no deal page, so no deal share link.
+  const isDealReport = item?.is_deal_report === true;
   const inviteVideoShareUrl = useMemo(
-    () => feedDealShareUrl(item?.deal_id || item?.id),
-    [item?.deal_id, item?.id]
+    () => (isDealReport ? "" : feedDealShareUrl(item?.deal_id || item?.id)),
+    [isDealReport, item?.deal_id, item?.id]
   );
-  const dealShareData = useMemo(() => (item ? buildFeedDealShareData(item) : null), [item]);
+  const dealShareData = useMemo(
+    () => (item && !isDealReport ? buildFeedDealShareData(item) : null),
+    [item, isDealReport]
+  );
   const showInvite = Boolean(restaurantRef?.restaurant_id);
   const inviteMenuItemId =
     item?.menu_item_id != null && String(item.menu_item_id).trim() !== ""
@@ -645,7 +651,7 @@ export default function DealVideoSwipe({
         }}
         data-testid="feed-deals-meta-dock"
       >
-        {item.feed_promoted ? (
+        {item.feed_promoted && !isDealReport ? (
           <span style={styles.sponsored} data-testid="feed-deals-sponsored">
             Sponsored
           </span>
@@ -665,10 +671,22 @@ export default function DealVideoSwipe({
         ) : (
           <span style={styles.restaurantPlain}>{item.restaurant_name}</span>
         )}
-        <Link to={item.deal_href} style={styles.titleLink} data-testid="feed-deals-title">
-          {item.headline || item.title}
-        </Link>
-        <FeedVideoWatchLink kind="deal" id={item.deal_id} label={item.title} />
+        {isDealReport ? (
+          <>
+            {/* Plan 78: informational use only; never a deal link, discount or Sponsored. */}
+            <span style={styles.titleLink} data-testid="feed-deals-title">
+              {item.headline || item.title}
+            </span>
+            <DealReportBox item={item} />
+          </>
+        ) : (
+          <>
+            <Link to={item.deal_href} style={styles.titleLink} data-testid="feed-deals-title">
+              {item.headline || item.title}
+            </Link>
+            <FeedVideoWatchLink kind="deal" id={item.deal_id} label={item.title} />
+          </>
+        )}
         {item.meal_time_caption &&
         item.title &&
         item.title !== item.meal_time_caption ? (
@@ -676,7 +694,7 @@ export default function DealVideoSwipe({
             {item.title}
           </span>
         ) : null}
-        {item.discount_label ? (
+        {item.discount_label && !isDealReport ? (
           <span style={{ ...styles.discount, display: "inline-flex", alignItems: "center", gap: 6 }} data-testid="feed-deals-discount">
             <DealIcon size={22} ring />
             {item.discount_label}
@@ -696,7 +714,7 @@ export default function DealVideoSwipe({
             ) : null}
           </div>
         ) : null}
-        {item.eligible_item_names?.length > 1 ? (
+        {isDealReport ? null : item.eligible_item_names?.length > 1 ? (
           <span style={styles.menuItem} data-testid="feed-deals-eligible-items">
             {item.eligible_item_names.join(" · ")}
           </span>

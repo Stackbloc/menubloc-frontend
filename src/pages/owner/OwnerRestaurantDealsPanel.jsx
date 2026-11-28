@@ -9,8 +9,10 @@ import {
   publishOwnerDeal,
   removeOwnerDeal,
   updateOwnerDeal,
+  respondOwnerDealReport,
   uploadOwnerDealMediaVideo,
 } from "../../lib/ownerApi.js";
+import OwnerDealReportsSection from "./OwnerDealReportsSection.jsx";
 import {
   DEAL_MEAL_PERIODS,
   dealMealPeriodSummary,
@@ -169,9 +171,21 @@ function smallButton(variant = "ghost") {
   };
 }
 
-function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) {
+/** Plan 78: "Create my deal" from a diner report starts a new deal with the dish + note filled in. */
+export function formFromDealReport(report) {
+  const base = emptyForm();
+  const dishId = report?.dish_listed && report?.menu_item_id != null ? report.menu_item_id : null;
+  return {
+    ...base,
+    title: String(report?.dish_name || "").trim().slice(0, 120),
+    description: String(report?.description || "").trim(),
+    items: dishId != null ? [{ id: dishId, name: report.dish_name || "" }] : [],
+  };
+}
+
+function DealForm({ restaurantId, deal, prefill = null, menu, menuLoading, onSaved, onCancel }) {
   const isNew = !deal;
-  const [form, setForm] = useState(() => (deal ? formFromDeal(deal, menu.items) : emptyForm()));
+  const [form, setForm] = useState(() => (deal ? formFromDeal(deal, menu.items) : prefill || emptyForm()));
   const [videoFile, setVideoFile] = useState(null);
   const [publishAfterSave, setPublishAfterSave] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -274,7 +288,8 @@ function DealForm({ restaurantId, deal, menu, menuLoading, onSaved, onCancel }) 
       onSaved?.(
         publishAfterSave || saved.status === "active"
           ? `“${body.title}” is live.`
-          : `“${body.title}” saved as a draft.`
+          : `“${body.title}” saved as a draft.`,
+        saved
       );
     } catch (err) {
       setError(err.message || "Unable to save deal");
@@ -552,7 +567,8 @@ export default function OwnerRestaurantDealsPanel({ restaurantId, restaurantName
   const [notice, setNotice] = useState("");
   const [menu, setMenu] = useState({ source: "public", items: [] });
   const [menuLoading, setMenuLoading] = useState(false);
-  const [editing, setEditing] = useState(null); // null | "new" | deal row
+  const [editing, setEditing] = useState(null); // null | "new" | deal row | { fromReport }
+  const [reportsReload, setReportsReload] = useState(0);
   const [rowBusy, setRowBusy] = useState(null);
 
   const loadDeals = useCallback(async () => {
@@ -632,15 +648,26 @@ export default function OwnerRestaurantDealsPanel({ restaurantId, restaurantName
     <div data-testid="owner-restaurant-deals">
       {editing ? (
         <DealForm
-          key={editing === "new" ? "new" : editing.id}
+          key={editing === "new" ? "new" : editing.fromReport ? `report-${editing.fromReport.deal_report_id}` : editing.id}
           restaurantId={rid}
-          deal={editing === "new" ? null : editing}
+          deal={editing === "new" || editing.fromReport ? null : editing}
+          prefill={editing.fromReport ? formFromDealReport(editing.fromReport) : null}
           menu={menu}
           menuLoading={menuLoading}
           onCancel={() => setEditing(null)}
-          onSaved={(message) => {
+          onSaved={async (message, saved) => {
+            const fromReport = editing?.fromReport || null;
             setEditing(null);
             setNotice(message);
+            // Plan 78: the restaurant made its own deal from a diner report → link it (CK decides).
+            if (fromReport && saved?.id) {
+              try {
+                await respondOwnerDealReport(fromReport.deal_report_id, "made_own_deal", saved.id);
+              } catch (err) {
+                setError(`Deal saved, but the diner report wasn't linked: ${err.message || "try again"}`);
+              }
+              setReportsReload((n) => n + 1);
+            }
             loadDeals();
           }}
         />
@@ -759,6 +786,18 @@ export default function OwnerRestaurantDealsPanel({ restaurantId, restaurantName
           </div>
         )}
       </PageCard>
+
+      <OwnerDealReportsSection
+        restaurantId={rid}
+        restaurantName={restaurantName}
+        menu={menu}
+        reloadKey={reportsReload}
+        onCreateDeal={(report) => {
+          setNotice("");
+          setEditing({ fromReport: report });
+          window.scrollTo?.({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }

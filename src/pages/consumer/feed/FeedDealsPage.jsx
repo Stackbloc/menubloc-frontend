@@ -84,11 +84,13 @@ export default function FeedDealsPage() {
           city: market.city,
           state: market.state,
           has_video: "1",
+          // Plan 78 (2026-11-27): diner deal reports, informational use only.
+          include_reports: "1",
         });
         const data = await apiGet(`/deals?${params.toString()}`);
         if (cancelled) return;
         // Order (meal sort + random) is applied in `items`; the reel reshuffles after each full pass.
-        setAllItems(mapDealsToFeedVideoItems(data?.deals));
+        setAllItems(mapDealsToFeedVideoItems(data?.deals, data?.deal_reports));
         setLoadedMarketKey(`${market.city}|${market.state}`);
       } catch (err) {
         if (cancelled) return;
