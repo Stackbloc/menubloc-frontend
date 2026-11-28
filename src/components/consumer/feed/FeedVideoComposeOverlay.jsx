@@ -39,6 +39,8 @@ export default function FeedVideoComposeOverlay({
   mediaSource = "camera",
   openLibraryOnMount = false,
   initialWhereType = null,
+  /** 2026-11-28 (plan 78): Deals → "+ Report a Deal" opens Post with Report a Deal ticked. Pass-through only. */
+  initialReportDeal = false,
   onClose,
 }) {
   const { isAuthenticated } = useConsumer();
@@ -174,6 +176,8 @@ export default function FeedVideoComposeOverlay({
         uploadPercent={uploadPercent}
         locationCity={market.city}
         locationState={market.state}
+        initialReportDeal={initialReportDeal}
+        canReportDeal={Boolean(isAuthenticated)}
       />
     ) : null;
 

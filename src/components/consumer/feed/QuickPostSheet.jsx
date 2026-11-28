@@ -29,6 +29,7 @@ import { unlistedRestaurantPlace } from "../../../lib/unlistedPlace.js";
 import { defaultWhatIAteMealPeriod } from "../../../lib/whatIAteTodayMealPeriod.js";
 import { updateWhatIAteToday } from "../../../lib/consumerApi.js";
 import { notifyFeedVideoPosted } from "../../../lib/feedVideoCompose.js";
+import { sendDealReport } from "../../../lib/dealReportsApi.js";
 import { Burst, CheckIcon, PencilIcon, PinIcon, PriceTicket, SearchIcon, StoreIcon, TacoIcon, TagSparks, VideoCam } from "./postArt.jsx";
 import { DOODLE_BG, POST_COLORS, priceToCents } from "../../../lib/postArtTheme.js";
 
@@ -61,6 +62,10 @@ export default function QuickPostSheet({
   uploadPercent = null,
   locationCity = null,
   locationState = null,
+  /** 2026-11-28 (Andre): Deals → "+ Report a Deal" opens Post with Report a Deal ticked. */
+  initialReportDeal = false,
+  /** Reports need an account (guests post without one). */
+  canReportDeal = false,
 }) {
   const recordId = useId();
   const uploadId = useId();
@@ -90,6 +95,18 @@ export default function QuickPostSheet({
   const [showPrice, setShowPrice] = useState(true);
   const [saving, setSaving] = useState(false);
   const [doneError, setDoneError] = useState("");
+  // Plan 78 (Andre 2026-11-27/28): "Report a Deal" = informational use only, never a deal. Sent after the
+  // normal post, so the clip upload is unchanged. Needs a restaurant (listed or typed); dish optional.
+  const [reportDeal, setReportDeal] = useState(Boolean(initialReportDeal));
+  const [dealNote, setDealNote] = useState("");
+  const [dealReportLine, setDealReportLine] = useState("");
+  const [reportOpenSeen, setReportOpenSeen] = useState(false);
+  if (open && initialReportDeal && canReportDeal && !reportOpenSeen) {
+    setReportOpenSeen(true);
+    setReportDeal(true);
+  } else if (!open && reportOpenSeen) {
+    setReportOpenSeen(false);
+  }
   const inlineCamera = useMemo(() => inlineCameraSupported() && preferInlineCamera(), []);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
 
@@ -121,6 +138,9 @@ export default function QuickPostSheet({
     setShowPrice(true);
     setSaving(false);
     setDoneError("");
+    setReportDeal(false);
+    setDealNote("");
+    setDealReportLine("");
     setFile(null);
     setFileError("");
     setFoodText("");
@@ -297,7 +317,10 @@ export default function QuickPostSheet({
   /** "Cooking @home / No restaurant" (Andre 2026-11-14 mockup): a checkbox; checked clears the restaurant. */
   function toggleHome() {
     const next = !atHome;
-    if (next) clearPlace();
+    if (next) {
+      clearPlace();
+      setReportDeal(false);
+    }
     setAtHome(next);
   }
 
@@ -316,7 +339,8 @@ export default function QuickPostSheet({
   // A restaurant alone is enough (Andre 2026-11-14: a typed restaurant left Post dim with no hint): picked or
   // just typed, Post turns on and the clip posts about the place.
   const placeOnly = !food && Boolean(postPlace);
-  const canPost = Boolean(file) && !busy && !saving && (Boolean(food) || placeOnly);
+  // A deal report needs the restaurant (picked, or typed like Invite to Eat).
+  const canPost = Boolean(file) && !busy && !saving && (Boolean(food) || placeOnly) && (!reportDeal || editing || Boolean(postPlace));
   const whereNow = atHome ? "home" : postPlace?.restaurant_id ? "restaurant" : "other";
 
   /** What the Posted! card shows and Edit Tags saves. */
@@ -337,6 +361,10 @@ export default function QuickPostSheet({
       return;
     }
     if (!file) return;
+    if (reportDeal && !editing && !postPlace) {
+      setDoneError("Add the restaurant to report a deal.");
+      return;
+    }
     if (editing) {
       await saveTags();
       return;
@@ -368,6 +396,12 @@ export default function QuickPostSheet({
     if (Number.isInteger(entryId) && entryId > 0) {
       setPosted(snapshot(entryId));
       setPlaceOpen(false);
+      if (reportDeal) {
+        // Never fails the post: the clip is already up, so a refused report is only a line on Posted!.
+        setDealReportLine(
+          await sendDealReport({ clipId: entryId, place: postPlace, food: food ? { ...food, label: foodLabel(food) } : null, description: dealNote })
+        );
+      }
     }
   }
 
@@ -619,6 +653,11 @@ export default function QuickPostSheet({
           <p style={styles.postedLine} data-testid="quick-post-done-where">
             {postedWhere}
           </p>
+          {dealReportLine ? (
+            <p style={styles.postedLine} data-testid="quick-post-done-deal-report">
+              {dealReportLine}
+            </p>
+          ) : null}
         </div>
         <div style={styles.box} data-testid="quick-post-done-card">
           <div style={styles.thumb}>
@@ -904,6 +943,36 @@ export default function QuickPostSheet({
               Cooking @home / No restaurant
             </label>
 
+            {canReportDeal && !editing && !atHome ? (
+              <>
+                <label style={styles.homeRow}>
+                  <input type="checkbox" checked={reportDeal} onChange={() => setReportDeal((v) => !v)} disabled={busy || saving} style={styles.checkboxNative} data-testid="quick-post-report-deal" />
+                  <span style={{ ...styles.homeBox, ...(reportDeal ? styles.homeBoxOn : null) }} aria-hidden>
+                    {reportDeal ? <CheckIcon size={16} /> : null}
+                  </span>
+                  Report a Deal
+                </label>
+                {reportDeal ? (
+                  <div style={styles.dealBox} data-testid="quick-post-report-deal-box">
+                    <textarea
+                      value={dealNote}
+                      onChange={(e) => setDealNote(e.target.value.slice(0, 500))}
+                      placeholder="What's the deal? e.g. Tuesday special, $9 pasta"
+                      maxLength={500}
+                      rows={2}
+                      disabled={busy || saving}
+                      style={styles.dealInput}
+                      aria-label="Deal description"
+                      data-testid="quick-post-report-deal-note"
+                    />
+                    <span style={styles.dealHint}>
+                      {postPlace ? "Shows in Deals as User Reported · Subject to restaurant confirmation." : "Add the restaurant above to report a deal."}
+                    </span>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
         {errorBlock}
         {/* Compact pill, not a full-width bar (Andre 2026-10-29). */}
         <button
@@ -1078,6 +1147,9 @@ const styles = {
   homeRow: { position: "relative", alignSelf: "center", display: "inline-flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 26, padding: "10px 16px", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", color: C.ink, cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.08)" },
   homeBox: { width: 22, height: 22, flex: "0 0 auto", boxSizing: "border-box", borderRadius: 6, border: `2px solid ${C.logoInk}`, background: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center" },
   homeBoxOn: { background: C.accent, borderColor: C.accent },
+  dealBox: { display: "grid", gap: 4, background: "#fff", borderRadius: 12, padding: 10 },
+  dealInput: { width: "100%", boxSizing: "border-box", border: `1px solid ${C.logoInk}33`, borderRadius: 8, padding: 8, fontSize: 15, fontFamily: "inherit", resize: "vertical", color: C.ink },
+  dealHint: { fontSize: 12, color: C.ink, opacity: 0.7 },
   // Compact dark pill sized to its label (Post / Save / Done): no full-width bars, no green pills.
   darkPill: { alignSelf: "center", appearance: "none", border: "none", background: C.ink, color: "#fff", borderRadius: 999, padding: "11px 32px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   postRight: { alignSelf: "flex-end" },

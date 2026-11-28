@@ -20,6 +20,7 @@ import { resolveFeedDealStartIndex } from "../../../lib/feedShare.js";
 import { useFeedShellDesktop } from "../../../lib/useFeedShellDesktop.js";
 import { markSetup } from "../../../lib/profileSetupMarks.js";
 import { useConsumer } from "../../../context/ConsumerContext.jsx";
+import { openReportDeal } from "../../../lib/dealReportsApi.js";
 import useConsumerFeatureFlags from "../../../hooks/useConsumerFeatureFlags.js";
 
 const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
@@ -106,6 +107,10 @@ export default function FeedDealsPage() {
     };
   }, [market.city, market.state]);
 
+  // Plan 78 (Andre 2026-11-28, web follows the app): "+ Report a Deal" opens Post with Report a Deal ticked.
+  // Mobile: last item in the meal row (nothing else sits there). Desktop (no header row): fixed at top left.
+  const reportButton = <ReportDealButton signedIn={isAuthenticated} inline={!isDesktop} />;
+
   const headerSlot = isDesktop ? null : (
     <div
       style={{ ...styles.chromeWrap, ...(underSwitch ? { top: "calc(max(12px, env(safe-area-inset-top)) + 48px)" } : null) }}
@@ -140,6 +145,7 @@ export default function FeedDealsPage() {
             </button>
           );
         })}
+        {reportButton}
       </div>
     </div>
   );
@@ -148,6 +154,7 @@ export default function FeedDealsPage() {
     return (
       <div style={styles.loading} data-testid="feed-deals-loading">
         {headerSlot}
+        {isDesktop ? reportButton : null}
         <p style={styles.loadingText}>Loading deal clips…</p>
       </div>
     );
@@ -157,6 +164,7 @@ export default function FeedDealsPage() {
     return (
       <div style={styles.loading} data-testid="feed-deals-error">
         {headerSlot}
+        {isDesktop ? reportButton : null}
         <p style={styles.loadingText}>{error}</p>
       </div>
     );
@@ -164,6 +172,7 @@ export default function FeedDealsPage() {
 
   return (
     <div style={styles.page} data-testid="feed-deals-page">
+      {isDesktop ? reportButton : null}
       <DealVideoSwipe
         key={`${effectiveMealFilter}|${loadedMarketKey}`}
         items={items}
@@ -177,7 +186,60 @@ export default function FeedDealsPage() {
   );
 }
 
+function ReportDealButton({ signedIn, inline }) {
+  const [note, setNote] = useState("");
+  return (
+    <div style={inline ? styles.reportInline : styles.reportWrap}>
+      <button
+        type="button"
+        style={styles.reportBtn}
+        data-testid="feed-deals-report-deal"
+        onClick={() => {
+          if (!signedIn) {
+            setNote("Sign in to report a deal.");
+            return;
+          }
+          setNote("");
+          openReportDeal();
+        }}
+      >
+        + Report a Deal
+      </button>
+      {note ? (
+        <span style={inline ? { ...styles.reportNote, ...styles.reportNoteFloat } : styles.reportNote} role="status" data-testid="feed-deals-report-deal-note">
+          {note}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 const styles = {
+  // Small dark box at the top right (no pill, no green, not full width).
+  reportInline: { marginLeft: "auto", position: "relative", alignSelf: "flex-start", pointerEvents: "auto" },
+  reportWrap: {
+    position: "fixed",
+    top: 12,
+    left: 12,
+    zIndex: 60,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 4,
+  },
+  reportBtn: {
+    padding: "6px 10px",
+    borderRadius: 8,
+    border: "1px solid rgba(255,255,255,0.35)",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  reportNoteFloat: { position: "absolute", top: "calc(100% + 4px)", right: 0, whiteSpace: "nowrap" },
+  reportNote: { fontSize: 12, color: "#fff", background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: 8 },
   page: {
     position: "relative",
     minHeight: "100dvh",

@@ -24,6 +24,7 @@ import {
   buildProfileViewSearchParams,
   readConnectViewFromWindow,
 } from "./profileViewMode.js";
+import { OPEN_REPORT_DEAL_EVENT } from "../../../lib/dealReportsApi.js";
 
 export { FEED_PRIMARY_NAV_HEIGHT };
 
@@ -64,6 +65,7 @@ export default function FeedShellPage({ children = null }) {
   const [composeMediaSource, setComposeMediaSource] = useState("camera");
   const [composeOpenLibrary, setComposeOpenLibrary] = useState(false);
   const [composeInitialWhere, setComposeInitialWhere] = useState(null);
+  const [composeReportDeal, setComposeReportDeal] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareMenuplyOpen, setShareMenuplyOpen] = useState(false);
   /** Prevent CLEAR_STUCK listener from immediately undoing openCreate / open QR. */
@@ -80,6 +82,7 @@ export default function FeedShellPage({ children = null }) {
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
     setComposeInitialWhere(null);
+    setComposeReportDeal(false);
     setMoreOpen(false);
     if (except !== "share") setShareMenuplyOpen(false);
   }
@@ -168,6 +171,16 @@ export default function FeedShellPage({ children = null }) {
     openingShellOverlayRef.current = null;
   }
 
+  // Plan 78 (Andre 2026-11-28): Deals → "+ Report a Deal" opens the same Post, Report a Deal ticked.
+  useEffect(() => {
+    function onOpenReportDeal() {
+      openCreateSheet();
+      setComposeReportDeal(true);
+    }
+    window.addEventListener(OPEN_REPORT_DEAL_EVENT, onOpenReportDeal);
+    return () => window.removeEventListener(OPEN_REPORT_DEAL_EVENT, onOpenReportDeal);
+  }, []);
+
   function closeCreateSheet() {
     setCreateSheetOpen(false);
   }
@@ -221,6 +234,7 @@ export default function FeedShellPage({ children = null }) {
     setComposeMediaSource("camera");
     setComposeOpenLibrary(false);
     setComposeInitialWhere(null);
+    setComposeReportDeal(false);
   }
 
   function handleShareMyMenuply(options = {}) {
@@ -305,6 +319,7 @@ export default function FeedShellPage({ children = null }) {
         mediaSource={composeMediaSource}
         openLibraryOnMount={composeOpenLibrary}
         initialWhereType={composeInitialWhere}
+        initialReportDeal={composeReportDeal}
         onClose={closeCompose}
       />
     </div>
