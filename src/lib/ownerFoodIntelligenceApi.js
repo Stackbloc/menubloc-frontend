@@ -35,6 +35,13 @@ export const fiApi = {
   // Food Ontology context (read-only): live Search/Similar/Compare use + mapped dishes.
   ontologyKeyStats: () => call("GET", "/food_ontology/key-stats"),
   ontologyKeyContext: (key) => call("GET", `/food_ontology/keys/${encodeURIComponent(key)}/context`),
+  // 2026-11-28 (plan 72): proposals CK holds for Andre; every action goes through CK.
+  ontologyReviewHolds: (params = {}) => call("GET", `/food_ontology/review/holds${q(params)}`),
+  ontologyReviewApprove: (id, note) => call("POST", `/food_ontology/review/holds/${encodeURIComponent(id)}/approve`, { note: note || null }),
+  ontologyReviewReject: (id, note) => call("POST", `/food_ontology/review/holds/${encodeURIComponent(id)}/reject`, { note: note || null }),
+  ontologyReviewRevise: (id, fields, note) => call("POST", `/food_ontology/review/holds/${encodeURIComponent(id)}/revise`, { fields, note: note || null }),
+  ontologyReviewFile: (apply) => call("POST", "/food_ontology/review/file", { apply: apply === true }),
+  ontologyReviewFindings: () => call("GET", "/food_ontology/review/findings"),
   audit: (params = {}) => call("GET", `/audit${q(params)}`),
   saveBaseline: (system) => call("POST", `/${system}/baseline`),
   revisions: (system) => call("GET", `/${system}/revisions`),

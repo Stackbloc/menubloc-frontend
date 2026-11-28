@@ -6,6 +6,7 @@ import RecordEditor, { AddRecordForm } from "./RecordEditor.jsx";
 import { MealtimeBrowse, MealtimeDraft, MealtimeRankingPreview } from "./MealtimeScreens.jsx";
 import { OntologyKeyContext, OntologyList } from "./OntologyExplorer.jsx";
 import FiltersScreen from "./FiltersScreen.jsx";
+import OntologyReview from "./OntologyReview.jsx";
 import {
   Banner, Btn, ConfirmDialog, DiffList, IssueList, Loading, SummaryLine, Tag,
   inputStyle, linkStyle, recordSub, recordTitle, useLoad, when,
@@ -122,6 +123,9 @@ function Browse() {
   const sys = ov.data?.systems?.find((s) => s.system === system);
   const rev = useLoad(() => (sys?.current ? fiApi.revision(system, sys.current.id) : Promise.resolve(null)), [system, sys?.current?.id]);
   const ontStats = useLoad(() => (system === "food_ontology" ? fiApi.ontologyKeyStats().catch(() => ({ keys: {} })) : Promise.resolve(null)), [system]);
+  // 2026-11-28 (plan 72): how many ontology proposals CK is holding (0 when the review API isn't deployed yet).
+  const review = useLoad(() => (system === "food_ontology" ? fiApi.ontologyReviewHolds({ limit: 1 }).catch(() => null) : Promise.resolve(null)), [system]);
+  const reviewCount = Object.values(review.data?.open_by_kind || {}).reduce((a, b) => a + b, 0);
   if (!SYSTEMS.includes(system)) return <EmptyState>Unknown system.</EmptyState>;
   const ontology = system === "food_ontology";
   const records = rev.data?.records || [];
@@ -148,7 +152,10 @@ function Browse() {
             <div style={{ fontSize: 13 }}>
               Viewing official version <strong>{sys.current.number}</strong> ({sys.current.title}) · {records.length} records · {records.filter((r) => !r.active).length} off
             </div>
-            <Btn kind="primary" onClick={startDraft} disabled={busy}>✎ Start a draft</Btn>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {ontology ? <Link to={`${BASE}/food_ontology/proposals`}><Btn>Proposals waiting for you{reviewCount ? ` · ${reviewCount}` : ""}</Btn></Link> : null}
+              <Btn kind="primary" onClick={startDraft} disabled={busy}>✎ Start a draft</Btn>
+            </div>
           </div>
           <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 16 }}>
             {ontology ? (
@@ -642,6 +649,7 @@ const td = { padding: "10px 14px" };
 const TITLES = {
   "": "Food Intelligence",
   food_ontology: "Food Ontology",
+  proposals: "Food Ontology proposals",
   mks: "MKS",
   mealtime: "Mealtimes",
   filters: "Filters",
@@ -655,7 +663,7 @@ export default function FoodIntelligence() {
   const params = useParams();
   const first = (params["*"] || "").split("/")[0];
   const rest = params["*"] || "";
-  const title = rest === "mealtime/preview" ? "Mealtime ranking preview" : first && rest.includes("/drafts/") ? `${TITLES[first] || ""} draft` : TITLES[first] ?? "Food Intelligence";
+  const title = rest === "food_ontology/proposals" ? "Food Ontology proposals" : rest === "mealtime/preview" ? "Mealtime ranking preview" : first && rest.includes("/drafts/") ? `${TITLES[first] || ""} draft` : TITLES[first] ?? "Food Intelligence";
   return (
     <OwnerLayout title={title}>
       <Routes>
@@ -668,6 +676,7 @@ export default function FoodIntelligence() {
         <Route path="mealtime/preview" element={<MealtimeRankingPreview />} />
         <Route path="mealtime/drafts/:id" element={<MealtimeDraft />} />
         <Route path="filters" element={<FiltersScreen />} />
+        <Route path="food_ontology/proposals" element={<OntologyReview />} />
         <Route path=":system" element={<Browse />} />
         <Route path=":system/drafts/:id" element={<DraftEditor />} />
       </Routes>
