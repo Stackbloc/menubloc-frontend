@@ -33,6 +33,7 @@ import {
   availabilityLine,
   circlesFrom,
   CUSTOM_VIBE_MAX,
+  TREAT_VIBES,
   dayLabel,
   DEFAULT_VIBE_HOURS,
   homeLine,
@@ -144,7 +145,8 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
   const shownLevel = discover || level;
   const paused = !!state && !state.available;
   const custom = state?.activeVibe?.kind === "custom" ? state.activeVibe : null;
-  const active = !!state && (state.hungry || state.upFor.length > 0 || homes.length > 0 || state.feelingSocial || !!custom);
+  const treat = state?.treatVibe ? TREAT_VIBES.find((t) => t.kind === state.treatVibe) : null;
+  const active = !!state && (state.hungry || state.upFor.length > 0 || homes.length > 0 || state.feelingSocial || !!custom || !!treat);
   const days = nextDays(now);
   const today = ymd(new Date(now));
   const until = (kind) => (state?.activeVibe?.kind === kind ? untilLabel(state.activeVibe.until, now) : null);
@@ -237,6 +239,16 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
                   testId="my-vibe-social"
                   onChange={() => openVibe("feeling_social")}
                   onRemove={() => run(() => setAvailability({ feeling_social: false }))}
+                  busy={busy}
+                />
+              ) : null}
+              {treat ? (
+                <Row
+                  label={treat.label}
+                  until={until(treat.kind)}
+                  testId={`my-vibe-${treat.kind}`}
+                  onChange={() => openVibe(treat.kind)}
+                  onRemove={() => run(() => setRightNowVibe({ kind: null }))}
                   busy={busy}
                 />
               ) : null}
@@ -370,6 +382,10 @@ export default function MyVibeCard({ discover = null, onDiscover }) {
             {!state.feelingSocial ? (
               <Choice label="✨ Feeling Social" note="Open to meeting new people" action="Turn on ›" busy={busy} onClick={() => openVibe("feeling_social")} testId="my-vibe-set-social" />
             ) : null}
+            {/* 2026-11-28 (plan 79): 😋 Treat me · 🙌 My treat (18+). */}
+            {TREAT_VIBES.filter((t) => t.kind !== treat?.kind).map((t) => (
+              <Choice key={t.kind} label={t.label} note={t.note} action="Turn on ›" busy={busy} onClick={() => openVibe(t.kind)} testId={`my-vibe-set-${t.kind}`} />
+            ))}
             <Choice
               label="Write your own vibe"
               note="Like “Down for late night tacos”"

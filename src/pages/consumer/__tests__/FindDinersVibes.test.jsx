@@ -69,3 +69,29 @@ describe("Find Connects: People / Vibes", () => {
     expect(await screen.findByText("No one you can see has that vibe right now.")).toBeTruthy();
   });
 });
+
+// 2026-11-28 (plan 79): when my vibe is 😋 Treat me the server lists 🙌 My treat first (and back).
+describe("Find Connects: complementary first", () => {
+  it("says who is first and still lists everyone; no note without one", async () => {
+    api.searchDiners.mockResolvedValue({
+      complementary_first: "🙌 My treat",
+      results: [
+        { id: 3, display_name: "Lee", active_vibe: "🙌 My treat", connection_status: null },
+        { id: 4, display_name: "Sam", active_vibe: null, connection_status: null },
+      ],
+    });
+    page();
+    fireEvent.change(screen.getByTestId("find-diners-input"), { target: { value: "lee" } });
+    fireEvent.submit(screen.getByTestId("find-diners-input").closest("form"));
+    expect((await screen.findByTestId("find-diners-first-note")).textContent).toBe("People with 🙌 My treat first");
+    expect(screen.getByTestId("find-diner-3-vibe").textContent).toBe("🙌 My treat");
+    expect(screen.getAllByTestId("find-diners-result")).toHaveLength(2);
+    cleanup();
+    api.searchDiners.mockResolvedValue({ results: [{ id: 3, display_name: "Lee", active_vibe: null, connection_status: null }] });
+    page();
+    fireEvent.change(screen.getByTestId("find-diners-input"), { target: { value: "lee" } });
+    fireEvent.submit(screen.getByTestId("find-diners-input").closest("form"));
+    expect(await screen.findAllByTestId("find-diners-result")).toHaveLength(1);
+    expect(screen.queryByTestId("find-diners-first-note")).toBeNull();
+  });
+});

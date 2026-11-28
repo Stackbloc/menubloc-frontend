@@ -34,11 +34,18 @@ export const CUSTOM_VIBE_MAX = 80;
 export const VIBE_KINDS = [
   { kind: "hungry", label: "Hungry now", note: "Ready to eat soon" },
   { kind: "feeling_social", label: "✨ Feeling Social", note: "Open to meeting new people (18+)" },
+  // 2026-11-28 (plan 79, app wins): 😋 Treat me · 🙌 My treat, 18+, same hours. No payment or promise.
+  { kind: "treat_me", label: "😋 Treat me", note: "Open to someone treating me to a meal" },
+  { kind: "my_treat", label: "🙌 My treat", note: "Open to treating someone to a meal" },
   { kind: "custom", label: "Write your own", note: `Up to ${CUSTOM_VIBE_MAX} characters` },
 ];
 
+/** 2026-11-28 (plan 79): the two treat vibes. Treat me is seen by Connects only (the server decides). */
+export const TREAT_VIBES = VIBE_KINDS.filter((k) => k.kind === "treat_me" || k.kind === "my_treat");
+export const isTreatKind = (k) => k === "treat_me" || k === "my_treat";
+
 function parseActiveVibe(v) {
-  const kind = ["hungry", "feeling_social", "custom"].find((k) => k === v?.kind);
+  const kind = ["hungry", "feeling_social", "custom", "treat_me", "my_treat"].find((k) => k === v?.kind);
   const label = text(v?.label);
   return kind && label ? { kind, label, until: text(v?.until) } : null;
 }
@@ -75,6 +82,7 @@ export function parseAvailability(body) {
     feelingSocial: a.feeling_social === true,
     noBirthday: a.no_birthday === true,
     activeVibe: parseActiveVibe(a.active_vibe),
+    treatVibe: isTreatKind(a.treat_vibe) ? a.treat_vibe : null,
     upFor: (Array.isArray(a.up_for) ? a.up_for : []).flatMap((u) => {
       const date = text(u?.date);
       const w = UP_FOR_KEYS.find((m) => m === u?.window);

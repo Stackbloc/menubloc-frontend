@@ -255,3 +255,23 @@ describe("MyVibeCard", () => {
     expect(screen.getByTestId("availability-status").textContent).toMatch(/You’re Hidden/);
   });
 });
+
+// 2026-11-28 (plan 79, web follows the app): 😋 Treat me / 🙌 My treat.
+describe("MyVibeCard: Treat me / My treat", () => {
+  it("both are choices with their notes; picking one sets it for the hours picked; listed with Change and Remove", async () => {
+    render(<MyVibeCard discover="connects" />);
+    expect((await screen.findByTestId("my-vibe-set-treat_me")).textContent).toMatch(/😋 Treat meOpen to someone treating me to a meal/);
+    expect(screen.getByTestId("my-vibe-set-my_treat").textContent).toMatch(/🙌 My treatOpen to treating someone to a meal/);
+    fireEvent.click(screen.getByTestId("my-vibe-set-my_treat"));
+    expect(screen.getByTestId("vibe-kind-my_treat").textContent).toMatch(/🙌 My treat/);
+    fireEvent.click(screen.getByTestId("vibe-hours-8"));
+    api.getAvailability.mockResolvedValue(avail({ treat_vibe: "my_treat", active_vibe: { kind: "my_treat", label: "🙌 My treat", until: new Date(Date.now() + 3600e3).toISOString() } }));
+    fireEvent.click(screen.getByTestId("vibe-set"));
+    await waitFor(() => expect(api.setRightNowVibe).toHaveBeenCalledWith({ kind: "my_treat", hours: 8 }));
+    expect((await screen.findByTestId("my-vibe-my_treat")).textContent).toMatch(/^🙌 My treatuntil .*ChangeRemove$/);
+    expect(screen.queryByTestId("my-vibe-set-my_treat")).toBeNull();
+    expect(screen.getByTestId("my-vibe-set-treat_me")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("my-vibe-my_treat-remove"));
+    await waitFor(() => expect(api.setRightNowVibe).toHaveBeenCalledWith({ kind: null }));
+  });
+});

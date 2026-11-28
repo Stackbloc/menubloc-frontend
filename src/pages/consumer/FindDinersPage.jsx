@@ -71,6 +71,8 @@ export default function FindDinersPage() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  // 2026-11-28 (plan 79): "🙌 My treat" when the server listed my complementary vibe first.
+  const [firstNote, setFirstNote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
@@ -117,6 +119,7 @@ export default function FindDinersPage() {
     try {
       const data = mode === "vibes" ? await searchDiners("", null, { vibe: q, vibeExact: exact }) : await searchDiners(q);
       setResults(data.results || []);
+      setFirstNote(typeof data.complementary_first === "string" && data.complementary_first ? data.complementary_first : null);
       setSearched(true);
     } catch (err) {
       setError(err.message || "Search failed");
@@ -227,6 +230,9 @@ export default function FindDinersPage() {
           </p>
         ) : null}
 
+        {results.length && firstNote ? (
+          <p style={styles.empty} data-testid="find-diners-first-note">{`People with ${firstNote} first`}</p>
+        ) : null}
         <ul style={styles.list}>
           {results.map((diner) => {
             const profileHref = `/account/diners/${encodeURIComponent(String(diner.id))}?from=find-diners`;
